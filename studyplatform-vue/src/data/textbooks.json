@@ -1,0 +1,4590 @@
+{
+  "source": "https://www.icourses.cn/textbook",
+  "apiBase": "https://www.icourses.cn/prod/icourse-portal-api",
+  "fetchedAt": "2026-07-01T18:45:59+08:00",
+  "categories": [
+    {
+      "id": "1",
+      "name": "理工",
+      "storageFolder": "excellent_textbook/理工"
+    },
+    {
+      "id": "2",
+      "name": "人文社科",
+      "storageFolder": "excellent_textbook/人文社科"
+    },
+    {
+      "id": "3",
+      "name": "数学物理",
+      "storageFolder": "excellent_textbook/数学物理"
+    },
+    {
+      "id": "4",
+      "name": "计算机",
+      "storageFolder": "excellent_textbook/计算机"
+    },
+    {
+      "id": "5",
+      "name": "交通运输",
+      "storageFolder": "excellent_textbook/交通运输"
+    },
+    {
+      "id": "6",
+      "name": "艺术体育",
+      "storageFolder": "excellent_textbook/艺术体育"
+    },
+    {
+      "id": "7",
+      "name": "外语",
+      "storageFolder": "excellent_textbook/外语"
+    },
+    {
+      "id": "8",
+      "name": "农医生科",
+      "storageFolder": "excellent_textbook/农医生科"
+    },
+    {
+      "id": "9",
+      "name": "航空航天",
+      "storageFolder": "excellent_textbook/航空航天"
+    }
+  ],
+  "textbooks": [
+    {
+      "id": "253",
+      "name": "无人机测绘技术",
+      "editor": "曹君   周业梅",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2022-02-23",
+      "isbn": "978-7-89530-127-6",
+      "description": "无人机测绘教材，先系统奠基，重数据采集与处理方法，以实例详解。涵盖多领域应用，为高职多专业量身打造，亦成教师、科研人员深入探究测绘领域之得力助手，开启无人机测绘知识宝库。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/253.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/9fed1122-6e42-4ed9-bad9-8b6d6173579f.png",
+      "coverFilePath": "storage/excellent_textbook/理工/253.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1473926450.htm"
+    },
+    {
+      "id": "252",
+      "name": "湖北传统音乐欣赏与实践",
+      "editor": "康玲",
+      "category": "艺术体育",
+      "categories": [
+        "艺术体育"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2022-11-29",
+      "isbn": "978-7-89530-122-1",
+      "description": "聚焦荆楚传统音乐文化，把民间音乐作品细细剖析。通过多元互动，带你领略音乐之美，感受文化魅力。大学生艺术素养课可用，音乐爱好者也别错过，一起传承民族文化，收获满满乐趣哟！",
+      "cover": "/files/excellent_textbook/%E8%89%BA%E6%9C%AF%E4%BD%93%E8%82%B2/252.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/e7e940e4-d8c7-458a-822a-377e1b62b37e.png",
+      "coverFilePath": "storage/excellent_textbook/艺术体育/252.png",
+      "storageFolder": "excellent_textbook/艺术体育",
+      "link": "https://www.icourse163.org/textbook/1473916445.htm"
+    },
+    {
+      "id": "251",
+      "name": "高等数学（下册）",
+      "editor": "张莉  朱士信",
+      "category": "数学物理",
+      "categories": [
+        "数学物理"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-07-10",
+      "isbn": "978-7-89530-876-3",
+      "description": "高等数学下册，依 “重基础、强练习、拓视野” 构建。含自测试题、易错讲解、应用案例，还有名师视频、例题讲解与动图演示，助力高校学子与科技人员学好微积分，开启探索之旅。",
+      "cover": "/files/excellent_textbook/%E6%95%B0%E5%AD%A6%E7%89%A9%E7%90%86/251.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/7f7683b0-1685-411e-b315-19ac0a14c2ce.png",
+      "coverFilePath": "storage/excellent_textbook/数学物理/251.png",
+      "storageFolder": "excellent_textbook/数学物理",
+      "link": "https://www.icourse163.org/textbook/1473916441.htm"
+    },
+    {
+      "id": "250",
+      "name": "高等数学（上册）",
+      "editor": "张莉  朱士信",
+      "category": "数学物理",
+      "categories": [
+        "数学物理"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-07-10",
+      "isbn": "978-7-89530-874-9",
+      "description": "《高等数学》上册含函数至常微分方程等知识。按 “重基础、强练习、拓视野” 构建，有自测试题、易错例题、应用案例，配名师教学视频、例题讲解视频与动图。适用于高校非数学专业与科技工作者，开启数学学习新篇，趣学深研微积分。",
+      "cover": "/files/excellent_textbook/%E6%95%B0%E5%AD%A6%E7%89%A9%E7%90%86/250.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/5a42cc79-df9b-4e58-ac9b-c9943fd4a3b6.png",
+      "coverFilePath": "storage/excellent_textbook/数学物理/250.png",
+      "storageFolder": "excellent_textbook/数学物理",
+      "link": "https://www.icourse163.org/textbook/1473934493.htm"
+    },
+    {
+      "id": "249",
+      "name": "现代教育技术",
+      "editor": "傅钢善",
+      "category": "人文社科",
+      "categories": [
+        "人文社科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-07-01",
+      "isbn": "978-7-89530-867-1",
+      "description": "这本教材逻辑清、结构新，图文并茂易上手。4 模块 12 单元 41 专题任你选学，理论实践皆涵盖，数字资源扫码即得。师范本科生、教育硕士等必备，带你掌握现代教育技术精髓，开启教学新征程！",
+      "cover": "/files/excellent_textbook/%E4%BA%BA%E6%96%87%E7%A4%BE%E7%A7%91/249.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/db60fc4d-6f89-490a-846f-303280f27dc6.png",
+      "coverFilePath": "storage/excellent_textbook/人文社科/249.png",
+      "storageFolder": "excellent_textbook/人文社科",
+      "link": "https://www.icourse163.org/textbook/1473934485.htm"
+    },
+    {
+      "id": "248",
+      "name": "机械原理",
+      "editor": "葛文杰",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2023-07-01",
+      "isbn": "978-7-89530-550-2",
+      "description": "机械专业必备辅助神器！《机械原理》第九版好帮手，学习要点、重难点清晰呈现，典型例题深入剖析，重要问题拓展延伸，兼具启发性与趣味性。助学生理解、考研，帮教师备课，技术人员也能从中取经！",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/248.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/5438ee5d-050f-45ca-8a09-57f7a0f422ba.png",
+      "coverFilePath": "storage/excellent_textbook/理工/248.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1473934442.htm"
+    },
+    {
+      "id": "247",
+      "name": "机械设计",
+      "editor": "宁方立",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2023-08-31",
+      "isbn": "978-7-89530-556-4",
+      "description": "机械设计学习好帮手来袭！以经典《机械设计》（第十版）为蓝本，五大模块超实用。学习指导精细到 18 章，图文、微视频、在线自测齐上阵，助力师生教与学。高校机械类专业必备，开启高效学习模式，让知识轻松掌握！",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/247.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/14b41d4c-274e-4c5e-89de-dab661e21132.png",
+      "coverFilePath": "storage/excellent_textbook/理工/247.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1473934446.htm"
+    },
+    {
+      "id": "246",
+      "name": "西方音乐史",
+      "editor": "张景晖",
+      "category": "艺术体育",
+      "categories": [
+        "艺术体育"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-08-21",
+      "isbn": "978-7-89530-893-0",
+      "description": "探索西方音乐史的宝藏之书来啦！以历史为线，十二章涵盖各时期音乐。知识讲解透彻，高阶模块丰富，习题实践兼具。紧跟时代，融入多元学科与思政美育。高校音乐专业的优选，音乐爱好者的珍藏，开启音乐文化的奇妙之旅！",
+      "cover": "/files/excellent_textbook/%E8%89%BA%E6%9C%AF%E4%BD%93%E8%82%B2/246.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/a69df5ae-6ab8-4f75-b7e6-fa57773b89dc.png",
+      "coverFilePath": "storage/excellent_textbook/艺术体育/246.png",
+      "storageFolder": "excellent_textbook/艺术体育",
+      "link": "https://www.icourse163.org/textbook/1473946441.htm"
+    },
+    {
+      "id": "245",
+      "name": "商务谈判英语口语",
+      "editor": "冯岩岩",
+      "category": "外语",
+      "categories": [
+        "外语"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2023-11-30",
+      "isbn": "978-7-89530-685-1",
+      "description": "学商务谈判英语，就选这本宝藏教材！以学生为中心，紧扣英语运用与商务实操，12 单元囊括贸易磋商全程。思政赋能，校企共创真实情境，音视频助力学习。商务英语等多专业适用，职场人、爱好者也不容错过，开启商务英语进阶之路。",
+      "cover": "/files/excellent_textbook/%E5%A4%96%E8%AF%AD/245.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/6aa5e4aa-ff5c-4429-a016-d5622bc8bcee.png",
+      "coverFilePath": "storage/excellent_textbook/外语/245.png",
+      "storageFolder": "excellent_textbook/外语",
+      "link": "https://www.icourse163.org/textbook/1473934464.htm"
+    },
+    {
+      "id": "244",
+      "name": "英语短篇小说教程（第二版）",
+      "editor": "虞建华",
+      "category": "外语",
+      "categories": [
+        "外语"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-09-03",
+      "isbn": "978-7-89530-854-1",
+      "description": "文学素养提升神器来啦！《英语短篇小说教程》，“十一五” 国规教材与 “精品教材” 双光环加持。知识系统、语言地道，融合课堂与在线学习，教师讲授与自主学习兼得，满足个性需求。英语专业本研生及高水平学习者的不二之选！",
+      "cover": "/files/excellent_textbook/%E5%A4%96%E8%AF%AD/244.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/c8fb599e-83a7-4a8f-b62a-dcdb5cfc80fb.png",
+      "coverFilePath": "storage/excellent_textbook/外语/244.png",
+      "storageFolder": "excellent_textbook/外语",
+      "link": "https://www.icourse163.org/textbook/1473934491.htm"
+    },
+    {
+      "id": "243",
+      "name": "数控编程与加工技术",
+      "editor": "蒲筠果",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2022-10-15",
+      "isbn": "978-7-89530-425-3",
+      "description": "数控专业必备宝藏教材来袭！它是融媒体智能教材，以就业为导向，依职业标准打造。3 大情境涵盖数控车铣核心知识，虚拟仿真呈现热门系统。岗课赛证融合，任务链由简至繁。微课、动画等资源丰富，培养综合编程能力，院校师生与行业人员的得力助手！",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/243.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/b2562593-d694-4277-8d64-e4f909fa387b.png",
+      "coverFilePath": "storage/excellent_textbook/理工/243.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1473916446.htm"
+    },
+    {
+      "id": "242",
+      "name": "现代物理学在创新创业中的应用案例汇编",
+      "editor": "方亮  翁雨燕",
+      "category": "数学物理",
+      "categories": [
+        "数学物理"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2022-03-30",
+      "isbn": "978-7-89530-374-4",
+      "description": "本书聚焦“现代物理学在创新创业中的应用”，以学生视角编写，突出朋辈学习，案例贴近生活，启发创新思维。配套多媒体资源实时更新，是创新教学与实践的理想选择！",
+      "cover": "/files/excellent_textbook/%E6%95%B0%E5%AD%A6%E7%89%A9%E7%90%86/242.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/2c6d8cdd-f618-44b4-8dc4-2cdedaf07229.png",
+      "coverFilePath": "storage/excellent_textbook/数学物理/242.png",
+      "storageFolder": "excellent_textbook/数学物理",
+      "link": "https://www.icourse163.org/textbook/1473926443.htm"
+    },
+    {
+      "id": "241",
+      "name": "Essential University Physics Experiment",
+      "editor": "须萍  陆伟新  侯波",
+      "category": "数学物理",
+      "categories": [
+        "数学物理"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2022-11-30",
+      "isbn": "978-7-89530-440-6",
+      "description": "《Essential University Physics Experiment》涵盖36个实验，系统讲解实验基础与技能，培养学生创新与实践能力，适合理工科非物理专业学生及相关教学参考。",
+      "cover": "/files/excellent_textbook/%E6%95%B0%E5%AD%A6%E7%89%A9%E7%90%86/241.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/5b96aca1-26f0-4edc-950f-23f60b9c7784.png",
+      "coverFilePath": "storage/excellent_textbook/数学物理/241.png",
+      "storageFolder": "excellent_textbook/数学物理",
+      "link": "https://www.icourse163.org/textbook/1473946470.htm"
+    },
+    {
+      "id": "240",
+      "name": "信号与系统",
+      "editor": "陈后金  李艳凤",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2023-07-15",
+      "isbn": "978-7-89530-603-5",
+      "description": "智能时代必备！这本信号与系统数字教材超赞！以学习者为中心，内容新颖。连续离散并行，时域变换域结合，案例生动，MATLAB 辅助。知识体系完整，资源丰富多元，助电子、通信等专业学子及科技工作者开启智慧学习之旅！",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/240.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/3d6685e2-6adc-40d1-8a90-4dfce2b470f1.png",
+      "coverFilePath": "storage/excellent_textbook/理工/240.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1473934451.htm"
+    },
+    {
+      "id": "239",
+      "name": "国际民航通识英语教程",
+      "editor": "褚天琦 李少忠 李吕华",
+      "category": "外语",
+      "categories": [
+        "外语"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-01-01",
+      "isbn": "978-7-89530-687-5",
+      "description": "本教材以民航话题为核心，融入真实语境，培养学生英语技能、批判性思维和实际问题解决能力。依托数字平台，支持线上线下混合教学，是民航专业学生与爱好者的理想学习资源。",
+      "cover": "/files/excellent_textbook/%E5%A4%96%E8%AF%AD/239.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/21ed51a6-39f4-437b-a2b1-e69f6448ea22.png",
+      "coverFilePath": "storage/excellent_textbook/外语/239.png",
+      "storageFolder": "excellent_textbook/外语",
+      "link": "https://www.icourse163.org/textbook/1473934463.htm"
+    },
+    {
+      "id": "238",
+      "name": "高等数学（上册）",
+      "editor": "方文波  黄华  孙玉琴",
+      "category": "数学物理",
+      "categories": [
+        "数学物理"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2023-11-20",
+      "isbn": "978-7-89530-659-2",
+      "description": "《高等数学数字教材》涵盖函数、导数、积分等经典内容，配有典型例题与考研题选讲。通过精美图形、动画、视频和交互模型，提升学习体验，适合作为高校高等数学课程的主教材或参考书。",
+      "cover": "/files/excellent_textbook/%E6%95%B0%E5%AD%A6%E7%89%A9%E7%90%86/238.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/c6d33571-3e34-4b8b-ab97-3e6815113185.png",
+      "coverFilePath": "storage/excellent_textbook/数学物理/238.png",
+      "storageFolder": "excellent_textbook/数学物理",
+      "link": "https://www.icourse163.org/textbook/1473934465.htm"
+    },
+    {
+      "id": "237",
+      "name": "心理测量学",
+      "editor": "戴海琦",
+      "category": "人文社科",
+      "categories": [
+        "人文社科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-05-15",
+      "isbn": "978-7-89530-836-7",
+      "description": "本书系统讲解心理测量学的理论与技术，注重实践应用，并配备丰富数字资源，助力学习与教学。适用于心理学、教育学等专业学生及心理测量相关领域的从业者和研究者参考。",
+      "cover": "/files/excellent_textbook/%E4%BA%BA%E6%96%87%E7%A4%BE%E7%A7%91/237.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/6258cfb7-5bdc-4dea-964c-7fff28f73f92.png",
+      "coverFilePath": "storage/excellent_textbook/人文社科/237.png",
+      "storageFolder": "excellent_textbook/人文社科",
+      "link": "https://www.icourse163.org/textbook/1473934469.htm"
+    },
+    {
+      "id": "236",
+      "name": "儿童文学教程（第4版）",
+      "editor": "方卫平  王昆建",
+      "category": "人文社科",
+      "categories": [
+        "人文社科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-06-30",
+      "isbn": "978-7-89530-865-7",
+      "description": "本教材入选国家级规划教材，多次修订迭代，内容全面涵盖儿童文学理论、文体类型及教学应用，配备丰富数字资源与实践指导，适合小学教育专业学生及在职教师参考，是儿童文学教学与学习的经典之选。",
+      "cover": "/files/excellent_textbook/%E4%BA%BA%E6%96%87%E7%A4%BE%E7%A7%91/236.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/ceb58ab7-04ae-4377-b166-2db5480f9333.png",
+      "coverFilePath": "storage/excellent_textbook/人文社科/236.png",
+      "storageFolder": "excellent_textbook/人文社科",
+      "link": "https://www.icourse163.org/textbook/1473934472.htm"
+    },
+    {
+      "id": "235",
+      "name": "太极拳",
+      "editor": "易鹏",
+      "category": "艺术体育",
+      "categories": [
+        "艺术体育"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-07-20",
+      "isbn": "978-7-89530-766-7",
+      "description": "首部太极拳数字教材来袭！世界冠军名师编著，丰富教材体系，走向国际舞台。形式新、资源优，“互联网 +” 模式开启立体教学。从理论到实战，从养生到鉴赏，内容超丰富。让我们跟随易鹏教授，开启这场奇妙的太极健康之旅！",
+      "cover": "/files/excellent_textbook/%E8%89%BA%E6%9C%AF%E4%BD%93%E8%82%B2/235.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/c91cdb7f-9333-4187-8faa-584695db2c52.png",
+      "coverFilePath": "storage/excellent_textbook/艺术体育/235.png",
+      "storageFolder": "excellent_textbook/艺术体育",
+      "link": "https://www.icourse163.org/textbook/1473934475.htm"
+    },
+    {
+      "id": "234",
+      "name": "物理学导论（第四版）",
+      "editor": "张汉壮  倪牟翠  王磊",
+      "category": "数学物理",
+      "categories": [
+        "数学物理"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-07-31",
+      "isbn": "978-7-89530-844-2",
+      "description": "系统地介绍了物理学的基本概念，内容全面易懂。清晰的解释、引人入胜的例子和实际应用使本教材成为学生理解物理学原理的理想选择。简洁而有条理的内容，使其成为初级物理学学习者的必备资源。强烈推荐给学生和教育工作者！",
+      "cover": "/files/excellent_textbook/%E6%95%B0%E5%AD%A6%E7%89%A9%E7%90%86/234.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/3a7e3e40-bcc2-4809-be6f-8bdad10fac40.png",
+      "coverFilePath": "storage/excellent_textbook/数学物理/234.png",
+      "storageFolder": "excellent_textbook/数学物理",
+      "link": "https://www.icourse163.org/textbook/1473916443.htm"
+    },
+    {
+      "id": "233",
+      "name": "网球运动技术与教学法",
+      "editor": "钟怡",
+      "category": "艺术体育",
+      "categories": [
+        "艺术体育"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-08-31",
+      "isbn": "978-7-89530-283-9",
+      "description": "本教材结合网球运动最新理论与发展趋势，全面介绍网球技术、战术、教学法等内容，配以丰富图文与信息化教学手段，帮助青少年更好理解和普及网球运动。适用于职业院校网球课程，也可作为运动员、教练员及爱好者的参考书。",
+      "cover": "/files/excellent_textbook/%E8%89%BA%E6%9C%AF%E4%BD%93%E8%82%B2/233.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/2eb619e2-a2e7-4127-8ac9-d2bdc7ec151a.png",
+      "coverFilePath": "storage/excellent_textbook/艺术体育/233.png",
+      "storageFolder": "excellent_textbook/艺术体育",
+      "link": "https://www.icourse163.org/textbook/1473934488.htm"
+    },
+    {
+      "id": "232",
+      "name": "数学分析",
+      "editor": "张然  王春朋  尹景学",
+      "category": "数学物理",
+      "categories": [
+        "数学物理"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-09-30",
+      "isbn": "978-7-89530-919-7",
+      "description": "本书结合吉林大学数学分析教学实践，改革内容安排与思维方法训练，涵盖极限、微分、积分、无穷级数等核心内容。适用于综合性大学及师范院校数学专业教材，也可供其他高要求专业学生和研究人员参考。",
+      "cover": "/files/excellent_textbook/%E6%95%B0%E5%AD%A6%E7%89%A9%E7%90%86/232.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/e13c2024-d426-4fdf-a282-44130653a042.png",
+      "coverFilePath": "storage/excellent_textbook/数学物理/232.png",
+      "storageFolder": "excellent_textbook/数学物理",
+      "link": "https://www.icourse163.org/textbook/1473946444.htm"
+    },
+    {
+      "id": "231",
+      "name": "可再生能源利用与存储技术",
+      "editor": "廖强",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-08-30",
+      "isbn": "978-7-89530-917-3",
+      "description": "本书系统介绍可再生能源利用与存储技术，涵盖太阳能、风能、生物质能等多种能源及储能技术的原理与应用，注重行业态势与未来发展前景。适用于能源、化工、环境等领域的学生与研究人员，是从事可再生能源研究与开发的理论与技术基础。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/231.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/79a2125d-4e43-4970-b7af-6e30e331d3fb.png",
+      "coverFilePath": "storage/excellent_textbook/理工/231.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1473946446.htm"
+    },
+    {
+      "id": "230",
+      "name": "能源电化学",
+      "editor": "邱萍",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-08-30",
+      "isbn": "978-7-89530-912-8",
+      "description": "本书系统介绍了电化学的基础理论与应用，包括电化学热力学、电化学动力学、电化学电源、催化、电化学腐蚀及测试技术等内容。适用于电化学相关专业的本科生与研究生，也可供从事电化学研究与实践的人员参考，是学习和研究电化学的全面指南。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/230.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/92667ea5-eb61-4f31-83b9-bb815b7a8a21.png",
+      "coverFilePath": "storage/excellent_textbook/理工/230.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1473946454.htm"
+    },
+    {
+      "id": "229",
+      "name": "轨道车辆轻量化与安全技术",
+      "editor": "吴圣川",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-09-30",
+      "isbn": "978-7-89530-957-9",
+      "description": "本书深入探讨了先进轨道交通领域的轻量化技术与安全设计，结合国内外发展现状及相关研究成果，系统总结了轨道车辆的轻量化技术路径及安全评价保障技术。适用于轨道交通、车辆工程及相关领域的本科生、研究生及科研人员，是学习和研究现代轨道交通技术的宝贵资源。",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/229.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/57a2f9ff-d56e-4971-ba7b-e3762a850825.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/229.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1473946455.htm"
+    },
+    {
+      "id": "228",
+      "name": "车用新能源与动力",
+      "editor": "王震坡",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-08-30",
+      "isbn": "978-7-89530-903-6",
+      "description": "本书系统介绍车用新能源与动力技术，涵盖锂离子电池、氢燃料电池、混合动力发动机等核心技术，深入探讨新能源汽车发展现状及技术趋势。适用于车辆、机电、能源等领域的学生和科研人员，是新能源汽车动力系统领域的重要参考教材。",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/228.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/5ff6d195-b70d-4e5f-86f7-73f2ddb9d63a.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/228.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1473946457.htm"
+    },
+    {
+      "id": "227",
+      "name": "幼儿园教育活动设计与实施",
+      "editor": "谭娟  袁书卷",
+      "category": "人文社科",
+      "categories": [
+        "人文社科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2021-10-11",
+      "isbn": "978-7-89530-071-2",
+      "description": "丰富案例，系统解读理论实践。五大领域、思政、一日生活等全囊括。依纲领政策，有目标导图，还设互动实训，案例视频扫码即看。学前教育学习者的宝藏，开启幼教知识探索大门！",
+      "cover": "/files/excellent_textbook/%E4%BA%BA%E6%96%87%E7%A4%BE%E7%A7%91/227.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/6e1967bd-7e69-422d-95a5-99d82d552682.png",
+      "coverFilePath": "storage/excellent_textbook/人文社科/227.png",
+      "storageFolder": "excellent_textbook/人文社科",
+      "link": "https://www.icourse163.org/textbook/1473926446.htm"
+    },
+    {
+      "id": "226",
+      "name": "汽车智能座舱技术",
+      "editor": "高镇海  胡宏宇  赵睿",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-09-30",
+      "isbn": "978-7-89530-956-2",
+      "description": "本书全面介绍智能网联与新能源汽车领域的最新发展，深入探讨智能汽车座舱技术，涵盖硬件、系统软件、多模态交互等关键技术。适用于车辆工程专业及智能座舱技术研究人员，帮助读者了解汽车智能化与未来发展趋势。",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/226.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/aec2e70c-8f52-453c-b66a-399d15bab1dd.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/226.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1473946458.htm"
+    },
+    {
+      "id": "225",
+      "name": "面向先进轨道交通的人因安全理论与方法",
+      "editor": "郭孜政",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-08-31",
+      "isbn": "978-7-89530-904-3",
+      "description": "本书基于人因工程学理论，构建了轨道交通人因安全工程体系，涵盖人的认知、行为失误机理及作业绩效影响因素等内容，并结合实际案例提供解决方案与技术应用，突出理论与实践的融合。适合交通运输工程、人机工程、安全工程、应用心理学等专业的本科生、研究生，以及轨道交通领域研究和工程技术人员参考。",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/225.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/18a1be63-316b-4485-9d65-ed30a97c2b8c.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/225.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1473946461.htm"
+    },
+    {
+      "id": "224",
+      "name": "轨道交通网络空间安全",
+      "editor": "闫连山  沈超  陈建译  李赛飞",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-08-31",
+      "isbn": "978-7-89330-900-5",
+      "description": "本书深入探讨轨道交通系统在数字化时代面临的网络空间安全挑战，涵盖基础理论、技术应用、案例分析与安全策略，突出系统性、前瞻性和实用性。适合作为交通运输、安全科学、轨道交通等专业的教材，也适合行业管理者、技术人员及相关领域从业人员参考。",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/224.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/92d1794a-4a53-48a2-ad39-00b76e40ad46.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/224.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1473946462.htm"
+    },
+    {
+      "id": "223",
+      "name": "新大学英语综合教程2（第二版）",
+      "editor": "王海啸 余渭深",
+      "category": "外语",
+      "categories": [
+        "外语"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-06-06",
+      "isbn": "978-7-89530-851-0",
+      "description": "从热身到反思，兼顾语言、文化等多方面，助你构建语言体系，提升自主学习与文化素养，英语学习好帮手，千万别错过啦！",
+      "cover": "/files/excellent_textbook/%E5%A4%96%E8%AF%AD/223.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/fe74a2d2-1bb3-4d40-90eb-3a6aaa488cc1.png",
+      "coverFilePath": "storage/excellent_textbook/外语/223.png",
+      "storageFolder": "excellent_textbook/外语",
+      "link": "https://www.icourse163.org/textbook/1473946463.htm"
+    },
+    {
+      "id": "222",
+      "name": "高等量子力学",
+      "editor": "李晋斌",
+      "category": "数学物理",
+      "categories": [
+        "数学物理"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2023-08-01",
+      "isbn": "978-7-89530-588-5",
+      "description": "量子力学学习必备！源于南航近二十年讲义，内容丰富，深浅适度，从数学基础到前沿理论，应有尽有。大量例题习题，助力巩固知识。适用于多专业研究生及高年级本科生，80 学时的精心编排，教师还可灵活调整，开启量子学习新篇章！",
+      "cover": "/files/excellent_textbook/%E6%95%B0%E5%AD%A6%E7%89%A9%E7%90%86/222.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/638419cc-eb6b-4376-9e8c-95e6aa9a06c8.png",
+      "coverFilePath": "storage/excellent_textbook/数学物理/222.png",
+      "storageFolder": "excellent_textbook/数学物理",
+      "link": "https://www.icourse163.org/textbook/1473948441.htm"
+    },
+    {
+      "id": "221",
+      "name": "安装工程计量与计价",
+      "editor": "王争",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2022-10-13",
+      "isbn": "978-7-89530-428-4",
+      "description": "本教材以融媒体、交互式、智能化形式，系统讲解建筑电气、给排水、采暖及通风空调工程的计量与计价方法，配套微课、习题库等数字资源，学习便捷高效。内容结合课程思政，助力素养培养。适合高职院校工程造价专业学生及工程造价从业人员使用。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/221.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/55814e28-2eb4-4be9-a0a0-cf54dfafed31.png",
+      "coverFilePath": "storage/excellent_textbook/理工/221.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1473934445.htm"
+    },
+    {
+      "id": "220",
+      "name": "茶艺素养与茶文化营销",
+      "editor": "胡璟  薛新春",
+      "category": "人文社科",
+      "categories": [
+        "人文社科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2022-12-26",
+      "isbn": "978-7-89530-131-3",
+      "description": "识茶韵、明工艺、悟技法，这本茶教材融合图文与视频。从茶源到茶路，经各类茶品至美态与民俗茶艺，再探健康饮法，适用于院校教学、从业者培训及茶艺爱好者，开启茶香四溢的文化之旅。",
+      "cover": "/files/excellent_textbook/%E4%BA%BA%E6%96%87%E7%A4%BE%E7%A7%91/220.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/bdb9f69a-e5da-4a84-9d50-fdb6f7327f40.png",
+      "coverFilePath": "storage/excellent_textbook/人文社科/220.png",
+      "storageFolder": "excellent_textbook/人文社科",
+      "link": "https://www.icourse163.org/textbook/1473926452.htm"
+    },
+    {
+      "id": "219",
+      "name": "产品图像与场景表达",
+      "editor": "张国军  林少群  李亚维",
+      "category": "艺术体育",
+      "categories": [
+        "艺术体育"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-08-10",
+      "isbn": "978-7-89530-726-1",
+      "description": "本教材围绕产品艺术设计专业基础课程，通过10个项目任务细致讲解Photoshop、KeyShot和Cinema 4D三款软件的核心知识与技能，注重职业素养培养和课程思政内容融入，助力全面落实立德树人任务。配套丰富数字资源，直观提升学习体验，适合作为高职、本科及相关从业者的学习参考用书。",
+      "cover": "/files/excellent_textbook/%E8%89%BA%E6%9C%AF%E4%BD%93%E8%82%B2/219.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/56a59073-3034-4cd4-977c-4b8fa8b1bc59.png",
+      "coverFilePath": "storage/excellent_textbook/艺术体育/219.png",
+      "storageFolder": "excellent_textbook/艺术体育",
+      "link": "https://www.icourse163.org/textbook/1473934479.htm"
+    },
+    {
+      "id": "218",
+      "name": "城市轨道交通车站设备管理",
+      "editor": "赵建峰",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-06-10",
+      "isbn": "978-7-89530-704-9",
+      "description": "本书紧扣城市轨道交通行业需求，以项目-任务形式编写，结合国家职业标准，融合理论与实践，涵盖城市轨道交通车站设备的多个核心内容。教材配套微课、动画等数字资源，帮助学生高效学习重点与难点。适合作为高职城市轨道交通运营管理专业核心课程教材及相关专业拓展教材，也适合企业岗前培训使用。",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/218.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/90d8da22-520d-4f64-b1c1-8049755d80f5.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/218.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1473934471.htm"
+    },
+    {
+      "id": "217",
+      "name": "城市轨道交通车站设备运用与监控",
+      "editor": "李红莲",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2023-12-22",
+      "isbn": "978-7-89530-621-9",
+      "description": "本教材面向高职院校城市轨道交通类专业，围绕站务人员典型工作任务，设计了涵盖车站及设备操作与管理的9个项目，内容丰富且实用。配套微课与实操视频资源，助力学生提升职业能力。适合作为城市轨道交通类相关专业教材，也适合从业人员学习参考。",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/217.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/a95a330c-8270-4962-98ef-1e8cee12cac5.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/217.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1473934456.htm"
+    },
+    {
+      "id": "216",
+      "name": "城市轨道交通低压配电与照明系统",
+      "editor": "王建堂 金立艳",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2023-10-25",
+      "isbn": "978-7-89530-620-2",
+      "description": "本教材详细介绍了城市轨道交通低压配电与照明系统的基础知识与设备维护实训内容，结合理论与实际操作，培养地铁运营维护人员的实际应用能力。书中配有微课与视频等丰富的数字化资源，帮助学习者便捷掌握核心知识。适用于高职院校、应用型本科院校机电类专业教学，也适合从事城市轨道交通机电维修与管理工作的技术人员学习参考。",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/216.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/b9c0d351-5ace-4e62-8a7c-5de884223e4e.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/216.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1473934452.htm"
+    },
+    {
+      "id": "215",
+      "name": "城市轨道交通职业素养与礼仪",
+      "editor": "杨建灵",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2022-04-30",
+      "isbn": "978-7-89530-348-5",
+      "description": "本书是《城市轨道交通职业素养与礼仪》课程的配套教材，围绕城市轨道交通服务工作过程，分为职业素养认知、职业生涯规划和职业礼仪三大模块。通过实际岗位服务内容的引领，系统介绍了相关素养与礼仪，适用于高职、中职院校城市轨道交通专业的基础教材，也可作为行业从业人员培训参考资料。",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/215.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/da9365d1-c9f7-4114-9bec-944e3adb142f.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/215.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1473934447.htm"
+    },
+    {
+      "id": "214",
+      "name": "城市轨道交通专用通信设备维护",
+      "editor": "张伟华",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-08-30",
+      "isbn": "978-7-89530-735-3",
+      "description": "本书是《城市轨道交通专用通信设备维护》课程的配套教材，系统介绍了城市轨道交通专用通信系统的原理与维护，涵盖了电话系统、无线集群系统、广播系统等多个模块，并通过任务实施与思考练习深入讲解了通信设备的维护与检修。适用于高职院校及职教本科的城市轨道交通通信信号专业课程，也可作为通信行业从业人员的参考和企业培训资料。",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/214.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/675c98da-147e-4616-813b-fe8d77dec91b.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/214.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1473946465.htm"
+    },
+    {
+      "id": "213",
+      "name": "传感器与自动检测技术",
+      "editor": "赵慧娴",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2021-11-24",
+      "isbn": "978-7-89530-136-8",
+      "description": "本教材是装备制造大类专业的数字教材，全面介绍了生产、生活及科学研究中常用传感器的工作原理、结构组成、测量电路和应用方法。通过企业案例与实际工程任务，讲解了传感器选用、检测系统设计与技术应用，同时融入了智能传感器和多传感器融合技术等前沿科技。书中结合思政、安全与劳动教育，培养学生的工匠精神，适用于自动化、机电、电子信息等专业的教学，也为工程技术人员提供了丰富的参考。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/213.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/860ddb3f-55f1-4aad-a605-6f1e1a4a35e3.png",
+      "coverFilePath": "storage/excellent_textbook/理工/213.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1473926453.htm"
+    },
+    {
+      "id": "212",
+      "name": "大学生心理健康教育",
+      "editor": "汪媛  陈秋红  熊娟梅",
+      "category": "人文社科",
+      "categories": [
+        "人文社科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2023-08-11",
+      "isbn": "978-7-89530-121-4",
+      "description": "高职大学生必备心理教材来啦！贯彻二十大要求，贴合学生特点规律编写。含九大实用模块，案例导入，知识与技能并重，还打造立体化教学空间。适用院校教学、心理服务及企业培训，助你守护心理健康，快来入手呀！",
+      "cover": "/files/excellent_textbook/%E4%BA%BA%E6%96%87%E7%A4%BE%E7%A7%91/212.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/681086b0-4881-4b65-807c-cff13e807f5b.png",
+      "coverFilePath": "storage/excellent_textbook/人文社科/212.png",
+      "storageFolder": "excellent_textbook/人文社科",
+      "link": "https://www.icourse163.org/textbook/1473934444.htm"
+    },
+    {
+      "id": "211",
+      "name": "道路工程施工技术",
+      "editor": "贾海艳  龙元武",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-08-30",
+      "isbn": "978-7-89530-707-0",
+      "description": "本教材详细讲解了路基与路面施工技术，分为两篇，涵盖了路基施工准备、一般路基施工、特殊路基施工等多个模块，内容实用且全面。第二篇则着重于路面施工技术，详细介绍了沥青路面和水泥混凝土路面施工的具体方法。教材适用于高职院校道路与桥梁工程、工程造价等专业，也可作为成人教育与工程技术人员的培训教材，具有较强的实践性与指导性。",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/211.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/8cd8720f-9a57-488a-9a4c-3b65c2c7e722.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/211.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1473934484.htm"
+    },
+    {
+      "id": "210",
+      "name": "地基与基础",
+      "editor": "谭正清  夏念恩",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-08-30",
+      "isbn": "978-7-89530-706-3",
+      "description": "本书以项目任务式结构编写，涵盖土工试验、土石方工程施工、深基坑施工等多个模块，注重学生专业技能的培养与职业素养的提升。结合实际工程项目，理论与实践相结合，全面提升学生的实操能力。适用于高职院校建筑工程技术、智能建造等相关专业，也可作为在职技术人员和管理人员的培训教材或自学参考书。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/210.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/9604bb4f-65b6-48ee-83cc-cf7824724ffc.png",
+      "coverFilePath": "storage/excellent_textbook/理工/210.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1473934490.htm"
+    },
+    {
+      "id": "209",
+      "name": "地铁企业文化",
+      "editor": "张景霞",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2021-11-01",
+      "isbn": "978-7-89530-110-8",
+      "description": "本书为城市轨道交通专业课程教材，深入分析了企业文化的内涵与作用，结合北京、上海、广州三大城市的地铁企业文化，内容充实且实用。通过理论与实践相结合的方式，帮助学生理解企业文化的建设与发展，培养文化认同感。教材融入多媒体教学资源，形式生动，适合高职院校教学及地铁行业从业人员自学使用。",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/209.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/752d8211-e271-4b07-a528-1461809cb75c.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/209.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1473926441.htm"
+    },
+    {
+      "id": "208",
+      "name": "电工电子技术应用",
+      "editor": "吴永亮，牛海霞",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2021-11-15",
+      "isbn": "978-7-89530-137-5",
+      "description": "本教材根据高职院校学生的特点和教学改革需求编写，涵盖7个任务和18个子任务，内容包括电路分析、设备控制、信号放大等多项实用技能。每个任务后附有技能训练、习题及答案，形式新颖，内容充实。适合装备制造、电子与信息等相关专业的高职院校教学，也可供专业技术人员参考，提升实践操作能力。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/208.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/a7ba3e3d-9cc5-4857-8459-e55382ca46ec.png",
+      "coverFilePath": "storage/excellent_textbook/理工/208.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1473948442.htm"
+    },
+    {
+      "id": "207",
+      "name": "电力电子技术与仿真",
+      "editor": "王凤杰  李黎黎",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-05-08",
+      "isbn": "978-7-89530-731-5",
+      "description": "本书深入介绍常用电力电子器件及其应用，重点讲解四种电力变换方式及典型电力变换电路。内容全面、实用，配合PLECS、PSIM和MATLAB等仿真软件进行电路仿真实验，帮助学生更直观地理解电路原理并强化实践技能。适用于自动化、机电设备等专业电力电子技术课程，也可作为相关工程技术人员的参考书，助力学习者提高电路分析和设计能力。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/207.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/abfaccc8-01f1-4cd1-a24e-38be558f13dd.png",
+      "coverFilePath": "storage/excellent_textbook/理工/207.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1473934468.htm"
+    },
+    {
+      "id": "206",
+      "name": "服装款式设计与表达",
+      "editor": "吴玉娥    孙金平",
+      "category": "艺术体育",
+      "categories": [
+        "艺术体育"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2023-12-31",
+      "isbn": "978-7-89530-585-4",
+      "description": "《服装款式设计与表达》是一本结合实践的核心教材，全面讲解服装设计师的岗位能力、款式设计、面料与色彩搭配等内容。通过实际案例，书中详细阐述了连衣裙、西装、衬衫等款式的设计方法与制作过程。配有丰富的数字资源，如动画、视频与在线试题，打造多元化的学习体验。适合高职院校及应用型本科院校服装设计与工艺专业的学生使用，也为相关从业者提供参考。",
+      "cover": "/files/excellent_textbook/%E8%89%BA%E6%9C%AF%E4%BD%93%E8%82%B2/206.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/262f18b0-e2fd-4969-b847-cbef6a9caa86.png",
+      "coverFilePath": "storage/excellent_textbook/艺术体育/206.png",
+      "storageFolder": "excellent_textbook/艺术体育",
+      "link": "https://www.icourse163.org/textbook/1473934459.htm"
+    },
+    {
+      "id": "205",
+      "name": "服装营销实务",
+      "editor": "刘玉洁  马巍巍",
+      "category": "艺术体育",
+      "categories": [
+        "艺术体育"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-03-08",
+      "isbn": "978-7-89530-619-6",
+      "description": "《服装市场营销》是服装设计与工艺专业的核心教材，全面涵盖服装市场营销的全过程。从基础认知到实务操作，内容系统而深入，包含市场分析、STP营销战略、4P策略及新媒体营销等。教材融入中国本土品牌成功案例、传统文化元素与思政内容，帮助学生树立文化自信与法律意识。同时，配有视频与动画等数字资源，提升学习效果。适用于高职院校及应用型本科院校的服装营销课程，也为行业从业者提供参考。",
+      "cover": "/files/excellent_textbook/%E8%89%BA%E6%9C%AF%E4%BD%93%E8%82%B2/205.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/c834fc19-bb48-460b-aa73-a393cac49374.png",
+      "coverFilePath": "storage/excellent_textbook/艺术体育/205.png",
+      "storageFolder": "excellent_textbook/艺术体育",
+      "link": "https://www.icourse163.org/textbook/1473934466.htm"
+    },
+    {
+      "id": "204",
+      "name": "钢结构BIM技术",
+      "editor": "姚习红  周业梅",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2023-09-01",
+      "isbn": "978-7-89530-132-0",
+      "description": "《钢结构BIM建模教程》系统讲解了钢结构BIM建模的基础知识、操作技巧及应用实践。通过Tekla软件，以单层工业厂房案例为载体，结合规范要求，逐步深入钢结构BIM建模及深化出图技术。本教材采用数字化编写模式，配有视频、微课、三维动画等丰富数字资源，增强学习体验。适用于高职院校土建类专业、BIM证书考试培训及钢结构设计人员入职培训，帮助读者掌握钢结构BIM建模技能，提升专业能力。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/204.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/480d1b6c-19cd-49b0-a797-b5339f8f7c6f.png",
+      "coverFilePath": "storage/excellent_textbook/理工/204.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1473934448.htm"
+    },
+    {
+      "id": "203",
+      "name": "工程地质与土力学",
+      "editor": "熊熙",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-08-30",
+      "isbn": "978-7-89530-885-5",
+      "description": "《工程地质与土力学》是高职院校道路与桥梁工程技术专业的基础课程教材，紧密结合职业能力培养和行业需求。全书以任务引领、实践导向为教学理念，涵盖地质构造、土的物理性质、地下水、地基承载力等关键内容，结合典型的野外实习和岩土试验案例，帮助学生深入理解课程知识。教材注重技能训练与可持续发展，适用于市政、建筑、水利及道路桥梁等相关专业，也可作为工程技术人员的参考书。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/203.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/2836fded-a5d1-4b12-a236-760b2af63d90.png",
+      "coverFilePath": "storage/excellent_textbook/理工/203.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1473934486.htm"
+    },
+    {
+      "id": "202",
+      "name": "工业机器人技术基础",
+      "editor": "郑火胜　王保军　金磊",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2023-09-01",
+      "isbn": "978-7-89530-138-2",
+      "description": "《工业机器人技术》是针对职业院校工业机器人及相关专业的教材，系统介绍工业机器人的构成、控制与应用。通过7个学习项目，涵盖了从工业机器人的基本概念、结构、驱动系统到编程、示教操作、典型应用及日常管理与维护等各方面内容。教材配有在线开放课程与教学课件，提供全面的学习资源，帮助学生掌握工业机器人技术的核心知识。适用于工业机器人技术、智能机器人技术及机电一体化等专业的学习和技术人员参考。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/202.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/d2479178-bee4-48e2-964c-db832cccd066.png",
+      "coverFilePath": "storage/excellent_textbook/理工/202.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1473934449.htm"
+    },
+    {
+      "id": "201",
+      "name": "机械设计基础",
+      "editor": "徐钢涛  张建国",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2023-07-27",
+      "isbn": "978-7-89530-534-2",
+      "description": "《机械设计基础》是高等职业教育的融媒体、交互式、智能化数字教材，内容涵盖了常见机械机构和零部件的结构、运动特性和工程应用。教材详细介绍了带传动与齿轮传动的设计计算方法，并融入了机构创新设计、非圆齿轮传动等最新内容。通过立体图例、实物图和动画等多媒体资源，帮助学生更好地理解复杂的机械设计过程，培养工程意识和解决实际问题的能力。适用于高职院校机械类及相关专业学生，也可供行业从业人员作为职工培训教材。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/201.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/c4b73be7-f8ba-4c25-a71f-b60e5c03ab42.png",
+      "coverFilePath": "storage/excellent_textbook/理工/201.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1473926447.htm"
+    },
+    {
+      "id": "200",
+      "name": "建筑识图与CAD制图",
+      "editor": "胡芳珍",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2021-11-15",
+      "isbn": "978-7-89530-133-7",
+      "description": "《建筑工程识图与AutoCAD绘图》紧密对接“1+X”建筑工程识图职业技能等级标准，内容结合最新国家标准与规范，详细讲解建筑识图与AutoCAD绘图技巧，适合初学者及进阶者。本书通过十个模块逐步引导，涵盖建筑平面图、立面图、剖面图等绘制与识读方法，并配有电子课件、练习、案例图样及微课视频，帮助读者在实践中掌握技能。适用于高职土建类专业教材，也可作为AutoCAD软件培训教材或自学参考书。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/200.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/e9d6b145-6e0d-4138-ba12-aaefd76e83f3.png",
+      "coverFilePath": "storage/excellent_textbook/理工/200.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1473926444.htm"
+    },
+    {
+      "id": "199",
+      "name": "矿山地质学",
+      "editor": "刘伟",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-07-31",
+      "isbn": "978-7-89530-710-0",
+      "description": "《矿山地质学》教材系统全面地介绍了矿产资源勘查、开发与利用的基础知识，涵盖矿床、矿体、矿石等重要概念，并通过数字化资源如视频与动画强化学习效果。教材采用模块化编写，内容包含矿山地质工作、地质图读图、数字化矿山项目等，既适合高等职业院校和职业本科院校的相关专业使用，也为资源勘探与地质类专业的学生提供了丰富的学习与实践资源。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/199.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/336c8901-8703-40e9-ab92-d6cc0c9c30c3.png",
+      "coverFilePath": "storage/excellent_textbook/理工/199.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1473934478.htm"
+    },
+    {
+      "id": "198",
+      "name": "礼服立体裁剪",
+      "editor": "章瓯雁",
+      "category": "艺术体育",
+      "categories": [
+        "艺术体育"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-05-28",
+      "isbn": "978-7-89530-701-8",
+      "description": "《礼服立体裁剪与设计》是服装设计与工艺专业的核心教材，旨在培养学生掌握礼服款式设计与立体裁剪技能。教材内容涵盖礼服的基础立体裁剪技术、艺术表现手法、企业真实项目案例等，帮助学生将布样板转化为纸样板，提升创意设计与工艺制作的实际能力。丰富的数字化资源，如教学视频和互动练习，增强了学习的便捷性与趣味性。适用于高职专科、本科及相关专业的教学，亦为从业者提供了宝贵的参考资料。",
+      "cover": "/files/excellent_textbook/%E8%89%BA%E6%9C%AF%E4%BD%93%E8%82%B2/198.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/e7e7f039-408a-48ed-885f-ea1e870f14b1.png",
+      "coverFilePath": "storage/excellent_textbook/艺术体育/198.png",
+      "storageFolder": "excellent_textbook/艺术体育",
+      "link": "https://www.icourse163.org/textbook/1473934470.htm"
+    },
+    {
+      "id": "197",
+      "name": "绿色建筑设计技术",
+      "editor": "秦翠翠  赵立华",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-08-30",
+      "isbn": "978-7-89530-721-6",
+      "description": "《绿色建筑理论与实践》深入介绍绿色建筑的设计原则、环境优化、模拟软件应用等内容，结合跨学科知识和国际先进案例，注重理论与实践结合。配有丰富的数字化资源，如视频、动画等，帮助学生提升实际操作能力。适用于应用型本科、职业本科及高职院校土建类相关专业，也为相关从业人员提供指导。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/197.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/0b8a1cf8-c0ea-4912-bfc0-5e3c238aa319.png",
+      "coverFilePath": "storage/excellent_textbook/理工/197.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1473934483.htm"
+    },
+    {
+      "id": "196",
+      "name": "乒乓球运动基础理论教程",
+      "editor": "姜远征",
+      "category": "艺术体育",
+      "categories": [
+        "艺术体育"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-08-31",
+      "isbn": "978-7-89530-286-0",
+      "description": "本教材结合乒乓球技战术与健身娱乐，运用现代教学方法和信息化手段，全面介绍乒乓球发展史、基本理论、技术、战术、身体素质训练方法及中国优秀运动员的技术打法。适用于职业院校乒乓球课程，也可供运动员、教练员及乒乓球爱好者参考。",
+      "cover": "/files/excellent_textbook/%E8%89%BA%E6%9C%AF%E4%BD%93%E8%82%B2/196.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/225d7787-6098-4801-b1e7-507801739863.png",
+      "coverFilePath": "storage/excellent_textbook/艺术体育/196.png",
+      "storageFolder": "excellent_textbook/艺术体育",
+      "link": "https://www.icourse163.org/textbook/1473934487.htm"
+    },
+    {
+      "id": "195",
+      "name": "热力设备检修",
+      "editor": "崔元媛  任俊英",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2023-12-22",
+      "isbn": "978-7-89530-144-3",
+      "description": "本教材针对300 MW和600 MW火电机组的检修工作，结合职业岗位能力和企业生产规程，融入电力检修行业的新技术与工艺。内容涵盖检修工量具、零部件、单体设备和大型设备，按照由小到大、由易到难的顺序编排。教材结合现场视频、图片及VR虚拟现实资源，讲解热力设备检修的基础、方法和原理，深入浅出。适用于高职院校热能动力工程技术、发电供热等专业，也可作为火电厂检修人员的培训教材。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/195.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/14fe8ce0-c3a5-49d3-9537-5b3372fcf621.png",
+      "coverFilePath": "storage/excellent_textbook/理工/195.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1473934457.htm"
+    },
+    {
+      "id": "194",
+      "name": "色彩构成与设计",
+      "editor": "徐磊",
+      "category": "艺术体育",
+      "categories": [
+        "艺术体育"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-09-01",
+      "isbn": "978-7-89530-888-6",
+      "description": "本教材是高职艺术设计类专业基础课程，适用于一年级学生。内容包括色彩基础知识、色彩视觉感知、色彩构成与设计、图像软件色彩应用和中国传统色彩体系等。通过合理运用色彩选择和搭配，培养学生的色彩感知力和设计能力，提升作品的艺术性和美感，传递信息和情感。教材适用于视觉传达设计、环境艺术设计、服装设计等专业教学，也适合艺术设计爱好者参考。",
+      "cover": "/files/excellent_textbook/%E8%89%BA%E6%9C%AF%E4%BD%93%E8%82%B2/194.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/43d4627c-68c0-4bc7-a980-02a4275ffd3e.png",
+      "coverFilePath": "storage/excellent_textbook/艺术体育/194.png",
+      "storageFolder": "excellent_textbook/艺术体育",
+      "link": "https://www.icourse163.org/textbook/1473934489.htm"
+    },
+    {
+      "id": "193",
+      "name": "设计色彩",
+      "editor": "朱磊",
+      "category": "艺术体育",
+      "categories": [
+        "艺术体育"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-08-10",
+      "isbn": "978-7-89530-703-2",
+      "description": "本教材是高职艺术设计类专业基础课程，旨在提升学生的色彩搭配、创意表达、数字应用及拓展实践能力。内容涵盖色彩分析与提取、再现与转调、材料与肌理、对比与形式、情感与空间等，结合项目实训、应用研发与实践拓展。教材适用于高职专科、本科及五年制高职院校艺术设计类专业教学，也适合艺术设计爱好者参考。",
+      "cover": "/files/excellent_textbook/%E8%89%BA%E6%9C%AF%E4%BD%93%E8%82%B2/193.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/f0fbe02f-6e69-488c-af92-598b80d555c7.png",
+      "coverFilePath": "storage/excellent_textbook/艺术体育/193.png",
+      "storageFolder": "excellent_textbook/艺术体育",
+      "link": "https://www.icourse163.org/textbook/1473934480.htm"
+    },
+    {
+      "id": "192",
+      "name": "侍酒师基础知识",
+      "editor": "李航  张有山  倪小丽",
+      "category": "人文社科",
+      "categories": [
+        "人文社科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-01-15",
+      "isbn": "978-7-89530-709-4",
+      "description": "本教材围绕侍酒师这一新兴职业，结合党的二十大精神，着重落实立德树人的任务。内容系统全面，涵盖文化知识、酒水知识、管理与营销知识，并介绍餐酒搭配技巧，结合中国国情及行业发展，构建全酒类的知识与实操体系。教材通过新媒体平台的图片与视频演示创新呈现，辅以多角度视频展示实操内容。适用于高职、职业本科及应用型本科院校的旅游管理、酒店管理等相关专业，同时也供社会从业人员参考。",
+      "cover": "/files/excellent_textbook/%E4%BA%BA%E6%96%87%E7%A4%BE%E7%A7%91/192.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/06a7ca25-15a6-4902-a9dd-7db4e6ed3ee2.png",
+      "coverFilePath": "storage/excellent_textbook/人文社科/192.png",
+      "storageFolder": "excellent_textbook/人文社科",
+      "link": "https://www.icourse163.org/textbook/1473934467.htm"
+    },
+    {
+      "id": "191",
+      "name": "视觉形态设计基础",
+      "editor": "刘骧群",
+      "category": "艺术体育",
+      "categories": [
+        "艺术体育"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-07-26",
+      "isbn": "978-7-89530-878-7",
+      "description": "本教材为艺术设计类基础课程教材，内容涵盖视觉形态平面构成、色彩与肌理、空间构成及材料表现等，旨在通过基本原理与实训，帮助学生建立设计基础与专业之间的连接，培养创造思维。教材配有丰富的数字资源，提供视频观摩和精致彩图细部放大观察，增强学习体验。适用于高职、本科及五年制高职艺术设计类基础课程，也可作为艺术设计从业者的参考书。",
+      "cover": "/files/excellent_textbook/%E8%89%BA%E6%9C%AF%E4%BD%93%E8%82%B2/191.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/eff31429-616f-4159-b9b1-c54d04f642e7.png",
+      "coverFilePath": "storage/excellent_textbook/艺术体育/191.png",
+      "storageFolder": "excellent_textbook/艺术体育",
+      "link": "https://www.icourse163.org/textbook/1473934477.htm"
+    },
+    {
+      "id": "190",
+      "name": "土木工程力学（第二版）",
+      "editor": "王秀丽",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-09-20",
+      "isbn": "978-7-89530-916-6",
+      "description": "本教材是“十二五”职业教育国家规划教材的修订版，吸纳了近年来课程改革成果。共13章，内容涵盖力与受力图、平面力系平衡、轴向拉伸与压缩、剪切与扭转、弯曲、组合变形等力学原理，并介绍超静定结构分析及PKPM软件计算等内容。为方便教学，教材配有PowerPoint课件、视频、动画等教学资源。适用于高职院校土木建筑、交通运输、水利等相关专业力学课程，也可供相关专业人员参考学习。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/190.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/94061c54-56b5-4737-aed2-608c9b0855a1.png",
+      "coverFilePath": "storage/excellent_textbook/理工/190.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1473946442.htm"
+    },
+    {
+      "id": "189",
+      "name": "物理创新实验",
+      "editor": "田红梅 曹喻霖",
+      "category": "数学物理",
+      "categories": [
+        "数学物理"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-07-31",
+      "isbn": "978-7-89530-841-1",
+      "description": "本教材通过七个项目，如“物理实验规范”、“光学成像”和“电子电路”等，帮助学生从基础实验到创新实践逐步提升。它以中国科技发展为背景，增强学生的自豪感，注重团队合作和创新设计。教材适合职业院校理工科学生，培养他们的物理实验技能和创新能力。",
+      "cover": "/files/excellent_textbook/%E6%95%B0%E5%AD%A6%E7%89%A9%E7%90%86/189.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/70811c04-f55e-4660-8462-1bb3a50fc2e2.png",
+      "coverFilePath": "storage/excellent_textbook/数学物理/189.png",
+      "storageFolder": "excellent_textbook/数学物理",
+      "link": "https://www.icourse163.org/textbook/1473934476.htm"
+    },
+    {
+      "id": "188",
+      "name": "液压与气压传动",
+      "editor": "王倩  高利军",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2023-10-14",
+      "isbn": "978-7-89530-429-1",
+      "description": "本教材面向高职机械类、机电类专业，以液压传动为主、气压传动为辅，结合磨床、刨床、机床等典型案例，讲解方向控制、压力控制、速度控制及多缸控制等基本回路设计。全书共5个项目，注重实践应用，适合作为教学用书，也可供工程技术人员参考学习。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/188.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/a0b6c697-92f0-40ed-9188-2dc8e1086fbf.png",
+      "coverFilePath": "storage/excellent_textbook/理工/188.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1473926442.htm"
+    },
+    {
+      "id": "187",
+      "name": "增材制造技术",
+      "editor": "程律莎",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2023-11-15",
+      "isbn": "978-7-89530-646-2",
+      "description": "本教材为融媒体、交互式、智能化数字教材，围绕三维扫描、3D打印机维护与故障排除、逆向建模与增材制造及医疗支具设计等3个模块，全面提升读者增材制造技术实践能力。适用于高职院校机械设计与制造等专业，也可供相关技术人员参考学习。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/187.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/ad91c2a2-ef98-4f14-b76f-f4433c0a5da8.png",
+      "coverFilePath": "storage/excellent_textbook/理工/187.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1473934455.htm"
+    },
+    {
+      "id": "186",
+      "name": "职场沟通表达技巧",
+      "editor": "杜宇虹",
+      "category": "人文社科",
+      "categories": [
+        "人文社科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2023-07-10",
+      "isbn": "978-7-89530-120-7",
+      "description": "本书以普通话沟通能力为核心，结合教育学、心理学及中华优秀传统文化，分为初级尝试、中级把握、高级探究3个项目，共18个沟通任务，注重职场模拟训练和双向交流，帮助学习者快速提升语言表达与综合素养。配套知识拓展和沟通测试资源，适合作为高职院校教材、企业培训用书及社会人士参考读物。",
+      "cover": "/files/excellent_textbook/%E4%BA%BA%E6%96%87%E7%A4%BE%E7%A7%91/186.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/89fa9015-a41c-4dae-962c-b6c3c203ffd3.png",
+      "coverFilePath": "storage/excellent_textbook/人文社科/186.png",
+      "storageFolder": "excellent_textbook/人文社科",
+      "link": "https://www.icourse163.org/textbook/1473926455.htm"
+    },
+    {
+      "id": "185",
+      "name": "工业机器人现场编程",
+      "editor": "武昌俊 杨浩",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2021-11-26",
+      "isbn": "978-7-89530-135-1",
+      "description": "《工业机器人技术应用》教材紧密结合全国职业院校技能大赛高职组竞赛平台，融入“岗课赛证”综合育人理念，采用项目化教学方式，系统介绍工业机器人基础知识、操作方法、坐标系应用、编程与调试等内容。通过丰富的数字化资源，包括教学视频、示例程序、动画和微课等，全面支持学生的自主学习，提升学习效率。适用于高职院校工业机器人技术及相关专业的教材，也可作为技术人员培训和参考书籍。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/185.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/266ccef5-e28d-4788-aa8f-5872e11f7a35.png",
+      "coverFilePath": "storage/excellent_textbook/理工/185.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1473926445.htm"
+    },
+    {
+      "id": "184",
+      "name": "汽车涂装技术",
+      "editor": "黄慧荣 朱欣鸣 易建红",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2022-06-01",
+      "isbn": "978-7-89530-139-9",
+      "description": "本教材是职业院校与企业“双元”合作编写的数字教材，结合实际工作任务设计框架，涵盖表面处理、遮蔽、调漆、喷漆等作业，遵循安全规范和7S要求。教材通过任务设计引入学习目标、任务分析和实训指导，提供丰富的数字学习资源，可通过线上、线下结合的方式进行教学。适用于职业院校汽车类相关专业，也可供汽车维修企业及相关人员参考。",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/184.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/66474c36-6a57-4c42-b6ac-cfa96b834fbd.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/184.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1473926454.htm"
+    },
+    {
+      "id": "183",
+      "name": "微积分（上）",
+      "editor": "尹逊波 姜薇 杨国俅",
+      "category": "数学物理",
+      "categories": [
+        "数学物理"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-10-16",
+      "isbn": "978-7-89530-908-1",
+      "description": "大一新生们学高数必备！微积分这本公共基础课教材，在教育改革浪潮中全新登场。助你洞熟悉自然规律、掌握科研工具、锤炼思维能力，体悟古人智慧与探索精神。顺应数字化潮流，迎合多样学习需求，为你学业奠基，开启精彩未来！",
+      "cover": "/files/excellent_textbook/%E6%95%B0%E5%AD%A6%E7%89%A9%E7%90%86/183.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/2a7333f7-985e-4315-b590-9a80bb0cc79d.png",
+      "coverFilePath": "storage/excellent_textbook/数学物理/183.png",
+      "storageFolder": "excellent_textbook/数学物理",
+      "link": "https://www.icourse163.org/textbook/1473916442.htm"
+    },
+    {
+      "id": "182",
+      "name": "微积分（下）",
+      "editor": "尹逊波  姜薇  杨国俅",
+      "category": "数学物理",
+      "categories": [
+        "数学物理"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-10-16",
+      "isbn": "978-7-89530-909-8",
+      "description": "大一新生学高数必备！这本微积分教材，紧扣教育改革步伐。助你理解科学规律、掌握研究工具、提升思维能力，领略古人智慧与探索精神。顺应数字化趋势，满足多样学习需求，为你打下坚实基础，开启学术新征程！",
+      "cover": "/files/excellent_textbook/%E6%95%B0%E5%AD%A6%E7%89%A9%E7%90%86/182.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/da84220e-9c42-4678-8f22-e155bda2c907.png",
+      "coverFilePath": "storage/excellent_textbook/数学物理/182.png",
+      "storageFolder": "excellent_textbook/数学物理",
+      "link": "https://www.icourse163.org/textbook/1473946466.htm"
+    },
+    {
+      "id": "181",
+      "name": "装配式混凝土结构工程施工",
+      "editor": "齐红军  苏仁权",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2021-11-10",
+      "isbn": "978-7-89530-126-9",
+      "description": "装配式建筑施工教材来啦！依最新规范，从构件图识读到现场施工全涵盖。以施工流程编排，六大项目任务清晰。高职中职、职业本科多专业适用，建筑工程人员也能从中取经，开启装配式建筑学习新旅程，引领行业新潮流！",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/181.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/3b186955-0ef3-4d78-a3e4-05551ab965f0.png",
+      "coverFilePath": "storage/excellent_textbook/理工/181.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1473926448.htm"
+    },
+    {
+      "id": "180",
+      "name": "模式识别及航空航天应用",
+      "editor": "谢凤英",
+      "category": "航空航天",
+      "categories": [
+        "航空航天"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-08-31",
+      "isbn": "978-7-89530-897-8",
+      "description": "本书系统介绍模式识别的基础理论、实验和应用，涵盖线性与非线性分类器、特征提取、神经网络等内容，结合卫星目标识别等实际工程案例，深入分析理论与应用的结合。适用于空天智能、人工智能、电子信息、自动化及计算机等专业的本科生、研究生，也适合人工智能领域的研究人员和工程技术人员参考。",
+      "cover": "/files/excellent_textbook/%E8%88%AA%E7%A9%BA%E8%88%AA%E5%A4%A9/180.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/2cd9abf1-2e68-48f0-9089-691272bcfed2.png",
+      "coverFilePath": "storage/excellent_textbook/航空航天/180.png",
+      "storageFolder": "excellent_textbook/航空航天",
+      "link": "https://www.icourse163.org/textbook/1473946460.htm"
+    },
+    {
+      "id": "179",
+      "name": "汽车软件工程基础",
+      "editor": "杨世春",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-09-30",
+      "isbn": "978-7-89530-954-8",
+      "description": "本书系统介绍智能网联与新能源汽车领域的软件工程应用，结合电控系统、智能驾驶、信息安全等实际案例，深入探讨汽车软件研发流程及技术。适用于车辆工程、智能驾驶等相关专业的本科生和研究生，以及从事汽车软件开发、电控技术和信息安全等领域的工程技术人员。",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/179.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/7d54eedc-70cc-4838-8fc4-61cd48471679.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/179.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1473946459.htm"
+    },
+    {
+      "id": "178",
+      "name": "车联网技术及应用",
+      "editor": "向怀坤    王静",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2022-12-31",
+      "isbn": "978-7-89530-723-0",
+      "description": "本教材紧扣车联网技术发展与应用场景，以任务情境为导向，系统讲解车联网关键技术与实际操作方法，涵盖六大项目及丰富的实训任务，突出“学中做、做中学”的职业教育特色。适合高职高专智能网联汽车、智能交通、新能源汽车等相关专业教学使用，也可供车联网从业人员参考与培训使用。",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/178.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/c090f651-d751-4d4a-9d3d-e2757af36792.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/178.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1473934492.htm"
+    },
+    {
+      "id": "177",
+      "name": "理工科等离子体物理学基础",
+      "editor": "王松柏  夏岩  钟志荣",
+      "category": "数学物理",
+      "categories": [
+        "数学物理"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-08-01",
+      "isbn": "978-7-89530-753-7",
+      "description": "本书系统讲解等离子体物理学的理论、实验与计算模拟，涵盖磁流体力学、低温等离子体应用及MATLAB模拟等内容。适合理工科本科高年级学生及相关领域研究生与科研工作者参考。",
+      "cover": "/files/excellent_textbook/%E6%95%B0%E5%AD%A6%E7%89%A9%E7%90%86/177.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/d65c9cb2-bb7b-465e-a5d8-c60f3857e9c4.png",
+      "coverFilePath": "storage/excellent_textbook/数学物理/177.png",
+      "storageFolder": "excellent_textbook/数学物理",
+      "link": "https://www.icourse163.org/textbook/1473934473.htm"
+    },
+    {
+      "id": "176",
+      "name": "智能导航原理与方法",
+      "editor": "杨毅 宋文杰",
+      "category": "航空航天",
+      "categories": [
+        "航空航天"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-09-20",
+      "isbn": "978-7-89530-945-6",
+      "description": "本书介绍了无人驾驶航空器的智能导航技术，涵盖导航发展趋势、核心技术与前沿方法，结合实践探索环节，帮助学生掌握导航原理和应用，为未来创新研究奠定基础。适用于航空航天类相关专业的学习。",
+      "cover": "/files/excellent_textbook/%E8%88%AA%E7%A9%BA%E8%88%AA%E5%A4%A9/176.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/f24596d6-3691-4ff7-900b-f7689ecbd21a.png",
+      "coverFilePath": "storage/excellent_textbook/航空航天/176.png",
+      "storageFolder": "excellent_textbook/航空航天",
+      "link": "https://www.icourse163.org/textbook/1473946456.htm"
+    },
+    {
+      "id": "175",
+      "name": "星球车混合虚拟仿真技术",
+      "editor": "崔勇  胡庆雷  郑建英",
+      "category": "航空航天",
+      "categories": [
+        "航空航天"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-08-20",
+      "isbn": "978-7-89530-895-4",
+      "description": "本书聚焦星球车与深空探测领域，结合典型航天工程，介绍控制、感知、路径规划等前沿科技，采用虚拟仿真与多媒体资源提升学习体验。适用于自动化、航空航天、电子信息等相关专业教材，也可供工程技术人员参考，帮助学生培养创新思维和实践能力。",
+      "cover": "/files/excellent_textbook/%E8%88%AA%E7%A9%BA%E8%88%AA%E5%A4%A9/175.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/80467d3f-83bf-4862-80de-b062d4e91f27.png",
+      "coverFilePath": "storage/excellent_textbook/航空航天/175.png",
+      "storageFolder": "excellent_textbook/航空航天",
+      "link": "https://www.icourse163.org/textbook/1473946448.htm"
+    },
+    {
+      "id": "174",
+      "name": "人工智能及其航空航天应用",
+      "editor": "王黎静",
+      "category": "航空航天",
+      "categories": [
+        "航空航天"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-09-20",
+      "isbn": "978-7-89530-924-1",
+      "description": "本书介绍人工智能在航空航天领域的应用，结合实际案例讲解人工智能的基本理论与算法，重点涵盖线性回归、神经网络、深度学习等技术。适用于航空航天、机械等专业的本科生与研究生，也可供科研人员参考，为人工智能在航空航天领域的普及与学科发展提供支持。",
+      "cover": "/files/excellent_textbook/%E8%88%AA%E7%A9%BA%E8%88%AA%E5%A4%A9/174.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/8393e0cb-73a8-4bc0-8251-3c67f20e8c82.png",
+      "coverFilePath": "storage/excellent_textbook/航空航天/174.png",
+      "storageFolder": "excellent_textbook/航空航天",
+      "link": "https://www.icourse163.org/textbook/1473948443.htm"
+    },
+    {
+      "id": "173",
+      "name": "高等学校航空航天类新兴领域专业人才培养研究报告暨核心课程体系",
+      "editor": "陶智",
+      "category": "航空航天",
+      "categories": [
+        "航空航天"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-09-01",
+      "isbn": "978-7-89530-947-0",
+      "description": "本书全面介绍“智能+航空航天”领域的发展现状与教材建设，涵盖教材研究报告、建设方案、支撑专业和核心课程教学大纲，为航空航天类课程教学与课程体系建设提供了理论与实践参考。适合高等院校教师及教学管理部门使用。",
+      "cover": "/files/excellent_textbook/%E8%88%AA%E7%A9%BA%E8%88%AA%E5%A4%A9/173.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/5dfe0992-b112-46f3-92e9-f1b389f9354b.png",
+      "coverFilePath": "storage/excellent_textbook/航空航天/173.png",
+      "storageFolder": "excellent_textbook/航空航天",
+      "link": "https://www.icourse163.org/textbook/1473946447.htm"
+    },
+    {
+      "id": "172",
+      "name": "飞行器智能制造技术",
+      "editor": "廖文和， 马贵春",
+      "category": "航空航天",
+      "categories": [
+        "航空航天"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-09-18",
+      "isbn": "978-7-89530-937-1",
+      "description": "",
+      "cover": "/files/excellent_textbook/%E8%88%AA%E7%A9%BA%E8%88%AA%E5%A4%A9/172.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/73d35269-5394-403e-85b9-f486387dd116.png",
+      "coverFilePath": "storage/excellent_textbook/航空航天/172.png",
+      "storageFolder": "excellent_textbook/航空航天",
+      "link": "https://www.icourse163.org/textbook/1474028462.htm"
+    },
+    {
+      "id": "171",
+      "name": "天基空间目标信息处理技术",
+      "editor": "姜志国，张景瑞",
+      "category": "航空航天",
+      "categories": [
+        "航空航天"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-09-20",
+      "isbn": "978-7-89530-935-7",
+      "description": "",
+      "cover": "/files/excellent_textbook/%E8%88%AA%E7%A9%BA%E8%88%AA%E5%A4%A9/171.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/637e850d-e7bb-4b14-9904-ed17d354c971.png",
+      "coverFilePath": "storage/excellent_textbook/航空航天/171.png",
+      "storageFolder": "excellent_textbook/航空航天",
+      "link": "https://www.icourse163.org/textbook/1473990461.htm"
+    },
+    {
+      "id": "170",
+      "name": "飞行器智能集群",
+      "editor": "李道春，屠展，向锦武",
+      "category": "航空航天",
+      "categories": [
+        "航空航天"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-09-01",
+      "isbn": "978-7-89530-923-4",
+      "description": "",
+      "cover": "/files/excellent_textbook/%E8%88%AA%E7%A9%BA%E8%88%AA%E5%A4%A9/170.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/b9b6d07d-960e-457d-8bc1-18e4a2678e48.png",
+      "coverFilePath": "storage/excellent_textbook/航空航天/170.png",
+      "storageFolder": "excellent_textbook/航空航天",
+      "link": "https://www.icourse163.org/textbook/1474028463.htm"
+    },
+    {
+      "id": "169",
+      "name": "汽车发动机电控技术及检修",
+      "editor": "李百华，郝伟，李崑",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-10-09",
+      "isbn": "978-7-89530-862-6",
+      "description": "",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/169.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/9fb2468a-b250-44fa-93c4-6b1c7962139e.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/169.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1473991463.htm"
+    },
+    {
+      "id": "168",
+      "name": "光学 数字教材",
+      "editor": "董建文",
+      "category": "数学物理",
+      "categories": [
+        "数学物理"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-10-15",
+      "isbn": "978-7-89530-958-6",
+      "description": "",
+      "cover": "/files/excellent_textbook/%E6%95%B0%E5%AD%A6%E7%89%A9%E7%90%86/168.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/4e52df06-95e5-4905-b5eb-490447482e46.png",
+      "coverFilePath": "storage/excellent_textbook/数学物理/168.png",
+      "storageFolder": "excellent_textbook/数学物理",
+      "link": "https://www.icourse163.org/textbook/1474030459.htm"
+    },
+    {
+      "id": "167",
+      "name": "机器学习及其在航空航天工程中的应用",
+      "editor": "范雨，张浩鹏",
+      "category": "航空航天",
+      "categories": [
+        "航空航天"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-09-27",
+      "isbn": "978-7-89530-942-5",
+      "description": "本书是航空航天领域 “十四五” 高等教育教材。以实际应用场景为线索，深入讲解数值计算与机器学习算法。从基础概念到实战案例，涵盖全面，代码示例与拓展作业助你提升实操能力，是相关专业学生和业内人士不可多得的优质读物。",
+      "cover": "/files/excellent_textbook/%E8%88%AA%E7%A9%BA%E8%88%AA%E5%A4%A9/167.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/15dc7c8b-2f52-4659-9e3d-3574b87a62c3.png",
+      "coverFilePath": "storage/excellent_textbook/航空航天/167.png",
+      "storageFolder": "excellent_textbook/航空航天",
+      "link": "https://www.icourse163.org/textbook/1473991460.htm"
+    },
+    {
+      "id": "166",
+      "name": "公差配合与技术测量",
+      "editor": "王倩",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2022-10-15",
+      "isbn": "978-7-89530-430-7",
+      "description": "《公差配合与技术测量》作为机械制造类专业核心基础课教材，借项目驱动教学与多媒体形式，强化实践应用，帮你掌握公差选用与测量数据处理，是高职机械专业学生与行业从业者的得力助手。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/166.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/5920f8c8-099f-4b8a-a387-7a0e8fd03ff8.png",
+      "coverFilePath": "storage/excellent_textbook/理工/166.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1473926451.htm"
+    },
+    {
+      "id": "165",
+      "name": "区域轨道交通协同运输与服务",
+      "editor": "彭其渊  刘岭  鲁工圆",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-09-20",
+      "isbn": "978-7-89530-939-5",
+      "description": "这本由翟婉明院士牵头的智慧交通 “十四五” 高等教育教材，聚焦多制式轨道交通复合网络，深入剖析区域轨道交通从规划到运营的全流程关键环节。内容全面，兼具理论深度与实践价值，无论是高校教师教学，还是教学管理部门课程体系建设，都不容错过。",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/165.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/68d1b77a-14f7-444c-ba37-45b4a5d5f972.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/165.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1474027465.htm"
+    },
+    {
+      "id": "164",
+      "name": "航空智能电推进原理",
+      "editor": "闫晓军",
+      "category": "航空航天",
+      "categories": [
+        "航空航天"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-10-15",
+      "isbn": "978-7-89530-922-7",
+      "description": "国内首部航空电推进领域 “十四五” 高等教育教材震撼来袭！它紧密追踪学术前沿，精心凝练理论与方法。丰富内容涵盖全体系，既适合高校相关专业教学，又能为工程技术人员提供助力，是航空航天领域不可多得的专业宝典。",
+      "cover": "/files/excellent_textbook/%E8%88%AA%E7%A9%BA%E8%88%AA%E5%A4%A9/164.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/e37e059f-34e8-42a7-a59f-f7d3b93c7cae.png",
+      "coverFilePath": "storage/excellent_textbook/航空航天/164.png",
+      "storageFolder": "excellent_textbook/航空航天",
+      "link": "https://www.icourse163.org/textbook/1473991461.htm"
+    },
+    {
+      "id": "163",
+      "name": "信息技术应用",
+      "editor": "聂哲  王铮钧  汤佳梅",
+      "category": "计算机",
+      "categories": [
+        "计算机"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2023-09-01",
+      "isbn": "978-7-89530-624-0",
+      "description": "本书是职业本科院校信息技术公共基础课程的数字教材，旨在培养学生的信息意识和计算思维能力。内容涵盖新一代信息技术、办公软件应用、计算思维、程序设计基础等，采用项目导向、任务驱动的教学模式，结合“云大物智”等领域的最新知识和技术。教材配有丰富的数字资源，包括视频、动画、习题解析等，适用于职业本科院校和应用型本科院校的计算机基础课程。",
+      "cover": "/files/excellent_textbook/%E8%AE%A1%E7%AE%97%E6%9C%BA/163.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/84c002d9-4f0d-4e50-a4bb-abc3bde0c617.png",
+      "coverFilePath": "storage/excellent_textbook/计算机/163.png",
+      "storageFolder": "excellent_textbook/计算机",
+      "link": "https://www.icourse163.org/textbook/1473934450.htm"
+    },
+    {
+      "id": "162",
+      "name": "人工智能通识教程",
+      "editor": "杨美霞",
+      "category": "计算机",
+      "categories": [
+        "计算机"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-11-01",
+      "isbn": "978-7-89530-898-5",
+      "description": "想要踏入人工智能的奇妙世界吗？这本通识教材就是你的绝佳指南！理论实践完美融合，六大项目精彩纷呈，案例生动鲜活，学习模块多元丰富。更有虚拟仿真等海量数字资源。无论是院校师生还是社会爱好者，都能借此开启智能时代新征程！",
+      "cover": "/files/excellent_textbook/%E8%AE%A1%E7%AE%97%E6%9C%BA/162.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/61831f77-9838-46f9-9b30-55708ed72989.png",
+      "coverFilePath": "storage/excellent_textbook/计算机/162.png",
+      "storageFolder": "excellent_textbook/计算机",
+      "link": "https://www.icourse163.org/textbook/1473946464.htm"
+    },
+    {
+      "id": "161",
+      "name": "可持续轨道工程",
+      "editor": "王平",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-09-20",
+      "isbn": "978-7-89530-899-2",
+      "description": "《可持续轨道工程》作为 “十四五” 高等教育教材，紧跟时代趋势。它总结前沿研究成果，在传统轨道工程理论基础上，融入节能减碳、智能建造运维等内容，知识点覆盖多领域全阶段，是高校土木、铁道工程等专业本硕教学的得力参考。",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/161.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/d48c1229-e730-4d06-9d96-f29075d4d991.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/161.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1474029462.htm"
+    },
+    {
+      "id": "160",
+      "name": "电推进智能控制",
+      "editor": "漆明净",
+      "category": "航空航天",
+      "categories": [
+        "航空航天"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-10-15",
+      "isbn": "978-7-89530-902-9",
+      "description": "《电推进智能控制》作为 “十四五” 高等教育教材，专为空天智能电推进技术专业高年级学生打造。它涵盖经典、现代及智能控制理论与应用，借多个空天典型案例，融合控制学与电推进技术，培养学生实践能力，适用于相关专业本硕教学。",
+      "cover": "/files/excellent_textbook/%E8%88%AA%E7%A9%BA%E8%88%AA%E5%A4%A9/160.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/6da575dc-0957-412e-8df0-6f8171d0b675.png",
+      "coverFilePath": "storage/excellent_textbook/航空航天/160.png",
+      "storageFolder": "excellent_textbook/航空航天",
+      "link": "https://www.icourse163.org/textbook/1474376441.htm"
+    },
+    {
+      "id": "159",
+      "name": "航空推进器原理与设计",
+      "editor": "孙大坤",
+      "category": "航空航天",
+      "categories": [
+        "航空航天"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-09-30",
+      "isbn": "978-7-89530-930-2",
+      "description": "《航空推进器原理与设计》系统全面，涵盖航空推进器基础概念、工作原理、设计方法等六大板块。从空气动力学理论到涵道风扇设计，再到前沿非定常特性研究，搭配丰富案例，助力航空航天相关专业本硕学生掌握知识，为科研与工程实践奠基。",
+      "cover": "/files/excellent_textbook/%E8%88%AA%E7%A9%BA%E8%88%AA%E5%A4%A9/159.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/90e035cc-f29c-478c-9436-13929679baf3.png",
+      "coverFilePath": "storage/excellent_textbook/航空航天/159.png",
+      "storageFolder": "excellent_textbook/航空航天",
+      "link": "https://www.icourse163.org/textbook/1474376442.htm"
+    },
+    {
+      "id": "158",
+      "name": "智能电动汽车试验学",
+      "editor": "朱冰",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-08-30",
+      "isbn": "978-7-89530-940-1",
+      "description": "《智能电动汽车试验》由众多优秀教学团队合力打造，紧扣行业前沿。全书七章，系统阐述试验原理、方法与技术，从基础理论到整车、电动汽车及智能汽车关键系统性能试验一应俱全。是高校车辆专业教材，也是行业从业者的得力技术参考。",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/158.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/a05040a9-eef2-4b87-8b9c-7918779e361a.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/158.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1474016461.htm"
+    },
+    {
+      "id": "157",
+      "name": "航空电源技术",
+      "editor": "黄建媚",
+      "category": "航空航天",
+      "categories": [
+        "航空航天"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-08-30",
+      "isbn": "978-7-89530-914-2",
+      "description": "《航空电源技术》作为 “十四五” 高等教育教材，聚焦航空电推进系统能源存储与转换。全书五章，系统阐述相关知识，融入前沿，以数字赋能，含丰富多媒体资源。适用于多专业本硕教学，也是新能源等领域从业者的优质基础参考书。",
+      "cover": "/files/excellent_textbook/%E8%88%AA%E7%A9%BA%E8%88%AA%E5%A4%A9/157.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/8e23521f-5865-4f60-a998-50c330dff781.png",
+      "coverFilePath": "storage/excellent_textbook/航空航天/157.png",
+      "storageFolder": "excellent_textbook/航空航天",
+      "link": "https://www.icourse163.org/textbook/1474376443.htm"
+    },
+    {
+      "id": "156",
+      "name": "无人机集群技术——智能组网与协同",
+      "editor": "雷磊，宋晓勤",
+      "category": "航空航天",
+      "categories": [
+        "航空航天"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-09-19",
+      "isbn": "978-7-89530-934-0",
+      "description": "这本 “十四五” 航空航天教材，紧扣无人机集群技术发展，依 “网联化”“智能化” 构建内容。8 章涵盖体系结构、通信技术、航迹规划等，理论实践结合。数字版含视频、虚拟实验，适用于高校教学，也是无人机领域工程人员的实用参考。",
+      "cover": "/files/excellent_textbook/%E8%88%AA%E7%A9%BA%E8%88%AA%E5%A4%A9/156.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/b83d242e-2f0a-46ed-a69e-d366f48d66e6.png",
+      "coverFilePath": "storage/excellent_textbook/航空航天/156.png",
+      "storageFolder": "excellent_textbook/航空航天",
+      "link": "https://www.icourse163.org/textbook/1474376444.htm"
+    },
+    {
+      "id": "155",
+      "name": "区域轨道交通网络规划理论与新经济分析方法",
+      "editor": "卢春房，帅斌，刘晓波",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-09-30",
+      "isbn": "978-7-89530-901-2",
+      "description": "这本数字教材从轨道交通基础特性切入，融合新经济理论与线网规划理论，内容丰富，涵盖产业分析、需求预测、线网规划等。适用于高校交通运输专业本硕教学，也是交通从业者的实用参考资料 。",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/155.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/559df41d-fe43-499a-8990-7a48a0cd1771.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/155.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1474030458.htm"
+    },
+    {
+      "id": "154",
+      "name": "先进轨道交通运输计划编制理论与方法",
+      "editor": "倪少权，吕红霞",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-09-30",
+      "isbn": "978-7-89530-906-7",
+      "description": "这本数字教材，已列入教育部战略性新兴领域“十四五”高等教育教材体系系列。它专为我国轨道交通发展编写，内容全面覆盖多种轨道交通运输计划理论与编制方法。适配高校多专业本硕教学，更为交通运输领域从业者，从技术到管理，提供宝贵参考。",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/154.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/d648afaa-9f30-40a2-870c-ba9c13224090.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/154.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1474028464.htm"
+    },
+    {
+      "id": "153",
+      "name": "精密传感技术与应用",
+      "editor": "谭久彬，胡鹏程",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-12-20",
+      "isbn": "978-7-89566-013-7",
+      "description": "本教材从传感测量基础讲起，涵盖多种典型传感器及前沿 MEMS 传感器，详述精密传感原理、设计与应用，紧跟智能化趋势。既能满足高校测控、自动化等专业教学，也为专业技术人员提供有力参考。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/153.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/a48056d1-652d-4e34-b138-7f9b3b32557a.png",
+      "coverFilePath": "storage/excellent_textbook/理工/153.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1474030460.htm"
+    },
+    {
+      "id": "152",
+      "name": "隐私计算导论",
+      "editor": "陈岑 高明 王延昊 王磊",
+      "category": "计算机",
+      "categories": [
+        "计算机"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-12-18",
+      "isbn": "978-7-89530-936-4",
+      "description": "这本 “十四五” 大数据领域教材，紧扣时代脉搏。鉴于数据价值与安全的关键地位，全面介绍数据隐私及隐私计算概念，深入剖析主流技术，搭配丰富应用实例，横跨多领域，将理论与实践相融，适配本硕不同层次学习者需求。",
+      "cover": "/files/excellent_textbook/%E8%AE%A1%E7%AE%97%E6%9C%BA/152.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/5e28b0ce-ae67-43bc-b3c9-40cbf496fac3.png",
+      "coverFilePath": "storage/excellent_textbook/计算机/152.png",
+      "storageFolder": "excellent_textbook/计算机",
+      "link": "https://www.icourse163.org/textbook/1474376445.htm"
+    },
+    {
+      "id": "151",
+      "name": "通信集成电路设计基础",
+      "editor": "贺光辉，金晶，张宇航，刘晓鸣",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-12-30",
+      "isbn": "978-7-89566-045-8",
+      "description": "这本通信集成电路设计教材，全面覆盖基础理论与实际应用，融合通信系统概念、信号处理理论及 VLSI 设计等内容，以交叉视角将典型算法与电路设计优化技术结合。搭配丰富习题、视频等资源，是相关专业本硕教材，也是从业者实用参考。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/151.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/6dd3c2ae-8e26-4bc6-bf9e-fe202a6e384d.png",
+      "coverFilePath": "storage/excellent_textbook/理工/151.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1474376446.htm"
+    },
+    {
+      "id": "150",
+      "name": "空间机器人技术",
+      "editor": "刘阳 刘伊威",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-01-10",
+      "isbn": "978-7-89566-026-7",
+      "description": "作为 “十四五” 高等教育教材，本书依托重大项目成果，系统呈现空间机器人技术。从研究现状到各系统设计，兼顾环境适应性与地面测试。含大量图表案例，融入前沿成果，是高校相关专业本硕生及航天等领域科研人员、工程师的绝佳专业参考。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/150.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/26d00344-42c8-43da-b13e-53842ecdfb5f.png",
+      "coverFilePath": "storage/excellent_textbook/理工/150.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1474376447.htm"
+    },
+    {
+      "id": "149",
+      "name": "建筑结构抗震",
+      "editor": "周颖",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-02-15",
+      "isbn": "978-7-89566-056-4",
+      "description": "这本建筑抗震教材内容丰富，全面涵盖地震知识与抗震设计要点。作为数字教材，借助思维导图、视频解读等特色设置，助力读者把握地震学与地震工程关联，掌握设计原理。无论是土木专业教学，还是工程人员参考，都极具价值 。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/149.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/c9009645-bcc7-4c5c-9015-87476216a211.png",
+      "coverFilePath": "storage/excellent_textbook/理工/149.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1474376448.htm"
+    },
+    {
+      "id": "148",
+      "name": "信息技术",
+      "editor": "陈捷",
+      "category": "计算机",
+      "categories": [
+        "计算机"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-07-30",
+      "isbn": "978-7-89530-863-3",
+      "description": "这本教材紧扣行业用人需求，聚焦培养学生信息技术实操力。8 大模块以实际应用导入，内容丰富新颖。搭配多样数字化资源，兼具融媒体特性。无论是高职相关课程教学、计算机等级考试备考，还是从业者与爱好者自学，都极为适用。",
+      "cover": "/files/excellent_textbook/%E8%AE%A1%E7%AE%97%E6%9C%BA/148.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/51b4ad86-63e0-4de2-9d1e-8e06d506a241.png",
+      "coverFilePath": "storage/excellent_textbook/计算机/148.png",
+      "storageFolder": "excellent_textbook/计算机",
+      "link": "https://www.icourse163.org/textbook/1474376450.htm"
+    },
+    {
+      "id": "147",
+      "name": "机械设计基础",
+      "editor": "雷晓燕   刘芳",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-01-02",
+      "isbn": "978-7-89530-142-9",
+      "description": "这本高等职业教育数字教材极具特色。由 4 大项目构成，各项目含丰富板块，内容编排注重实践、循序渐进。作为融媒体教材，配置海量动画、视频等资源。既贴合生产实际，突出工程实用性，又适合高职机械类专业教学及相关岗位培训 。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/147.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/30813077-bc49-4598-87e8-69625fe01212.png",
+      "coverFilePath": "storage/excellent_textbook/理工/147.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1474376451.htm"
+    },
+    {
+      "id": "146",
+      "name": "公差配合与测量技术",
+      "editor": "田晓燕 王慧",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-01-01",
+      "isbn": "978-7-89530-143-6",
+      "description": "这本高职高专机械类教材，遵循 “理论够用、应用为主” 原则，以任务驱动编写。全书含 5 大任务及 16 个子任务，覆盖公差与检测等核心内容。既为机械类及近机械类大专专业提供教学支撑，也为相关工程技术人员呈上实用参考。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/146.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/69220518-c7de-44d0-b895-7c664a51a78a.png",
+      "coverFilePath": "storage/excellent_textbook/理工/146.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1474376453.htm"
+    },
+    {
+      "id": "145",
+      "name": "数控铣削加工技术项目化教程",
+      "editor": "孙贵斌，陈军",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-01-08",
+      "isbn": "978-7-89530-730-8",
+      "description": "这本数控技术教材以实用为导向编写。介绍主流数控系统功能，结合先进工装设备等，详述编程指令应用与机床操作，尤其聚焦数控铣床。搭配数控仿真软件，内容循序渐进，极具针对性与实用性，助力数控人才培养 。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/145.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/8d64510f-3656-47fb-9b3d-63a4d17a4315.png",
+      "coverFilePath": "storage/excellent_textbook/理工/145.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1474376454.htm"
+    },
+    {
+      "id": "144",
+      "name": "智能通信终端产品检测与维修",
+      "editor": "侯海亭，王翠萍",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-01-08",
+      "isbn": "978-7-89566-049-6",
+      "description": "这本高等职业教育数字教材聚焦智能通信终端维修。依岗位工作过程编写，涵盖业务受理到故障维修多项目。作为融媒体教材，配备丰富数字化资源。以易懂项目串联知识点，适用于高职多专业教学，也是技能评价、大赛及社会培训的优质之选 。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/144.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/daae6073-4d6f-493d-a350-c90f6af50f1e.png",
+      "coverFilePath": "storage/excellent_textbook/理工/144.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1474376455.htm"
+    },
+    {
+      "id": "143",
+      "name": "智能终端产品技术服务",
+      "editor": "李翠，侯海亭",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-12-10",
+      "isbn": "978-7-89530-966-1",
+      "description": "本教材以项目引领、教学一体为特色，依岗位技能标准编写，是国家级教学资源库配套教材。5 大项目含多样案例，按实际流程分任务，搭配实训与习题。适配多专业教学，也为智能终端维修等人员提供实用参考 。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/143.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/5fd76267-d761-4599-9ee5-5a436ca5d1e5.png",
+      "coverFilePath": "storage/excellent_textbook/理工/143.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1474376456.htm"
+    },
+    {
+      "id": "142",
+      "name": "新能源汽车整车控制系统检修",
+      "editor": "宋广辉，颜宇",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-12-31",
+      "isbn": "978-7-89566-051-9",
+      "description": "这本高职新能源汽车数字教材紧扣多类权威标准，以比亚迪秦 EV 为例设 6 项目 13 任务，融入企业与大赛案例，实现理实融合。作为融媒体教材，配备丰富资源。适用于多专业教学，也是工程与维修技术人员的优质学习参考 。",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/142.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/6a385e67-9776-493d-917c-beeda0003359.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/142.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1474376457.htm"
+    },
+    {
+      "id": "141",
+      "name": "Photoshop平面设计",
+      "editor": "尤凤英，姚又龙",
+      "category": "艺术体育",
+      "categories": [
+        "艺术体育"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-12-10",
+      "isbn": "978-7-89530-970-8",
+      "description": "本教材引入广告设计公司4A作业规范，联合企业依行业新要求编写。以企业案例为引，项目式体例编写，借 Photoshop 讲解图像处理，配套多样信息化资源。既能助力高职高专教学，也是计算机培训、平面设计从业者的实用参考 。",
+      "cover": "/files/excellent_textbook/%E8%89%BA%E6%9C%AF%E4%BD%93%E8%82%B2/141.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/07e56953-7b2a-4bf9-9c01-6ff87f3cb971.png",
+      "coverFilePath": "storage/excellent_textbook/艺术体育/141.png",
+      "storageFolder": "excellent_textbook/艺术体育",
+      "link": "https://www.icourse163.org/textbook/1474376458.htm"
+    },
+    {
+      "id": "140",
+      "name": "C语言程序设计",
+      "editor": "王艳娟",
+      "category": "计算机",
+      "categories": [
+        "计算机"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-12-10",
+      "isbn": "978-7-89530-965-4",
+      "description": "本教材专为高等职业院校学生打造。依岗位需求设模块，以 “项目引领、任务驱动” 重构知识，借典型项目串联教学。作为融媒体教材，搭配微课、动画等资源。概念清晰、通俗易懂，是高职多专业学习 C 语言的优质之选 。",
+      "cover": "/files/excellent_textbook/%E8%AE%A1%E7%AE%97%E6%9C%BA/140.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/15a54e8a-13b7-4d86-b34d-077b48ad06ba.png",
+      "coverFilePath": "storage/excellent_textbook/计算机/140.png",
+      "storageFolder": "excellent_textbook/计算机",
+      "link": "https://www.icourse163.org/textbook/1474376459.htm"
+    },
+    {
+      "id": "139",
+      "name": "PLC应用技术项目化教程（西门子S7-1500）",
+      "editor": "吕茜，李丽，石宪红",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-12-30",
+      "isbn": "978-7-89530-732-2",
+      "description": "本教材以西门子 S7 - 1500 PLC 为核心，围绕全自动灌装线重构内容，融入新技术与思政案例。借云创平台整合数字资源，打破时空限制。由浅入深编排，既为机电、电气专业教学助力，也是工程技术人员学习 PLC 的实用参考。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/139.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/048f1bcd-cb26-4837-be01-92b445355250.png",
+      "coverFilePath": "storage/excellent_textbook/理工/139.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1474376460.htm"
+    },
+    {
+      "id": "138",
+      "name": "可编程控制器技术项目化教程",
+      "editor": "商义叶， 刘文光， 李海祯",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-12-10",
+      "isbn": "978-7-89530-967-8",
+      "description": "本教材将 S7 - 1200 PLC 知识串联于六大项目，融入比亚迪真实案例，实现理论与实践深度融合。作为融媒体教材，搭配丰富数字资源。既适合高职自动化相关专业教学，又能助力职业培训与工程人员自学 。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/138.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/de1a11f1-ce3a-4832-8e4c-c9d4391ef879.png",
+      "coverFilePath": "storage/excellent_textbook/理工/138.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1474376461.htm"
+    },
+    {
+      "id": "137",
+      "name": "建筑施工技术",
+      "editor": "苏小梅，段红玲，杨向华",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-01-24",
+      "isbn": "978-7-89530-158-0",
+      "description": "本教材紧扣人才培养目标与专业改革需求，依最新标准规范编写，融合 “岗赛课证”。以分部分项施工为主线，含多工程重点内容。体例新颖，注重德育，配套丰富教学资源，适用于院校教学与职业资格备考 。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/137.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/12a609fd-50b5-4a7e-a0a3-cd6d454a0169.png",
+      "coverFilePath": "storage/excellent_textbook/理工/137.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1474376462.htm"
+    },
+    {
+      "id": "136",
+      "name": "湖北民族民间舞蹈训练教程",
+      "editor": "卢慧",
+      "category": "艺术体育",
+      "categories": [
+        "艺术体育"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-01-01",
+      "isbn": "978-7-89566-059-5",
+      "description": "这本高职舞蹈教材极具开创性，挖掘湖北特色民间舞，结合当代需求。含徒手与道具类五个教学模块，剖析设计、示范方法，成果丰富权威。内容生动，可读性强，是对传统文化的创新传承，适用于院校教学与行业参考。",
+      "cover": "/files/excellent_textbook/%E8%89%BA%E6%9C%AF%E4%BD%93%E8%82%B2/136.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/746f833d-e60c-4274-8a09-a1507c7024fd.png",
+      "coverFilePath": "storage/excellent_textbook/艺术体育/136.png",
+      "storageFolder": "excellent_textbook/艺术体育",
+      "link": "https://www.icourse163.org/textbook/1474376463.htm"
+    },
+    {
+      "id": "135",
+      "name": "数字艺术设计基础",
+      "editor": "吴骊英",
+      "category": "艺术体育",
+      "categories": [
+        "艺术体育"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-12-10",
+      "isbn": "978-7-89530-787-2",
+      "description": "这本职业本科数字艺术教材，作为融媒体佳作，融合设计原理与软件实操。7 大项目、15 个任务模块，依工作任务导向，融合知识讲授、技能教学与企业案例。兼顾趣味性与职业性，贯彻 “教、学、做合一”，是院校教学与设计从业者参考的不二之选 。",
+      "cover": "/files/excellent_textbook/%E8%89%BA%E6%9C%AF%E4%BD%93%E8%82%B2/135.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/7f236ae8-b744-446a-a39c-762674a38881.png",
+      "coverFilePath": "storage/excellent_textbook/艺术体育/135.png",
+      "storageFolder": "excellent_textbook/艺术体育",
+      "link": "https://www.icourse163.org/textbook/1474376464.htm"
+    },
+    {
+      "id": "134",
+      "name": "航海仪器",
+      "editor": "崔立功，巴忠峰",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-12-26",
+      "isbn": "978-7-89530-976-0",
+      "description": "这本航海仪器教材极具创新，涵盖九大项目，以项目引导教学，聚焦船舶驾驶员职业能力。满足多类权威大纲要求，知识点全且实用。无论是适任考试、院校教学，还是从业者参考，都能从中汲取知识，助你在航海领域破浪前行 。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/134.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/c8d09bb1-c6cf-4014-b80a-247e9ea97352.png",
+      "coverFilePath": "storage/excellent_textbook/理工/134.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1474376465.htm"
+    },
+    {
+      "id": "133",
+      "name": "字体设计",
+      "editor": "李宇建",
+      "category": "艺术体育",
+      "categories": [
+        "艺术体育"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-02-25",
+      "isbn": "978-7-89566-082-3",
+      "description": "本教材围绕字体设计，从基础理论到实操，七大模块层层递进，涵盖字体设计多方面知识，助你掌握字体设计的定义、发展与创新方法。无论是设计专业学生夯实基础，还是行业从业者精进技能，都能从中获益。",
+      "cover": "/files/excellent_textbook/%E8%89%BA%E6%9C%AF%E4%BD%93%E8%82%B2/133.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/f5ebdfe1-1142-45fb-aeae-0801e0e01f85.png",
+      "coverFilePath": "storage/excellent_textbook/艺术体育/133.png",
+      "storageFolder": "excellent_textbook/艺术体育",
+      "link": "https://www.icourse163.org/textbook/1474376466.htm"
+    },
+    {
+      "id": "132",
+      "name": "牧草及饲料作物育种学实习实验指导",
+      "editor": "徐博",
+      "category": "农医生科",
+      "categories": [
+        "农医生科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-11-01",
+      "isbn": "978-7-89530-960-9",
+      "description": "本书全面涵盖引种、基因工程育种等关键领域，详述新品种选育实验技能与技巧。实验方法源于资深专家超 20 年经验，经筛选修正，兼具新颖性、实用性与可靠性，适配本科教学、企事业培训及研修。",
+      "cover": "/files/excellent_textbook/%E5%86%9C%E5%8C%BB%E7%94%9F%E7%A7%91/132.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/12adb47b-95c9-4809-ba34-74ccbdabab92.png",
+      "coverFilePath": "storage/excellent_textbook/农医生科/132.png",
+      "storageFolder": "excellent_textbook/农医生科",
+      "link": "https://www.icourse163.org/textbook/1473990464.htm"
+    },
+    {
+      "id": "131",
+      "name": "农业资源与环境综合分析技术实验",
+      "editor": "王寅，侯文峰",
+      "category": "农医生科",
+      "categories": [
+        "农医生科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-11-30",
+      "isbn": "978-7-89530-982-1",
+      "description": "本教材聚焦黑土地保护战略，服务农业生态等领域教学研究。系统整合土壤、植物营养等多方面知识与实验方法，含三大类实验项目，各章兼具概述、方法与案例。适用于东北乃至全国农业院校相关专业教学，也是农业科技工作者实验分析的得力参考。",
+      "cover": "/files/excellent_textbook/%E5%86%9C%E5%8C%BB%E7%94%9F%E7%A7%91/131.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/f07e0af3-dc32-4db2-aad0-be07e1795e18.png",
+      "coverFilePath": "storage/excellent_textbook/农医生科/131.png",
+      "storageFolder": "excellent_textbook/农医生科",
+      "link": "https://www.icourse163.org/textbook/1474376468.htm"
+    },
+    {
+      "id": "130",
+      "name": "作物栽培学实验指导",
+      "editor": "邵玺文，王晓波，郭丽颖",
+      "category": "农医生科",
+      "categories": [
+        "农医生科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-01-31",
+      "isbn": "978-7-89530-983-8",
+      "description": "这本教材架构清晰，融合实验操作、虚拟仿真、作业习题。实验操作分总论与各论，涵盖作物生长分析、形态观测等多方面内容。通过创新内容与教学方法，实现理论与实践结合。适用于相关专业本科生教学，也助力继续教育学生学习提升。",
+      "cover": "/files/excellent_textbook/%E5%86%9C%E5%8C%BB%E7%94%9F%E7%A7%91/130.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/190e0aa4-6e6c-4197-9c54-52b1a9c08c85.png",
+      "coverFilePath": "storage/excellent_textbook/农医生科/130.png",
+      "storageFolder": "excellent_textbook/农医生科",
+      "link": "https://www.icourse163.org/textbook/1474376469.htm"
+    },
+    {
+      "id": "129",
+      "name": "影视非线性编辑教程",
+      "editor": "逯明宇",
+      "category": "艺术体育",
+      "categories": [
+        "艺术体育"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-03-07",
+      "isbn": "978-7-89566-052-6",
+      "description": "本书专业且实用，面向影视爱好者与专业人士。从数字视频基础讲起，深入软件工作流程、剪辑操作，涵盖字幕、特效等板块。内容丰富、结构清晰，助读者夯实理论，掌握实操，提升影视后期制作技能，是影视后期宝贵参考资料。",
+      "cover": "/files/excellent_textbook/%E8%89%BA%E6%9C%AF%E4%BD%93%E8%82%B2/129.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/101a5897-5e0c-4a1f-8302-f1de0cce6c0c.png",
+      "coverFilePath": "storage/excellent_textbook/艺术体育/129.png",
+      "storageFolder": "excellent_textbook/艺术体育",
+      "link": "https://www.icourse163.org/textbook/1474376471.htm"
+    },
+    {
+      "id": "128",
+      "name": "C语言程序设计",
+      "editor": "曹丽英",
+      "category": "计算机",
+      "categories": [
+        "计算机"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-03-07",
+      "isbn": "978-7-89566-076-2",
+      "description": "本书系统介绍 C 语言从基础到进阶的知识，包括数据类型、指针等。以循序渐进之法，借丰富实例，助读者构建完整知识体系，提升综合应用能力。无论是高校学生、培训班学员，还是自学爱好者，都能从中受益 。",
+      "cover": "/files/excellent_textbook/%E8%AE%A1%E7%AE%97%E6%9C%BA/128.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/242d8821-08d7-4f58-ae7d-a4796010511d.png",
+      "coverFilePath": "storage/excellent_textbook/计算机/128.png",
+      "storageFolder": "excellent_textbook/计算机",
+      "link": "https://www.icourse163.org/textbook/1474376472.htm"
+    },
+    {
+      "id": "127",
+      "name": "植物细胞工程原理与技术（2.0版）",
+      "editor": "王正加",
+      "category": "农医生科",
+      "categories": [
+        "农医生科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-07-31",
+      "isbn": "978-7-89530-869-5",
+      "description": "本数字教材全面介绍植物细胞工程的基础理论与技术应用，涵盖快速繁殖、胚胎培养、基因工程等内容，配有视频讲解和自测题等数字资源，便于学习与教学。适用于生物技术、农学等相关专业本科生及研究人员参考。",
+      "cover": "/files/excellent_textbook/%E5%86%9C%E5%8C%BB%E7%94%9F%E7%A7%91/127.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/c6c2e4d4-bb03-4b79-9de2-015e8b05323c.png",
+      "coverFilePath": "storage/excellent_textbook/农医生科/127.png",
+      "storageFolder": "excellent_textbook/农医生科",
+      "link": "https://www.icourse163.org/textbook/1473934482.htm"
+    },
+    {
+      "id": "126",
+      "name": "生物工程专业综合实验",
+      "editor": "陈欢，王刚，王真慧",
+      "category": "农医生科",
+      "categories": [
+        "农医生科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-01-24",
+      "isbn": "978-7-89530-984-5",
+      "description": "本书紧扣专业需求与培养目标，精心编排三章内容，系统介绍发酵、酶工程及生物工程分析实验的操作技术与手段。融合理论与实践，兼具通用性与指导性。无论是高校本专科教学，还是科研人员参考，都是生物领域的优质之选。",
+      "cover": "/files/excellent_textbook/%E5%86%9C%E5%8C%BB%E7%94%9F%E7%A7%91/126.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/673e63f5-b543-475a-8fd7-04c8242df399.png",
+      "coverFilePath": "storage/excellent_textbook/农医生科/126.png",
+      "storageFolder": "excellent_textbook/农医生科",
+      "link": "https://www.icourse163.org/textbook/1474376470.htm"
+    },
+    {
+      "id": "125",
+      "name": "家具设计案例实训",
+      "editor": "邓坤",
+      "category": "艺术体育",
+      "categories": [
+        "艺术体育"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-11-01",
+      "isbn": "978-7-89566-005-2",
+      "description": "",
+      "cover": "/files/excellent_textbook/%E8%89%BA%E6%9C%AF%E4%BD%93%E8%82%B2/125.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/9cab0cbf-dbca-4245-9edf-5840080ed94b.png",
+      "coverFilePath": "storage/excellent_textbook/艺术体育/125.png",
+      "storageFolder": "excellent_textbook/艺术体育",
+      "link": "https://www.icourse163.org/textbook/1474459441.htm"
+    },
+    {
+      "id": "124",
+      "name": "大学体育",
+      "editor": "田祖国",
+      "category": "艺术体育",
+      "categories": [
+        "艺术体育"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-02-28",
+      "isbn": "978-7-89566-006-9",
+      "description": "超级实用的数字教材，理论篇夯实知识，从体育健康到竞赛欣赏，应有尽有。实践篇涵盖球类、操舞、民族传统等多元运动项目，每项配有详尽教学内容，还搭载视频讲解。无论是运动小白入门，还是体育达人精进，它都是不可多得的良师益友 。",
+      "cover": "/files/excellent_textbook/%E8%89%BA%E6%9C%AF%E4%BD%93%E8%82%B2/124.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/f2ff5ce7-33c4-46ca-ae33-660f11a45dce.png",
+      "coverFilePath": "storage/excellent_textbook/艺术体育/124.png",
+      "storageFolder": "excellent_textbook/艺术体育",
+      "link": "https://www.icourse163.org/textbook/1474459442.htm"
+    },
+    {
+      "id": "123",
+      "name": "车辆机电传动系统设计与优化",
+      "editor": "刘辉",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-12-31",
+      "isbn": "978-7-89566-035-9",
+      "description": "本书面向汽车工业、国防军事等国家重大战略与学科前沿发展的迫切应用需求，集理论与实践于一体，融合现代信息技术与思政元素。从基础概念到优化设计，内容全面。是车辆工程等专业学生的得力课本，也是科研与技术人员的实用指南。",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/123.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/68dac39d-04a1-435f-b334-f34160146ef5.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/123.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1474459444.htm"
+    },
+    {
+      "id": "122",
+      "name": "3ds Max三维空间表现",
+      "editor": "秦颖，王梦蝶，窦紫烟",
+      "category": "艺术体育",
+      "categories": [
+        "艺术体育"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-02-18",
+      "isbn": "978-7-89530-969-2",
+      "description": "学 3ds Max 三维空间表现，就选这本超实用教材！它分四模块，从软件基础到实战项目全流程教学，融入传统文化与思政元素。依托专业资源库及企业项目编写，还附赠丰富教学资源。是高职相关专业必选，也是培训、大赛及自学的得力助手。",
+      "cover": "/files/excellent_textbook/%E8%89%BA%E6%9C%AF%E4%BD%93%E8%82%B2/122.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/928d60ff-3c1f-4d49-be95-ed349b839d49.png",
+      "coverFilePath": "storage/excellent_textbook/艺术体育/122.png",
+      "storageFolder": "excellent_textbook/艺术体育",
+      "link": "https://www.icourse163.org/textbook/1474459445.htm"
+    },
+    {
+      "id": "121",
+      "name": "机修钳工项目化教程",
+      "editor": "刘延利，张泽衡，郭红",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-02-28",
+      "isbn": "978-7-89530-968-5",
+      "description": "这本数字教材融合德式先进教学法，依最新行业规范编制，融入 “1+X” 证书及世赛要求。借知名企业案例，践行 “做中学”。5 大项目循序渐进，“互联网 +” 资源助力理解。无论是高职教学，还是从业者自我提升，都值得拥有。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/121.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/e96d1825-ffde-4b34-aa0a-c21158416d80.png",
+      "coverFilePath": "storage/excellent_textbook/理工/121.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1474459446.htm"
+    },
+    {
+      "id": "120",
+      "name": "Java程序设计案例教程",
+      "editor": "姜晓刚，张红梅",
+      "category": "计算机",
+      "categories": [
+        "计算机"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-01-18",
+      "isbn": "978-7-89530-978-4",
+      "description": "本教材以培养实战能力为目标，精选工程案例，将知识点巧妙融入 9 大项目。借助丰富音视频资源，实现线上交互自测。从搭建环境到界面开发，一步步带你提升。不仅是高职计算机专业良师，更是 Java 爱好者提升开发能力的实用宝典 。",
+      "cover": "/files/excellent_textbook/%E8%AE%A1%E7%AE%97%E6%9C%BA/120.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/a80101db-e481-4410-98fe-e867543a8009.png",
+      "coverFilePath": "storage/excellent_textbook/计算机/120.png",
+      "storageFolder": "excellent_textbook/计算机",
+      "link": "https://www.icourse163.org/textbook/1474459447.htm"
+    },
+    {
+      "id": "119",
+      "name": "模拟电子技术基础",
+      "editor": "杜湘瑜",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-03-15",
+      "isbn": "978-7-89566-037-3",
+      "description": "本书以学习者为中心，依 BOPPPS 模型编排，融入思政元素。多元教学资源搭配，启发互动、注重实践。由浅入深构建知识链，是普通高校相关专业本科生的优质教材，也是电子技术从业者的得力参考。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/119.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/58ea9cf3-10fe-4f3c-b4db-9f3a85ad2a7a.png",
+      "coverFilePath": "storage/excellent_textbook/理工/119.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1474459448.htm"
+    },
+    {
+      "id": "118",
+      "name": "智能电动汽车原理",
+      "editor": "何洪文、李梦林",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-10-10",
+      "isbn": "978-7-89530-952-4",
+      "description": "本书全面剖析智能电动汽车从整车到关键零部件的原理与构造，融入基础设施和应用知识，以多元数字化呈现。既助力相关专业学生系统学习，也是行业技术人员提升自我的优质读物。",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/118.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/d48b7ab2-4725-44ca-a395-884d19bcfeed.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/118.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1474459443.htm"
+    },
+    {
+      "id": "117",
+      "name": "汽车营销策划",
+      "editor": "林凤  赵一敏  张潇月",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-07-30",
+      "isbn": "978-7-89530-861-9",
+      "description": "这本职业教育汽车类 “互联网 +” 创新教材，是理论与实践一体化的佳作。涵盖汽车营销各关键环节，内容新颖全面。借助 “互联网 +” 融入多媒体资源，助力理解。适用于职业院校教学、车企内训，也是汽车行业从业者的实用参考。",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/117.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/42ba3cea-27f8-41ae-9bd2-c3ab7b8ac9b7.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/117.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1474376452.htm"
+    },
+    {
+      "id": "116",
+      "name": "绿色制造技术",
+      "editor": "姬莉 张虹 胡晓丽",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-02-10",
+      "isbn": "978-7-89566-064-9",
+      "description": "本书紧扣工业产品绿色制造需求，聚焦新技术、新工艺，强化任务、岗位能力与知识关联。以 5 大项目分解全过程，设关联任务，体现工作完整性。助力学习者在体验中掌握绿色制造工作方法。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/116.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/822d5621-8bca-443a-b52e-daae2897e35e.png",
+      "coverFilePath": "storage/excellent_textbook/理工/116.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1474844447.htm"
+    },
+    {
+      "id": "115",
+      "name": "数字电路与逻辑设计",
+      "editor": "罗笑冰",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-03-30",
+      "isbn": "978-7-89566-036-6",
+      "description": "本书为高校电气、电子等专业基础教材，秉持强基础重逻辑的理念。分为三大模块，可灵活组合教学。融入教学策略，以思维导图、多样环节排布内容，穿插测试与仿真，易学性强。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/115.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/33907013-9278-4b5c-84c0-88e8c0b32c9a.png",
+      "coverFilePath": "storage/excellent_textbook/理工/115.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1474844446.htm"
+    },
+    {
+      "id": "114",
+      "name": "模拟集成电路分析与设计",
+      "editor": "杜力",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-12-30",
+      "isbn": "978-7-89566-043-4",
+      "description": "本书系统讲解模拟集成电路设计，融合多本教材精华、前沿发展及作者专业经验。遵循循序渐进原则，从器件物理到复杂技术逐步渗透，涵盖基础、关键技术及应用，助读者掌握普适分析处理技术，构建完整知识体系。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/114.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/51b8d658-1472-4f16-9135-fa4a8f07f590.png",
+      "coverFilePath": "storage/excellent_textbook/理工/114.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1474825442.htm"
+    },
+    {
+      "id": "113",
+      "name": "微纳机器人技术",
+      "editor": "李隆球",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-12-30",
+      "isbn": "978-7-89530-979-1",
+      "description": "本书为 “十四五” 高端装备制造教材，聚焦微纳机器人领域。内容涵盖发展历史、交叉学科知识、驱动设计、操作机器人系统及应用。融合多学科，体系系统，适合机械、材料等专业本硕生研读，助力新兴领域知识构建。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/113.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/04994c39-9b42-4854-96b1-67ae3603d2c5.png",
+      "coverFilePath": "storage/excellent_textbook/理工/113.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1474820443.htm"
+    },
+    {
+      "id": "112",
+      "name": "国际商务谈判",
+      "editor": "金莹  武晓平  窦争妍",
+      "category": "人文社科",
+      "categories": [
+        "人文社科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-01-15",
+      "isbn": "978-7-89566-091-5",
+      "description": "本教材为国家职业教育专业教学资源库配套教材，分3篇 8 项目 28 任务，涵盖国际商务谈判全流程。配套丰富资源，理论实践结合。适合高职相关专业及从业人员，助力技能与素养双提升。",
+      "cover": "/files/excellent_textbook/%E4%BA%BA%E6%96%87%E7%A4%BE%E7%A7%91/112.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/79d99b43-888a-4e96-95e8-1e78fbb31fef.png",
+      "coverFilePath": "storage/excellent_textbook/人文社科/112.png",
+      "storageFolder": "excellent_textbook/人文社科",
+      "link": "https://www.icourse163.org/textbook/1474826442.htm"
+    },
+    {
+      "id": "111",
+      "name": "园林美术",
+      "editor": "李欢，胡笑颖",
+      "category": "艺术体育",
+      "categories": [
+        "艺术体育"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-02-28",
+      "isbn": "978-7-89566-097-7",
+      "description": "本书为风景园林设计专业基础课程教材，设六大项目，涵盖美术基础、线稿表现、色彩技法等。顺应行业新趋势，嵌入富媒体资源，聚焦岗位手绘技能培养，助力学习者将创意转化为图纸。",
+      "cover": "/files/excellent_textbook/%E8%89%BA%E6%9C%AF%E4%BD%93%E8%82%B2/111.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/2555b922-99a6-4679-b339-7e6864f1a878.png",
+      "coverFilePath": "storage/excellent_textbook/艺术体育/111.png",
+      "storageFolder": "excellent_textbook/艺术体育",
+      "link": "https://www.icourse163.org/textbook/1474826443.htm"
+    },
+    {
+      "id": "110",
+      "name": "视听栏目策划",
+      "editor": "覃晓燕",
+      "category": "艺术体育",
+      "categories": [
+        "艺术体育"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-12-15",
+      "isbn": "978-7-89566-087-8",
+      "description": "本教材为广播影视类专业核心课用书，分概论与实务模块，含 3 专题 6 项目，融合传统与新兴媒体，对接行业资源。编排上教、学、做结合，助力学习者技能与素养双提升。",
+      "cover": "/files/excellent_textbook/%E8%89%BA%E6%9C%AF%E4%BD%93%E8%82%B2/110.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/7b0a1db8-eb99-4046-8b3b-b583f78630b9.png",
+      "coverFilePath": "storage/excellent_textbook/艺术体育/110.png",
+      "storageFolder": "excellent_textbook/艺术体育",
+      "link": "https://www.icourse163.org/textbook/1474844442.htm"
+    },
+    {
+      "id": "109",
+      "name": "氢储能零碳智慧能源系统与经济性",
+      "editor": "管晓宏",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-04-01",
+      "isbn": "978-7-89566-104-2",
+      "description": "本书聚焦氢储能零碳智慧能源系统，涵盖基础理论、研究方法与应用。融合多能源形式，提升可再生能源利用率，实现近零污染与零碳排。结合前沿技术，系统探讨多方面内容，适合相关专业师生及领域从业者参考。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/109.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/dc919aae-f09d-48c6-96e2-0e2e25e9d438.png",
+      "coverFilePath": "storage/excellent_textbook/理工/109.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1474824443.htm"
+    },
+    {
+      "id": "108",
+      "name": "集成电路封装与三维集成",
+      "editor": "丁英涛",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-12-30",
+      "isbn": "978-7-89566-044-1",
+      "description": "本书聚焦先进封装技术，尤其三维集成领域，梳理技术脉络，详解硅通孔及三维系统仿真建模。结合主流消费电子应用实例，展现行业现状。适合高校集成电路、微电子等专业教学及研发科技人员参考。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/108.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/01d7552a-d593-4f10-bbf3-4dfaef507743.png",
+      "coverFilePath": "storage/excellent_textbook/理工/108.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1474820444.htm"
+    },
+    {
+      "id": "107",
+      "name": "人体机能",
+      "editor": "姚水洪  李雨颖",
+      "category": "农医生科",
+      "categories": [
+        "农医生科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-02-18",
+      "isbn": "978-7-89566-088-5",
+      "description": "本教材为浙江省高职 “十四五” 重点教材，顺应 “双高” 课改，按 “人体基本功能→分系统功能→功能调节” 重构，设 9 大理论项目 + 17 项实训。融合生理、病理内容，逻辑清晰，适配护理、中医药等专业教学及在职人员学习。",
+      "cover": "/files/excellent_textbook/%E5%86%9C%E5%8C%BB%E7%94%9F%E7%A7%91/107.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/c42f621f-9bcd-41bf-8ba7-c9e4a34f58b0.png",
+      "coverFilePath": "storage/excellent_textbook/农医生科/107.png",
+      "storageFolder": "excellent_textbook/农医生科",
+      "link": "https://www.icourse163.org/textbook/1474844443.htm"
+    },
+    {
+      "id": "106",
+      "name": "实验室标准操作规程选编（第一辑）",
+      "editor": "清华大学实验室管理处",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-04-10",
+      "isbn": "978-7-89566-089-2",
+      "description": "本书聚焦高校实验设计与操作，以实验探索和风险管理为核心，融入清华最新成果。含多模块标准规程，首辑覆盖多安全领域。由一线专家编制，内容实用权威，是高校师生、科研院所及行业安全人员的优质实验与管理指南。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/106.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/083a2fc4-2ce9-4f05-81ee-75db32df2568.png",
+      "coverFilePath": "storage/excellent_textbook/理工/106.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1474845441.htm"
+    },
+    {
+      "id": "105",
+      "name": "逻辑思维与公文写作",
+      "editor": "朱凌",
+      "category": "人文社科",
+      "categories": [
+        "人文社科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-12-30",
+      "isbn": "978-7-89566-022-9",
+      "description": "本教材立足逻辑学框架，聚焦公文写作应用，提升逻辑思维与写作技能。分三模块，从基础逻辑到论证谬误，再到思维提取与细节，结合原理与技巧，帮助学习者增强文本条理性、说服力及沟通效率，达到高效沟通的目的。",
+      "cover": "/files/excellent_textbook/%E4%BA%BA%E6%96%87%E7%A4%BE%E7%A7%91/105.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/9a55bc2b-df89-49e7-9800-8a1970ab1f2a.png",
+      "coverFilePath": "storage/excellent_textbook/人文社科/105.png",
+      "storageFolder": "excellent_textbook/人文社科",
+      "link": "https://www.icourse163.org/textbook/1474844444.htm"
+    },
+    {
+      "id": "104",
+      "name": "微电子器件原理与模型",
+      "editor": "陈志铭",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-12-30",
+      "isbn": "978-7-89566-042-7",
+      "description": "集成电路是现代信息社会的重要基石，本书从 P-N 结二极管切入，系统讲解微电子器件原理、性能与特性，结合器件模型深入剖析。搭配丰富思考题与习题，助读者巩固知识，适合高校相关专业教学与微电子研发人员参考。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/104.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/19108f33-0d76-4470-bacf-25e71643287e.png",
+      "coverFilePath": "storage/excellent_textbook/理工/104.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1474844445.htm"
+    },
+    {
+      "id": "103",
+      "name": "本科高校产教融合教育教学改革理论与实践（课程篇）",
+      "editor": "徐守坤",
+      "category": "人文社科",
+      "categories": [
+        "人文社科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-01-16",
+      "isbn": "978-7-89566-053-3",
+      "description": "在产教融合背景下，本科课程向能力培养转型。常州大学聚焦课程建设，本书精选典型改革案例，分理论、课程建设、教学案例设计三篇，展现产教融合在本科课程中的实践与探索，为高校课程改革提供参考。",
+      "cover": "/files/excellent_textbook/%E4%BA%BA%E6%96%87%E7%A4%BE%E7%A7%91/103.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/e497e908-86ae-4421-af94-d9a5a4e60446.png",
+      "coverFilePath": "storage/excellent_textbook/人文社科/103.png",
+      "storageFolder": "excellent_textbook/人文社科",
+      "link": "https://www.icourse163.org/textbook/1474845442.htm"
+    },
+    {
+      "id": "102",
+      "name": "大气污染治理技术",
+      "editor": "徐静 朱晓敏 李然",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-03-01",
+      "isbn": "978-7-89530-711-7",
+      "description": "",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/102.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/86375a85-72e1-415e-b982-33510f8a457b.png",
+      "coverFilePath": "storage/excellent_textbook/理工/102.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1474824442.htm"
+    },
+    {
+      "id": "101",
+      "name": "集成电路科学与工程导论",
+      "editor": "李楠",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-12-30",
+      "isbn": "978-7-89566-039-7",
+      "description": "《集成电路科学与工程导论》以数字化形式系统构建集成电路知识体系，覆盖历史、材料、器件、工艺等全链条内容，图文并茂且融入多媒体资源，既为高校相关专业学生搭建知识脉络、培养分析能力，也为行业工程师提供实用技术指南。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/101.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/cc6340df-94d3-47b6-8adc-532ab4efb010.png",
+      "coverFilePath": "storage/excellent_textbook/理工/101.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1475066442.htm"
+    },
+    {
+      "id": "100",
+      "name": "数控加工编程与操作",
+      "editor": "邓宇翔 ，高强",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-05-01",
+      "isbn": "978-7-89566-101-1",
+      "description": "《数控编程与操作项目化教程》以项目驱动教学，融合发那科系统实操与数控工艺，涵盖机床编程、操作规范、典型零件案例，配套 FANUC 指令表，通过情境教学展现学科前沿，助力高职学生夯实基础、掌握产教融合的数控核心技能。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/100.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/8c5a95c8-6c8a-45f6-81c6-e25644049999.png",
+      "coverFilePath": "storage/excellent_textbook/理工/100.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1475066443.htm"
+    },
+    {
+      "id": "99",
+      "name": "机器人学及应用",
+      "editor": "陈柏、吴青聪",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-09-15",
+      "isbn": "978-7-89530-931-9",
+      "description": "《机器人技术与应用》作为 “十四五” 高等教育教材，紧扣国家战略需求，融合 “两化” 特色，系统讲解机器人原理与典型应用，融入思政与产教元素，搭配二维码视频资源，为高校相关专业师生及科研技术人员提供立体化学习参考。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/99.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/afd151b9-c4c4-4e83-86fb-93d83c88655e.png",
+      "coverFilePath": "storage/excellent_textbook/理工/99.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1475062442.htm"
+    },
+    {
+      "id": "98",
+      "name": "工业机器人技术",
+      "editor": "李瑞峰 刘阳",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-12-29",
+      "isbn": "978-7-89566-033-5",
+      "description": "本书凝结作者多年研发经验，从分类、机械与控制系统设计到测试、编程应用全覆盖，详解开发要点与技术难点。既适合行业技术人员案头参考，亦可为高校师生提供教学范本，助你掌握机器人全链路知识，是理论与实践结合的专业宝典！",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/98.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/1a570553-8a40-4afb-80c9-77adf0ec17c7.png",
+      "coverFilePath": "storage/excellent_textbook/理工/98.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1475069442.htm"
+    },
+    {
+      "id": "97",
+      "name": "数字电子技术",
+      "editor": "段有艳、王震婷",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-05-01",
+      "isbn": "978-7-89566-102-8",
+      "description": "本书紧扣 “工学结合” 理念，以 10 大项目串联教学，按 “任务引入 — 知识讲解 — 任务实现” 模式拆解内容，将基础理论融入实践场景，由浅入深培养应用能力。适合电气、电子信息等专业师生及技术爱好者，既是课堂教材，也是自学宝典，助你掌握数字电子技术核心技能，夯实职业基础！",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/97.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/1460bd0d-d947-4596-98e8-f8c91b211dac.png",
+      "coverFilePath": "storage/excellent_textbook/理工/97.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1475069443.htm"
+    },
+    {
+      "id": "96",
+      "name": "线性代数",
+      "editor": "黄正华",
+      "category": "数学物理",
+      "categories": [
+        "数学物理"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-06-06",
+      "isbn": "978-7-89530-864-0",
+      "description": "这本数字教材围绕线性方程组，借行列式、矩阵、向量工具，重概念讲授与算法理解，以几何视角剖析，结合丰富案例。涵盖向量、矩阵等核心内容，适配多类专业教学，也是考研、科研及自学的优质参考。",
+      "cover": "/files/excellent_textbook/%E6%95%B0%E5%AD%A6%E7%89%A9%E7%90%86/96.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/a8b58bf4-fc6f-41d4-887d-46ef19a30e3e.png",
+      "coverFilePath": "storage/excellent_textbook/数学物理/96.png",
+      "storageFolder": "excellent_textbook/数学物理",
+      "link": "https://www.icourse163.org/textbook/1474376449.htm"
+    },
+    {
+      "id": "95",
+      "name": "飞行器智能设计技术",
+      "editor": "周尧明  罗明强  刘尧龙",
+      "category": "航空航天",
+      "categories": [
+        "航空航天"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-09-20",
+      "isbn": "978-7-89530-943-2",
+      "description": "这本飞行器设计核心专业课教材，聚焦人工智能在飞行设计中的应用，系统梳理八大关键板块。从体系到各关键环节，都有深度讲解。它既是高校相关专业本科生、研究生的优质教科书，也是科研与工程人员不可多得的参考书。",
+      "cover": "/files/excellent_textbook/%E8%88%AA%E7%A9%BA%E8%88%AA%E5%A4%A9/95.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/9eb0ce45-b525-4650-ae8e-9e2601a25a08.png",
+      "coverFilePath": "storage/excellent_textbook/航空航天/95.png",
+      "storageFolder": "excellent_textbook/航空航天",
+      "link": "https://www.icourse163.org/textbook/1473991462.htm"
+    },
+    {
+      "id": "94",
+      "name": "航天智能探测原理与设计",
+      "editor": "宋佳  邹征夏  李昭莹  余涛",
+      "category": "航空航天",
+      "categories": [
+        "航空航天"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-09-20",
+      "isbn": "978-7-89530-929-6",
+      "description": "",
+      "cover": "/files/excellent_textbook/%E8%88%AA%E7%A9%BA%E8%88%AA%E5%A4%A9/94.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/9396a8e0-e4eb-463c-8092-b4f9360c59aa.png",
+      "coverFilePath": "storage/excellent_textbook/航空航天/94.png",
+      "storageFolder": "excellent_textbook/航空航天",
+      "link": "https://www.icourse163.org/textbook/1473990462.htm"
+    },
+    {
+      "id": "93",
+      "name": "航天信息工程科研创新训练指导教程",
+      "editor": "张浩鹏",
+      "category": "航空航天",
+      "categories": [
+        "航空航天"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-09-20",
+      "isbn": "978-7-89530-944-9",
+      "description": "这本教材紧扣航空航天领域信息处理实际需求，精心编排信息检索、论文写作、科研实践案例等内容，科学搭建体系，助力学生与从业者全面训练创新实践能力。无论是航天信息工程本硕教学，还是领域工程人员进修，它都是实用的参考佳作 。",
+      "cover": "/files/excellent_textbook/%E8%88%AA%E7%A9%BA%E8%88%AA%E5%A4%A9/93.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/367e067e-8c10-4733-bb2e-0635b643cf81.png",
+      "coverFilePath": "storage/excellent_textbook/航空航天/93.png",
+      "storageFolder": "excellent_textbook/航空航天",
+      "link": "https://www.icourse163.org/textbook/1473990460.htm"
+    },
+    {
+      "id": "92",
+      "name": "数字集成电路基础",
+      "editor": "付宇卓，何卫锋，孙亚男",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-12-30",
+      "isbn": "978-7-89566-046-5",
+      "description": "本教材从深亚微米尺度下的基础理论到 MOS 器件的核心应用，再到 FinFET 等前沿技术，内容层层递进。逻辑电路设计、低功耗策略等实用知识与 28 纳米工艺实例结合，兼顾深度与实用性，是集成电路、电子工程等相关专业本科生的必备好书。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/92.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/90965157-38c8-4bd8-9e1d-677c169dbd3a.png",
+      "coverFilePath": "storage/excellent_textbook/理工/92.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1475306442.htm"
+    },
+    {
+      "id": "91",
+      "name": "数字逻辑电路分析与设计",
+      "editor": "程鸿",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-06-05",
+      "isbn": "978-7-89566-117-2",
+      "description": "本教材理论与实践并重，理论涵盖逻辑函数、时序电路等核心内容，实践聚焦仿真与 FPGA 设计。每章明确重难点与目标，搭配 AI 难点视频、习题等资源，还有优秀案例与自检试卷，是电子电气、计算机类本科生夯实基础的优选教材。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/91.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/d7dbf519-54d4-4753-bc7a-a699f7f24d32.png",
+      "coverFilePath": "storage/excellent_textbook/理工/91.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1475306443.htm"
+    },
+    {
+      "id": "90",
+      "name": "集成电路综合设计实验指导书",
+      "editor": "李楠",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-05-30",
+      "isbn": "978-7-89566-040-3",
+      "description": "本教材聚焦实践能力培养，实验内容层次化、模块化，由基础到高级逐步深入。项目紧贴产业需求，搭配数字化资源与融媒体呈现，助学生掌握核心技术，缩短职场适应期，是提升集成电路实践能力的优质教材。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/90.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/798f0ed6-6e88-4827-90cb-553cd2acf4c3.png",
+      "coverFilePath": "storage/excellent_textbook/理工/90.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1475306444.htm"
+    },
+    {
+      "id": "89",
+      "name": "冶金备料技术",
+      "editor": "李亚东 张金梁",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-06-01",
+      "isbn": "978-7-89566-127-1",
+      "description": "本教材以项目任务驱动，涵盖物理处理、配料焙烧及多种金属备料等十大模块，紧扣冶金备料核心方法与技术。既适用于职业教育冶金专业教学，也可作行业培训及工程人员参考，是夯实冶金备料技能的实用教材。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/89.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/a6ae6eff-75c6-4818-9ee7-909b52e708ff.png",
+      "coverFilePath": "storage/excellent_textbook/理工/89.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1475306445.htm"
+    },
+    {
+      "id": "88",
+      "name": "信号与系统（第5版）",
+      "editor": "李辉，段哲民，樊晔",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-07-08",
+      "isbn": "978-7-89566-182-0",
+      "description": "本教材包含九章核心内容，内容精炼严谨，资源丰富。配套《信号与系统重点与难点解析及模拟题》第 4 版，适合电子、通信等专业本科及部分研究生教学，亦可供工程人员参考，有助提升自主学习与高阶思维能力。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/88.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/b7ca586b-2cb2-4f8c-a520-22e138aea846.png",
+      "coverFilePath": "storage/excellent_textbook/理工/88.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1475654445.htm"
+    },
+    {
+      "id": "87",
+      "name": "电子技术",
+      "editor": "袁玉雅、赵双双、赛恒吉雅",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-09-01",
+      "isbn": "978-7-89566-219-3",
+      "description": "本教材是电力系统自动化技术专业群核心课程用书，配套精品在线课程，资源完备，融合知识、微课、实训等多类内容，可直接在线学习。全书设 8 个项目，涵盖数模电路，适合高职、高专等相关专业教学及电力类培训使用。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/87.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/cfca25ac-be46-4153-8903-6a3a9f931d04.png",
+      "coverFilePath": "storage/excellent_textbook/理工/87.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1475654444.htm"
+    },
+    {
+      "id": "86",
+      "name": "建筑材料检测",
+      "editor": "于海云，张瑞麟",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-08-22",
+      "isbn": "978-7-89566-163-9",
+      "description": "本教材紧扣国家及行业最新标准，以融媒体形式系统讲解七大核心建材检测项目，配套教学目标、规范标准等实用内容，逻辑清晰、资源丰富。既适合作高职水利水电、建筑工程等专业教材，也能为工程技术与管理人员提供权威参考。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/86.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/4d9f5a2e-a760-4a28-9209-04f25d262ad3.png",
+      "coverFilePath": "storage/excellent_textbook/理工/86.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1475653442.htm"
+    },
+    {
+      "id": "85",
+      "name": "储能电池基础",
+      "editor": "肖睿，吴宇平",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-12-20",
+      "isbn": "978-7-89566-028-1",
+      "description": "本书兼具理论深度与实用价值。它聚焦储能电池核心技术，剖析多类电池特性，展望新兴技术前景，还给出电池管理系统化方案。不管是科研人员、工程师，还是相关专业学生，都能从中夯实基础、把握前沿，助力能源转型技术探索。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/85.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/ebe5058b-08f4-4229-891b-6598f1781282.png",
+      "coverFilePath": "storage/excellent_textbook/理工/85.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1475985445.htm"
+    },
+    {
+      "id": "84",
+      "name": "结晶学及矿物学实验教程",
+      "editor": "徐冠立，夏瑛",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-06-30",
+      "isbn": "978-7-89566-176-9",
+      "description": "本教程是《结晶学及矿物学》实验课创新数字教材，含 18 次实验（结晶学 7 次、矿物学 11 次），详述实验目的、步骤等，配思维导图助梳理知识。整合三维模型、虚拟仿真等资源，适配地质与材料类专业教学，也可作相关人员参考及自学用书，适配多场景学习。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/84.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/0d9c6fd8-0595-47b7-9047-9b8154e79b0d.png",
+      "coverFilePath": "storage/excellent_textbook/理工/84.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1475985447.htm"
+    },
+    {
+      "id": "83",
+      "name": "网站前台美工设计项目化教程",
+      "editor": "蔡宗慧  王志坚",
+      "category": "艺术体育",
+      "categories": [
+        "艺术体育"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-06-30",
+      "isbn": "978-7-89566-168-4",
+      "description": "紧扣数字经济下行业需求，本教材以 “项目导向” 为核心，精选 Logo、电商广告等 5 大项目，含 15 个典型任务。通过 “导入 — 实施 — 拓展” 模式，融入色彩、布局知识，配套素材与指导。适配高职数字媒体等专业教学，助力学生提升设计思维与实操能力。",
+      "cover": "/files/excellent_textbook/%E8%89%BA%E6%9C%AF%E4%BD%93%E8%82%B2/83.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/1a4767eb-747a-40c7-a927-ffb68c268653.png",
+      "coverFilePath": "storage/excellent_textbook/艺术体育/83.png",
+      "storageFolder": "excellent_textbook/艺术体育",
+      "link": "https://www.icourse163.org/textbook/1475990442.htm"
+    },
+    {
+      "id": "82",
+      "name": "新标准职业本科英语——职业与个人",
+      "editor": "孙云霞，李彦民",
+      "category": "外语",
+      "categories": [
+        "外语"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-02-10",
+      "isbn": "978-7-89566-081-6",
+      "description": "作为高职融媒体公共英语数字教材，本书以 “产出导向” 为核心、任务为引领。结合旅游、外贸等行业需求构建内容，数字资源丰富，既教听说读写译技能，又培养职业素养与协作能力。能帮学生在职业场景中提升英语能力、塑造职业品格，为职场身份转变铺路。",
+      "cover": "/files/excellent_textbook/%E5%A4%96%E8%AF%AD/82.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/bb736db1-7974-4428-abe9-9e5cad636319.png",
+      "coverFilePath": "storage/excellent_textbook/外语/82.png",
+      "storageFolder": "excellent_textbook/外语",
+      "link": "https://www.icourse163.org/textbook/1475985446.htm"
+    },
+    {
+      "id": "81",
+      "name": "财政学",
+      "editor": "马骁，周克清",
+      "category": "人文社科",
+      "categories": [
+        "人文社科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-05-22",
+      "isbn": "978-7-89566-170-7",
+      "description": "本书以习近平新时代中国特色社会主义思想为指导，遵循 \"财政是国家治理的基础\" 设计十五章内容，立足中国实际，融合当代财政理论，传递中国特色观念。体例逻辑清晰，可读性强，适用于高校经管、公管本科教学及相关人员参考。",
+      "cover": "/files/excellent_textbook/%E4%BA%BA%E6%96%87%E7%A4%BE%E7%A7%91/81.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/ab7ff02f-b7eb-430a-8372-464a253ce954.png",
+      "coverFilePath": "storage/excellent_textbook/人文社科/81.png",
+      "storageFolder": "excellent_textbook/人文社科",
+      "link": "https://www.icourse163.org/textbook/1475658443.htm"
+    },
+    {
+      "id": "80",
+      "name": "管理学基础与实务",
+      "editor": "吴亚秋，于敬竹",
+      "category": "人文社科",
+      "categories": [
+        "人文社科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-08-29",
+      "isbn": "978-7-89566-205-6",
+      "description": "本书是管理类专业基础课教材，含基础理论、管理职能、综合实训三模块共七单元。特色鲜明，融古今中西管理智慧，设创业实训，依托 MOOC 平台并融入 AI 技术，助学生提升管理技能与数字素养，适用于高职多管理专业及中职参考。",
+      "cover": "/files/excellent_textbook/%E4%BA%BA%E6%96%87%E7%A4%BE%E7%A7%91/80.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/b06ece4a-6767-42b6-bd5d-ccd74537ad90.png",
+      "coverFilePath": "storage/excellent_textbook/人文社科/80.png",
+      "storageFolder": "excellent_textbook/人文社科",
+      "link": "https://www.icourse163.org/textbook/1475647442.htm"
+    },
+    {
+      "id": "79",
+      "name": "形势与政策 2025年版",
+      "editor": "徐维凡",
+      "category": "人文社科",
+      "categories": [
+        "人文社科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-09-01",
+      "isbn": "978-7-89566-247-6",
+      "description": "本书是高校 “形势与政策” 课程配套教材，以专题形式聚焦中国式现代化、人民代表大会制度、遵义会议精神等热点，及时回应学生关切，跟进党的理论创新成果，助力最新思想进教材进课堂进头脑，是大学生必修课程的优质学习用书。",
+      "cover": "/files/excellent_textbook/%E4%BA%BA%E6%96%87%E7%A4%BE%E7%A7%91/79.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/51cd322a-61a8-4926-a468-8b965cb3f297.png",
+      "coverFilePath": "storage/excellent_textbook/人文社科/79.png",
+      "storageFolder": "excellent_textbook/人文社科",
+      "link": "https://www.icourse163.org/textbook/1475654443.htm"
+    },
+    {
+      "id": "78",
+      "name": "汽车驾驶行为理论及应用",
+      "editor": "席军强",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-08-30",
+      "isbn": "978-7-89530-941-8",
+      "description": "本教材系统阐述核心理论与应用，涵盖数据采集、风格辨识、交互决策等内容，聚焦个性化辅助与自动驾驶实践。适合车辆工程、智能驾驶等专业教学，亦是相关工程技术人员与研究者的优质参考用书。",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/78.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/879d2698-3ce0-45be-be83-6b5d44f70f43.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/78.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1475306449.htm"
+    },
+    {
+      "id": "77",
+      "name": "幼儿教师音乐技能——歌曲演唱（第3版）数字教材",
+      "editor": "吴春瑛，姜华敏",
+      "category": "艺术体育",
+      "categories": [
+        "艺术体育"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-02-01",
+      "isbn": "978-7-89566-014-4",
+      "description": "这本学前教育音乐教材，是国家精品课程配套用书，聚焦歌唱能力培养，以 “以说带唱” 设六大学习情境。第 3 版融合歌表演创编，增更多风格歌曲，富文化意蕴，借数字资源提供全方位体验，适合学前专业师生及幼教工作者。",
+      "cover": "/files/excellent_textbook/%E8%89%BA%E6%9C%AF%E4%BD%93%E8%82%B2/77.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/6b67eb87-b9b9-4d8d-a9dc-2756d2f85d72.png",
+      "coverFilePath": "storage/excellent_textbook/艺术体育/77.png",
+      "storageFolder": "excellent_textbook/艺术体育",
+      "link": "https://www.icourse163.org/textbook/1475306448.htm"
+    },
+    {
+      "id": "76",
+      "name": "人工智能引论",
+      "editor": "吴飞 潘云鹤",
+      "category": "计算机",
+      "categories": [
+        "计算机"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-05-20",
+      "isbn": "978-7-89530-997-5",
+      "description": "本书是计算机领域 “101 计划” 系列教材之一，以厚基础、养伦理、匠工具、促应用为目标，涵盖知识推理、机器学习、伦理安全等核心内容。结构系统全面，适合高校人工智能及相关专业教学，亦是爱好者与从业者的实用参考用书。",
+      "cover": "/files/excellent_textbook/%E8%AE%A1%E7%AE%97%E6%9C%BA/76.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/73fabe7d-a57f-465c-bb5e-f8a5974c0a5c.png",
+      "coverFilePath": "storage/excellent_textbook/计算机/76.png",
+      "storageFolder": "excellent_textbook/计算机",
+      "link": "https://www.icourse163.org/textbook/1475306447.htm"
+    },
+    {
+      "id": "75",
+      "name": "宇宙探索与发现",
+      "editor": "刘金寿",
+      "category": "航空航天",
+      "categories": [
+        "航空航天"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2023-04-10",
+      "isbn": "978-7-89530-524-3",
+      "description": "从古老的宇宙猜想，到现代的前沿发现，这本书全面涵盖了宇宙探索的研究进展。数十个专题故事精彩纷呈，摆脱复杂计算的困扰，以通俗生动的笔触，为你开启一场星际之旅，引领你领略宇宙的浩瀚与神奇，是天文爱好者不容错过的佳作！",
+      "cover": "/files/excellent_textbook/%E8%88%AA%E7%A9%BA%E8%88%AA%E5%A4%A9/75.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/216591c8-e24d-478d-b916-d2ddb3ddd7eb.png",
+      "coverFilePath": "storage/excellent_textbook/航空航天/75.png",
+      "storageFolder": "excellent_textbook/航空航天",
+      "link": "https://www.icourse163.org/textbook/1473934441.htm"
+    },
+    {
+      "id": "74",
+      "name": "理论力学",
+      "editor": "孙毅",
+      "category": "数学物理",
+      "categories": [
+        "数学物理"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2023-07-10",
+      "isbn": "978-7-89530-561-8",
+      "description": "集多种功能于一体，适配不同学习者与教学者。立足经典教材，含 MOOC 视频，有重难点、解题技巧讲解，还有自检自测。全新内容呈现，带来立体化体验，助你高效学理论力学，千万别错过！",
+      "cover": "/files/excellent_textbook/%E6%95%B0%E5%AD%A6%E7%89%A9%E7%90%86/74.jpg",
+      "coverUrl": "http://mooc-image.nosdn.127.net/437886f0ce9849618d5834227a9d70c7.jpg?imageView&quality=100",
+      "coverFilePath": "storage/excellent_textbook/数学物理/74.jpg",
+      "storageFolder": "excellent_textbook/数学物理",
+      "link": "https://www.icourse163.org/textbook/1473934443.htm"
+    },
+    {
+      "id": "73",
+      "name": "大学物理实验(第三版)数字教材",
+      "editor": "王旗 徐林",
+      "category": "数学物理",
+      "categories": [
+        "数学物理"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-12-01",
+      "isbn": "978-7-89530-946-3",
+      "description": "依据2023年版“教学基本要求”，融入东北大学教改经验。以实验为主线，涵盖力、热、电、光及近代物理 76 项实验，详述原理步骤与数据处理，强调安全与不确定度评定。助学生夯实技能，培养科学素养，是理工类本科及教学人员的优选教材。",
+      "cover": "/files/excellent_textbook/%E6%95%B0%E5%AD%A6%E7%89%A9%E7%90%86/73.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/2c289106-e714-4bc5-ab40-1beb69eb8640.png",
+      "coverFilePath": "storage/excellent_textbook/数学物理/73.png",
+      "storageFolder": "excellent_textbook/数学物理",
+      "link": "https://www.icourse163.org/textbook/1475306446.htm"
+    },
+    {
+      "id": "72",
+      "name": "Photoshop图像处理",
+      "editor": "李杰，徐颖丽",
+      "category": "计算机",
+      "categories": [
+        "计算机"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-08-26",
+      "isbn": "978-7-89566-192-9",
+      "description": "本教材是图像处理专业基础课用书，含 5 个学习情境，以大量实训任务结合理论讲解与操作步骤，助学生掌握 Photoshop 核心功能与技巧，提升专业素养。适用于职业本科、高职相关专业教学，亦供从业者参考，为职业发展奠基。",
+      "cover": "/files/excellent_textbook/%E8%AE%A1%E7%AE%97%E6%9C%BA/72.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/db7a108f-a4cb-483d-a3df-748fc9d6718c.png",
+      "coverFilePath": "storage/excellent_textbook/计算机/72.png",
+      "storageFolder": "excellent_textbook/计算机",
+      "link": "https://www.icourse163.org/textbook/1475655443.htm"
+    },
+    {
+      "id": "71",
+      "name": "大数据技术与财务应用",
+      "editor": "麻鹏波，史志琳",
+      "category": "计算机",
+      "categories": [
+        "计算机"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-12-18",
+      "isbn": "978-7-89530-977-7",
+      "description": "本书遵循通俗原则，以职业能力需求为基础，结合财务场景等设计 9 个项目 33 个任务，强化多方面能力。作为融媒体数字教材，配套丰富资源，适用于高职财会等专业，亦可供财务人员及社会人士参考。",
+      "cover": "/files/excellent_textbook/%E8%AE%A1%E7%AE%97%E6%9C%BA/71.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/a0f1ad59-57c2-40f4-b60d-220dc581fd00.png",
+      "coverFilePath": "storage/excellent_textbook/计算机/71.png",
+      "storageFolder": "excellent_textbook/计算机",
+      "link": "https://www.icourse163.org/textbook/1475658444.htm"
+    },
+    {
+      "id": "70",
+      "name": "智慧港口业务与操作",
+      "editor": "张守忠，吕震宇",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-12-20",
+      "isbn": "978-7-89530-973-9",
+      "description": "本教材依港口业务流程，融智能策划等前沿技术，设涵盖4 个智慧码头操作项目。作为交互式数字教材，配套微课、试题等资源，可直接点击学习。适用于高职相关专业教学，亦可供港口一线人员培训自学。",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/70.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/fdbd1523-42b0-4042-b378-8acddaa92684.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/70.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1475655442.htm"
+    },
+    {
+      "id": "69",
+      "name": "现代轨道车辆转向架构造与原理",
+      "editor": "石怀龙   王开云",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-09-20",
+      "isbn": "978-7-89530-905-0",
+      "description": "本书聚焦现代轨道车辆转向架，分七章系统讲解高速、重载、城轨等多场景转向架构造、轮轨关系与动力学等核心内容。既覆盖本科生专业基础，又为研究生提供深度参考，还融入前沿技术与设计原理，是机车车辆专业师生的优质教学资源。",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/69.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/7d91b917-a4e3-4893-8f73-5658458b4369.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/69.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1475985444.htm"
+    },
+    {
+      "id": "68",
+      "name": "飞行器智能感知",
+      "editor": "钱政，乔栋",
+      "category": "航空航天",
+      "categories": [
+        "航空航天"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-08-30",
+      "isbn": "978-7-89530-896-1",
+      "description": "本书是航空航天领域 “十四五” 高等教育教材体系建设项目成果，聚焦飞行器智能感知，覆盖传感技术、智能算法、多源数据融合等核心内容。软硬件结合，配备习题与答案，衔接实验实践，适配高校教学，也可供科研人员参考。",
+      "cover": "/files/excellent_textbook/%E8%88%AA%E7%A9%BA%E8%88%AA%E5%A4%A9/68.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/52bb1e99-9db4-47b8-a78e-7d01dd0be772.png",
+      "coverFilePath": "storage/excellent_textbook/航空航天/68.png",
+      "storageFolder": "excellent_textbook/航空航天",
+      "link": "https://www.icourse163.org/textbook/1475987444.htm"
+    },
+    {
+      "id": "67",
+      "name": "数据库原理与应用：基于openGauss",
+      "editor": "马瑞新",
+      "category": "计算机",
+      "categories": [
+        "计算机"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-07-07",
+      "isbn": "978-7-89566-161-5",
+      "description": "这本新工科系列教材聚焦 openGauss 数据库，以项目驱动教学。详解 SQL、索引、事务等关键知识点与数据库设计流程，搭配真实项目展现工具性能。内容兼顾理论与实践，既适合高校相关专业课堂使用，也能助力感兴趣的读者快速入门并提升能力。",
+      "cover": "/files/excellent_textbook/%E8%AE%A1%E7%AE%97%E6%9C%BA/67.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/977bdfa8-2f56-4628-9dfe-d8eed940e3bb.png",
+      "coverFilePath": "storage/excellent_textbook/计算机/67.png",
+      "storageFolder": "excellent_textbook/计算机",
+      "link": "https://www.icourse163.org/textbook/1475986443.htm"
+    },
+    {
+      "id": "66",
+      "name": "货币金融学",
+      "editor": "翁舟杰",
+      "category": "人文社科",
+      "categories": [
+        "人文社科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-06-16",
+      "isbn": "978-7-89566-162-2",
+      "description": "作为国家级一流本科线上课程配套教材，以 “资金融通” 为核心展开，内容紧扣中国金融实际。正文与拓展案例均融入我国实践，及时反映金融改革与前沿动态。适配多类学习者，既能满足教学需求，也能帮读者全面了解中国金融体系与成就。",
+      "cover": "/files/excellent_textbook/%E4%BA%BA%E6%96%87%E7%A4%BE%E7%A7%91/66.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/75695440-7a94-485f-9b88-cb9cffafaad1.png",
+      "coverFilePath": "storage/excellent_textbook/人文社科/66.png",
+      "storageFolder": "excellent_textbook/人文社科",
+      "link": "https://www.icourse163.org/textbook/1475990441.htm"
+    },
+    {
+      "id": "65",
+      "name": "计算机网络技术",
+      "editor": "陈良维 申巧俐",
+      "category": "计算机",
+      "categories": [
+        "计算机"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-05-16",
+      "isbn": "978-7-89566-135-6",
+      "description": "作为高职电子信息类专业教材，本书依教学标准编写，以 12 个项目案例为载体。从网络基础、设备到物联、车联网等前沿领域，每个项目含任务讲解与实训。既能满足课堂教学，也适配职业培训，帮学生夯实基础、掌握网络技术应用。",
+      "cover": "/files/excellent_textbook/%E8%AE%A1%E7%AE%97%E6%9C%BA/65.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/cc35888a-153b-4635-9a57-5a2a7a939cf4.png",
+      "coverFilePath": "storage/excellent_textbook/计算机/65.png",
+      "storageFolder": "excellent_textbook/计算机",
+      "link": "https://www.icourse163.org/textbook/1475989442.htm"
+    },
+    {
+      "id": "64",
+      "name": "计算机组成与结构教程",
+      "editor": "邓蕾蕾",
+      "category": "计算机",
+      "categories": [
+        "计算机"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-07-17",
+      "isbn": "978-7-89566-075-5",
+      "description": "本书作为计算机专业核心课教材，紧扣创新驱动战略，系统讲解组成架构与原理，融合系统结构、指令系统等核心内容，配案例导读与视频讲解，更新硬件技术趋势，助力掌握知识、提升能力，适配院校教学与科研。",
+      "cover": "/files/excellent_textbook/%E8%AE%A1%E7%AE%97%E6%9C%BA/64.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/d5f7880b-ab62-4ef0-8fb2-e79dfa927168.png",
+      "coverFilePath": "storage/excellent_textbook/计算机/64.png",
+      "storageFolder": "excellent_textbook/计算机",
+      "link": "https://www.icourse163.org/textbook/1475988443.htm"
+    },
+    {
+      "id": "63",
+      "name": "植物学",
+      "editor": "张彪，丁海东，杨芳",
+      "category": "农医生科",
+      "categories": [
+        "农医生科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-07-28",
+      "isbn": "978-7-89566-133-2",
+      "description": "本书是融合数十年教学与改革成果的植物学数字教材，依经典知识体系阐述植物多层面特性。含 3000 余幅原创彩图、近 2000 份数字化资源，直观呈现生命活动，还紧跟前沿、兼顾多院校需求，适合作高校教材及相关人员参考用书。",
+      "cover": "/files/excellent_textbook/%E5%86%9C%E5%8C%BB%E7%94%9F%E7%A7%91/63.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/7e9bf2d1-b3c7-45ad-ab5c-1e6777f51636.png",
+      "coverFilePath": "storage/excellent_textbook/农医生科/63.png",
+      "storageFolder": "excellent_textbook/农医生科",
+      "link": "https://www.icourse163.org/textbook/1475984443.htm"
+    },
+    {
+      "id": "62",
+      "name": "国际贸易理论与实务",
+      "editor": "鲁丹萍",
+      "category": "人文社科",
+      "categories": [
+        "人文社科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-07-21",
+      "isbn": "978-7-89566-171-4",
+      "description": "本教材以 “技术赋能、实践驱动” 构建智能学习体系，内容兼顾理论、政策与实务，含国际贸易 9 大核心模块。融入数字贸易、RCEP 等前沿内容，结合海南自贸港等案例，适配多院校相关专业教学，也可作外贸从业者参考与培训用书。",
+      "cover": "/files/excellent_textbook/%E4%BA%BA%E6%96%87%E7%A4%BE%E7%A7%91/62.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/b13b5cd8-70d9-471c-8cea-8dc46999bb6a.png",
+      "coverFilePath": "storage/excellent_textbook/人文社科/62.png",
+      "storageFolder": "excellent_textbook/人文社科",
+      "link": "https://www.icourse163.org/textbook/1475987445.htm"
+    },
+    {
+      "id": "61",
+      "name": "先进轨道交通装备数字化设计",
+      "editor": "丁国富，黎荣，张海柱，郑庆，王双不",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-05-15",
+      "isbn": "978-7-89566-030-4",
+      "description": "本教材由翟婉明院士牵头，作为 “十四五” 高等教育教材成果，聚焦复杂产品数字化研发共性技术，结合轨道交通装备特点，覆盖数字化建模、模块化设计等全流程，构建理论方法技术工具体系，为高校师生与企业工程师提供知识体系构建指南。",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/61.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/2db86a3b-1346-4c50-b4b2-148647f9447b.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/61.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1475068442.htm"
+    },
+    {
+      "id": "60",
+      "name": "电动汽车智能控制理论与方法",
+      "editor": "陈虹",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-12-15",
+      "isbn": "978-7-89566-031-1",
+      "description": "本书作为教育部 “十四五” 教材，系统整合经典与现代控制理论，融入神经网络等前沿 AI 方法，通过精选研究与工程案例，助力学生构建完整知识体系，培养 “AI for Science” 交叉创新能力。",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/60.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/deb57825-c924-4577-bcb0-a4c97f2a1651.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/60.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1475069441.htm"
+    },
+    {
+      "id": "59",
+      "name": "智能生产线数字化设计与仿真（MCD）",
+      "editor": "陶依贝，娄莘浩",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-05-15",
+      "isbn": "978-7-89566-126-4",
+      "description": "《机电一体化项目化实训教程》以项目教学法为纲，构建 “任务驱动 + 仿真实操” 体系，涵盖机电概念、传送带 / 机器人仿真等六大模块化项目，融合微课 / 动画等资源，助高职生系统化掌握智能控制技能，为相关专业教学与行业实践提供多维参考。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/59.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/48c7390b-5ed2-44d8-b093-3c3ba766f77f.png",
+      "coverFilePath": "storage/excellent_textbook/理工/59.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1475068441.htm"
+    },
+    {
+      "id": "58",
+      "name": "智能电动汽车控制技术",
+      "editor": "殷国栋",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-12-01",
+      "isbn": "978-789566-038-0",
+      "description": "《智能电动汽车控制技术》紧扣 “十四五” 战略性新兴领域需求，系统覆盖控制基础到高级辅助驾驶等核心技术，融入行业实例，理论实践结合，适合车辆工程专业师生及行业人员教学参考与技能提升。",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/58.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/935741d9-048e-4fd3-885a-aeb20a3c156f.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/58.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1475066441.htm"
+    },
+    {
+      "id": "57",
+      "name": "Photoshop图像处理",
+      "editor": "余辉",
+      "category": "计算机",
+      "categories": [
+        "计算机"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2021-11-01",
+      "isbn": "978-7-89530-123-8",
+      "description": "本书以任务驱动为编写体例，通过丰富的实践任务系统讲解Photoshop的运用技能和实践经验，内容涵盖图像合成、照片翻新、平面广告绘制等操作技巧，结合行业新技术实践运用，具有较强的实践性与指导性。适合高职院校艺术设计类专业学生及艺术设计工作者学习参考。",
+      "cover": "/files/excellent_textbook/%E8%AE%A1%E7%AE%97%E6%9C%BA/57.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/6a9300d8-0cd9-45bf-87c3-5ddd85bac53b.png",
+      "coverFilePath": "storage/excellent_textbook/计算机/57.png",
+      "storageFolder": "excellent_textbook/计算机",
+      "link": "https://www.icourse163.org/textbook/1473934460.htm"
+    },
+    {
+      "id": "56",
+      "name": "建筑室内手绘表现",
+      "editor": "李顺华 李妍",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-09-27",
+      "isbn": "978-7-89530-921-0",
+      "description": "《室内设计手绘技法》结合建筑室内设计、建筑装饰工程技术、环境艺术设计等专业要求，聚焦手绘能力的培养，内容涵盖手绘工具、透视规律、室内线稿与色彩表现等技能，帮助学生掌握室内设计的基础手绘技巧。本书适合高职院校相关专业教材，也可作为艺术设计学生、设计师及工程技术人员的参考书，为读者提供实践指导和创作灵感。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/56.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/6b517a48-1be1-4e76-9e15-19aa32bdb2d4.png",
+      "coverFilePath": "storage/excellent_textbook/理工/56.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1473946443.htm"
+    },
+    {
+      "id": "55",
+      "name": "岩石力学物理试验与数值试验",
+      "editor": "吴顺川",
+      "category": "数学物理",
+      "categories": [
+        "数学物理"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-11-30",
+      "isbn": "978-7-89530-891-6",
+      "description": "本书以“视频讲解为主、文字叙述为辅”的形式，系统讲解岩石力学试验的基本原理、操作流程及数值试验方法，包含37个视频与52个试验记录表，内容详实，实践特色鲜明。适合作为高校岩石力学课程辅助教材，亦可为科研院所及设计施工单位的技术人员提供参考。",
+      "cover": "/files/excellent_textbook/%E6%95%B0%E5%AD%A6%E7%89%A9%E7%90%86/55.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/ce3297e4-9b5d-4abe-afb0-9189af4c8da5.png",
+      "coverFilePath": "storage/excellent_textbook/数学物理/55.png",
+      "storageFolder": "excellent_textbook/数学物理",
+      "link": "https://www.icourse163.org/textbook/1473946469.htm"
+    },
+    {
+      "id": "54",
+      "name": "教学简笔画",
+      "editor": "边庆",
+      "category": "艺术体育",
+      "categories": [
+        "艺术体育"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-03-01",
+      "isbn": "978-7-89530-125-2",
+      "description": "《小学教育专业简笔画教学》专为小学教育专业学生设计，内容涵盖简笔画基础知识、造型技巧及静物、植物、动物等多种简笔画形式，配合丰富的插图和课后训练，逐步提升绘画技巧，激发学生学习兴趣。此书适用于高职专科和职教本科小学教育专业，也可供小学教育工作者参考，是一部理论与实践相结合的优秀教材。",
+      "cover": "/files/excellent_textbook/%E8%89%BA%E6%9C%AF%E4%BD%93%E8%82%B2/54.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/1cfba098-4e66-4ea6-98ec-02efc3c4e5dc.png",
+      "coverFilePath": "storage/excellent_textbook/艺术体育/54.png",
+      "storageFolder": "excellent_textbook/艺术体育",
+      "link": "https://www.icourse163.org/textbook/1473934474.htm"
+    },
+    {
+      "id": "53",
+      "name": "地理信息系统与社会科学应用",
+      "editor": "向华丽",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-08-27",
+      "isbn": "978-7-89566-194-3",
+      "description": "本教材系统介绍 GIS 基本功能与典型应用，分两篇十五章，讲解地理空间数据及空间分析功能与应用，案例丰富，增强实践性。适用于各阶段社科类专业教学，亦供 GIS 爱好者及从业者参考，助掌握核心知识与应用。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/53.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/562b71ba-3ea6-44bf-9e19-2e0320a616d5.png",
+      "coverFilePath": "storage/excellent_textbook/理工/53.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1475653443.htm"
+    },
+    {
+      "id": "52",
+      "name": "机器人工程导论",
+      "editor": "刘宏 赵京东",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-08-28",
+      "isbn": "978-7-89566-208-7",
+      "description": "本书是高端装备制造（机器人）新兴领域 “十四五” 高等教育教材，系统阐述机器人工程基础理论、技术方法与应用，结合案例解析多领域工程设计实践，梳理发展脉络并展望趋势，为专业人员、学生及爱好者提供参考。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/52.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/8df7f8aa-5739-4c76-a2f3-8a650065fbe0.png",
+      "coverFilePath": "storage/excellent_textbook/理工/52.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1475654442.htm"
+    },
+    {
+      "id": "51",
+      "name": "机械CAD/CAM技术应用（UG）",
+      "editor": "赵树国，高志贤 ，韩悦",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-07-02",
+      "isbn": "9787895661530",
+      "description": "作为高职机械类专业 CAD/CAM 课程教材，本书以项目引导、任务为主线，基于 UG NX 12.0 展开。从基础界面到运动仿真，覆盖核心功能，搭配实践案例教学。能帮学生掌握软件操作与设计方法，提升三维建模能力，也适配相近专业教学使用。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/51.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/7d824294-9076-4eba-af3b-6df7dc548f2d.png",
+      "coverFilePath": "storage/excellent_textbook/理工/51.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1475984442.htm"
+    },
+    {
+      "id": "50",
+      "name": "建筑制图与CAD",
+      "editor": "周宏业，韩连军",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-07-04",
+      "isbn": "9787895661479",
+      "description": "贴合高职办学特点，本书以实际工程项目为载体，聚焦识图绘图技能培养。涵盖制图基础、建筑施工图、结构构件平法识读等内容，将 CAD 与制图知识深度融合。通过项目任务教学，实现 “边学边绘、以绘促识”，适配建筑工程技术专业教学，也供土木相关专业参考。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/50.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/8f5c2894-d7f3-4f66-b1cb-510888e7b007.png",
+      "coverFilePath": "storage/excellent_textbook/理工/50.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1475986444.htm"
+    },
+    {
+      "id": "49",
+      "name": "人工智能及其在航空发动机涡轮叶片设计上的应用",
+      "editor": "朱剑琴，邱璐，童自翔",
+      "category": "航空航天",
+      "categories": [
+        "航空航天"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-09-20",
+      "isbn": "978-7-89530-938-8",
+      "description": "本书聚焦飞行器动力工程专业核心需求，以数学与算法为基、航空发动机设计为内核，系统涵盖 AI 在涡轮叶片设计的趋势、数学基础、各类 AI 模型理论及实战案例，深度融合理论与应用。既能助力本科生提升创新解题能力，也为相关科研人员提供实用参考。",
+      "cover": "/files/excellent_textbook/%E8%88%AA%E7%A9%BA%E8%88%AA%E5%A4%A9/49.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/f092219d-ee9f-4056-9266-eb27e236fb7c.png",
+      "coverFilePath": "storage/excellent_textbook/航空航天/49.png",
+      "storageFolder": "excellent_textbook/航空航天",
+      "link": "https://www.icourse163.org/textbook/1473990463.htm"
+    },
+    {
+      "id": "48",
+      "name": "铝电解智能化生产技术",
+      "editor": "张金梁，卢萍",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-02-21",
+      "isbn": "978-7-89530-717-9",
+      "description": "本书是 “双高” 计划系列融媒体、交互式、智能化数字教材，也是有色冶金技术专业资源库配套用书。以铝电解工作过程为导向，覆盖生产全流程，适用于高职冶金相关学生，也可供工程技术人员参考。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/48.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/d0da6d2c-8cb8-49ab-970f-204c6349d673.png",
+      "coverFilePath": "storage/excellent_textbook/理工/48.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1475995451.htm"
+    },
+    {
+      "id": "47",
+      "name": "科技创新实践活动",
+      "editor": "余显志",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-09-01",
+      "isbn": "978-7-89530-285-3",
+      "description": "本教材含四大模块，从基础创客工具使用，到科学教具、科技模型制作，再到青少年创意编程，内容由简到难。以案例为依托，培养实操与创新能力，还可为指导模型比赛提供参考。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/47.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/cd3e2c74-bd16-4f1e-a005-3c781b055913.png",
+      "coverFilePath": "storage/excellent_textbook/理工/47.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1475993457.htm"
+    },
+    {
+      "id": "46",
+      "name": "钢结构基本原理",
+      "editor": "李军 刘芸 杨怡亭 刘秀丽 徐菁",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-09-04",
+      "isbn": "978-7-89566-237-7",
+      "description": "这本土木工程专业 “钢结构基本原理” 数字教材，设 6 模块讲核心内容，结合多媒体化复杂概念。助学生与从业者系统学理论和设计方法，可辅助教学与自学，夯实专业基础。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/46.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/8c0092e8-281e-4664-92ad-8db1a6b43b28.png",
+      "coverFilePath": "storage/excellent_textbook/理工/46.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1475994456.htm"
+    },
+    {
+      "id": "45",
+      "name": "集成电路先进封装技术",
+      "editor": "张建华，路秀真，杨连乔",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-06-06",
+      "isbn": "978-7-89566-032-8",
+      "description": "这本 “十四五” 集成电路封装数字教材，含 10 章核心内容，凝结上海大学十余年教学成果。适配微电子等专业 40 学时授课，也供技术人员参考，助力课堂教学与行业学习。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/45.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/68382f4e-63ee-42cf-af0f-c737823de580.png",
+      "coverFilePath": "storage/excellent_textbook/理工/45.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1475992454.htm"
+    },
+    {
+      "id": "44",
+      "name": "学科交叉实验室安全——风险防控与实验指南",
+      "editor": "李冰洋",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-01-22",
+      "isbn": "978-7-89566-057-1",
+      "description": "这本高校实验室安全教育教材，多维度覆盖电气、化学等领域安全知识，还关注易被忽视的学科交叉实验室安全。能提升人员安全意识与风控能力，适用于高校教学及科研、管理人员参考。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/44.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/6862d4dd-1101-42c9-9504-629ccecf922f.png",
+      "coverFilePath": "storage/excellent_textbook/理工/44.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1475993455.htm"
+    },
+    {
+      "id": "43",
+      "name": "电子技术",
+      "editor": "刘丽莎",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-08-15",
+      "isbn": "978-7-89530-718-6",
+      "description": "这本职教电子技术教材，以智能小车开发为导向，拆分为 7 个项目，覆盖二极管、逻辑门等核心内容。理论与实践结合，适配电子信息等专业教学，也可作技术人员培训、自学用书。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/43.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/91b9813a-f1f8-4434-9329-7029b08c03f5.png",
+      "coverFilePath": "storage/excellent_textbook/理工/43.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1475992457.htm"
+    },
+    {
+      "id": "42",
+      "name": "老年生活照料",
+      "editor": "马俊娟  郭志敏  陈雪茹  王磊  王蕾",
+      "category": "农医生科",
+      "categories": [
+        "农医生科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-07-12",
+      "isbn": "978-7-89530-708-7",
+      "description": "《老年人生活照料》教材专为高等职业教育设计，全面介绍老年人生活照料的各个方面，包括清洁、进食、排泄、睡眠等照料内容。教材采用任务驱动的教学方式，通过项目内容聚焦、学习目标、工作任务描述等模块，引导学生深入理解并掌握老年人护理的工作流程与实际操作。配有工作流程图、任务实施步骤及操作视频，帮助学生提高实践能力。适用于老年保健、智慧健康养老服务等相关专业的课程教学，也可作为养老护理员的参考资料。",
+      "cover": "/files/excellent_textbook/%E5%86%9C%E5%8C%BB%E7%94%9F%E7%A7%91/42.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/c21e968e-440d-4c84-b6a5-fffa18cc3224.png",
+      "coverFilePath": "storage/excellent_textbook/农医生科/42.png",
+      "storageFolder": "excellent_textbook/农医生科",
+      "link": "https://www.icourse163.org/textbook/1473934481.htm"
+    },
+    {
+      "id": "41",
+      "name": "护理学基础",
+      "editor": "史学敏  马纯华",
+      "category": "农医生科",
+      "categories": [
+        "农医生科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-04-30",
+      "isbn": "978-7-89530-725-4",
+      "description": "本教材从护理临床实际出发，涵盖护理基本理论、知识与技能，采用项目化课程设计，结合丰富的视频与虚拟仿真资源，强化技能应用。适用于高职护理与助产专业学生，也可供临床护士与助产士参考，满足多种认证考试需求。",
+      "cover": "/files/excellent_textbook/%E5%86%9C%E5%8C%BB%E7%94%9F%E7%A7%91/41.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/2e3285e8-9743-4d36-9b36-c564aad7abed.png",
+      "coverFilePath": "storage/excellent_textbook/农医生科/41.png",
+      "storageFolder": "excellent_textbook/农医生科",
+      "link": "https://www.icourse163.org/textbook/1473946445.htm"
+    },
+    {
+      "id": "40",
+      "name": "药物制剂技术",
+      "editor": "丁立  许嵘",
+      "category": "农医生科",
+      "categories": [
+        "农医生科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-09-30",
+      "isbn": "978-7-89530-932-6",
+      "description": "本书是国家职业教育药学专业的配套教材，内容紧贴实际工作，重点讲解药物制剂的基础知识和最新技术。全书包括19章和10个实验，涵盖液体、固体等不同药物制剂类型，结合案例和互动方式，注重实用技能的培养。教材还融入了视频、动画等数字资源，方便学习。本书适用于药学、药物制剂等专业的教学，也适合相关培训和考证使用。",
+      "cover": "/files/excellent_textbook/%E5%86%9C%E5%8C%BB%E7%94%9F%E7%A7%91/40.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/a806d55a-29d0-4969-8c4c-7c236cbc1b1d.png",
+      "coverFilePath": "storage/excellent_textbook/农医生科/40.png",
+      "storageFolder": "excellent_textbook/农医生科",
+      "link": "https://www.icourse163.org/textbook/1473946468.htm"
+    },
+    {
+      "id": "39",
+      "name": "中药材加工学",
+      "editor": "李伟",
+      "category": "农医生科",
+      "categories": [
+        "农医生科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-11-10",
+      "isbn": "978-7-89530-948-7",
+      "description": "本书体系完备，分总论与各论。总论融合课程思政阐述加工理论及应用意义，各论依药用部位分类，详述 174 种代表性药材，重点剖析 75 种。内容全面详实，是高等农业与中医药院校中药学等相关专业教学的得力教材。",
+      "cover": "/files/excellent_textbook/%E5%86%9C%E5%8C%BB%E7%94%9F%E7%A7%91/39.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/9aa7eb5f-9dcc-4ce9-873a-d644799b83d9.png",
+      "coverFilePath": "storage/excellent_textbook/农医生科/39.png",
+      "storageFolder": "excellent_textbook/农医生科",
+      "link": "https://www.icourse163.org/textbook/1474376467.htm"
+    },
+    {
+      "id": "38",
+      "name": "人体解剖学与组织胚胎学",
+      "editor": "刘晓梅  李杰  吴龙祥",
+      "category": "农医生科",
+      "categories": [
+        "农医生科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-02-10",
+      "isbn": "978-7-89566-058-8",
+      "description": "这本教材作为高等职业教育国家在线精品课程配套用书，融合大体、微细结构与护理应用，依人体系统框架，从器官基础深入至临床。助力学生快速搭建人体结构认知，掌握护理应用，是教学、学习路上的贴心伙伴 。",
+      "cover": "/files/excellent_textbook/%E5%86%9C%E5%8C%BB%E7%94%9F%E7%A7%91/38.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/3eef41d2-259f-4f08-b75e-24eebc4f449e.png",
+      "coverFilePath": "storage/excellent_textbook/农医生科/38.png",
+      "storageFolder": "excellent_textbook/农医生科",
+      "link": "https://www.icourse163.org/textbook/1474459449.htm"
+    },
+    {
+      "id": "37",
+      "name": "急危重症护理",
+      "editor": "胡爱招  赖娟",
+      "category": "农医生科",
+      "categories": [
+        "农医生科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-02-10",
+      "isbn": "978-7-89566-001-4",
+      "description": "本教材为浙江省高职 “十四五” 重点教材，适配护理中高本贯通培养。以初、中、高三阶模块，递进培养急危重症救护、临床思维、科研创新能力，助力学习者从生手到能手进阶，适合 4 年制本科及中高职护理专业师生使用。",
+      "cover": "/files/excellent_textbook/%E5%86%9C%E5%8C%BB%E7%94%9F%E7%A7%91/37.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/4d3af2ae-504c-4c34-b47e-5cc7d5dede56.png",
+      "coverFilePath": "storage/excellent_textbook/农医生科/37.png",
+      "storageFolder": "excellent_textbook/农医生科",
+      "link": "https://www.icourse163.org/textbook/1474825443.htm"
+    },
+    {
+      "id": "36",
+      "name": "康复评定技术",
+      "editor": "杨飞",
+      "category": "农医生科",
+      "categories": [
+        "农医生科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-12-25",
+      "isbn": "978-7-89530-846-6",
+      "description": "《康复评定工作手册》以 4 个典型真实病例项目为载体，将康复评定理论与临床工作流程深度融合，系统涵盖 17 类评定内容，助学生掌握评定技术，破解临床应用难题，为相关专业教学与行业实践提供实用参考。",
+      "cover": "/files/excellent_textbook/%E5%86%9C%E5%8C%BB%E7%94%9F%E7%A7%91/36.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/3e68c0e6-f689-45ef-b88f-7d775677ba90.png",
+      "coverFilePath": "storage/excellent_textbook/农医生科/36.png",
+      "storageFolder": "excellent_textbook/农医生科",
+      "link": "https://www.icourse163.org/textbook/1475068443.htm"
+    },
+    {
+      "id": "35",
+      "name": "儿童保健理论与实操手册",
+      "editor": "杜艳丽",
+      "category": "农医生科",
+      "categories": [
+        "农医生科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-09-05",
+      "isbn": "978-7-89566-217-9",
+      "description": "本书兼顾理论与实操，介绍儿童生长发育、营养等知识及体格检查、急救等技能。设 7 个项目 37 个主任务，基于实际情境编写，适用于相关专业人才、保健工作者及家长。",
+      "cover": "/files/excellent_textbook/%E5%86%9C%E5%8C%BB%E7%94%9F%E7%A7%91/35.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/b81cdeca-3c1f-4223-8e3b-f278c76b2979.png",
+      "coverFilePath": "storage/excellent_textbook/农医生科/35.png",
+      "storageFolder": "excellent_textbook/农医生科",
+      "link": "https://www.icourse163.org/textbook/1475993458.htm"
+    },
+    {
+      "id": "34",
+      "name": "人体解剖学",
+      "editor": "张冬青、何坪",
+      "category": "农医生科",
+      "categories": [
+        "农医生科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-09-08",
+      "isbn": "978-7-89566-252-0",
+      "description": "本人体解剖学教材涵盖人体九大系统，以职业能力培养为核心，紧密联系临床实践。融入四色彩图、3D 交互等数字资源，适合高职临床、护理等专业教学，也可供相关从业人员参考。",
+      "cover": "/files/excellent_textbook/%E5%86%9C%E5%8C%BB%E7%94%9F%E7%A7%91/34.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/22a3f9c4-8077-4ed3-9631-ef7c7af09ed5.png",
+      "coverFilePath": "storage/excellent_textbook/农医生科/34.png",
+      "storageFolder": "excellent_textbook/农医生科",
+      "link": "https://www.icourse163.org/textbook/1475996451.htm"
+    },
+    {
+      "id": "33",
+      "name": "高等数学（下册）",
+      "editor": "代晋军  程  婷",
+      "category": "数学物理",
+      "categories": [
+        "数学物理"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-07-10",
+      "isbn": "978-7-89530-890-9",
+      "description": "这本《高等数学》数字教材下册含 6 章核心内容，增典型例题与考研题选讲。配近 400 幅彩图、48 个动画等数字资源，是多校共建成果，适合作高校主教材及教学参考书。",
+      "cover": "/files/excellent_textbook/%E6%95%B0%E5%AD%A6%E7%89%A9%E7%90%86/33.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/12d3a84d-db7a-4931-b301-3583df5d1c04.png",
+      "coverFilePath": "storage/excellent_textbook/数学物理/33.png",
+      "storageFolder": "excellent_textbook/数学物理",
+      "link": "https://www.icourse163.org/textbook/1475993459.htm"
+    },
+    {
+      "id": "32",
+      "name": "餐饮服务管理实务",
+      "editor": "郝芳，钟成君",
+      "category": "人文社科",
+      "categories": [
+        "人文社科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-07-30",
+      "isbn": "978-7-89566-175-2",
+      "description": "这本职教教材以 “岗课赛证 + 思政融通” 为导向，设 4 模块 27 任务，按职业发展轨迹编排。配套多模态数字资源，凸显 “学做结合” 特色，适用于高职旅游餐饮专业教学及酒店行业培训。",
+      "cover": "/files/excellent_textbook/%E4%BA%BA%E6%96%87%E7%A4%BE%E7%A7%91/32.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/68b22079-704a-4c4e-936a-8d6f03ce0a58.png",
+      "coverFilePath": "storage/excellent_textbook/人文社科/32.png",
+      "storageFolder": "excellent_textbook/人文社科",
+      "link": "https://www.icourse163.org/textbook/1475997451.htm"
+    },
+    {
+      "id": "31",
+      "name": "菌类作物栽培学",
+      "editor": "李晓，李玉",
+      "category": "农医生科",
+      "categories": [
+        "农医生科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-09-04",
+      "isbn": "978-7-89566-203-2",
+      "description": "这本菌类作物栽培教材，分总论奠定理论、解析通用技术，各论精讲 34 种菌类栽培实操。内容科学实用、图文并茂，能帮师生、科研者及从业者学核心技能，为产业发展提供权威参考。",
+      "cover": "/files/excellent_textbook/%E5%86%9C%E5%8C%BB%E7%94%9F%E7%A7%91/31.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/d7aad41e-4982-4960-abd6-696e623b18f9.png",
+      "coverFilePath": "storage/excellent_textbook/农医生科/31.png",
+      "storageFolder": "excellent_textbook/农医生科",
+      "link": "https://www.icourse163.org/textbook/1475993456.htm"
+    },
+    {
+      "id": "30",
+      "name": "参与式农村发展：理论·方法·实践",
+      "editor": "卢敏，李小云",
+      "category": "人文社科",
+      "categories": [
+        "人文社科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-09-04",
+      "isbn": "978-7-89566-193-6",
+      "description": "这本参与式农村发展教材，以 “理论→方法→实践” 架构，系统讲解核心理论、原则与方法，搭配丰富案例。既适合领域学者，也为农村发展、农业经济管理等研究者提供思路策略，助力创新探索。",
+      "cover": "/files/excellent_textbook/%E4%BA%BA%E6%96%87%E7%A4%BE%E7%A7%91/30.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/4d8a678d-e459-4d91-b549-59cbf04dec78.png",
+      "coverFilePath": "storage/excellent_textbook/人文社科/30.png",
+      "storageFolder": "excellent_textbook/人文社科",
+      "link": "https://www.icourse163.org/textbook/1475997453.htm"
+    },
+    {
+      "id": "29",
+      "name": "数学分析（第二版）",
+      "editor": "张然，王春朋，尹景学",
+      "category": "数学物理",
+      "categories": [
+        "数学物理"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-07-05",
+      "isbn": "978-7-89566-183-7",
+      "description": "本书基于高教社出版的《数学分析》教材，结合吉林大学十几年教学经验编写，从初等数学过渡到微积分，涵盖极限、导数、积分等核心内容。适合作综合大学、高师数学类教材，也供对数学要求高的专业选用。",
+      "cover": "/files/excellent_textbook/%E6%95%B0%E5%AD%A6%E7%89%A9%E7%90%86/29.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/be9bd6a8-0e58-4251-8c19-00c92d63948b.png",
+      "coverFilePath": "storage/excellent_textbook/数学物理/29.png",
+      "storageFolder": "excellent_textbook/数学物理",
+      "link": "https://www.icourse163.org/textbook/1475994457.htm"
+    },
+    {
+      "id": "28",
+      "name": "人工智能内生安全",
+      "editor": "姜育刚，马兴军",
+      "category": "计算机",
+      "categories": [
+        "计算机"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-04-28",
+      "isbn": "9787895661165",
+      "description": "本教材聚焦 AI 模型内在安全，探讨其全生命周期安全风险与防护策略，填补国内大模型安全教材空白。涵盖大小模型安全攻防，适合相关专业学生及从业者，兼具理论与实践价值。",
+      "cover": "/files/excellent_textbook/%E8%AE%A1%E7%AE%97%E6%9C%BA/28.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/7a52446c-e55c-47e2-9a14-c7edfddfaadd.png",
+      "coverFilePath": "storage/excellent_textbook/计算机/28.png",
+      "storageFolder": "excellent_textbook/计算机",
+      "link": "https://www.icourse163.org/textbook/1475998451.htm"
+    },
+    {
+      "id": "27",
+      "name": "新标准职业本科英语——职业与社会",
+      "editor": "赵亚玲，卢魁",
+      "category": "外语",
+      "categories": [
+        "外语"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-02-10",
+      "isbn": "978-7-89566-079-3",
+      "description": "本高职公共英语数字教材以 “产出导向” 为核心，借任务引领学生掌握英语技能。数字资源丰富，联合多涉外行业构建内容，兼顾基础技能与关键社会能力培养，为学生职业发展奠基。",
+      "cover": "/files/excellent_textbook/%E5%A4%96%E8%AF%AD/27.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/f5d8940b-06ff-486a-adc0-0fbe01dab4eb.png",
+      "coverFilePath": "storage/excellent_textbook/外语/27.png",
+      "storageFolder": "excellent_textbook/外语",
+      "link": "https://www.icourse163.org/textbook/1475994458.htm"
+    },
+    {
+      "id": "26",
+      "name": "新能源汽车技术",
+      "editor": "刘云飞　龚艳丽　杨阳",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-01-10",
+      "isbn": "978-7-89530-141-2",
+      "description": "本教材含 9 个项目，全面覆盖新能源汽车核心知识与维修保养等技能。图文结合并融入微课、实操视频等数字资源，支持混合式教学，适合作职校汽车类专业教材，也供行业技术人员参考。",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/26.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/2347f7c2-8a04-4e6f-afb6-e835e4f8d7bf.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/26.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1475998452.htm"
+    },
+    {
+      "id": "25",
+      "name": "Python程序设计基础",
+      "editor": "吴继雁 肖正兴",
+      "category": "计算机",
+      "categories": [
+        "计算机"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-09-12",
+      "isbn": "978-7-89530-849-7",
+      "description": "本书以 Python 为载体，讲解计算机科学原理与程序设计方法，涵盖语法、数据处理及办公自动化等内容。案例源于生活，搭配多形式学习资源，适合作高职信息技术通识教材，也方便自学者入门。",
+      "cover": "/files/excellent_textbook/%E8%AE%A1%E7%AE%97%E6%9C%BA/25.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/6947ba33-50f9-4e29-80d1-d6f0f3d2d06f.png",
+      "coverFilePath": "storage/excellent_textbook/计算机/25.png",
+      "storageFolder": "excellent_textbook/计算机",
+      "link": "https://www.icourse163.org/textbook/1475992456.htm"
+    },
+    {
+      "id": "24",
+      "name": "汽车美容与装饰",
+      "editor": "夏明、廖俊生、许松",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-09-12",
+      "isbn": "978-7-89566-248-3",
+      "description": "本教材紧密对接市场，融合 “岗课赛证” 理念，按行业岗位能力与国家职业标准编写。以项目化模式贯穿，嵌入实景教学视频，覆盖主流服务项目，为师生提供高效教与学参考。",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/24.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/35ae6c9b-9751-4726-a806-fc9cad594dda.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/24.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1475995452.htm"
+    },
+    {
+      "id": "23",
+      "name": "C语言程序设计",
+      "editor": "赵彦",
+      "category": "计算机",
+      "categories": [
+        "计算机"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-08-31",
+      "isbn": "978-7-89566-202-5",
+      "description": "“程序设计基础” 精品课配套数字教材，以三大真实项目带学 C 语言，含微课等丰富资源。按企业流程教学，适配高职电子信息类专业，也适合自学者。",
+      "cover": "/files/excellent_textbook/%E8%AE%A1%E7%AE%97%E6%9C%BA/23.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/85d1e2e8-87fb-4c9e-a715-0cf95729b6e4.png",
+      "coverFilePath": "storage/excellent_textbook/计算机/23.png",
+      "storageFolder": "excellent_textbook/计算机",
+      "link": "https://www.icourse163.org/textbook/1475992455.htm"
+    },
+    {
+      "id": "22",
+      "name": "智能税费申报与管理",
+      "editor": "胡冬 袁敏",
+      "category": "计算机",
+      "categories": [
+        "计算机"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2022-03-16",
+      "isbn": "978-7-89530-119-1",
+      "description": "本书是校企合作编写的职业教育教材，围绕企业税务岗位需求设计，涵盖征纳管理、单税种纳税项目案例及大数据技术在税务中的应用。教材内容丰富，形式灵活，注重职业能力培养，可用于教学与探究性学习。适合作为职业教育税务课程的教材，也可供税务从业者参考。",
+      "cover": "/files/excellent_textbook/%E8%AE%A1%E7%AE%97%E6%9C%BA/22.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/625e2db8-d688-4b05-858c-2cf19807fe11.png",
+      "coverFilePath": "storage/excellent_textbook/计算机/22.png",
+      "storageFolder": "excellent_textbook/计算机",
+      "link": "https://www.icourse163.org/textbook/1473916444.htm"
+    },
+    {
+      "id": "21",
+      "name": "数字创业学",
+      "editor": "林嵩",
+      "category": "人文社科",
+      "categories": [
+        "人文社科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-04-15",
+      "isbn": "978-7-89566-121-9",
+      "description": "本教材系统解析数字创业全流程，涵盖概念、机会识别、企业成长等模块，融合理论与真实案例，助学生掌握知识、启发实践，为高校教学与创业者提供实用指南。",
+      "cover": "/files/excellent_textbook/%E4%BA%BA%E6%96%87%E7%A4%BE%E7%A7%91/21.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/6589876a-b291-4a2a-a6eb-09526fa4fddd.png",
+      "coverFilePath": "storage/excellent_textbook/人文社科/21.png",
+      "storageFolder": "excellent_textbook/人文社科",
+      "link": "https://www.icourse163.org/textbook/1475067441.htm"
+    },
+    {
+      "id": "20",
+      "name": "线性代数 第三版",
+      "editor": "黄廷祝",
+      "category": "数学物理",
+      "categories": [
+        "数学物理"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-11-14",
+      "isbn": "978-7-89530-907-4",
+      "description": "内容体系完备，满足教学要求，代数几何巧妙结合，理论推导深入浅出。新工科前沿应用实例丰富，数字资源多样，配精品课，易教易学，工科等专业必备，开启数学新视野！",
+      "cover": "/files/excellent_textbook/%E6%95%B0%E5%AD%A6%E7%89%A9%E7%90%86/20.png",
+      "coverUrl": "http://mooc-image.nosdn.127.net/b1dd25c08f66497c85b8b24e62db2915.png?imageView&quality=100",
+      "coverFilePath": "storage/excellent_textbook/数学物理/20.png",
+      "storageFolder": "excellent_textbook/数学物理",
+      "link": "https://www.icourse163.org/textbook/1473946467.htm"
+    },
+    {
+      "id": "19",
+      "name": "设计概论（第二版）",
+      "editor": "吕杰锋   陆江艳",
+      "category": "艺术体育",
+      "categories": [
+        "艺术体育"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-05-01",
+      "isbn": "978-7-89566-103-5",
+      "description": "作为国家级一流本科线上课程配套教材，内容覆盖设计全领域知识。修订为数字教材后强化融媒体属性，用三维模型、动画等可视化资源呈现作品，还融入 AI 辅助案例。适合艺术设计相关专业师生使用，也为行业学习者提供优质参考。",
+      "cover": "/files/excellent_textbook/%E8%89%BA%E6%9C%AF%E4%BD%93%E8%82%B2/19.png",
+      "coverUrl": "http://mooc-image.nosdn.127.net/b6ae0e34c7e94b839e3dac58249cd594.png?imageView&quality=100",
+      "coverFilePath": "storage/excellent_textbook/艺术体育/19.png",
+      "storageFolder": "excellent_textbook/艺术体育",
+      "link": "https://www.icourse163.org/textbook/1475988442.htm"
+    },
+    {
+      "id": "18",
+      "name": "量化投资实务",
+      "editor": "郑秀",
+      "category": "人文社科",
+      "categories": [
+        "人文社科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-09-12",
+      "isbn": "978-7-89566-204-9",
+      "description": "零基础友好的量化投资入门数字教材，以量化交易工作流程为逻辑编写。系统讲解量化投资原理、流程与常用策略，贴合岗位需求，含 8 大核心项目（工具、Python 基础、策略设计等），配套学习目标、任务实战等特色栏目，助力掌握岗位技能。适用于职校金融投资类专业，也可作为量化交易初级入门培训用书。",
+      "cover": "/files/excellent_textbook/%E4%BA%BA%E6%96%87%E7%A4%BE%E7%A7%91/18.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/f3c757a6-edbc-4dcb-beb5-4a29a5fae589.png",
+      "coverFilePath": "storage/excellent_textbook/人文社科/18.png",
+      "storageFolder": "excellent_textbook/人文社科",
+      "link": "https://www.icourse163.org/textbook/1476263474.htm"
+    },
+    {
+      "id": "17",
+      "name": "电路基础与应用",
+      "editor": "陈海松",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-04-30",
+      "isbn": "978-7-89530-719-3",
+      "description": "全书以 10 个生活常见、趣味十足的实践项目为核心，从电路基本概念、定律到正弦交流电路，层层递进解锁电路知识。每个项目贯穿 “做什么→来仿真→动手做→去拓展→学知识” 全流程，边实践边学理论，告别枯燥死记，轻松掌握电路制作与调试核心技能！",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/17.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/885879af-078d-41bf-87bf-8b2a444d8de3.png",
+      "coverFilePath": "storage/excellent_textbook/理工/17.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1476280452.htm"
+    },
+    {
+      "id": "16",
+      "name": "会计数据分析与处理——基于SQL",
+      "editor": "陈旭",
+      "category": "人文社科",
+      "categories": [
+        "人文社科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-09-05",
+      "isbn": "978-7-89566-186-8",
+      "description": "国家级精品 / 一流本科课程配套、教育部虚拟教研室推荐！聚焦小型商流企业业财融合，教你用 SQL 实现数据查算审溯与系统开发，覆盖 5 篇 18 章核心内容。适配会计、财管等多专业，可作课程教材或会计审计 SQL 培训用书，助快速提升会计数据处理与系统开发能力！",
+      "cover": "/files/excellent_textbook/%E4%BA%BA%E6%96%87%E7%A4%BE%E7%A7%91/16.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/0ad37871-523a-4b74-92ae-106197008d8d.png",
+      "coverFilePath": "storage/excellent_textbook/人文社科/16.png",
+      "storageFolder": "excellent_textbook/人文社科",
+      "link": "https://www.icourse163.org/textbook/1476270451.htm"
+    },
+    {
+      "id": "15",
+      "name": "新能源高效利用设备",
+      "editor": "赵海波，吴坤",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-09-04",
+      "isbn": "978-7-89566-180-6",
+      "description": "聚焦新能源领域，系统讲解设备与系统专业知识。理论深度融合实践，配套丰富案例 + 实操步骤，同步追踪前沿趋势。四章内容覆盖设备拆装检修、系统运维、虚拟仿真和职业道德，适用于新能源相关本专科生（含能动本科、制冷空调高职），也供行业从业者、研究者参考，助高效掌握核心能力！",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/15.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/10990c69-fd01-4d3d-92cf-c1b325b8fe5f.png",
+      "coverFilePath": "storage/excellent_textbook/理工/15.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1476270452.htm"
+    },
+    {
+      "id": "14",
+      "name": "电气控制与PLC应用技术",
+      "editor": "孙玉峰，张善平",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-03-03",
+      "isbn": "978-7-89566-050-2",
+      "description": "融媒体 + 交互式 + 智能化！以继电器控制电路、三菱 FX₃U 系列 PLC 为核心，校企联合开发引入企业案例，将 PLC 知识、编程技巧等融入实例。配丰富视频动画，重技能培养，育工匠精神。适用于高职机电、电气自动化等专业，也可作工程人员、PLC 培训及自学用书。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/14.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/e528dd02-1e6e-4324-b83e-a4425a4f75b4.png",
+      "coverFilePath": "storage/excellent_textbook/理工/14.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1476255461.htm"
+    },
+    {
+      "id": "13",
+      "name": "国际经济学",
+      "editor": "李瑞琴",
+      "category": "人文社科",
+      "categories": [
+        "人文社科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-07-22",
+      "isbn": "978-7-89566-195-0",
+      "description": "聚焦国际经济活动，分为国际贸易（理论+政策）、国际金融（收支/外汇/内外部平衡）两大部分。立足中国实际探索特色体系，梳理理论脉络、夯实基础，挖掘思政元素，引领价值观。嵌入视频、图片等富媒体资源，兼顾契合度与拓展性。适用于经济贸易类及其他经济学类本科生，也供研究者、实际工作者参考。",
+      "cover": "/files/excellent_textbook/%E4%BA%BA%E6%96%87%E7%A4%BE%E7%A7%91/13.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/54ab8585-ad27-4ca6-99a7-07f62c642c04.png",
+      "coverFilePath": "storage/excellent_textbook/人文社科/13.png",
+      "storageFolder": "excellent_textbook/人文社科",
+      "link": "https://www.icourse163.org/textbook/1476255460.htm"
+    },
+    {
+      "id": "12",
+      "name": "商业银行经营管理实验",
+      "editor": "王小燕",
+      "category": "人文社科",
+      "categories": [
+        "人文社科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-07-31",
+      "isbn": "978-7-89566-210-0",
+      "description": "商业银行仿真实验配套教材，含9个关联实验，五大核心特点：明确育人目标、依企业生命周期理实结合、知识图谱重构体系、以中国银行案例紧贴现实、数智赋能配虚拟仿真等资源。适用于高校金融学类学生，可作 “数字金融挑战赛” 指导用书，也为金融业从业者提供参考。",
+      "cover": "/files/excellent_textbook/%E4%BA%BA%E6%96%87%E7%A4%BE%E7%A7%91/12.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/fb51b011-1a46-457c-9628-4e8d4f236594.png",
+      "coverFilePath": "storage/excellent_textbook/人文社科/12.png",
+      "storageFolder": "excellent_textbook/人文社科",
+      "link": "https://www.icourse163.org/textbook/1476270453.htm"
+    },
+    {
+      "id": "11",
+      "name": "工业设计史",
+      "editor": "王震亚",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-09-01",
+      "isbn": "978-7-89566-185-1",
+      "description": "全景梳理工业设计从手工业到智能时代演进脉络。以全球视角解读工艺美术运动、包豪斯等关键阶段，创新融入中国设计轨迹，从《考工记》造物思想到当代成就，深析技术、文化与经济的互动关系。设计强国背景下，引导汲取传统智慧、审视技术伦理。适用于工业/产品设计专业核心课，也为工业文明研究者提供跨学科视角。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/11.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/0ebc3f01-b984-453f-8323-3750c251fc41.png",
+      "coverFilePath": "storage/excellent_textbook/理工/11.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1476258455.htm"
+    },
+    {
+      "id": "10",
+      "name": "数据通信与网络技术",
+      "editor": "滕丽丽，葛婷婷",
+      "category": "计算机",
+      "categories": [
+        "计算机"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2024-12-30",
+      "isbn": "978-7-89530-971-5",
+      "description": "依据国家职业技能标准编写，以项目—任务形式，融通理论与实践，用动画、视频等富媒体 与交互式操作，还原企业真实场景。7项目24任务由浅入深，助力掌握数据通信、交换路由核心，具备网络工程师基础能力。适用于高职电子信息/通信工程专业，也可作计算机网络拓展课及企业岗前培训用书。",
+      "cover": "/files/excellent_textbook/%E8%AE%A1%E7%AE%97%E6%9C%BA/10.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/bbd64037-a23c-4071-aed3-77c87c515899.png",
+      "coverFilePath": "storage/excellent_textbook/计算机/10.png",
+      "storageFolder": "excellent_textbook/计算机",
+      "link": "https://www.icourse163.org/textbook/1476259458.htm"
+    },
+    {
+      "id": "9",
+      "name": "大学生职业生涯规划",
+      "editor": "陆丹，段静琰",
+      "category": "人文社科",
+      "categories": [
+        "人文社科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-09-19",
+      "isbn": "978-7-89566-250-6",
+      "description": "贴合大学生生涯发展规律，以本土化体验式理论为指导，系统讲解职业规划方法工具，设计多样体验实践活动，助力大学生主动构建生涯路径并行动。适用于大学生通识课，也供高中生及家长、职场人自我成长参考！",
+      "cover": "/files/excellent_textbook/%E4%BA%BA%E6%96%87%E7%A4%BE%E7%A7%91/9.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/1dc9fd22-2d3b-413a-add1-8c5eed8df8d7.png",
+      "coverFilePath": "storage/excellent_textbook/人文社科/9.png",
+      "storageFolder": "excellent_textbook/人文社科",
+      "link": "https://www.icourse163.org/textbook/1476258456.htm"
+    },
+    {
+      "id": "8",
+      "name": "虚拟现实技术与应用",
+      "editor": "孙红云、刘长征、岳腾达",
+      "category": "计算机",
+      "categories": [
+        "计算机"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-09-23",
+      "isbn": "978-7-89566-243-8",
+      "description": "聚焦虚拟现实核心内容，详解概念、硬件设备、核心技术与应用，涵盖三维建模、全景技术。理论+实践双兼顾，为专业学习打基础。同步紧扣行业热点，补充增强现实、混合现实内容，拓宽认知边界。适用于高校虚拟现实及相关专业学生，也适合 VR 爱好者入门。",
+      "cover": "/files/excellent_textbook/%E8%AE%A1%E7%AE%97%E6%9C%BA/8.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/5abd8a36-8197-4f39-af48-ad1f35f3a019.png",
+      "coverFilePath": "storage/excellent_textbook/计算机/8.png",
+      "storageFolder": "excellent_textbook/计算机",
+      "link": "https://www.icourse163.org/textbook/1476280454.htm"
+    },
+    {
+      "id": "7",
+      "name": "出境领队业务",
+      "editor": "刘志霞 ，张博",
+      "category": "交通运输",
+      "categories": [
+        "交通运输"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-09-23",
+      "isbn": "978-7-89566-215-5",
+      "description": "高职旅游大类核心课专用，7大项目覆盖领队全流程（行前准备、出入境、境外服务、归来后续等），还原真实工作场景，配备详实案例+模拟任务，快速掌握复杂场景应对技巧，无缝对接职场。内嵌同步教学视频、自测练习、虚拟仿真，提升学习体验。适用于职业本科/高职旅游专业，也供行业从业者参考！",
+      "cover": "/files/excellent_textbook/%E4%BA%A4%E9%80%9A%E8%BF%90%E8%BE%93/7.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/8a8e2aaf-b246-48a2-84a3-8854b166f6ad.png",
+      "coverFilePath": "storage/excellent_textbook/交通运输/7.png",
+      "storageFolder": "excellent_textbook/交通运输",
+      "link": "https://www.icourse163.org/textbook/1476260453.htm"
+    },
+    {
+      "id": "6",
+      "name": "嵌入式操作系统应用开发与实践",
+      "editor": "吴媛媛 朱星",
+      "category": "计算机",
+      "categories": [
+        "计算机"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-09-12",
+      "isbn": "978-7-89566-251-3",
+      "description": "高校计算机/电子信息类专属教材，以 STM32 和 FreeRTOS 为核心，“基础理论+开发工具+项目实战” 三维架构，覆盖嵌入式开发全流程。分基础篇（核心理论+工具链）、应用篇（梯度项目：传感器驱动到复杂系统设计），闭环培养能力。配套完整源码、仿真模型、习题答案，适用于本科生，也可作电子设计竞赛/嵌入式认证实训指南。",
+      "cover": "/files/excellent_textbook/%E8%AE%A1%E7%AE%97%E6%9C%BA/6.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/aad514e1-9ce9-46db-bf98-e89c8e659cd8.png",
+      "coverFilePath": "storage/excellent_textbook/计算机/6.png",
+      "storageFolder": "excellent_textbook/计算机",
+      "link": "https://www.icourse163.org/textbook/1476258454.htm"
+    },
+    {
+      "id": "5",
+      "name": "三维动画骨骼绑定",
+      "editor": "张佩权",
+      "category": "计算机",
+      "categories": [
+        "计算机"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-09-05",
+      "isbn": "978-7-89566-241-4",
+      "description": "动画系列教材核心分册，基础篇聚焦 Maya 绑定，详解约束、关节、权重绘制等核心命令技巧；实战篇以产业真实项目为实例，讲道具与角色绑定思路、流程。重理实结合，助灵活用命令、拓展绑定思维，掌握 Maya 骨骼绑定核心技能，为投身动画行业打坚实基础。",
+      "cover": "/files/excellent_textbook/%E8%AE%A1%E7%AE%97%E6%9C%BA/5.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/dd9ca45b-3ff3-44a4-b92a-0e8b23d218d2.png",
+      "coverFilePath": "storage/excellent_textbook/计算机/5.png",
+      "storageFolder": "excellent_textbook/计算机",
+      "link": "https://www.icourse163.org/textbook/1476280453.htm"
+    },
+    {
+      "id": "4",
+      "name": "线性代数",
+      "editor": "韩本三",
+      "category": "数学物理",
+      "categories": [
+        "数学物理"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2025-09-19",
+      "isbn": "978-7-89566-263-6",
+      "description": "系统覆盖线性代数核心（行列式、矩阵、n 维向量、特征值、二次型 5 大章节），融现代教学法！配章节教学视频、北太天元代码实践、经济/AI 应用案例、互动操作，还有梯度习题。适用于学生、研究者及从业者，兼顾理论深度与实操性，让线性代数学习更生动高效！",
+      "cover": "/files/excellent_textbook/%E6%95%B0%E5%AD%A6%E7%89%A9%E7%90%86/4.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/89684d53-b50a-463f-b7c7-2fd9dc126c22.png",
+      "coverFilePath": "storage/excellent_textbook/数学物理/4.png",
+      "storageFolder": "excellent_textbook/数学物理",
+      "link": "https://www.icourse163.org/textbook/1476259457.htm"
+    },
+    {
+      "id": "3",
+      "name": "研学旅行策划与管理实务",
+      "editor": "朱德勇 邓青 陈戎",
+      "category": "人文社科",
+      "categories": [
+        "人文社科"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2022-10-15",
+      "isbn": "978-7-89530-124-5",
+      "description": "研学新教材，教育部倡议下诞生。融合理论与实践，育研学英才。岗课赛证巧融通，开启精彩旅程。是专业学习秘籍，更是证书得力助手，助你在研学天地大展身手，探索无限可能！",
+      "cover": "/files/excellent_textbook/%E4%BA%BA%E6%96%87%E7%A4%BE%E7%A7%91/3.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/560c7a73-c5f9-4fa6-89f0-c7433e181225.png",
+      "coverFilePath": "storage/excellent_textbook/人文社科/3.png",
+      "storageFolder": "excellent_textbook/人文社科",
+      "link": "https://www.icourse163.org/textbook/1473926449.htm"
+    },
+    {
+      "id": "2",
+      "name": "无人机组装与调试",
+      "editor": "高月辉 殷镜波",
+      "category": "理工",
+      "categories": [
+        "理工"
+      ],
+      "publisher": "高等教育出版社",
+      "publishDate": "2023-12-22",
+      "isbn": "978-7-89530-426-0",
+      "description": "本教材以项目任务式架构，详细介绍无人机装配技术，涵盖无人机结构与选型、动力系统调试、通信与导航控制系统装调、飞行控制系统装调、载荷系统认知及发射回收系统认知六个项目。随着人工智能和信息网络化的快速发展，无人机已成为经济、军事、环境保护等领域的重要技术工具。教材适用于高职院校无人机应用技术、中职学校无人机操控与维护等专业，也可供无人机爱好者和培训机构参考。",
+      "cover": "/files/excellent_textbook/%E7%90%86%E5%B7%A5/2.png",
+      "coverUrl": "https://mooc-image.nosdn.127.net/02d1dd64-ef76-469b-8b86-35bc6631cf6c.png",
+      "coverFilePath": "storage/excellent_textbook/理工/2.png",
+      "storageFolder": "excellent_textbook/理工",
+      "link": "https://www.icourse163.org/textbook/1473934458.htm"
+    }
+  ]
+}

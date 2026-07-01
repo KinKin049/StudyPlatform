@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 
 // Small API wrapper used only by the standalone OJ page.
 async function request(path, options = {}) {
@@ -44,3 +44,4 @@ export function getSubmission(id) {
 export function listSubmissionCases(id) {
   return request(`/api/oj/submissions/${id}/cases`)
 }
+
