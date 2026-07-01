@@ -202,7 +202,7 @@ function aggregateResult(status, score, timeUsedMs, memoryUsedKb, message, cases
 
 function runProcess(command, args, options) {
   return new Promise((resolveProcess) => {
-    const startedAt = performance.now()
+    let startedAt = null
     let stdout = ''
     let stderr = ''
     let settled = false
@@ -212,6 +212,10 @@ function runProcess(command, args, options) {
       cwd: options.cwd,
       windowsHide: true,
       stdio: ['pipe', 'pipe', 'pipe'],
+    })
+
+    child.once('spawn', () => {
+      startedAt = performance.now()
     })
 
     const timer = setTimeout(() => {
@@ -264,7 +268,8 @@ function runProcess(command, args, options) {
 }
 
 function elapsedMs(startedAt) {
-  return Math.max(1, Math.round(performance.now() - startedAt))
+  const start = startedAt ?? performance.now()
+  return Math.max(1, Math.round(performance.now() - start))
 }
 
 function normalizeOutput(output) {
