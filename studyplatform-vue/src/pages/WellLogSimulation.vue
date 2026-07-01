@@ -22,7 +22,7 @@ const MAX_DEPTH = 2000
 const DEPTH_STEP = 20
 
 // 后端接口基础地址，可通过 Vite 环境变量覆盖。
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 
 // 图表 DOM、ECharts 实例和尺寸监听器引用。
 const chartWrapRef = ref(null)
