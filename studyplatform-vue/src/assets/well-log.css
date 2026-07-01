@@ -1,0 +1,275 @@
+/* 测井仿真独立页面外壳，使用实验平台主色调背景。 */
+.well-log-page {
+  min-height: 100vh;
+  padding: 0;
+  background: linear-gradient(to right, #acb6e5, #74ebd5);
+}
+
+/* 顶部模块栏保持透明，使页面背景连续可见。 */
+.well-log-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 82px;
+  padding: 18px 32px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.34);
+  background: transparent;
+}
+
+/* 英文模块标识，作为页面副标题。 */
+.well-log-kicker {
+  margin: 0 0 4px;
+  color: rgba(35, 63, 77, 0.76);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+/* 页面主标题。 */
+.well-log-header h1 {
+  margin: 0;
+  color: #1b1a55;
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+/* 返回首页入口，仅在本独立页面内显示。 */
+.well-log-home-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  border-radius: 6px;
+  color: #1b1a55;
+  background: rgba(255, 255, 255, 0.32);
+  text-decoration: none;
+  backdrop-filter: blur(12px);
+}
+
+/* 内容区高度扣除头部，确保分割面板和图表能撑满视口。 */
+.well-log-content {
+  height: calc(100vh - 82px);
+  padding: 22px;
+}
+
+/* Element Plus 分割面板主体，保持左右两栏可拖动。 */
+.well-log-page .well-log-layout {
+  height: 100%;
+  min-height: 0;
+  gap: 18px;
+}
+
+/* 左侧参数控制栏最小宽度。 */
+.well-log-control {
+  min-width: 260px;
+}
+
+/* 面板基础高度约束，避免内部图表初始化时高度塌陷。 */
+.well-log-panel {
+  height: 100%;
+  min-height: 0;
+}
+
+/* 参数面板允许纵向滚动，适配较小屏幕高度。 */
+.well-log-control-panel {
+  overflow: auto;
+}
+
+/* 主图表面板禁止横向溢出。 */
+.well-log-main-panel {
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* 控制卡片使用半透明背景，保留页面底色但不影响表单可读性。 */
+.well-log-control .el-card {
+  border-radius: 8px;
+  border-color: rgba(255, 255, 255, 0.58);
+  background: rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(14px);
+}
+
+/* 单个参数控制项。 */
+.control-item {
+  margin-bottom: 24px;
+}
+
+/* 参数名称与当前数值的左右布局。 */
+.control-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  color: #275163;
+  font-weight: 800;
+}
+
+/* 参数数值强调色。 */
+.control-label strong {
+  color: #178f86;
+}
+
+/* 生成报告按钮占满控制卡片宽度。 */
+.report-button {
+  width: 100%;
+}
+
+/* 公式说明卡片与参数卡片之间的间距。 */
+.formula-card {
+  margin-top: 16px;
+}
+
+/* 公式说明文本。 */
+.formula-card p {
+  margin: 0 0 10px;
+  color: #526a75;
+  line-height: 1.6;
+}
+
+/* 右侧曲线区域容器，保持可压缩宽度。 */
+.well-log-main {
+  min-width: 0;
+  padding: 0;
+}
+
+/* 图表卡片半透明，图表画布本身在内部单独设置为不透明。 */
+.well-log-chart-card {
+  height: 100%;
+  min-height: 0;
+  border-radius: 8px;
+  border-color: rgba(255, 255, 255, 0.58);
+  background: rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(14px);
+}
+
+/* 卡片 body 必须占满剩余高度，保证 ECharts 有稳定绘制空间。 */
+.well-log-page .well-log-chart-card > .el-card__body {
+  height: calc(100% - 57px);
+  min-height: 0;
+  padding: 0;
+}
+
+/* 图表卡片标题行。 */
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #233f4d;
+  font-weight: 850;
+}
+
+/* 图表标题右侧深度说明。 */
+.chart-header small {
+  color: #6a7f8a;
+  font-weight: 700;
+}
+
+/* 图表容器保持纯白不透明背景，避免半透明卡片影响曲线和岩心块。 */
+.chart-wrap {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+/* ECharts 主画布宽度预留右侧层位标注栏。 */
+.well-log-chart {
+  width: calc(100% - 92px);
+  height: 100%;
+  min-height: 0;
+}
+
+/* 右侧层位标注栏，与 ECharts 深度网格顶部和底部对齐。 */
+.layer-labels {
+  position: absolute;
+  top: 42px;
+  right: 12px;
+  bottom: 38px;
+  width: 76px;
+  border-left: 1px solid #d9e2ec;
+}
+
+/* 单个层位标签，背景色与 markArea 保持一致且不透明。 */
+.layer-label {
+  position: absolute;
+  right: 0;
+  left: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 18px;
+  border-radius: 4px;
+  color: #233f4d;
+  font-size: 12px;
+  font-weight: 800;
+  opacity: 1;
+}
+
+/* 层位文字使用白底提升可读性，不改变层段色块透明度。 */
+.layer-label span {
+  padding: 2px 4px;
+  border-radius: 4px;
+  background: #ffffff;
+}
+
+/* 取消 Element Plus 卡片内部默认白底，半透明效果由外层卡片控制。 */
+.well-log-page .el-card__header,
+.well-log-page .el-card__body {
+  background: transparent;
+}
+
+/* 报告抽屉使用半透明背景，与页面视觉保持一致。 */
+.well-log-page .el-drawer {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(14px);
+}
+
+/* 报告内容分区。 */
+.report-section {
+  margin-bottom: 22px;
+}
+
+/* 报告分区标题。 */
+.report-section h3 {
+  margin: 0 0 12px;
+  color: #233f4d;
+}
+
+/* 报告参数文本。 */
+.report-section p {
+  margin: 0 0 8px;
+  color: #526a75;
+}
+
+/* 窄屏布局：上下排列参数面板和图表面板，保留足够图表高度。 */
+@media (max-width: 980px) {
+  .well-log-header {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 16px 20px;
+  }
+
+  .well-log-content {
+    height: auto;
+    padding: 16px;
+  }
+
+  .well-log-page .well-log-layout {
+    display: block;
+    height: auto;
+  }
+
+  .well-log-control {
+    width: 100% !important;
+    min-width: 0;
+    margin-bottom: 18px;
+  }
+
+  .well-log-chart-card {
+    height: 760px;
+  }
+}
