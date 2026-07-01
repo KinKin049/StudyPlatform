@@ -2,6 +2,11 @@
 const openOjPlatform = () => {
   window.location.href = '/oj.html'
 }
+
+const openWellLogSimulation = () => {
+  window.history.pushState({}, '', '/lab/well-log')
+  window.dispatchEvent(new Event('popstate'))
+}
 </script>
 
 <template>
@@ -76,8 +81,8 @@ const openOjPlatform = () => {
           </section>
         </div>
 
-        <button class="lab-action lab-action-disabled" type="button" disabled>
-          模块建设中
+        <button class="lab-action" type="button" @click="openWellLogSimulation">
+          进入测井仿真平台
         </button>
       </article>
     </section>
