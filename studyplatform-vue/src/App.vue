@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import onlineOpenCourseData from './data/onlineOpenCourses.json'
+import LabPlatform from './pages/LabPlatform.vue'
 
 const navItems = [
   {
@@ -102,6 +103,7 @@ const selectedOnlineCourseCategory = ref('全部')
 const onlineCourseKeyword = ref('')
 
 const isAcademyPage = computed(() => currentPath.value.startsWith('/academy'))
+const isLabPage = computed(() => currentPath.value === '/lab')
 const isOnlineOpenCoursePage = computed(() => currentPath.value === '/academy/open-courses')
 const onlineOpenCourseCategories = computed(() => [
   '全部',
@@ -150,7 +152,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div v-if="!isAcademyPage" class="home-page">
+  <div v-if="!isAcademyPage && !isLabPage" class="home-page">
     <header class="site-header">
       <a class="site-brand" href="/" aria-label="返回首页" @click.prevent="navigateTo('/')">
         EpistemeHub
@@ -193,6 +195,43 @@ onUnmounted(() => {
         </p>
       </section>
     </main>
+  </div>
+
+  <div v-else-if="isLabPage" class="home-page">
+    <header class="site-header">
+      <a class="site-brand" href="/" aria-label="返回首页" @click.prevent="navigateTo('/')">
+        EpistemeHub
+      </a>
+
+      <nav class="site-nav" aria-label="主导航">
+        <div v-for="item in navItems" :key="item.path" class="nav-item">
+          <button class="nav-button" type="button" @click="handleNavigate(item)">
+            <span>{{ item.label }}</span>
+            <span class="nav-arrow" aria-hidden="true">▼</span>
+          </button>
+
+          <div class="dropdown-menu" role="menu">
+            <a
+              v-for="child in item.children"
+              :key="child.path"
+              class="dropdown-link"
+              :href="child.path"
+              role="menuitem"
+              @click.prevent="navigateTo(child.path)"
+            >
+              {{ child.label }}
+            </a>
+            <span v-if="item.children.length === 0" class="dropdown-empty">暂无子菜单</span>
+          </div>
+        </div>
+      </nav>
+
+      <button class="user-entry" type="button" aria-label="用户中心">
+        <span class="user-avatar">U</span>
+      </button>
+    </header>
+
+    <LabPlatform />
   </div>
 
   <div v-else class="academy-page">
