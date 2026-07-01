@@ -1,6 +1,8 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import onlineOpenCourseData from './data/onlineOpenCourses.json'
+import AppNavigation from './components/AppNavigation.vue'
+import AcademyPage from './pages/AcademyPage.vue'
+import HomePage from './pages/HomePage.vue'
 import LabPlatform from './pages/LabPlatform.vue'
 import WellLogSimulation from './pages/WellLogSimulation.vue'
 
@@ -48,60 +50,7 @@ const navItems = [
   },
 ]
 
-const academyNavItems = [
-  {
-    label: '首页',
-    path: '/academy/home',
-    children: [],
-    dropdown: false,
-  },
-  {
-    label: '在线开放课程',
-    path: '/academy/open-courses',
-    children: [],
-    dropdown: true,
-  },
-  {
-    label: '通识课程',
-    path: '/academy/general-courses',
-    children: [],
-    dropdown: true,
-  },
-  {
-    label: '微专业课程',
-    path: '/academy/micro-majors',
-    children: [],
-    dropdown: true,
-  },
-  {
-    label: '精品教材',
-    path: '/academy/textbooks',
-    children: [],
-    dropdown: true,
-  },
-]
-
-const featuredCourses = [
-  {
-    title: '人工智能导论',
-    category: '在线开放课程',
-    meta: '32 学时 · 8 个章节',
-  },
-  {
-    title: '大学生创新实践',
-    category: '通识课程',
-    meta: '24 学时 · 项目制学习',
-  },
-  {
-    title: '数据分析微专业',
-    category: '微专业课程',
-    meta: '6 门课 · 能力认证',
-  },
-]
-
 const currentPath = ref(window.location.pathname)
-const selectedOnlineCourseCategory = ref('全部')
-const onlineCourseKeyword = ref('')
 
 const isAcademyPage = computed(() => currentPath.value.startsWith('/academy'))
 const isLabPage = computed(() => currentPath.value === '/lab')
@@ -131,13 +80,9 @@ const filteredOnlineOpenCourses = computed(() => {
 })
 
 const navigateTo = (path) => {
-  // 预留路由跳转入口：接入 vue-router 后可替换为 router.push(item.path)
+  // 预留路由跳转入口：接入 vue-router 后可替换为 router.push(path)
   window.history.pushState({}, '', path)
   currentPath.value = path
-}
-
-const handleNavigate = (item) => {
-  navigateTo(item.path)
 }
 
 const handlePopState = () => {
@@ -154,6 +99,9 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <div v-if="isAcademyPage" class="academy-shell">
+    <AppNavigation :nav-items="navItems" @navigate="navigateTo" />
+    <AcademyPage :current-path="currentPath" @navigate="navigateTo" />
   <div v-if="!isAcademyPage && !isLabPage && !isWellLogPage" class="home-page">
     <header class="site-header">
       <a class="site-brand" href="/" aria-label="返回首页" @click.prevent="navigateTo('/')">
@@ -199,43 +147,12 @@ onUnmounted(() => {
     </main>
   </div>
 
-  <div v-else-if="isLabPage" class="home-page">
-    <header class="site-header">
-      <a class="site-brand" href="/" aria-label="返回首页" @click.prevent="navigateTo('/')">
-        EpistemeHub
-      </a>
-
-      <nav class="site-nav" aria-label="主导航">
-        <div v-for="item in navItems" :key="item.path" class="nav-item">
-          <button class="nav-button" type="button" @click="handleNavigate(item)">
-            <span>{{ item.label }}</span>
-            <span class="nav-arrow" aria-hidden="true">▼</span>
-          </button>
-
-          <div class="dropdown-menu" role="menu">
-            <a
-              v-for="child in item.children"
-              :key="child.path"
-              class="dropdown-link"
-              :href="child.path"
-              role="menuitem"
-              @click.prevent="navigateTo(child.path)"
-            >
-              {{ child.label }}
-            </a>
-            <span v-if="item.children.length === 0" class="dropdown-empty">暂无子菜单</span>
-          </div>
-        </div>
-      </nav>
-
-      <button class="user-entry" type="button" aria-label="用户中心">
-        <span class="user-avatar">U</span>
-      </button>
-    </header>
-
+  <div v-else-if="isLabPage" class="app-page lab-shell">
+    <AppNavigation :nav-items="navItems" @navigate="navigateTo" />
     <LabPlatform />
   </div>
 
+  <HomePage v-else :nav-items="navItems" @navigate="navigateTo" />
   <div v-else-if="isWellLogPage">
     <header v-if="false" class="site-header">
       <a class="site-brand" href="/" aria-label="返回首页" @click.prevent="navigateTo('/')">

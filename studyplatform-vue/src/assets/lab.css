@@ -1,9 +1,9 @@
 .lab-page {
   min-height: calc(100vh - 72px);
   padding: 44px 6vw 64px;
-  background: #74ebd5;
-  background: -webkit-linear-gradient(to right, #003d4d, #00c996);
-  background: linear-gradient(to right,  #003d4d, #00c996);
+  background: #c8fff1;
+  background: -webkit-linear-gradient(to right, #4aa6a8, #b9fbc0);
+  background: linear-gradient(to right, #4aa6a8, #b9fbc0);
 }
 
 .lab-hero {
