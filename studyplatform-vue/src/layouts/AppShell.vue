@@ -61,10 +61,12 @@ const navItems = [
 const shellClass = computed(() => ({
   'home-page': route.path === '/',
   'academy-shell': route.path.startsWith('/academy'),
+  'academy-course-detail-shell': route.path.startsWith('/academy/open-courses/'),
   'app-page lab-shell': route.path === '/lab',
   'app-page oj-page-shell': route.path === '/lab/oj',
   'app-page production-shell': route.path === '/lab/petroleum',
   'app-page well-log-shell': route.path === '/lab/well-log',
+  'app-page visual-shell': route.path.startsWith('/visualization'),
 }))
 </script>
 

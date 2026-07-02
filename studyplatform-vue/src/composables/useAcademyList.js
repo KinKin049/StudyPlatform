@@ -1,13 +1,15 @@
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { fetchAcademyCategories, fetchAcademyCourses } from '../api/academy'
 
-export function useAcademyList(resource, searchFields) {
+export function useAcademyList(resource, searchFields, options = {}) {
   const selectedCategory = ref('全部')
   const keyword = ref('')
   const items = ref([])
   const remoteCategories = ref([])
   const loading = ref(true)
   const error = ref('')
+  const currentPage = ref(1)
+  const pageSize = ref(options.pageSize || 12)
 
   const categories = computed(() => [
     '全部',
@@ -30,6 +32,24 @@ export function useAcademyList(resource, searchFields) {
 
       return matchesCategory && matchesKeyword
     })
+  })
+
+  const totalItems = computed(() => filteredItems.value.length)
+
+  const pagedItems = computed(() => {
+    const start = (currentPage.value - 1) * pageSize.value
+    return filteredItems.value.slice(start, start + pageSize.value)
+  })
+
+  watch([selectedCategory, keyword, pageSize], () => {
+    currentPage.value = 1
+  })
+
+  watch(totalItems, (total) => {
+    const maxPage = Math.max(1, Math.ceil(total / pageSize.value))
+    if (currentPage.value > maxPage) {
+      currentPage.value = maxPage
+    }
   })
 
   const loadItems = async () => {
@@ -59,6 +79,10 @@ export function useAcademyList(resource, searchFields) {
     keyword,
     categories,
     filteredItems,
+    pagedItems,
+    currentPage,
+    pageSize,
+    totalItems,
     loading,
     error,
     loadItems,

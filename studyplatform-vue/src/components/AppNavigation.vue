@@ -10,7 +10,8 @@ const props = defineProps({
 
 const router = useRouter()
 
-const navigateTo = (path) => {
+const navigateTo = (path, event) => {
+  event?.currentTarget?.blur()
   router.push(path)
 }
 </script>
@@ -23,7 +24,7 @@ const navigateTo = (path) => {
 
     <nav class="site-nav" aria-label="主导航">
       <div v-for="item in props.navItems" :key="item.path" class="nav-item">
-        <button class="nav-button" type="button" @click="navigateTo(item.path)">
+        <button class="nav-button" type="button" @click="navigateTo(item.path, $event)">
           <span>{{ item.label }}</span>
           <span class="nav-arrow" aria-hidden="true">▾</span>
         </button>
@@ -35,7 +36,7 @@ const navigateTo = (path) => {
             class="dropdown-link"
             :href="child.path"
             role="menuitem"
-            @click.prevent="navigateTo(child.path)"
+            @click.prevent="navigateTo(child.path, $event)"
           >
             {{ child.label }}
           </a>

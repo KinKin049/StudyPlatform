@@ -1,0 +1,1560 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>折半插入排序过程可视化</title>
+  <style>
+    :root {
+      --bg: #f6f7f4;
+      --panel: #ffffff;
+      --text: #1f2933;
+      --muted: #667085;
+      --line: #d9ded8;
+      --main: #0f766e;
+      --accent: #2563eb;
+      --violet: #7c3aed;
+      --warn: #b45309;
+      --danger: #b42318;
+      --ok: #15803d;
+      --soft-main: #ecfdf8;
+      --soft-accent: #eff6ff;
+      --soft-violet: #f5f3ff;
+      --soft-warn: #fff7ed;
+      --soft-danger: #fff1f2;
+      --shadow: 0 12px 30px rgba(31, 41, 51, 0.08);
+      --tile: 70px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+      background: var(--bg);
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .app {
+      width: min(1400px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 24px 0 32px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: end;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      line-height: 1.25;
+      font-weight: 750;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .result-badge {
+      min-width: 300px;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .result-badge small {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .result-badge strong {
+      display: block;
+      color: var(--main);
+      font-size: 18px;
+      line-height: 1.45;
+      word-break: break-word;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) minmax(160px, 0.42fr) auto;
+      gap: 12px;
+      align-items: end;
+      margin-bottom: 16px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      min-height: 42px;
+      padding: 9px 12px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      color: var(--text);
+      background: #fbfcfb;
+      outline: none;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--main);
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--main);
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    button {
+      min-height: 40px;
+      padding: 8px 12px;
+      border: 1px solid rgba(236, 110, 173, 0.56);
+      border-radius: 6px;
+      color: #fff;
+      background: rgba(236, 110, 173, 0.82);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    button.primary {
+      border-color: #d94c97;
+      color: #fff;
+      background: #ec6ead;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.48;
+    }
+
+    .error {
+      display: none;
+      grid-column: 1 / -1;
+      color: var(--danger);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .error.show {
+      display: block;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.26fr) minmax(360px, 0.74fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfcfb;
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 720;
+      letter-spacing: 0;
+    }
+
+    .step-count {
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .visual-body {
+      padding: 16px;
+    }
+
+    .array-viewport {
+      overflow-x: auto;
+      padding: 4px 0 12px;
+    }
+
+    .array-track {
+      display: flex;
+      gap: 10px;
+      align-items: end;
+      min-width: max-content;
+      padding: 6px 2px 4px;
+    }
+
+    .cell {
+      width: var(--tile);
+      display: grid;
+      gap: 6px;
+      justify-items: center;
+    }
+
+    .cell-index {
+      min-height: 18px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .tile {
+      position: relative;
+      width: var(--tile);
+      height: 112px;
+      display: grid;
+      align-content: end;
+      justify-items: center;
+      gap: 3px;
+      padding: 8px 6px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      overflow: hidden;
+      transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+      will-change: transform;
+    }
+
+    .bar {
+      position: absolute;
+      left: 7px;
+      right: 7px;
+      bottom: 7px;
+      height: var(--bar-height);
+      border-radius: 6px;
+      background: rgba(15, 118, 110, 0.16);
+      z-index: 0;
+    }
+
+    .value,
+    .origin,
+    .hole-text,
+    .marker-line {
+      position: relative;
+      z-index: 1;
+    }
+
+    .value {
+      min-height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text);
+      font-size: var(--value-size, 18px);
+      font-weight: 760;
+      line-height: 1.15;
+      word-break: break-all;
+      text-align: center;
+    }
+
+    .origin {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.2;
+    }
+
+    .marker-line {
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      right: 5px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
+      justify-content: center;
+      min-height: 17px;
+    }
+
+    .marker {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px 4px;
+      border-radius: 4px;
+      color: #fff;
+      font-size: 10px;
+      line-height: 1;
+      will-change: transform;
+    }
+
+    .marker.low {
+      background: var(--main);
+    }
+
+    .marker.high {
+      background: var(--violet);
+    }
+
+    .marker.mid {
+      background: var(--accent);
+    }
+
+    .marker.pos {
+      background: var(--warn);
+    }
+
+    .cell.sorted .tile {
+      border-color: rgba(21, 128, 61, 0.38);
+      background: var(--soft-main);
+    }
+
+    .cell.unsorted .tile {
+      background: #fff;
+    }
+
+    .cell.current .tile {
+      border-color: var(--warn);
+      background: var(--soft-warn);
+    }
+
+    .cell.mid .tile {
+      border-color: var(--accent);
+      box-shadow: inset 0 0 0 2px rgba(37, 99, 235, 0.12);
+    }
+
+    .cell.low .tile {
+      box-shadow: inset 0 0 0 2px rgba(15, 118, 110, 0.16);
+    }
+
+    .cell.high .tile {
+      box-shadow: inset 0 0 0 2px rgba(124, 58, 237, 0.14);
+    }
+
+    .cell.insert .tile {
+      border-color: var(--warn);
+      background: var(--soft-warn);
+    }
+
+    .cell.moving .tile {
+      border-color: var(--accent);
+      background: var(--soft-accent);
+      box-shadow: 0 8px 18px rgba(37, 99, 235, 0.14);
+    }
+
+    .cell.hole .tile {
+      border-style: dashed;
+      border-color: #cbd5e1;
+      background: #f8fafc;
+    }
+
+    .cell.hole .bar {
+      display: none;
+    }
+
+    .hole-text {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+      text-align: center;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding-top: 8px;
+      border-top: 1px solid var(--line);
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .swatch.sorted {
+      background: var(--soft-main);
+      border-color: rgba(21, 128, 61, 0.38);
+    }
+
+    .swatch.current {
+      background: var(--soft-warn);
+      border-color: var(--warn);
+    }
+
+    .swatch.mid {
+      background: var(--soft-accent);
+      border-color: var(--accent);
+    }
+
+    .swatch.moving {
+      background: var(--soft-accent);
+      border-color: var(--accent);
+    }
+
+    .narration {
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .message {
+      min-height: 76px;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfb;
+      line-height: 1.7;
+    }
+
+    .message strong {
+      color: var(--main);
+    }
+
+    .detail {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .stat {
+      min-height: 72px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .stat span {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 18px;
+      line-height: 1.35;
+      word-break: break-word;
+    }
+
+    .side {
+      display: grid;
+      gap: 16px;
+    }
+
+    .temp-box {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 12px;
+      align-items: center;
+      padding: 16px;
+    }
+
+    .temp-token {
+      position: relative;
+      min-width: 78px;
+      min-height: 78px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--warn);
+      border-radius: 8px;
+      color: var(--warn);
+      background: var(--soft-warn);
+      font-size: 24px;
+      font-weight: 800;
+      word-break: break-all;
+      text-align: center;
+      will-change: transform;
+    }
+
+    @keyframes motionFlash {
+      0% {
+        filter: brightness(1.08);
+      }
+      55% {
+        filter: brightness(1.16);
+      }
+      100% {
+        filter: brightness(1);
+      }
+    }
+
+    .motion-active {
+      animation: motionFlash 520ms ease;
+    }
+
+    .motion-ghost {
+      margin: 0;
+      pointer-events: none;
+      box-shadow: 0 14px 28px rgba(31, 41, 51, 0.16);
+    }
+
+    .temp-meta {
+      display: grid;
+      gap: 7px;
+      min-width: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .temp-meta strong {
+      color: var(--text);
+    }
+
+    .pointer-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      padding: 0 16px 16px;
+    }
+
+    .pointer {
+      min-height: 62px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .pointer span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .pointer strong {
+      display: block;
+      margin-top: 5px;
+      font-size: 17px;
+      line-height: 1.25;
+    }
+
+    .code-list {
+      margin: 0;
+      padding: 10px 0;
+      list-style: none;
+      font-family: Consolas, "JetBrains Mono", "Courier New", monospace;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .code-list li {
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr);
+      gap: 8px;
+      padding: 6px 14px;
+      border-left: 3px solid transparent;
+    }
+
+    .code-list li.active {
+      border-left-color: var(--main);
+      background: var(--soft-main);
+    }
+
+    .code-no {
+      color: var(--muted);
+      text-align: right;
+    }
+
+    .trace {
+      max-height: 320px;
+      overflow: auto;
+      padding: 10px;
+    }
+
+    .trace-row {
+      width: 100%;
+      min-height: 38px;
+      display: grid;
+      grid-template-columns: 48px minmax(0, 1fr);
+      gap: 8px;
+      align-items: center;
+      margin: 0 0 6px;
+      padding: 7px 8px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      color: var(--text);
+      background: transparent;
+      text-align: left;
+      white-space: normal;
+    }
+
+    .trace-row:hover,
+    .trace-row.active {
+      border-color: var(--line);
+      background: #fbfcfb;
+    }
+
+    .trace-row.active {
+      border-color: var(--main);
+      background: var(--soft-main);
+    }
+
+    .trace-step {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .trace-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 13px;
+    }
+
+    @media (max-width: 1050px) {
+      header,
+      .layout,
+      .toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      .result-badge {
+        min-width: 0;
+      }
+
+      .controls {
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .app {
+        width: min(100% - 20px, 1400px);
+        padding-top: 16px;
+      }
+
+      h1 {
+        font-size: 23px;
+      }
+
+      .stats,
+      .pointer-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      :root {
+        --tile: 64px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div>
+        <h1>折半插入排序过程可视化</h1>
+        <p class="subtitle">在有序区用折半查找确定插入位置，再把插入位置之后的元素整体后移。</p>
+      </div>
+      <div class="result-badge">
+        <small>当前数组</small>
+        <strong id="resultText"></strong>
+      </div>
+    </header>
+
+    <section class="toolbar" aria-label="控制区">
+      <div class="field">
+        <label for="arrayInput">数组</label>
+        <input id="arrayInput" type="text" value="49, 38, 65, 97, 76, 13, 27, 49, 55, 4, 89, 20">
+      </div>
+      <div class="field">
+        <label for="speedInput">播放间隔 <span id="speedText">700 ms</span></label>
+        <input id="speedInput" type="range" min="180" max="1500" step="40" value="700">
+      </div>
+      <div class="controls">
+        <button id="applyBtn" class="primary" type="button">应用数组</button>
+        <button id="exampleBtn" type="button">复杂示例</button>
+        <button id="randomBtn" type="button">随机数组</button>
+        <button id="prevBtn" type="button">上一步</button>
+        <button id="nextBtn" type="button">下一步</button>
+        <button id="playBtn" class="primary" type="button">播放</button>
+      </div>
+      <div id="errorText" class="error"></div>
+    </section>
+
+    <main class="layout">
+      <section class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">数组状态</h2>
+          <div id="stepText" class="step-count"></div>
+        </div>
+        <div class="visual-body">
+          <div class="array-viewport">
+            <div id="arrayTrack" class="array-track"></div>
+          </div>
+          <div class="legend" aria-label="图例">
+            <span class="legend-item"><span class="swatch sorted"></span>有序区</span>
+            <span class="legend-item"><span class="swatch current"></span>temp</span>
+            <span class="legend-item"><span class="swatch mid"></span>mid 比较</span>
+            <span class="legend-item"><span class="swatch moving"></span>元素后移</span>
+          </div>
+
+          <div class="narration">
+            <div class="message">
+              <strong id="messageTitle"></strong>
+              <div id="messageText"></div>
+              <div id="detailText" class="detail"></div>
+            </div>
+            <div class="stats">
+              <div class="stat">
+                <span>关键字比较</span>
+                <strong id="compareCount">0</strong>
+              </div>
+              <div class="stat">
+                <span>元素后移</span>
+                <strong id="shiftCount">0</strong>
+              </div>
+              <div class="stat">
+                <span>数组写入</span>
+                <strong id="writeCount">0</strong>
+              </div>
+              <div class="stat">
+                <span>有序区</span>
+                <strong id="sortedText">arr[0]</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="side">
+        <section class="panel">
+          <div class="panel-head">
+            <h2 class="panel-title">本趟变量</h2>
+          </div>
+          <div class="temp-box">
+            <div id="tempToken" class="temp-token">-</div>
+            <div class="temp-meta">
+              <div>当前趟：<strong id="roundText">-</strong></div>
+              <div>插入位置：<strong id="insertText">-</strong></div>
+              <div>稳定性：相等时继续向右找，插到已有相等元素之后。</div>
+            </div>
+          </div>
+          <div class="pointer-grid">
+            <div class="pointer">
+              <span>low</span>
+              <strong id="lowText">-</strong>
+            </div>
+            <div class="pointer">
+              <span>high</span>
+              <strong id="highText">-</strong>
+            </div>
+            <div class="pointer">
+              <span>mid</span>
+              <strong id="midText">-</strong>
+            </div>
+            <div class="pointer">
+              <span>比较结果</span>
+              <strong id="compareText">-</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2 class="panel-title">伪代码</h2>
+          </div>
+          <ol id="codeList" class="code-list"></ol>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2 class="panel-title">步骤列表</h2>
+            <div id="traceCount" class="step-count"></div>
+          </div>
+          <div id="traceList" class="trace"></div>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    const defaultArray = "49, 38, 65, 97, 76, 13, 27, 49, 55, 4, 89, 20";
+    const codeLines = [
+      "for i = 1 .. n - 1",
+      "temp = arr[i]",
+      "low = 0; high = i - 1",
+      "while low <= high: mid = floor((low + high) / 2)",
+      "if arr[mid] > temp: high = mid - 1",
+      "else: low = mid + 1",
+      "low 即第一个大于 temp 的位置",
+      "for j = i - 1 downto low: arr[j + 1] = arr[j]",
+      "arr[low] = temp",
+      "排序完成"
+    ];
+
+    const els = {
+      arrayInput: document.getElementById("arrayInput"),
+      speedInput: document.getElementById("speedInput"),
+      speedText: document.getElementById("speedText"),
+      applyBtn: document.getElementById("applyBtn"),
+      exampleBtn: document.getElementById("exampleBtn"),
+      randomBtn: document.getElementById("randomBtn"),
+      prevBtn: document.getElementById("prevBtn"),
+      nextBtn: document.getElementById("nextBtn"),
+      playBtn: document.getElementById("playBtn"),
+      errorText: document.getElementById("errorText"),
+      resultText: document.getElementById("resultText"),
+      stepText: document.getElementById("stepText"),
+      arrayTrack: document.getElementById("arrayTrack"),
+      messageTitle: document.getElementById("messageTitle"),
+      messageText: document.getElementById("messageText"),
+      detailText: document.getElementById("detailText"),
+      compareCount: document.getElementById("compareCount"),
+      shiftCount: document.getElementById("shiftCount"),
+      writeCount: document.getElementById("writeCount"),
+      sortedText: document.getElementById("sortedText"),
+      tempToken: document.getElementById("tempToken"),
+      roundText: document.getElementById("roundText"),
+      insertText: document.getElementById("insertText"),
+      lowText: document.getElementById("lowText"),
+      highText: document.getElementById("highText"),
+      midText: document.getElementById("midText"),
+      compareText: document.getElementById("compareText"),
+      codeList: document.getElementById("codeList"),
+      traceList: document.getElementById("traceList"),
+      traceCount: document.getElementById("traceCount")
+    };
+
+    let frames = [];
+    let currentFrame = 0;
+    let playing = false;
+    let playTimer = null;
+    let valueRange = { min: 0, max: 1 };
+    let suppressNextAnimation = false;
+
+    function cloneItems(items) {
+      return items.map((item) => item ? { value: item.value, originalIndex: item.originalIndex } : null);
+    }
+
+    function parseArray(text) {
+      const parts = text.trim().split(/[\s,，;；]+/).filter(Boolean);
+      if (parts.length < 2) {
+        throw new Error("数组至少需要 2 个元素。");
+      }
+      if (parts.length > 24) {
+        throw new Error("为了保证可视化清晰，数组长度请控制在 24 个元素以内。");
+      }
+      return parts.map((part, index) => {
+        const value = Number(part);
+        if (!Number.isFinite(value)) {
+          throw new Error("数组中只能包含数字，元素之间可用空格、逗号或分号分隔。");
+        }
+        return { value, originalIndex: index };
+      });
+    }
+
+    function formatNumber(value) {
+      return Number.isInteger(value) ? String(value) : String(Number(value.toFixed(2)));
+    }
+
+    function valuesText(arr) {
+      return arr.map((item) => item ? formatNumber(item.value) : "空").join(", ");
+    }
+
+    function frameTitle(stage) {
+      const titles = {
+        init: "初始状态",
+        take: "取出当前元素",
+        search: "初始化查找区间",
+        compare: "折半比较",
+        decision: "缩小查找区间",
+        found: "确定插入位置",
+        shift: "整体后移",
+        insert: "写回 temp",
+        done: "排序完成"
+      };
+      return titles[stage] || "当前步骤";
+    }
+
+    function makeFrame(base) {
+      return {
+        arr: cloneItems(base.arr),
+        stage: base.stage,
+        i: base.i ?? null,
+        sortedEnd: base.sortedEnd ?? null,
+        temp: base.temp ? { ...base.temp } : null,
+        low: base.low ?? null,
+        high: base.high ?? null,
+        mid: base.mid ?? null,
+        insertIndex: base.insertIndex ?? null,
+        holeIndex: base.holeIndex ?? null,
+        currentIndex: base.currentIndex ?? null,
+        movingFrom: base.movingFrom ?? null,
+        movingTo: base.movingTo ?? null,
+        compareResult: base.compareResult ?? null,
+        message: base.message,
+        detail: base.detail || "",
+        codeLine: base.codeLine ?? null,
+        compareCount: base.compareCount,
+        shiftCount: base.shiftCount,
+        writeCount: base.writeCount
+      };
+    }
+
+    function generateFrames(items) {
+      const result = [];
+      let arr = cloneItems(items);
+      let compareCount = 0;
+      let shiftCount = 0;
+      let writeCount = 0;
+
+      function add(patch) {
+        result.push(makeFrame({
+          arr: patch.arr || arr,
+          stage: patch.stage,
+          i: patch.i,
+          sortedEnd: patch.sortedEnd,
+          temp: patch.temp,
+          low: patch.low,
+          high: patch.high,
+          mid: patch.mid,
+          insertIndex: patch.insertIndex,
+          holeIndex: patch.holeIndex,
+          currentIndex: patch.currentIndex,
+          movingFrom: patch.movingFrom,
+          movingTo: patch.movingTo,
+          compareResult: patch.compareResult,
+          message: patch.message,
+          detail: patch.detail,
+          codeLine: patch.codeLine,
+          compareCount,
+          shiftCount,
+          writeCount
+        }));
+      }
+
+      add({
+        stage: "init",
+        sortedEnd: 0,
+        message: "arr[0] 可看作长度为 1 的有序区，后续每一趟把一个无序区元素插入到前方有序区。",
+        detail: "折半插入排序只改变“找插入位置”的方式，插入时仍然要移动元素。",
+        codeLine: 0
+      });
+
+      for (let i = 1; i < arr.length; i += 1) {
+        const temp = { ...arr[i] };
+        let visual = cloneItems(arr);
+        add({
+          arr: visual,
+          stage: "take",
+          i,
+          sortedEnd: i - 1,
+          temp,
+          currentIndex: i,
+          message: `第 ${i} 趟：取出 arr[${i}] = ${formatNumber(temp.value)}，准备插入到 arr[0..${i - 1}]。`,
+          detail: `temp 保留原始下标 ${temp.originalIndex}，用于观察相等关键字的相对次序。`,
+          codeLine: 1
+        });
+
+        let low = 0;
+        let high = i - 1;
+        visual = cloneItems(arr);
+        visual[i] = null;
+        add({
+          arr: visual,
+          stage: "search",
+          i,
+          sortedEnd: i - 1,
+          temp,
+          low,
+          high,
+          holeIndex: i,
+          message: `初始化 low = 0，high = ${i - 1}，在有序区中折半查找插入位置。`,
+          detail: "查找结束后，low 将指向第一个大于 temp 的位置。",
+          codeLine: 2
+        });
+
+        while (low <= high) {
+          const mid = Math.floor((low + high) / 2);
+          const midValue = arr[mid].value;
+          const goesLeft = midValue > temp.value;
+          compareCount += 1;
+          add({
+            arr: visual,
+            stage: "compare",
+            i,
+            sortedEnd: i - 1,
+            temp,
+            low,
+            high,
+            mid,
+            holeIndex: i,
+            compareResult: goesLeft ? ">" : "<=",
+            message: `比较 arr[${mid}] = ${formatNumber(midValue)} 与 temp = ${formatNumber(temp.value)}。`,
+            detail: goesLeft
+              ? "arr[mid] > temp，插入位置只可能在 mid 左侧或 mid 本身。"
+              : "arr[mid] <= temp，继续向右查找；相等时这样做可以保持排序稳定。",
+            codeLine: 3
+          });
+
+          if (goesLeft) {
+            high = mid - 1;
+            add({
+              arr: visual,
+              stage: "decision",
+              i,
+              sortedEnd: i - 1,
+              temp,
+              low,
+              high,
+              mid,
+              holeIndex: i,
+              compareResult: ">",
+              message: `${formatNumber(midValue)} > ${formatNumber(temp.value)}，令 high = mid - 1 = ${high}。`,
+              detail: "左半区继续保留为候选插入范围。",
+              codeLine: 4
+            });
+          } else {
+            low = mid + 1;
+            add({
+              arr: visual,
+              stage: "decision",
+              i,
+              sortedEnd: i - 1,
+              temp,
+              low,
+              high,
+              mid,
+              holeIndex: i,
+              compareResult: "<=",
+              message: `${formatNumber(midValue)} <= ${formatNumber(temp.value)}，令 low = mid + 1 = ${low}。`,
+              detail: "若关键字相等，新元素会插到已有相等元素之后。",
+              codeLine: 5
+            });
+          }
+        }
+
+        const insertIndex = low;
+        add({
+          arr: visual,
+          stage: "found",
+          i,
+          sortedEnd: i - 1,
+          temp,
+          low,
+          high,
+          insertIndex,
+          holeIndex: i,
+          message: `查找结束：low = ${low}，因此 arr[${insertIndex}] 是 temp 的插入位置。`,
+          detail: `需要把 arr[${insertIndex}..${i - 1}] 整体后移一位。`,
+          codeLine: 6
+        });
+
+        for (let j = i - 1; j >= insertIndex; j -= 1) {
+          visual[j + 1] = visual[j] ? { ...visual[j] } : null;
+          visual[j] = null;
+          shiftCount += 1;
+          writeCount += 1;
+          add({
+            arr: visual,
+            stage: "shift",
+            i,
+            sortedEnd: i - 1,
+            temp,
+            insertIndex,
+            holeIndex: j,
+            movingFrom: j,
+            movingTo: j + 1,
+            message: `后移：arr[${j}] 复制到 arr[${j + 1}]。`,
+            detail: "折半查找减少比较次数，但这个后移过程仍可能产生平方级移动。",
+            codeLine: 7
+          });
+        }
+
+        visual[insertIndex] = { ...temp };
+        writeCount += 1;
+        arr = cloneItems(visual);
+        add({
+          arr,
+          stage: "insert",
+          i,
+          sortedEnd: i,
+          temp,
+          insertIndex,
+          message: `写回：temp = ${formatNumber(temp.value)} 放入 arr[${insertIndex}]，第 ${i} 趟完成。`,
+          detail: `当前有序区扩展为 arr[0..${i}]。`,
+          codeLine: 8
+        });
+      }
+
+      add({
+        arr,
+        stage: "done",
+        sortedEnd: arr.length - 1,
+        message: `排序完成：${valuesText(arr)}。`,
+        detail: "总时间复杂度仍为 O(n^2)，因为移动元素没有被折半查找消除。",
+        codeLine: 9
+      });
+
+      return result;
+    }
+
+    function computeRange(items) {
+      const values = items.filter(Boolean).map((item) => item.value);
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      return { min, max: max === min ? min + 1 : max };
+    }
+
+    function barHeight(value) {
+      const ratio = (value - valueRange.min) / (valueRange.max - valueRange.min);
+      return `${18 + Math.max(0, Math.min(1, ratio)) * 72}px`;
+    }
+
+    function valueFontSize(value) {
+      const length = formatNumber(value).length;
+      if (length >= 7) return "12px";
+      if (length >= 5) return "14px";
+      return "18px";
+    }
+
+    function motionKeyForItem(item) {
+      return `item-${item.originalIndex}`;
+    }
+
+    function collectMotionRects() {
+      const rects = new Map();
+      document.querySelectorAll("[data-motion-key]").forEach((node) => {
+        const key = node.dataset.motionKey;
+        if (!key || rects.has(key)) return;
+        rects.set(key, node.getBoundingClientRect());
+      });
+      return rects;
+    }
+
+    function clearMotionArtifacts() {
+      document.querySelectorAll(".motion-ghost").forEach((node) => {
+        if (typeof node.remove === "function") {
+          node.remove();
+        } else if (node.parentNode) {
+          node.parentNode.removeChild(node);
+        }
+      });
+      document.querySelectorAll("[data-motion-hidden]").forEach((node) => {
+        node.style.visibility = "";
+        delete node.dataset.motionHidden;
+      });
+    }
+
+    function stripMotionKeys(node) {
+      if (node.removeAttribute) node.removeAttribute("data-motion-key");
+      if (node.querySelectorAll) {
+        node.querySelectorAll("[data-motion-key]").forEach((child) => {
+          child.removeAttribute("data-motion-key");
+        });
+      }
+    }
+
+    function runMotionAnimations(previousRects) {
+      if (!previousRects || previousRects.size === 0) return;
+      const duration = Math.max(420, Math.min(900, Number(els.speedInput.value) * 0.82));
+      const nodes = Array.from(document.querySelectorAll("[data-motion-key]"));
+      const movingItems = [];
+      const canUseGhosts = Boolean(document.body);
+
+      nodes.forEach((node) => {
+        const key = node.dataset.motionKey;
+        const previous = previousRects.get(key);
+        if (!previous) return;
+
+        const current = node.getBoundingClientRect();
+        const dx = previous.left - current.left;
+        const dy = previous.top - current.top;
+        if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
+
+        if (canUseGhosts && typeof node.cloneNode === "function") {
+          const ghost = node.cloneNode(true);
+          stripMotionKeys(ghost);
+          ghost.classList.add("motion-ghost", "motion-active");
+          ghost.style.position = "fixed";
+          ghost.style.left = `${previous.left}px`;
+          ghost.style.top = `${previous.top}px`;
+          ghost.style.width = `${previous.width || current.width}px`;
+          ghost.style.height = `${previous.height || current.height}px`;
+          ghost.style.zIndex = "9999";
+          ghost.style.transition = "none";
+          ghost.style.transform = "translate(0, 0)";
+          node.style.visibility = "hidden";
+          node.dataset.motionHidden = "true";
+          document.body.appendChild(ghost);
+          movingItems.push({ node, ghost, current });
+        } else {
+          node.style.transition = "none";
+          node.style.transform = `translate(${dx}px, ${dy}px)`;
+          node.style.zIndex = "10";
+          node.classList.add("motion-active");
+          movingItems.push({ node });
+        }
+      });
+
+      if (movingItems.length === 0) return;
+
+      const raf = typeof requestAnimationFrame === "function"
+        ? requestAnimationFrame
+        : (callback) => setTimeout(callback, 16);
+      const later = typeof window !== "undefined" && window.setTimeout
+        ? window.setTimeout.bind(window)
+        : setTimeout;
+
+      // Force layout so the browser paints each node at its old position first.
+      const firstAnimatedNode = movingItems[0].ghost || movingItems[0].node;
+      firstAnimatedNode.getBoundingClientRect();
+      raf(() => {
+        movingItems.forEach(({ node, ghost, current }) => {
+          if (ghost) {
+            ghost.style.transition = [
+              `left ${duration}ms cubic-bezier(0.22, 1, 0.36, 1)`,
+              `top ${duration}ms cubic-bezier(0.22, 1, 0.36, 1)`,
+              `width ${duration}ms cubic-bezier(0.22, 1, 0.36, 1)`,
+              `height ${duration}ms cubic-bezier(0.22, 1, 0.36, 1)`
+            ].join(", ");
+            ghost.style.left = `${current.left}px`;
+            ghost.style.top = `${current.top}px`;
+            ghost.style.width = `${current.width}px`;
+            ghost.style.height = `${current.height}px`;
+          } else {
+            node.style.transition = `transform ${duration}ms cubic-bezier(0.22, 1, 0.36, 1)`;
+            node.style.transform = "translate(0, 0)";
+          }
+        });
+      });
+
+      later(() => {
+        movingItems.forEach(({ node, ghost }) => {
+          node.style.transition = "";
+          node.style.transform = "";
+          node.style.zIndex = "";
+          node.classList.remove("motion-active");
+          node.style.visibility = "";
+          delete node.dataset.motionHidden;
+          if (ghost) {
+            if (typeof ghost.remove === "function") {
+              ghost.remove();
+            } else if (ghost.parentNode) {
+              ghost.parentNode.removeChild(ghost);
+            }
+          }
+        });
+      }, duration + 80);
+    }
+
+    function tempIsInArray(frame) {
+      return frame.temp && frame.arr.some((item) => item && item.originalIndex === frame.temp.originalIndex);
+    }
+
+    function renderTempToken(frame) {
+      els.tempToken.textContent = frame.temp ? formatNumber(frame.temp.value) : "-";
+      if (frame.temp && !tempIsInArray(frame)) {
+        els.tempToken.dataset.motionKey = motionKeyForItem(frame.temp);
+      } else {
+        delete els.tempToken.dataset.motionKey;
+      }
+    }
+
+    function marker(label, className) {
+      const span = document.createElement("span");
+      span.className = `marker ${className}`;
+      span.textContent = label;
+      if (className === "low" || className === "high" || className === "mid") {
+        span.dataset.motionKey = `marker-${className}`;
+      }
+      return span;
+    }
+
+    function renderArray(frame) {
+      els.arrayTrack.innerHTML = "";
+      frame.arr.forEach((item, index) => {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        if (frame.sortedEnd !== null && index <= frame.sortedEnd) cell.classList.add("sorted");
+        if (frame.sortedEnd !== null && index > frame.sortedEnd && item) cell.classList.add("unsorted");
+        if (index === frame.currentIndex) cell.classList.add("current");
+        if (index === frame.low) cell.classList.add("low");
+        if (index === frame.high) cell.classList.add("high");
+        if (index === frame.mid) cell.classList.add("mid");
+        if (index === frame.insertIndex) cell.classList.add("insert");
+        if (index === frame.movingFrom || index === frame.movingTo) cell.classList.add("moving");
+        if (index === frame.holeIndex || !item) cell.classList.add("hole");
+
+        const cellIndex = document.createElement("div");
+        cellIndex.className = "cell-index";
+        cellIndex.textContent = `[${index}]`;
+
+        const tile = document.createElement("div");
+        tile.className = "tile";
+        if (item) {
+          tile.dataset.motionKey = motionKeyForItem(item);
+        }
+
+        const markerLine = document.createElement("div");
+        markerLine.className = "marker-line";
+        if (index === frame.low) markerLine.appendChild(marker("low", "low"));
+        if (index === frame.high) markerLine.appendChild(marker("high", "high"));
+        if (index === frame.mid) markerLine.appendChild(marker("mid", "mid"));
+        if (index === frame.insertIndex) markerLine.appendChild(marker("pos", "pos"));
+        tile.appendChild(markerLine);
+
+        if (item) {
+          const bar = document.createElement("div");
+          bar.className = "bar";
+          bar.style.setProperty("--bar-height", barHeight(item.value));
+          const value = document.createElement("div");
+          value.className = "value";
+          value.style.setProperty("--value-size", valueFontSize(item.value));
+          value.textContent = formatNumber(item.value);
+          const origin = document.createElement("div");
+          origin.className = "origin";
+          origin.textContent = `原${item.originalIndex}`;
+          tile.append(bar, value, origin);
+        } else {
+          const text = document.createElement("div");
+          text.className = "hole-text";
+          text.textContent = "空位";
+          tile.appendChild(text);
+        }
+
+        cell.append(cellIndex, tile);
+        els.arrayTrack.appendChild(cell);
+      });
+    }
+
+    function renderCode(frame) {
+      els.codeList.innerHTML = "";
+      codeLines.forEach((line, index) => {
+        const li = document.createElement("li");
+        if (index === frame.codeLine) li.classList.add("active");
+        const no = document.createElement("span");
+        no.className = "code-no";
+        no.textContent = String(index + 1).padStart(2, "0");
+        const code = document.createElement("span");
+        code.textContent = line;
+        li.append(no, code);
+        els.codeList.appendChild(li);
+      });
+    }
+
+    function renderTrace() {
+      const previousScrollTop = els.traceList.scrollTop;
+      els.traceCount.textContent = `${frames.length} 步`;
+      els.traceList.innerHTML = "";
+      frames.forEach((frame, index) => {
+        const row = document.createElement("button");
+        row.type = "button";
+        row.className = "trace-row";
+        if (index === currentFrame) row.classList.add("active");
+        row.addEventListener("click", () => {
+          stopPlay();
+          setFrame(index);
+        });
+        const step = document.createElement("span");
+        step.className = "trace-step";
+        step.textContent = `${index + 1}`;
+        const text = document.createElement("span");
+        text.className = "trace-text";
+        text.textContent = frame.message;
+        row.append(step, text);
+        els.traceList.appendChild(row);
+      });
+      els.traceList.scrollTop = previousScrollTop;
+    }
+
+    function pointerValue(value) {
+      return value === null || value === undefined ? "-" : String(value);
+    }
+
+    function renderFrame() {
+      clearMotionArtifacts();
+      const frame = frames[currentFrame];
+      const previousRects = suppressNextAnimation ? new Map() : collectMotionRects();
+      renderArray(frame);
+      renderCode(frame);
+      renderTrace();
+
+      els.resultText.textContent = valuesText(frame.arr);
+      els.stepText.textContent = `第 ${currentFrame + 1} / ${frames.length} 步`;
+      els.messageTitle.textContent = frameTitle(frame.stage);
+      els.messageText.textContent = frame.message;
+      els.detailText.textContent = frame.detail;
+      els.compareCount.textContent = frame.compareCount;
+      els.shiftCount.textContent = frame.shiftCount;
+      els.writeCount.textContent = frame.writeCount;
+      els.sortedText.textContent = frame.sortedEnd === null ? "-" : `arr[0..${frame.sortedEnd}]`;
+
+      renderTempToken(frame);
+      els.roundText.textContent = frame.i === null ? "-" : `i = ${frame.i}`;
+      els.insertText.textContent = frame.insertIndex === null ? "-" : `arr[${frame.insertIndex}]`;
+      els.lowText.textContent = pointerValue(frame.low);
+      els.highText.textContent = pointerValue(frame.high);
+      els.midText.textContent = pointerValue(frame.mid);
+      els.compareText.textContent = frame.compareResult || "-";
+
+      els.prevBtn.disabled = currentFrame === 0;
+      els.nextBtn.disabled = currentFrame === frames.length - 1;
+      els.playBtn.textContent = playing ? "暂停" : "播放";
+      runMotionAnimations(previousRects);
+      suppressNextAnimation = false;
+    }
+
+    function setFrame(index) {
+      currentFrame = Math.max(0, Math.min(frames.length - 1, index));
+      renderFrame();
+    }
+
+    function stopPlay() {
+      playing = false;
+      if (playTimer) {
+        clearTimeout(playTimer);
+        playTimer = null;
+      }
+      if (frames.length) renderFrame();
+    }
+
+    function tickPlay() {
+      if (!playing) return;
+      if (currentFrame >= frames.length - 1) {
+        stopPlay();
+        return;
+      }
+      setFrame(currentFrame + 1);
+      playTimer = setTimeout(tickPlay, Number(els.speedInput.value));
+    }
+
+    function togglePlay() {
+      if (playing) {
+        stopPlay();
+        return;
+      }
+      if (currentFrame >= frames.length - 1) {
+        setFrame(0);
+      }
+      playing = true;
+      renderFrame();
+      playTimer = setTimeout(tickPlay, Number(els.speedInput.value));
+    }
+
+    function showError(message) {
+      els.errorText.textContent = message;
+      els.errorText.classList.add("show");
+    }
+
+    function clearError() {
+      els.errorText.textContent = "";
+      els.errorText.classList.remove("show");
+    }
+
+    function applyArray() {
+      try {
+        stopPlay();
+        const items = parseArray(els.arrayInput.value);
+        valueRange = computeRange(items);
+        frames = generateFrames(items);
+        currentFrame = 0;
+        suppressNextAnimation = true;
+        clearError();
+        renderFrame();
+      } catch (error) {
+        showError(error.message);
+      }
+    }
+
+    function randomArray() {
+      const length = 10 + Math.floor(Math.random() * 5);
+      const values = Array.from({ length }, () => Math.floor(Math.random() * 91) - 20);
+      if (values.length > 6) {
+        values[values.length - 1] = values[1];
+      }
+      els.arrayInput.value = values.join(", ");
+      applyArray();
+    }
+
+    els.applyBtn.addEventListener("click", applyArray);
+    els.exampleBtn.addEventListener("click", () => {
+      els.arrayInput.value = defaultArray;
+      applyArray();
+    });
+    els.randomBtn.addEventListener("click", randomArray);
+    els.prevBtn.addEventListener("click", () => {
+      stopPlay();
+      setFrame(currentFrame - 1);
+    });
+    els.nextBtn.addEventListener("click", () => {
+      stopPlay();
+      setFrame(currentFrame + 1);
+    });
+    els.playBtn.addEventListener("click", togglePlay);
+    els.speedInput.addEventListener("input", () => {
+      els.speedText.textContent = `${els.speedInput.value} ms`;
+    });
+    els.arrayInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        applyArray();
+      }
+    });
+
+    els.speedText.textContent = `${els.speedInput.value} ms`;
+    applyArray();
+  </script>
+</body>
+</html>

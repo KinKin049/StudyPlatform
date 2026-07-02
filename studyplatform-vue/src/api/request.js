@@ -1,12 +1,21 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 
+export function resolveResourceUrl(path) {
+  if (!path || /^https?:\/\//i.test(path)) {
+    return path || ''
+  }
+
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  return `${API_BASE_URL}${normalizedPath}`
+}
+
 export async function request(path, options = {}) {
   const headers = {
     ...(options.body ? { 'Content-Type': 'application/json' } : {}),
     ...(options.headers || {}),
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(resolveResourceUrl(path), {
     ...options,
     headers,
   })
