@@ -5,12 +5,18 @@ const AcademyGeneralCourses = () => import('../pages/academy/AcademyGeneralCours
 const AcademyHome = () => import('../pages/academy/AcademyHome.vue')
 const AcademyMicroMajors = () => import('../pages/academy/AcademyMicroMajors.vue')
 const AcademyOpenCourses = () => import('../pages/academy/AcademyOpenCourses.vue')
+const AcademyCourseDetail = () => import('../pages/academy/AcademyCourseDetail.vue')
 const AcademyTextbooks = () => import('../pages/academy/AcademyTextbooks.vue')
 const HomePage = () => import('../pages/HomePage.vue')
 const LabPlatform = () => import('../pages/LabPlatform.vue')
 const OjPlatform = () => import('../pages/OjPlatform.vue')
 const PetroleumSimulation = () => import('../pages/petroleum/PetroleumSimulation.vue')
 const WellLogSimulation = () => import('../pages/WellLogSimulation.vue')
+const VisualizationHome = () => import('../pages/visualization/VisualizationHome.vue')
+const DataStructureVisualization = () => import('../pages/visualization/DataStructureVisualization.vue')
+const AlgorithmDemoViewer = () => import('../pages/visualization/AlgorithmDemoViewer.vue')
+const FunctionGraph2D = () => import('../pages/visualization/FunctionGraph2D.vue')
+const SpaceModel3D = () => import('../pages/visualization/SpaceModel3D.vue')
 
 const routes = [
   {
@@ -38,14 +44,47 @@ const routes = [
         component: AcademyOpenCourses,
       },
       {
+        path: 'open-courses/:id',
+        name: 'academy-open-course-detail',
+        component: AcademyCourseDetail,
+        props: (route) => ({
+          resource: 'online-open-courses',
+          listPath: '/academy/open-courses',
+          moduleTitle: '在线开放课程',
+          courseId: route.params.id,
+        }),
+      },
+      {
         path: 'general-courses',
         name: 'academy-general-courses',
         component: AcademyGeneralCourses,
       },
       {
+        path: 'general-courses/:id',
+        name: 'academy-general-course-detail',
+        component: AcademyCourseDetail,
+        props: (route) => ({
+          resource: 'general-courses',
+          listPath: '/academy/general-courses',
+          moduleTitle: '通识课程',
+          courseId: route.params.id,
+        }),
+      },
+      {
         path: 'micro-majors',
         name: 'academy-micro-majors',
         component: AcademyMicroMajors,
+      },
+      {
+        path: 'micro-majors/:id',
+        name: 'academy-micro-major-detail',
+        component: AcademyCourseDetail,
+        props: (route) => ({
+          resource: 'micro-major-courses',
+          listPath: '/academy/micro-majors',
+          moduleTitle: '微专业课程',
+          courseId: route.params.id,
+        }),
       },
       {
         path: 'textbooks',
@@ -77,6 +116,31 @@ const routes = [
   {
     path: '/lab/production',
     redirect: '/lab/petroleum',
+  },
+  {
+    path: '/visualization',
+    name: 'visualization',
+    component: VisualizationHome,
+  },
+  {
+    path: '/visualization/data-structure',
+    name: 'visualization-data-structure',
+    component: DataStructureVisualization,
+  },
+  {
+    path: '/visualization/data-structure/:demoId',
+    name: 'visualization-data-structure-demo',
+    component: AlgorithmDemoViewer,
+  },
+  {
+    path: '/visualization/function-2d',
+    name: 'visualization-function-2d',
+    component: FunctionGraph2D,
+  },
+  {
+    path: '/visualization/space-3d',
+    name: 'visualization-space-3d',
+    component: SpaceModel3D,
   },
   {
     path: '/:pathMatch(.*)*',

@@ -1,15 +1,43 @@
 <script setup>
+import { watch } from 'vue'
+import { RouterLink } from 'vue-router'
+import { useRoute } from 'vue-router'
+import { resolveResourceUrl } from '../../api/request'
 import { useAcademyList } from '../../composables/useAcademyList'
+
+const route = useRoute()
 
 const {
   selectedCategory,
   keyword,
   categories,
   filteredItems: filteredCourses,
+  pagedItems: pagedCourses,
+  currentPage,
+  pageSize,
+  totalItems,
   loading,
   error,
   loadItems,
 } = useAcademyList('online-open-courses', ['name', 'teacher', 'school', 'category'])
+
+const resolveCover = (course) => resolveResourceUrl(course.cover || course.coverUrl)
+
+const useCoverFallback = (event, course) => {
+  if (course.coverUrl && event.target.src !== course.coverUrl) {
+    event.target.src = course.coverUrl
+  }
+}
+
+watch(
+  [categories, () => route.query.category],
+  ([categoryList, category]) => {
+    if (typeof category === 'string' && categoryList.includes(category)) {
+      selectedCategory.value = category
+    }
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
@@ -59,9 +87,14 @@ const {
       <div v-else-if="filteredCourses.length === 0" class="academy-state">暂无匹配课程</div>
 
       <div v-else class="online-course-grid">
-        <article v-for="course in filteredCourses" :key="course.id" class="online-course-card">
-          <a :href="course.link" target="_blank" rel="noreferrer">
-            <img :src="course.cover" :alt="course.name" loading="lazy" />
+        <article v-for="course in pagedCourses" :key="course.id" class="online-course-card">
+          <RouterLink :to="`/academy/open-courses/${encodeURIComponent(course.id)}`">
+            <img
+              :src="resolveCover(course)"
+              :alt="course.name"
+              loading="lazy"
+              @error="useCoverFallback($event, course)"
+            />
             <div class="online-course-card-body">
               <div class="online-course-card-meta">
                 <span>{{ course.category }}</span>
@@ -80,9 +113,20 @@ const {
               </dl>
               <p>{{ course.school }}</p>
             </div>
-          </a>
+          </RouterLink>
         </article>
       </div>
+
+      <el-pagination
+        v-if="filteredCourses.length > pageSize"
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        class="academy-pagination"
+        background
+        layout="total, sizes, prev, pager, next, jumper"
+        :page-sizes="[8, 12, 16, 24]"
+        :total="totalItems"
+      />
     </section>
   </main>
 </template>

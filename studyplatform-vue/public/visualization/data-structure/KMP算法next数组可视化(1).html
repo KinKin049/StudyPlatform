@@ -1,0 +1,1058 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KMP 算法 next 数组可视化</title>
+  <style>
+    :root {
+      --bg: #f6f7f4;
+      --panel: #ffffff;
+      --text: #1f2933;
+      --muted: #667085;
+      --line: #d9ded8;
+      --main: #0f766e;
+      --accent: #2563eb;
+      --warn: #b45309;
+      --danger: #b42318;
+      --ok: #15803d;
+      --soft-main: #ecfdf8;
+      --soft-accent: #eff6ff;
+      --soft-warn: #fff7ed;
+      --shadow: 0 12px 30px rgba(31, 41, 51, 0.08);
+      --cell: 38px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+      background: var(--bg);
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .app {
+      width: min(1360px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 24px 0 32px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: end;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      line-height: 1.25;
+      font-weight: 750;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .result-badge {
+      min-width: 260px;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .result-badge small {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .result-badge strong {
+      display: block;
+      color: var(--main);
+      font-size: 18px;
+      line-height: 1.45;
+      word-break: break-word;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto auto;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 16px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      min-height: 42px;
+      padding: 9px 12px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      color: var(--text);
+      background: #fbfcfb;
+      outline: none;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--main);
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    button {
+      min-height: 40px;
+      padding: 8px 12px;
+      border: 1px solid rgba(236, 110, 173, 0.56);
+      border-radius: 6px;
+      color: #fff;
+      background: rgba(236, 110, 173, 0.82);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    button.primary {
+      border-color: #d94c97;
+      color: #fff;
+      background: #ec6ead;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.48;
+    }
+
+    .speed {
+      display: grid;
+      gap: 6px;
+      min-width: 150px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--main);
+    }
+
+    .error {
+      display: none;
+      grid-column: 1 / -1;
+      color: var(--danger);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .error.show {
+      display: block;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.28fr) minmax(360px, 0.72fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfcfb;
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 720;
+    }
+
+    .step-count {
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .visual {
+      padding: 16px;
+    }
+
+    .action-box {
+      min-height: 118px;
+      display: grid;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding: 14px;
+      border-left: 4px solid var(--main);
+      border-radius: 8px;
+      background: #eef8f6;
+    }
+
+    .action-box h2 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.35;
+    }
+
+    .action-box p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .stage-tag {
+      display: inline-flex;
+      width: max-content;
+      align-items: center;
+      min-height: 24px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      color: #fff;
+      background: var(--main);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .section {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .section:last-child {
+      margin-bottom: 0;
+    }
+
+    .scroll-x {
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    .char-grid {
+      display: grid;
+      gap: 6px;
+      width: max-content;
+      min-width: 100%;
+    }
+
+    .row-label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .cells {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: var(--cell);
+      gap: 5px;
+      width: max-content;
+    }
+
+    .cell {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: var(--cell);
+      height: var(--cell);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      font-weight: 750;
+      line-height: 1;
+      transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+    }
+
+    .cell.index {
+      height: 24px;
+      color: var(--muted);
+      background: transparent;
+      border-color: transparent;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .cell.empty {
+      color: transparent;
+      border-color: transparent;
+      background: transparent;
+    }
+
+    .cell.main-char {
+      color: var(--main);
+      background: var(--soft-main);
+      border-color: rgba(15, 118, 110, 0.28);
+    }
+
+    .cell.pattern-char {
+      color: var(--accent);
+      background: var(--soft-accent);
+      border-color: rgba(37, 99, 235, 0.28);
+    }
+
+    .cell.next-val {
+      color: var(--warn);
+      background: var(--soft-warn);
+      border-color: rgba(180, 83, 9, 0.28);
+    }
+
+    .cell.active {
+      color: #fff;
+      background: var(--text);
+      border-color: var(--text);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 16px rgba(31, 41, 51, 0.18);
+    }
+
+    .cell.k-active {
+      color: #fff;
+      background: var(--warn);
+      border-color: var(--warn);
+      transform: translateY(-4px);
+    }
+
+    .cell.match {
+      color: #fff;
+      background: var(--ok);
+      border-color: var(--ok);
+    }
+
+    .cell.mismatch {
+      color: #fff;
+      background: var(--danger);
+      border-color: var(--danger);
+    }
+
+    .array-card,
+    .match-card {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfb;
+    }
+
+    .match-card {
+      min-height: 162px;
+    }
+
+    .side {
+      display: grid;
+      gap: 16px;
+    }
+
+    .summary {
+      padding: 14px 16px;
+    }
+
+    .summary dl {
+      display: grid;
+      grid-template-columns: 88px minmax(0, 1fr);
+      gap: 10px 12px;
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .summary dt {
+      color: var(--muted);
+    }
+
+    .summary dd {
+      margin: 0;
+      word-break: break-word;
+      line-height: 1.6;
+    }
+
+    .rules {
+      padding: 14px 16px;
+    }
+
+    .rules ol {
+      margin: 0;
+      padding-left: 22px;
+      line-height: 1.85;
+      color: #364152;
+      font-size: 14px;
+    }
+
+    .table-wrap {
+      max-height: 420px;
+      overflow: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th,
+    td {
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      color: #364152;
+      background: #fbfcfb;
+    }
+
+    tr.active-row {
+      background: #eef8f6;
+    }
+
+    code {
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: #eef2f0;
+      font-family: Consolas, "SFMono-Regular", monospace;
+    }
+
+    @media (max-width: 1120px) {
+      header,
+      .toolbar,
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .result-badge,
+      .speed {
+        min-width: 0;
+      }
+
+      .controls {
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 640px) {
+      :root {
+        --cell: 34px;
+      }
+
+      .app {
+        width: min(100% - 20px, 1360px);
+        padding-top: 14px;
+      }
+
+      h1 {
+        font-size: 22px;
+      }
+
+      .summary dl {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div>
+        <h1>KMP 算法 next 数组可视化</h1>
+        <p class="subtitle">使用 `next[0] = -1` 的 next 数组实现。主串指针 `i` 不回退，模式串指针 `j` 在失配时跳到 `next[j]`。</p>
+      </div>
+      <div class="result-badge">
+        <small>匹配结果</small>
+        <strong id="resultText">待生成</strong>
+      </div>
+    </header>
+
+    <section class="toolbar" aria-label="动画控制">
+      <div class="field">
+        <label for="mainString">主串 S</label>
+        <input id="mainString" type="text" value="ABABABCABABABCAC" spellcheck="false">
+      </div>
+      <div class="field">
+        <label for="patternString">模式串 P</label>
+        <input id="patternString" type="text" value="ABABABCAC" spellcheck="false">
+      </div>
+      <div class="controls">
+        <button id="build">重新生成</button>
+        <button id="prev">上一步</button>
+        <button id="play" class="primary">播放</button>
+        <button id="next">下一步</button>
+        <button id="reset">重置</button>
+      </div>
+      <div class="speed">
+        <label for="speed">播放速度</label>
+        <input id="speed" type="range" min="450" max="1800" step="150" value="900">
+      </div>
+      <div id="error" class="error"></div>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">可视化过程</h2>
+          <div id="stepCount" class="step-count">第 1 / 1 步</div>
+        </div>
+        <div class="visual">
+          <div class="action-box">
+            <span id="stageTag" class="stage-tag">next 构造</span>
+            <h2 id="actionTitle">初始化</h2>
+            <p id="actionText">准备构造 next 数组。</p>
+          </div>
+
+          <div class="section array-card">
+            <label>模式串 P 与 next 数组</label>
+            <div class="scroll-x">
+              <div id="nextGrid" class="char-grid"></div>
+            </div>
+          </div>
+
+          <div class="section match-card">
+            <label>主串匹配过程</label>
+            <div class="scroll-x">
+              <div id="matchGrid" class="char-grid"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="side">
+        <div class="panel">
+          <div class="panel-head">
+            <h2 class="panel-title">当前状态</h2>
+          </div>
+          <div class="summary">
+            <dl>
+              <dt>阶段</dt>
+              <dd id="stageInfo">next 构造</dd>
+              <dt>i</dt>
+              <dd id="iInfo">-</dd>
+              <dt>j</dt>
+              <dd id="jInfo">-</dd>
+              <dt>k</dt>
+              <dd id="kInfo">-</dd>
+              <dt>next</dt>
+              <dd id="nextInfo">[]</dd>
+              <dt>比较</dt>
+              <dd id="compareInfo">无</dd>
+            </dl>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2 class="panel-title">KMP 规则</h2>
+          </div>
+          <div class="rules">
+            <ol>
+              <li>`next[j]` 表示模式串第 `j` 位失配时，`j` 应回退到的位置。</li>
+              <li>构造 next 时使用两个指针 `j` 和 `k`，`k` 表示当前可复用的最长相等前后缀长度。</li>
+              <li>匹配时若 `S[i] == P[j]`，则 `i++`、`j++`。</li>
+              <li>匹配时若失配，主串指针 `i` 不回退，只令 `j = next[j]`。</li>
+              <li>若 `j == -1`，说明模式串无法继续回退，下一步令 `i++`、`j++`。</li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2 class="panel-title">步骤表</h2>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>步</th>
+                  <th>阶段</th>
+                  <th>动作</th>
+                </tr>
+              </thead>
+              <tbody id="stepTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const mainInput = document.getElementById("mainString");
+    const patternInput = document.getElementById("patternString");
+    const errorBox = document.getElementById("error");
+    const resultText = document.getElementById("resultText");
+    const stepCount = document.getElementById("stepCount");
+    const stageTag = document.getElementById("stageTag");
+    const actionTitle = document.getElementById("actionTitle");
+    const actionText = document.getElementById("actionText");
+    const nextGrid = document.getElementById("nextGrid");
+    const matchGrid = document.getElementById("matchGrid");
+    const stageInfo = document.getElementById("stageInfo");
+    const iInfo = document.getElementById("iInfo");
+    const jInfo = document.getElementById("jInfo");
+    const kInfo = document.getElementById("kInfo");
+    const nextInfo = document.getElementById("nextInfo");
+    const compareInfo = document.getElementById("compareInfo");
+    const stepTable = document.getElementById("stepTable");
+    const buildBtn = document.getElementById("build");
+    const prevBtn = document.getElementById("prev");
+    const playBtn = document.getElementById("play");
+    const nextBtn = document.getElementById("next");
+    const resetBtn = document.getElementById("reset");
+    const speedInput = document.getElementById("speed");
+
+    let S = "";
+    let P = "";
+    let finalNext = [];
+    let steps = [];
+    let index = 0;
+    let timer = null;
+
+    function chars(text) {
+      return Array.from(text);
+    }
+
+    function snapshotNext(next, m) {
+      return Array.from({ length: m }, (_, i) => next[i] ?? "");
+    }
+
+    function visibleChar(ch) {
+      return ch === " " ? "␠" : ch;
+    }
+
+    function addStep(step) {
+      steps.push({
+        stage: step.stage,
+        title: step.title,
+        detail: step.detail,
+        next: snapshotNext(step.next ?? finalNext, P.length),
+        j: step.j ?? null,
+        k: step.k ?? null,
+        i: step.i ?? null,
+        align: step.align ?? null,
+        compare: step.compare ?? "",
+        matchIndex: step.matchIndex ?? null,
+        done: step.done ?? false
+      });
+    }
+
+    function buildNextSteps() {
+      const m = P.length;
+      const next = Array(m).fill("");
+      if (m === 0) return next;
+
+      next[0] = -1;
+      addStep({
+        stage: "next",
+        title: "初始化 next[0] = -1",
+        detail: "模式串第 0 位失配时已经无法继续回退，因此记为 -1。",
+        next,
+        j: 0,
+        k: -1
+      });
+
+      let j = 0;
+      let k = -1;
+
+      while (j < m - 1) {
+        if (k === -1 || P[j] === P[k]) {
+          const oldJ = j;
+          const oldK = k;
+          j += 1;
+          k += 1;
+          next[j] = k;
+          addStep({
+            stage: "next",
+            title: `填写 next[${j}] = ${k}`,
+            detail: oldK === -1
+              ? `k = -1，说明当前没有可复用前后缀，j 和 k 同时后移，得到 next[${j}] = ${k}。`
+              : `P[${oldJ}] 与 P[${oldK}] 相等，最长可复用前后缀长度增加，得到 next[${j}] = ${k}。`,
+            next,
+            j,
+            k,
+            compare: oldK === -1 ? "k = -1" : `P[${oldJ}] = P[${oldK}] = ${visibleChar(P[oldJ])}`
+          });
+        } else {
+          const oldK = k;
+          k = next[k];
+          addStep({
+            stage: "next",
+            title: `构造 next 时失配，k = next[${oldK}]`,
+            detail: `P[${j}] = ${visibleChar(P[j])} 与 P[${oldK}] = ${visibleChar(P[oldK])} 不相等，k 回退到 ${k}，j 不动。`,
+            next,
+            j,
+            k,
+            compare: `P[${j}] != P[${oldK}]`
+          });
+        }
+      }
+
+      finalNext = next.slice();
+      return next;
+    }
+
+    function buildMatchSteps(next) {
+      let i = 0;
+      let j = 0;
+      const n = S.length;
+      const m = P.length;
+
+      addStep({
+        stage: "match",
+        title: "开始匹配主串和模式串",
+        detail: "从 S[0] 与 P[0] 开始比较。匹配时两个指针同时前进，失配时只移动 j。",
+        next,
+        i,
+        j,
+        align: 0
+      });
+
+      while (i < n && j < m) {
+        if (j === -1) {
+          addStep({
+            stage: "match",
+            title: "j = -1，主串指针前进",
+            detail: "模式串已经无法继续回退，令 i++、j++，从主串下一个位置重新比较。",
+            next,
+            i,
+            j,
+            align: i,
+            compare: "j = -1"
+          });
+          i += 1;
+          j += 1;
+          continue;
+        }
+
+        const align = i - j;
+        if (S[i] === P[j]) {
+          addStep({
+            stage: "match",
+            title: `S[${i}] 与 P[${j}] 匹配`,
+            detail: `${visibleChar(S[i])} 与 ${visibleChar(P[j])} 相等，令 i++、j++。`,
+            next,
+            i,
+            j,
+            align,
+            compare: "match"
+          });
+          i += 1;
+          j += 1;
+
+          if (j === m) {
+            addStep({
+              stage: "match",
+              title: "匹配成功",
+              detail: `模式串完整匹配，起始位置为 ${i - j}。`,
+              next,
+              i,
+              j,
+              align: i - j,
+              compare: "success",
+              matchIndex: i - j,
+              done: true
+            });
+            return;
+          }
+        } else {
+          const fallback = next[j];
+          addStep({
+            stage: "match",
+            title: `失配，j = next[${j}]`,
+            detail: `S[${i}] = ${visibleChar(S[i])} 与 P[${j}] = ${visibleChar(P[j])} 不相等。主串 i 不回退，j 从 ${j} 跳到 ${fallback}。`,
+            next,
+            i,
+            j,
+            align,
+            compare: "mismatch"
+          });
+          j = fallback;
+        }
+      }
+
+      addStep({
+        stage: "match",
+        title: "匹配失败",
+        detail: "主串已经扫描结束，未找到完整模式串。",
+        next,
+        i,
+        j,
+        align: Math.max(0, i - Math.max(j, 0)),
+        compare: "fail",
+        matchIndex: -1,
+        done: true
+      });
+    }
+
+    function validate() {
+      if (!mainInput.value.length) return "主串不能为空。";
+      if (!patternInput.value.length) return "模式串不能为空。";
+      if (patternInput.value.length > mainInput.value.length) return "模式串长度不能大于主串长度。";
+      return "";
+    }
+
+    function buildAllSteps() {
+      S = mainInput.value;
+      P = patternInput.value;
+      steps = [];
+      finalNext = Array(P.length).fill("");
+      const next = buildNextSteps();
+      finalNext = next.slice();
+      buildMatchSteps(next);
+    }
+
+    function makeCell(text, className = "") {
+      const cell = document.createElement("span");
+      cell.className = `cell ${className}`.trim();
+      cell.textContent = text;
+      return cell;
+    }
+
+    function renderNextGrid(step) {
+      nextGrid.innerHTML = "";
+      const indices = document.createElement("div");
+      const charsRow = document.createElement("div");
+      const nextRow = document.createElement("div");
+      indices.className = "cells";
+      charsRow.className = "cells";
+      nextRow.className = "cells";
+
+      chars(P).forEach((ch, pos) => {
+        indices.appendChild(makeCell(pos, "index"));
+        let charClass = "pattern-char";
+        if (step.stage === "next" && pos === step.j) charClass += " active";
+        if (step.stage === "next" && pos === step.k) charClass += " k-active";
+        charsRow.appendChild(makeCell(visibleChar(ch), charClass));
+
+        let nextClass = "next-val";
+        if (step.stage === "next" && pos === step.j && step.next[pos] !== "") nextClass += " active";
+        nextRow.appendChild(makeCell(step.next[pos] === "" ? "" : step.next[pos], nextClass));
+      });
+
+      const label1 = document.createElement("div");
+      const label2 = document.createElement("div");
+      const label3 = document.createElement("div");
+      label1.className = "row-label";
+      label2.className = "row-label";
+      label3.className = "row-label";
+      label1.textContent = "下标";
+      label2.textContent = "P";
+      label3.textContent = "next";
+
+      nextGrid.append(label1, indices, label2, charsRow, label3, nextRow);
+    }
+
+    function renderMatchGrid(step) {
+      matchGrid.innerHTML = "";
+      const n = S.length;
+      const m = P.length;
+      const rawAlign = step.align ?? 0;
+      const align = Math.max(0, rawAlign);
+      const total = Math.max(n, align + m);
+
+      const indexRow = document.createElement("div");
+      const textRow = document.createElement("div");
+      const patternRow = document.createElement("div");
+      indexRow.className = "cells";
+      textRow.className = "cells";
+      patternRow.className = "cells";
+
+      for (let pos = 0; pos < total; pos += 1) {
+        indexRow.appendChild(makeCell(pos < n ? pos : "", "index"));
+
+        let textClass = pos < n ? "main-char" : "empty";
+        if (step.stage === "match" && pos === step.i) {
+          textClass += step.compare === "mismatch" ? " mismatch" : " active";
+          if (step.compare === "match" || step.compare === "success") textClass += " match";
+        }
+        textRow.appendChild(makeCell(pos < n ? visibleChar(S[pos]) : "", textClass));
+
+        const pIndex = pos - align;
+        let pClass = pIndex >= 0 && pIndex < m ? "pattern-char" : "empty";
+        if (step.stage === "match" && pIndex === step.j && step.j >= 0) {
+          pClass += step.compare === "mismatch" ? " mismatch" : " active";
+          if (step.compare === "match" || step.compare === "success") pClass += " match";
+        }
+        if (step.matchIndex !== null && step.matchIndex >= 0 && pos >= step.matchIndex && pos < step.matchIndex + m) {
+          pClass += " match";
+        }
+        patternRow.appendChild(makeCell(pIndex >= 0 && pIndex < m ? visibleChar(P[pIndex]) : "", pClass));
+      }
+
+      const label1 = document.createElement("div");
+      const label2 = document.createElement("div");
+      const label3 = document.createElement("div");
+      label1.className = "row-label";
+      label2.className = "row-label";
+      label3.className = "row-label";
+      label1.textContent = "S 下标";
+      label2.textContent = "主串 S";
+      label3.textContent = "模式 P";
+
+      matchGrid.append(label1, indexRow, label2, textRow, label3, patternRow);
+    }
+
+    function renderTable() {
+      stepTable.innerHTML = "";
+      steps.forEach((step, pos) => {
+        const row = document.createElement("tr");
+        if (pos === index) row.classList.add("active-row");
+        row.innerHTML = `
+          <td>${pos + 1}</td>
+          <td>${step.stage === "next" ? "next" : "匹配"}</td>
+          <td>${step.title}</td>
+        `;
+        stepTable.appendChild(row);
+      });
+    }
+
+    function finalResult() {
+      const done = steps.findLast((step) => step.done);
+      if (!done) return "待生成";
+      if (done.matchIndex !== null && done.matchIndex >= 0) return `匹配成功，起始下标 ${done.matchIndex}`;
+      return "匹配失败";
+    }
+
+    function render() {
+      const step = steps[index];
+      renderNextGrid(step);
+      renderMatchGrid(step);
+      renderTable();
+
+      stepCount.textContent = `第 ${index + 1} / ${steps.length} 步`;
+      stageTag.textContent = step.stage === "next" ? "next 构造" : "主串匹配";
+      stageTag.style.background = step.stage === "next" ? "var(--main)" : "var(--accent)";
+      actionTitle.textContent = step.title;
+      actionText.textContent = step.detail;
+      resultText.textContent = finalResult();
+
+      stageInfo.textContent = step.stage === "next" ? "next 构造" : "主串匹配";
+      iInfo.textContent = step.i === null ? "-" : step.i;
+      jInfo.textContent = step.j === null ? "-" : step.j;
+      kInfo.textContent = step.k === null ? "-" : step.k;
+      nextInfo.textContent = `[${step.next.map((value) => value === "" ? "_" : value).join(", ")}]`;
+      compareInfo.textContent = step.compare || "无";
+
+      prevBtn.disabled = index === 0;
+      nextBtn.disabled = index === steps.length - 1;
+    }
+
+    function stop() {
+      window.clearInterval(timer);
+      timer = null;
+      playBtn.textContent = "播放";
+    }
+
+    function play() {
+      if (timer) {
+        stop();
+        return;
+      }
+      playBtn.textContent = "暂停";
+      timer = window.setInterval(() => {
+        if (index >= steps.length - 1) {
+          stop();
+          return;
+        }
+        index += 1;
+        render();
+      }, Number(speedInput.value));
+    }
+
+    function rebuild() {
+      stop();
+      const message = validate();
+      if (message) {
+        errorBox.textContent = message;
+        errorBox.classList.add("show");
+        return;
+      }
+      errorBox.textContent = "";
+      errorBox.classList.remove("show");
+      buildAllSteps();
+      index = 0;
+      render();
+    }
+
+    buildBtn.addEventListener("click", rebuild);
+
+    prevBtn.addEventListener("click", () => {
+      stop();
+      index = Math.max(0, index - 1);
+      render();
+    });
+
+    nextBtn.addEventListener("click", () => {
+      stop();
+      index = Math.min(steps.length - 1, index + 1);
+      render();
+    });
+
+    playBtn.addEventListener("click", play);
+
+    resetBtn.addEventListener("click", () => {
+      stop();
+      index = 0;
+      render();
+    });
+
+    speedInput.addEventListener("input", () => {
+      if (timer) {
+        stop();
+        play();
+      }
+    });
+
+    [mainInput, patternInput].forEach((input) => {
+      input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") rebuild();
+      });
+    });
+
+    rebuild();
+  </script>
+</body>
+</html>

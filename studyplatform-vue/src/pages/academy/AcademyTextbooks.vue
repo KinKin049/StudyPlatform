@@ -1,15 +1,42 @@
 <script setup>
+import { watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { resolveResourceUrl } from '../../api/request'
 import { useAcademyList } from '../../composables/useAcademyList'
+
+const route = useRoute()
 
 const {
   selectedCategory,
   keyword,
   categories,
   filteredItems: filteredTextbooks,
+  pagedItems: pagedTextbooks,
+  currentPage,
+  pageSize,
+  totalItems,
   loading,
   error,
   loadItems,
 } = useAcademyList('textbooks', ['name', 'editor', 'category', 'publisher', 'isbn', 'description'])
+
+const resolveCover = (textbook) => resolveResourceUrl(textbook.cover || textbook.coverUrl)
+
+const useCoverFallback = (event, textbook) => {
+  if (textbook.coverUrl && event.target.src !== textbook.coverUrl) {
+    event.target.src = textbook.coverUrl
+  }
+}
+
+watch(
+  [categories, () => route.query.category],
+  ([categoryList, category]) => {
+    if (typeof category === 'string' && categoryList.includes(category)) {
+      selectedCategory.value = category
+    }
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
@@ -59,10 +86,15 @@ const {
       <div v-else-if="filteredTextbooks.length === 0" class="academy-state">暂无匹配教材</div>
 
       <div v-else class="textbook-grid">
-        <article v-for="textbook in filteredTextbooks" :key="textbook.id" class="textbook-card">
+        <article v-for="textbook in pagedTextbooks" :key="textbook.id" class="textbook-card">
           <a :href="textbook.link" target="_blank" rel="noreferrer">
             <div class="textbook-cover">
-              <img :src="textbook.cover" :alt="textbook.name" loading="lazy" />
+              <img
+                :src="resolveCover(textbook)"
+                :alt="textbook.name"
+                loading="lazy"
+                @error="useCoverFallback($event, textbook)"
+              />
             </div>
             <div class="textbook-card-body">
               <div class="online-course-card-meta">
@@ -85,6 +117,17 @@ const {
           </a>
         </article>
       </div>
+
+      <el-pagination
+        v-if="filteredTextbooks.length > pageSize"
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        class="academy-pagination"
+        background
+        layout="total, sizes, prev, pager, next, jumper"
+        :page-sizes="[8, 12, 16, 24]"
+        :total="totalItems"
+      />
     </section>
   </main>
 </template>
