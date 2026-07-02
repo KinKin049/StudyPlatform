@@ -120,6 +120,21 @@
   margin: 12px 0 0;
 }
 
+.simulation-intro-card {
+  margin-top: 16px;
+}
+
+.simulation-intro-card p {
+  margin: 0 0 10px;
+  color: #526a75;
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.simulation-intro-card p:last-child {
+  margin-bottom: 0;
+}
+
 .summary-list {
   margin: 8px 0 14px;
   padding: 12px;
@@ -161,14 +176,64 @@
   background: #f8fbfc;
 }
 
+.pump-sky {
+  fill: #f8fbfc;
+}
+
 .pump-base {
   fill: #637381;
+}
+
+.pump-ground-line {
+  fill: none;
+  stroke: rgba(82, 106, 117, 0.28);
+  stroke-width: 2;
 }
 
 .pump-tower {
   fill: rgba(23, 143, 134, 0.08);
   stroke: #526a75;
   stroke-width: 6;
+}
+
+.pump-tower-brace,
+.pump-tower-rung {
+  fill: none;
+  stroke: rgba(82, 106, 117, 0.72);
+  stroke-linecap: round;
+}
+
+.pump-tower-brace {
+  stroke-width: 4;
+}
+
+.pump-tower-rung {
+  stroke-width: 3;
+}
+
+.pump-gearbox {
+  fill: #dbe5e8;
+  stroke: #526a75;
+  stroke-width: 3;
+}
+
+.pump-motor {
+  fill: #8fb4bc;
+  stroke: #526a75;
+  stroke-width: 3;
+}
+
+.pump-motor-wheel {
+  fill: #f8fbfc;
+  stroke: #526a75;
+  stroke-width: 4;
+}
+
+.pump-belt {
+  fill: none;
+  stroke: #233f4d;
+  stroke-width: 5;
+  stroke-linecap: round;
 }
 
 .pump-beam,
@@ -179,9 +244,15 @@
   stroke-linecap: round;
 }
 
-.pump-beam {
+.pump-beam-body {
+  fill: url("#pumpSteelGradient");
   stroke: #233f4d;
-  stroke-width: 9;
+  stroke-width: 2;
+}
+
+.pump-beam {
+  stroke: rgba(255, 255, 255, 0.36);
+  stroke-width: 3;
 }
 
 .pump-crank {
@@ -207,10 +278,31 @@
   stroke-linecap: round;
 }
 
+.pump-head-sling,
+.pump-head-plate {
+  fill: none;
+  stroke: #526a75;
+  stroke-linecap: round;
+}
+
+.pump-head-sling {
+  stroke-width: 3;
+}
+
+.pump-head-plate {
+  stroke-width: 4;
+}
+
 .pump-wheel {
   fill: none;
   stroke: #8b9bab;
   stroke-width: 6;
+}
+
+.pump-wheel-track {
+  fill: none;
+  stroke: rgba(242, 185, 75, 0.22);
+  stroke-width: 8;
 }
 
 .pump-joint,
@@ -220,8 +312,40 @@
   stroke-width: 3;
 }
 
+.pump-tail-bearing {
+  fill: #8fb4bc;
+  stroke: #ffffff;
+  stroke-width: 3;
+}
+
+.pump-counterweight {
+  fill: #f2b94b;
+  stroke: #9a6a18;
+  stroke-width: 3;
+}
+
 .pump-carrier {
   fill: #178f86;
+}
+
+.pump-wellhead,
+.pump-wellhead-body {
+  fill: #dbe5e8;
+  stroke: #526a75;
+  stroke-width: 3;
+}
+
+.pump-flowline {
+  fill: none;
+  stroke: #526a75;
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.pump-label {
+  fill: #526a75;
+  font-size: 12px;
+  font-weight: 800;
 }
 
 /* 指标卡片和图表容器。 */

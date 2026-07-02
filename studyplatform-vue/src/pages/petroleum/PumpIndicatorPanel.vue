@@ -2,7 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
-import { postSimulationRecord } from './api'
+import { downloadTextReport } from './api'
 
 /**
  * 游梁式抽油机动画与示功图面板。
@@ -16,6 +16,7 @@ const pumpStrokeTimes = ref(6)
 const pumpStroke = ref(3)
 const pumpDiameter = ref(44)
 const pumpCondition = ref('normal')
+const reportVisible = ref(false)
 const indicatorChartRef = ref(null)
 const chartInstance = ref(null)
 const chartResizeObserver = ref(null)
@@ -46,7 +47,7 @@ const pumpLoadRange = computed(() => {
 const pumpGeometry = computed(() => {
   const phase = pumpPhase.value
   const amplitude = 12 + pumpStroke.value * 5
-  const crankCenter = { x: 155, y: 250 }
+  const crankCenter = { x: 152, y: 248 }
   const crankRadius = 34
   const crankPin = {
     x: crankCenter.x + Math.cos(phase) * crankRadius,
@@ -58,19 +59,31 @@ const pumpGeometry = computed(() => {
     x: beamPivot.x - Math.cos(beamAngle) * 145,
     y: beamPivot.y - Math.sin(beamAngle) * 145,
   }
+  const rearBeam = {
+    x: beamPivot.x - Math.cos(beamAngle) * 170,
+    y: beamPivot.y - Math.sin(beamAngle) * 170,
+  }
   const horseHead = {
     x: beamPivot.x + Math.cos(beamAngle) * 205,
     y: beamPivot.y + Math.sin(beamAngle) * 205,
   }
   const polishedRodY = 222 + Math.sin(phase) * amplitude
+  const counterWeight = {
+    x: crankCenter.x + Math.cos(phase + Math.PI) * (crankRadius + 10),
+    y: crankCenter.y + Math.sin(phase + Math.PI) * (crankRadius + 10),
+  }
   return {
     crankCenter,
     crankPin,
     beamPivot,
     leftBeam,
+    rearBeam,
     horseHead,
     polishedRodY,
-    headArcPath: `M ${horseHead.x - 12} ${horseHead.y - 42} Q ${horseHead.x + 34} ${horseHead.y} ${horseHead.x - 8} ${horseHead.y + 44}`,
+    counterWeight,
+    beamBodyPath: `M ${rearBeam.x} ${rearBeam.y - 9} L ${horseHead.x - 10} ${horseHead.y - 13} L ${horseHead.x - 6} ${horseHead.y + 13} L ${rearBeam.x + 4} ${rearBeam.y + 9} Z`,
+    headArcPath: `M ${horseHead.x - 14} ${horseHead.y - 48} Q ${horseHead.x + 46} ${horseHead.y} ${horseHead.x - 12} ${horseHead.y + 52}`,
+    slingPath: `M ${horseHead.x + 10} ${horseHead.y - 28} Q ${horseHead.x + 28} ${horseHead.y + 6} ${horseHead.x + 8} ${horseHead.y + 40}`,
   }
 })
 
@@ -105,6 +118,21 @@ const indicatorData = computed(() => {
 
   points.push(points[0])
   return points
+})
+
+const pumpReportRows = computed(() => [
+  { name: '杆柱静载荷 Wr', value: `${pumpLoadRange.value.rodLoad.toFixed(2)} kN` },
+  { name: '液柱静载荷 Wl', value: `${pumpLoadRange.value.liquidLoad.toFixed(2)} kN` },
+  { name: '最大静载荷 Wmax', value: `${pumpLoadRange.value.staticMax.toFixed(2)} kN` },
+  { name: '最小静载荷 Wmin', value: `${pumpLoadRange.value.staticMin.toFixed(2)} kN` },
+  { name: '惯性动载荷', value: `${pumpLoadRange.value.inertiaLoad.toFixed(2)} kN` },
+])
+
+const pumpReportConclusion = computed(() => {
+  const conditionText = workConditionOptions.find((item) => item.value === pumpCondition.value)?.label || '正常'
+  const speedLevel = pumpStrokeTimes.value >= 9 ? '冲次较高，惯性载荷影响明显' : '冲次处于常规范围，载荷变化较平稳'
+  const strokeLevel = pumpStroke.value >= 4.5 ? '冲程较长，悬点位移范围较大' : '冲程适中，适合观察常规抽汲过程'
+  return `当前工况为${conditionText}。${speedLevel}；${strokeLevel}。示功图形态可用于判断泵况、供液状态和杆柱受力变化。`
 })
 
 function renderIndicatorChart() {
@@ -164,21 +192,27 @@ function animatePump(timestamp) {
   animationFrameId = window.requestAnimationFrame(animatePump)
 }
 
-async function savePumpRecord() {
-  try {
-    await postSimulationRecord('/api/production/pump/save', {
-      userId: null,
-      stroke: pumpStroke.value,
-      strokeTimes: pumpStrokeTimes.value,
-      pumpDiameter: pumpDiameter.value,
-      workCondition: pumpCondition.value,
-      indicatorChartData: JSON.stringify(indicatorData.value),
-    })
-    ElMessage.success('抽油机仿真记录已保存')
-  } catch (error) {
-    console.error('保存抽油机仿真记录失败', error)
-    ElMessage.warning('后端未连接，当前仅完成前端仿真')
-  }
+function downloadPumpReport() {
+  const rows = pumpReportRows.value.map((row) => `${row.name}：${row.value}`).join('\n')
+  const conditionText = workConditionOptions.find((item) => item.value === pumpCondition.value)?.label || '正常'
+  const content = [
+    '抽油机展示功图解释报告',
+    '',
+    '一、当前仿真参数',
+    `冲次：${pumpStrokeTimes.value} 次/min`,
+    `冲程：${pumpStroke.value} m`,
+    `泵径：${pumpDiameter.value} mm`,
+    `工况：${conditionText}`,
+    '',
+    '二、载荷计算结果',
+    rows,
+    '',
+    '三、解释结论',
+    pumpReportConclusion.value,
+  ].join('\n')
+
+  downloadTextReport(`抽油机展示功图解释报告_${Date.now()}.txt`, content)
+  ElMessage.success('报告已下载到本地')
 }
 
 watch([pumpStrokeTimes, pumpStroke, pumpDiameter, pumpCondition], () => {
@@ -239,26 +273,71 @@ onBeforeUnmount(() => {
         <el-button type="primary" class="full-control" @click="isPumpPlaying = !isPumpPlaying">
           {{ isPumpPlaying ? '暂停动画' : '播放动画' }}
         </el-button>
-        <el-button class="full-control secondary-action" @click="savePumpRecord">保存记录</el-button>
+        <el-button class="full-control secondary-action" @click="reportVisible = true">生成解释报告</el-button>
+      </el-card>
+
+      <el-card shadow="never" class="simulation-intro-card">
+        <template #header>仿真说明</template>
+        <p>
+          该模块用二维 SVG 表现游梁式抽油机的曲柄、连杆、游梁、驴头和悬绳器联动过程。
+          冲次控制曲柄角速度，冲程控制驴头摆动幅度和悬点位移范围。
+        </p>
+        <p>
+          右侧展示功图根据杆柱静载荷、液柱静载荷和惯性动载荷生成，用于观察正常、供液不足、气体影响和漏失等典型工况差异。
+        </p>
       </el-card>
     </aside>
 
     <section class="production-visual pump-visual pump-wide-visual">
       <el-card shadow="never">
         <template #header>游梁式抽油机 2D 动画</template>
-        <svg class="pump-svg" viewBox="0 0 560 340" role="img" aria-label="游梁式抽油机二维动画">
-          <rect x="42" y="294" width="470" height="18" rx="3" class="pump-base" />
-          <path d="M250 292 L305 145 L358 292 Z" class="pump-tower" />
+        <svg class="pump-svg" viewBox="0 0 640 390" role="img" aria-label="游梁式抽油机二维动画">
+          <defs>
+            <linearGradient id="pumpGroundGradient" x1="0" x2="1">
+              <stop offset="0%" stop-color="#e8f4f1" />
+              <stop offset="100%" stop-color="#f8fbfc" />
+            </linearGradient>
+            <linearGradient id="pumpSteelGradient" x1="0" x2="1">
+              <stop offset="0%" stop-color="#203747" />
+              <stop offset="100%" stop-color="#526a75" />
+            </linearGradient>
+          </defs>
+          <rect x="0" y="0" width="640" height="390" class="pump-sky" />
+          <rect x="30" y="315" width="570" height="24" rx="4" class="pump-base" />
+          <rect x="0" y="339" width="640" height="51" fill="url(#pumpGroundGradient)" />
+          <path d="M58 354 C118 340 174 350 230 342 S342 354 412 342 S530 338 604 352" class="pump-ground-line" />
+          <path d="M244 315 L305 145 L372 315 Z" class="pump-tower" />
+          <path d="M270 315 L305 145 L340 315" class="pump-tower-brace" />
+          <path d="M252 255 L354 255 M265 218 L342 218 M280 181 L328 181" class="pump-tower-rung" />
+          <rect x="92" y="256" width="116" height="58" rx="10" class="pump-gearbox" />
+          <circle cx="114" cy="285" r="18" class="pump-motor-wheel" />
+          <circle cx="196" cy="285" r="22" class="pump-motor-wheel" />
+          <path d="M114 267 C132 242 178 242 196 263" class="pump-belt" />
+          <rect x="54" y="274" width="52" height="30" rx="6" class="pump-motor" />
           <circle :cx="pumpGeometry.beamPivot.x" :cy="pumpGeometry.beamPivot.y" r="8" class="pump-joint" />
+          <path :d="pumpGeometry.beamBodyPath" class="pump-beam-body" />
           <line :x1="pumpGeometry.leftBeam.x" :y1="pumpGeometry.leftBeam.y" :x2="pumpGeometry.horseHead.x" :y2="pumpGeometry.horseHead.y" class="pump-beam" />
+          <circle :cx="pumpGeometry.rearBeam.x" :cy="pumpGeometry.rearBeam.y" r="12" class="pump-tail-bearing" />
           <path :d="pumpGeometry.headArcPath" class="pump-head" />
+          <path :d="pumpGeometry.slingPath" class="pump-head-sling" />
+          <path :d="`M ${pumpGeometry.horseHead.x + 16} ${pumpGeometry.horseHead.y - 44} L ${pumpGeometry.horseHead.x + 32} ${pumpGeometry.horseHead.y - 20} L ${pumpGeometry.horseHead.x + 28} ${pumpGeometry.horseHead.y + 22} L ${pumpGeometry.horseHead.x + 8} ${pumpGeometry.horseHead.y + 48}`" class="pump-head-plate" />
           <line :x1="pumpGeometry.crankCenter.x" :y1="pumpGeometry.crankCenter.y" :x2="pumpGeometry.crankPin.x" :y2="pumpGeometry.crankPin.y" class="pump-crank" />
           <line :x1="pumpGeometry.crankPin.x" :y1="pumpGeometry.crankPin.y" :x2="pumpGeometry.leftBeam.x" :y2="pumpGeometry.leftBeam.y" class="pump-rod" />
+          <circle :cx="pumpGeometry.counterWeight.x" :cy="pumpGeometry.counterWeight.y" r="15" class="pump-counterweight" />
+          <path :d="`M ${pumpGeometry.crankCenter.x - 38} ${pumpGeometry.crankCenter.y} A 38 38 0 1 1 ${pumpGeometry.crankCenter.x + 38} ${pumpGeometry.crankCenter.y}`" class="pump-wheel-track" />
           <circle :cx="pumpGeometry.crankCenter.x" :cy="pumpGeometry.crankCenter.y" r="38" class="pump-wheel" />
+          <circle :cx="pumpGeometry.crankCenter.x" :cy="pumpGeometry.crankCenter.y" r="9" class="pump-joint" />
           <circle :cx="pumpGeometry.crankPin.x" :cy="pumpGeometry.crankPin.y" r="6" class="pump-pin" />
           <line :x1="pumpGeometry.horseHead.x" :y1="pumpGeometry.horseHead.y + 40" :x2="pumpGeometry.horseHead.x" :y2="pumpGeometry.polishedRodY" class="pump-cable" />
           <rect :x="pumpGeometry.horseHead.x - 13" :y="pumpGeometry.polishedRodY" width="26" height="44" rx="4" class="pump-carrier" />
-          <line :x1="pumpGeometry.horseHead.x" :y1="pumpGeometry.polishedRodY + 44" :x2="pumpGeometry.horseHead.x" y2="318" class="pump-well-line" />
+          <line :x1="pumpGeometry.horseHead.x" :y1="pumpGeometry.polishedRodY + 44" :x2="pumpGeometry.horseHead.x" y2="346" class="pump-well-line" />
+          <rect :x="pumpGeometry.horseHead.x - 34" y="313" width="68" height="10" rx="3" class="pump-wellhead" />
+          <rect :x="pumpGeometry.horseHead.x - 18" y="323" width="36" height="32" rx="4" class="pump-wellhead-body" />
+          <path :d="`M ${pumpGeometry.horseHead.x - 36} 333 H ${pumpGeometry.horseHead.x - 82} M ${pumpGeometry.horseHead.x + 36} 333 H ${pumpGeometry.horseHead.x + 82}`" class="pump-flowline" />
+          <text x="54" y="366" class="pump-label">Motor</text>
+          <text x="112" y="246" class="pump-label">Gearbox & crank</text>
+          <text x="360" y="128" class="pump-label">Walking beam</text>
+          <text :x="pumpGeometry.horseHead.x - 28" y="374" class="pump-label">Wellhead</text>
         </svg>
       </el-card>
 
@@ -268,4 +347,29 @@ onBeforeUnmount(() => {
       </el-card>
     </section>
   </section>
+
+  <el-drawer v-model="reportVisible" title="抽油机展示功图解释报告" size="44%">
+    <section class="report-section">
+      <h3>当前仿真参数</h3>
+      <p>冲次：{{ pumpStrokeTimes }} 次/min</p>
+      <p>冲程：{{ pumpStroke }} m</p>
+      <p>泵径：{{ pumpDiameter }} mm</p>
+      <p>工况：{{ workConditionOptions.find((item) => item.value === pumpCondition)?.label }}</p>
+    </section>
+
+    <section class="report-section">
+      <h3>载荷计算结果</h3>
+      <el-table :data="pumpReportRows" border>
+        <el-table-column prop="name" label="指标" width="160" />
+        <el-table-column prop="value" label="结果" />
+      </el-table>
+    </section>
+
+    <section class="report-section">
+      <h3>解释结论</h3>
+      <p>{{ pumpReportConclusion }}</p>
+    </section>
+
+    <el-button type="primary" @click="downloadPumpReport">下载报告到本地</el-button>
+  </el-drawer>
 </template>

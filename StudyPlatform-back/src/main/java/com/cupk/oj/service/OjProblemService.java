@@ -20,8 +20,14 @@ public class OjProblemService {
         this.problemRepository = problemRepository;
     }
 
-    public List<ProblemSummary> listProblems(ProblemStatus status) {
-        return problemRepository.findAll(status);
+    public List<ProblemSummary> listProblems(
+            ProblemStatus status,
+            String keyword,
+            String tags,
+            String difficulties,
+            String languages
+    ) {
+        return problemRepository.findAll(status, keyword, tags, difficulties, languages);
     }
 
     public OjProblem getProblem(Long id) {

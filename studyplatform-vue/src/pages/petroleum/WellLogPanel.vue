@@ -2,7 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
-import { postSimulationRecord } from './api'
+import { downloadTextReport } from './api'
 
 /**
  * 测井曲线仿真面板。
@@ -25,7 +25,6 @@ const chartResizeObserver = ref(null)
 const porosityPercent = ref(20)
 const oilSaturationPercent = ref(60)
 const reportVisible = ref(false)
-const savingReport = ref(false)
 
 const depthArray = Array.from({ length: MAX_DEPTH / DEPTH_STEP + 1 }, (_, index) => index * DEPTH_STEP)
 
@@ -328,25 +327,23 @@ function buildReportPayload() {
   }
 }
 
-async function saveReport() {
-  const reportPayload = buildReportPayload()
-  savingReport.value = true
+function downloadWellLogReport() {
+  const layerRows = interpretedLayers.value
+    .map((layer) => `${layer.index}. ${layer.topDepth}-${layer.bottomDepth} m，${layer.type}：${layer.conclusion}`)
+    .join('\n')
+  const content = [
+    '测井解释报告',
+    '',
+    '一、当前仿真参数',
+    `孔隙度 φ：${porosityPercent.value}%`,
+    `含油饱和度 So：${oilSaturationPercent.value}%`,
+    '',
+    '二、分层结果',
+    layerRows,
+  ].join('\n')
 
-  try {
-    await postSimulationRecord('/api/well-log/record/save', {
-      userId: null,
-      porosity: porosityPercent.value,
-      oilSaturation: oilSaturationPercent.value,
-      reportJson: JSON.stringify(reportPayload),
-    })
-
-    ElMessage.success('报告已保存')
-  } catch (error) {
-    console.error('保存测井解释报告失败', error)
-    ElMessage.warning('当前未连接后端，报告已在前端生成')
-  } finally {
-    savingReport.value = false
-  }
+  downloadTextReport(`测井解释报告_${Date.now()}.txt`, content)
+  ElMessage.success('报告已下载到本地')
 }
 
 watch([porosityPercent, oilSaturationPercent], () => {
@@ -413,6 +410,18 @@ onBeforeUnmount(() => {
             <p>RT = (1 × 0.12) / (φ² × (1 - So)²)</p>
             <p>GR为岩性基础曲线，仅用于岩性判别。</p>
           </el-card>
+
+          <el-card shadow="never" class="simulation-intro-card">
+            <template #header>
+              <span>仿真说明</span>
+            </template>
+            <p>
+              测井仿真模块将岩心柱状图、GR、RT 和 AC 四道曲线按同一深度轴联动显示，用于观察储层段和泥岩段的响应差异。
+            </p>
+            <p>
+              孔隙度主要影响声波时差，含油饱和度主要影响电阻率；系统根据 GR、孔隙度和含油饱和度自动识别泥岩、干层、水层和油气层。
+            </p>
+          </el-card>
         </div>
       </el-splitter-panel>
 
@@ -467,8 +476,8 @@ onBeforeUnmount(() => {
       </el-table>
     </section>
 
-    <el-button type="primary" :loading="savingReport" @click="saveReport">
-      保存报告
+    <el-button type="primary" @click="downloadWellLogReport">
+      下载报告到本地
     </el-button>
   </el-drawer>
 </template>

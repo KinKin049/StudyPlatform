@@ -19,12 +19,50 @@ const errorMessage = ref('')
 const activeTab = ref('statement')
 const sourceCode = ref('')
 const language = ref('cpp')
+const searchKeyword = ref('')
+const filterPanelOpen = ref(false)
+const selectedAlgorithmCategories = ref([])
+const selectedDifficultyCategories = ref([])
+const selectedStatementLanguages = ref([])
+let searchTimer = 0
 
 const difficultyLabel = {
-  EASY: '简单',
-  MEDIUM: '中等',
-  HARD: '困难',
+  EASY: '简单 Easy',
+  MEDIUM: '中等 Medium',
+  HARD: '困难 Hard',
 }
+
+const difficultyOptions = [
+  { value: 'EASY', label: '简单', labelEn: 'Easy' },
+  { value: 'MEDIUM', label: '中等', labelEn: 'Medium' },
+  { value: 'HARD', label: '困难', labelEn: 'Hard' },
+]
+
+const statementLanguageOptions = [
+  { value: 'zh', label: '中文题面', labelEn: 'Chinese' },
+  { value: 'en', label: '英文题面', labelEn: 'English' },
+]
+
+const algorithmCategoryOptions = [
+  { value: 'beginner', label: '入门', labelEn: 'Beginner' },
+  { value: 'math', label: '数学', labelEn: 'Math' },
+  { value: 'number-theory', label: '数论', labelEn: 'Number Theory' },
+  { value: 'array', label: '数组', labelEn: 'Array' },
+  { value: 'string', label: '字符串', labelEn: 'String' },
+  { value: 'stack', label: '栈', labelEn: 'Stack' },
+  { value: 'hash-table', label: '哈希表', labelEn: 'Hash Table' },
+  { value: 'sort', label: '排序', labelEn: 'Sort' },
+  { value: 'interval', label: '区间', labelEn: 'Interval' },
+  { value: 'dp', label: '动态规划', labelEn: 'Dynamic Programming' },
+  { value: 'binary-search', label: '二分', labelEn: 'Binary Search' },
+  { value: 'graph', label: '图论', labelEn: 'Graph' },
+  { value: 'bfs', label: '广度优先搜索', labelEn: 'BFS' },
+  { value: 'grid', label: '网格', labelEn: 'Grid' },
+  { value: 'sieve', label: '筛法', labelEn: 'Sieve' },
+  { value: 'prefix', label: '前缀', labelEn: 'Prefix' },
+]
+
+const quickAlgorithmCategories = ['beginner', 'array', 'string', 'dp', 'graph', 'bfs']
 
 const statusLabel = {
   PENDING: '等待中',
@@ -57,18 +95,49 @@ const parsedTags = computed(() => {
 })
 
 const latestSubmission = computed(() => submissions.value[0] || null)
+const activeFilterCount = computed(
+  () =>
+    selectedAlgorithmCategories.value.length +
+    selectedDifficultyCategories.value.length +
+    selectedStatementLanguages.value.length,
+)
+const quickCategoryOptions = computed(() =>
+  algorithmCategoryOptions.filter((item) => quickAlgorithmCategories.includes(item.value)),
+)
 
 watch(language, () => {
   sourceCode.value = defaultSourceFor(selectedProblem.value?.slug, language.value)
 })
 
+watch(
+  [
+    searchKeyword,
+    () => selectedAlgorithmCategories.value.slice(),
+    () => selectedDifficultyCategories.value.slice(),
+    () => selectedStatementLanguages.value.slice(),
+  ],
+  () => {
+    window.clearTimeout(searchTimer)
+    searchTimer = window.setTimeout(() => {
+      loadProblems()
+    }, 300)
+  },
+)
+
 async function loadProblems() {
   loading.value = true
   errorMessage.value = ''
   try {
-    problems.value = await listProblems()
+    problems.value = await listProblems(searchKeyword.value, {
+      tags: selectedAlgorithmCategories.value,
+      difficulties: selectedDifficultyCategories.value,
+      languages: selectedStatementLanguages.value,
+    })
     if (problems.value.length > 0) {
       await selectProblem(problems.value[0])
+    } else {
+      selectedProblem.value = null
+      selectedSubmissionCases.value = []
     }
   } catch (error) {
     errorMessage.value = formatError(error)
@@ -194,12 +263,65 @@ int main() {
     ios::sync_with_stdio(false);
     cin.tie(nullptr);
 
-    long long a, b;
-    cin >> a >> b;
-    cout << a + b << '\\n';
+    // 在这里编写你的解题代码。
     return 0;
 }
 `
+}
+
+function clearSearch() {
+  searchKeyword.value = ''
+}
+
+function clearFilters() {
+  selectedAlgorithmCategories.value = []
+  selectedDifficultyCategories.value = []
+  selectedStatementLanguages.value = []
+}
+
+function tagLabel(tag) {
+  const option = algorithmCategoryOptions.find((item) => item.value === tag)
+  return option ? `${option.label} ${option.labelEn}` : tag
+}
+
+function toggleAlgorithmCategory(value) {
+  toggleValue(selectedAlgorithmCategories, value)
+}
+
+function toggleDifficultyCategory(value) {
+  toggleValue(selectedDifficultyCategories, value)
+}
+
+function toggleStatementLanguage(value) {
+  toggleValue(selectedStatementLanguages, value)
+}
+
+function isAlgorithmSelected(value) {
+  return selectedAlgorithmCategories.value.includes(value)
+}
+
+function isDifficultySelected(value) {
+  return selectedDifficultyCategories.value.includes(value)
+}
+
+function isStatementLanguageSelected(value) {
+  return selectedStatementLanguages.value.includes(value)
+}
+
+function problemTags(problem) {
+  try {
+    return JSON.parse(problem.tags || '[]')
+  } catch {
+    return []
+  }
+}
+
+function toggleValue(targetRef, value) {
+  if (targetRef.value.includes(value)) {
+    targetRef.value = targetRef.value.filter((item) => item !== value)
+  } else {
+    targetRef.value = [...targetRef.value, value]
+  }
 }
 
 function delay(ms) {
@@ -230,23 +352,119 @@ onMounted(loadProblems)
           <span>{{ problems.length }} 题</span>
         </div>
 
-        <p v-if="loading" class="muted-text">正在加载题库...</p>
-        <button
-          v-for="problem in problems"
-          :key="problem.id"
-          class="problem-item"
-          :class="{ active: selectedProblem?.id === problem.id }"
-          type="button"
-          @click="selectProblem(problem)"
-        >
-          <span class="problem-title">{{ problem.title }}</span>
-          <span class="problem-meta">
-            <span :class="['difficulty', problem.difficulty?.toLowerCase()]">
-              {{ difficultyLabel[problem.difficulty] || problem.difficulty }}
+        <div class="problem-search">
+          <input
+            v-model="searchKeyword"
+            type="search"
+            placeholder="搜索题名、编号、算法分类或标签"
+            aria-label="搜索题目"
+          />
+          <button
+            class="filter-toggle"
+            type="button"
+            :class="{ active: filterPanelOpen || activeFilterCount > 0 }"
+            @click="filterPanelOpen = !filterPanelOpen"
+          >
+            分类筛选<span v-if="activeFilterCount"> {{ activeFilterCount }}</span>
+          </button>
+          <button v-if="searchKeyword" type="button" @click="clearSearch">清空</button>
+        </div>
+
+        <div class="quick-filter-row" aria-label="快捷分类筛选">
+          <button
+            v-for="item in quickCategoryOptions"
+            :key="item.value"
+            type="button"
+            :class="{ active: isAlgorithmSelected(item.value) }"
+            @click="toggleAlgorithmCategory(item.value)"
+          >
+            {{ item.label }} / {{ item.labelEn }}
+          </button>
+          <button
+            v-for="item in difficultyOptions"
+            :key="item.value"
+            type="button"
+            :class="{ active: isDifficultySelected(item.value) }"
+            @click="toggleDifficultyCategory(item.value)"
+          >
+            {{ item.label }} / {{ item.labelEn }}
+          </button>
+          <button
+            v-for="item in statementLanguageOptions"
+            :key="item.value"
+            type="button"
+            :class="{ active: isStatementLanguageSelected(item.value) }"
+            @click="toggleStatementLanguage(item.value)"
+          >
+            {{ item.label }} / {{ item.labelEn }}
+          </button>
+        </div>
+
+        <div v-if="filterPanelOpen" class="filter-dropdown">
+          <section>
+            <div class="filter-title">
+              <strong>算法分类</strong>
+              <span>Algorithm Categories</span>
+            </div>
+            <label v-for="item in algorithmCategoryOptions" :key="item.value" class="filter-option">
+              <input v-model="selectedAlgorithmCategories" type="checkbox" :value="item.value" />
+              <span>{{ item.label }}</span>
+              <em>{{ item.labelEn }}</em>
+            </label>
+          </section>
+
+          <section>
+            <div class="filter-title">
+              <strong>难度分类</strong>
+              <span>Difficulty Levels</span>
+            </div>
+            <label v-for="item in difficultyOptions" :key="item.value" class="filter-option">
+              <input v-model="selectedDifficultyCategories" type="checkbox" :value="item.value" />
+              <span>{{ item.label }}</span>
+              <em>{{ item.labelEn }}</em>
+            </label>
+          </section>
+
+          <section>
+            <div class="filter-title">
+              <strong>中英文分类</strong>
+              <span>Statement Language</span>
+            </div>
+            <label v-for="item in statementLanguageOptions" :key="item.value" class="filter-option">
+              <input v-model="selectedStatementLanguages" type="checkbox" :value="item.value" />
+              <span>{{ item.label }}</span>
+              <em>{{ item.labelEn }}</em>
+            </label>
+          </section>
+
+          <button v-if="activeFilterCount" class="filter-clear" type="button" @click="clearFilters">
+            清除分类筛选
+          </button>
+        </div>
+
+        <div class="problem-results">
+          <p v-if="loading" class="muted-text">正在加载题库...</p>
+          <p v-else-if="problems.length === 0" class="muted-text">未找到匹配题目。</p>
+          <button
+            v-for="problem in problems"
+            :key="problem.id"
+            class="problem-item"
+            :class="{ active: selectedProblem?.id === problem.id }"
+            type="button"
+            @click="selectProblem(problem)"
+          >
+            <span class="problem-title">{{ problem.title }}</span>
+            <span class="problem-meta">
+              <span :class="['difficulty', problem.difficulty?.toLowerCase()]">
+                {{ difficultyLabel[problem.difficulty] || problem.difficulty }}
+              </span>
+              <span>{{ problem.timeLimitMs }} ms</span>
             </span>
-            <span>{{ problem.timeLimitMs }} ms</span>
-          </span>
-        </button>
+            <span class="problem-tag-preview">
+              <span v-for="tag in problemTags(problem).slice(0, 3)" :key="tag">{{ tagLabel(tag) }}</span>
+            </span>
+          </button>
+        </div>
       </aside>
 
       <section v-if="selectedProblem" class="problem-workspace">
@@ -255,7 +473,7 @@ onMounted(loadProblems)
             <h2>{{ selectedProblem.title }}</h2>
             <div class="tag-row">
               <span v-for="tag in parsedTags" :key="tag" class="tag-pill">
-                {{ tag }}
+                {{ tagLabel(tag) }}
               </span>
             </div>
           </div>
@@ -311,7 +529,7 @@ onMounted(loadProblems)
               {{ submitting ? '提交中...' : '提交判题' }}
             </button>
           </div>
-          <textarea v-model="sourceCode" spellcheck="false" aria-label="代码或答案输出" />
+          <textarea v-model="sourceCode" spellcheck="false" aria-label="代码或答案输入" />
           <p class="helper-text">
             C++ 判题需要先启动 judge-sandbox 服务，并确保后端配置 oj.sandbox-url=http://localhost:9000。
           </p>

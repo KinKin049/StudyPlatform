@@ -9,6 +9,8 @@ import com.cupk.oj.model.ProblemStatus;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -78,16 +80,94 @@ public class OjProblemRepository {
                 id);
     }
 
-    public List<ProblemSummary> findAll(ProblemStatus status) {
-        String baseSql = """
+    public List<ProblemSummary> findAll(
+            ProblemStatus status,
+            String keyword,
+            String tags,
+            String difficulties,
+            String languages
+    ) {
+        String normalizedKeyword = normalizeKeyword(keyword);
+        List<String> normalizedTags = splitCsv(tags).stream()
+                .map(String::toLowerCase)
+                .toList();
+        List<String> normalizedDifficulties = splitCsv(difficulties).stream()
+                .map(String::toUpperCase)
+                .toList();
+        List<String> normalizedLanguages = splitCsv(languages).stream()
+                .map(String::toLowerCase)
+                .toList();
+        List<String> keywordTags = tagsForKeyword(normalizedKeyword);
+        List<String> keywordDifficulties = difficultiesForKeyword(normalizedKeyword);
+        List<Object> args = new ArrayList<>();
+
+        StringBuilder sql = new StringBuilder("""
                 SELECT id, title, slug, difficulty, time_limit_ms, memory_limit_kb,
                        CAST(tags AS CHAR) AS tags, status, created_at, updated_at
                 FROM oj_problems
-                """;
-        if (status == null) {
-            return jdbcTemplate.query(baseSql + " ORDER BY id DESC", summaryMapper());
+                WHERE 1 = 1
+                """);
+
+        if (status != null) {
+            sql.append(" AND status = ?");
+            args.add(status.name());
         }
-        return jdbcTemplate.query(baseSql + " WHERE status = ? ORDER BY id DESC", summaryMapper(), status.name());
+
+        if (normalizedKeyword != null) {
+            String keywordValue = "%" + normalizedKeyword + "%";
+            sql.append("""
+                     AND (
+                       LOWER(title) LIKE ?
+                       OR LOWER(slug) LIKE ?
+                       OR LOWER(CAST(tags AS CHAR)) LIKE ?
+                    """);
+            args.add(keywordValue);
+            args.add(keywordValue);
+            args.add(keywordValue);
+            if (!keywordDifficulties.isEmpty()) {
+                sql.append(" OR difficulty IN (");
+                appendPlaceholders(sql, keywordDifficulties.size());
+                sql.append(")");
+                args.addAll(keywordDifficulties);
+            }
+            for (String keywordTag : keywordTags) {
+                sql.append(" OR LOWER(CAST(tags AS CHAR)) LIKE ?");
+                args.add("%\"" + keywordTag + "\"%");
+            }
+            sql.append("""
+                     )
+                    """);
+        }
+
+        if (!normalizedDifficulties.isEmpty()) {
+            sql.append(" AND difficulty IN (");
+            appendPlaceholders(sql, normalizedDifficulties.size());
+            sql.append(")");
+            args.addAll(normalizedDifficulties);
+        }
+
+        if (!normalizedTags.isEmpty()) {
+            sql.append(" AND (");
+            for (int index = 0; index < normalizedTags.size(); index += 1) {
+                if (index > 0) {
+                    sql.append(" OR ");
+                }
+                sql.append("LOWER(CAST(tags AS CHAR)) LIKE ?");
+                args.add("%\"" + normalizedTags.get(index) + "\"%");
+            }
+            sql.append(")");
+        }
+
+        if (normalizedLanguages.size() == 1) {
+            if (normalizedLanguages.contains("zh")) {
+                sql.append(" AND (title REGEXP '[一-龥]' OR description REGEXP '[一-龥]')");
+            } else if (normalizedLanguages.contains("en")) {
+                sql.append(" AND title NOT REGEXP '[一-龥]'");
+            }
+        }
+
+        sql.append(" ORDER BY id DESC");
+        return jdbcTemplate.query(sql.toString(), summaryMapper(), args.toArray());
     }
 
     public Optional<OjProblem> findById(Long id) {
@@ -152,5 +232,68 @@ public class OjProblemRepository {
             throw new IllegalStateException("Generated key is missing");
         }
         return key.longValue();
+    }
+
+    private String normalizeKeyword(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return null;
+        }
+        return keyword.trim().toLowerCase();
+    }
+
+    private List<String> splitCsv(String value) {
+        if (value == null || value.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(value.split(","))
+                .map(String::trim)
+                .filter(item -> !item.isBlank())
+                .toList();
+    }
+
+    private void appendPlaceholders(StringBuilder sql, int count) {
+        for (int index = 0; index < count; index += 1) {
+            if (index > 0) {
+                sql.append(", ");
+            }
+            sql.append("?");
+        }
+    }
+
+    private List<String> tagsForKeyword(String keyword) {
+        if (keyword == null) {
+            return List.of();
+        }
+        return switch (keyword) {
+            case "入门", "beginner" -> List.of("beginner");
+            case "数学", "math" -> List.of("math");
+            case "数论", "number theory", "number-theory" -> List.of("number-theory");
+            case "数组", "array" -> List.of("array");
+            case "字符串", "string" -> List.of("string");
+            case "栈", "stack" -> List.of("stack");
+            case "哈希表", "hash table", "hash-table" -> List.of("hash-table");
+            case "排序", "sort" -> List.of("sort");
+            case "区间", "interval" -> List.of("interval");
+            case "动态规划", "dp", "dynamic programming" -> List.of("dp");
+            case "二分", "binary search", "binary-search" -> List.of("binary-search");
+            case "图论", "graph" -> List.of("graph");
+            case "广度优先搜索", "bfs" -> List.of("bfs");
+            case "网格", "grid" -> List.of("grid");
+            case "筛法", "sieve" -> List.of("sieve");
+            case "前缀", "prefix" -> List.of("prefix");
+            default -> List.of();
+        };
+    }
+
+    private List<String> difficultiesForKeyword(String keyword) {
+        if (keyword == null) {
+            return List.of();
+        }
+        return switch (keyword) {
+            case "简单", "easy" -> List.of("EASY");
+            case "中等", "medium" -> List.of("MEDIUM");
+            case "困难", "hard" -> List.of("HARD");
+            default -> List.of();
+        };
     }
 }
