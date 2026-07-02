@@ -333,14 +333,13 @@ async function saveReport() {
   savingReport.value = true
 
   try {
-    const response = await postSimulationRecord('/api/well-log/record/save', {
+    await postSimulationRecord('/api/well-log/record/save', {
       userId: null,
       porosity: porosityPercent.value,
       oilSaturation: oilSaturationPercent.value,
       reportJson: JSON.stringify(reportPayload),
     })
 
-    if (!response.ok) throw new Error(`HTTP ${response.status}`)
     ElMessage.success('报告已保存')
   } catch (error) {
     console.error('保存测井解释报告失败', error)

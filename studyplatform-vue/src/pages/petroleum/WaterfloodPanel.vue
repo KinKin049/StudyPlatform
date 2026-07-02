@@ -164,7 +164,7 @@ function toggleWaterfloodPlayback() {
 
 async function saveWaterfloodRecord() {
   try {
-    const response = await postSimulationRecord('/api/production/waterflood/save', {
+    await postSimulationRecord('/api/production/waterflood/save', {
       userId: null,
       injectionRate: injectionRate.value,
       effectDay: waterfloodSummary.value.effectDay,
@@ -172,7 +172,6 @@ async function saveWaterfloodRecord() {
       peakOil: waterfloodSummary.value.peakOil,
       productionCurve: JSON.stringify(waterfloodFullCurve.value),
     })
-    if (!response.ok) throw new Error(`HTTP ${response.status}`)
     ElMessage.success('注水开发记录已保存')
   } catch (error) {
     console.error('保存注水开发记录失败', error)

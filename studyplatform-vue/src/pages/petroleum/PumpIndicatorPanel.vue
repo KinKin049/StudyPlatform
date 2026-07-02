@@ -166,7 +166,7 @@ function animatePump(timestamp) {
 
 async function savePumpRecord() {
   try {
-    const response = await postSimulationRecord('/api/production/pump/save', {
+    await postSimulationRecord('/api/production/pump/save', {
       userId: null,
       stroke: pumpStroke.value,
       strokeTimes: pumpStrokeTimes.value,
@@ -174,7 +174,6 @@ async function savePumpRecord() {
       workCondition: pumpCondition.value,
       indicatorChartData: JSON.stringify(indicatorData.value),
     })
-    if (!response.ok) throw new Error(`HTTP ${response.status}`)
     ElMessage.success('抽油机仿真记录已保存')
   } catch (error) {
     console.error('保存抽油机仿真记录失败', error)

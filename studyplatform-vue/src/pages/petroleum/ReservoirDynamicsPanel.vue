@@ -60,7 +60,7 @@ function resizeChart() {
 
 async function saveReservoirRecord() {
   try {
-    const response = await postSimulationRecord('/api/production/reservoir/save', {
+    await postSimulationRecord('/api/production/reservoir/save', {
       userId: null,
       formationPressure: formationPressure.value,
       permeability: permeability.value,
@@ -69,7 +69,6 @@ async function saveReservoirRecord() {
       dailyOil: reservoirProduction.value.dailyOil,
       dailyWater: reservoirProduction.value.dailyWater,
     })
-    if (!response.ok) throw new Error(`HTTP ${response.status}`)
     ElMessage.success('油藏动态记录已保存')
   } catch (error) {
     console.error('保存油藏动态记录失败', error)

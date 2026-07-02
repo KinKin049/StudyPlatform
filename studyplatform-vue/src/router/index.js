@@ -9,6 +9,7 @@ const AcademyTextbooks = () => import('../pages/academy/AcademyTextbooks.vue')
 const HomePage = () => import('../pages/HomePage.vue')
 const LabPlatform = () => import('../pages/LabPlatform.vue')
 const OjPlatform = () => import('../pages/OjPlatform.vue')
+const PetroleumSimulation = () => import('../pages/petroleum/PetroleumSimulation.vue')
 const WellLogSimulation = () => import('../pages/WellLogSimulation.vue')
 
 const routes = [
@@ -64,9 +65,18 @@ const routes = [
     component: OjPlatform,
   },
   {
+    path: '/lab/petroleum',
+    name: 'lab-petroleum',
+    component: PetroleumSimulation,
+  },
+  {
     path: '/lab/well-log',
     name: 'well-log',
     component: WellLogSimulation,
+  },
+  {
+    path: '/lab/production',
+    redirect: '/lab/petroleum',
   },
   {
     path: '/:pathMatch(.*)*',

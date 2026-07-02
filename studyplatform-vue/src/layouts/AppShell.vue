@@ -41,8 +41,8 @@ const navItems = [
         path: '/lab/oj',
       },
       {
-        label: '测井仿真平台',
-        path: '/lab/well-log',
+        label: '石油气仿真',
+        path: '/lab/petroleum',
       },
     ],
   },
@@ -63,6 +63,7 @@ const shellClass = computed(() => ({
   'academy-shell': route.path.startsWith('/academy'),
   'app-page lab-shell': route.path === '/lab',
   'app-page oj-page-shell': route.path === '/lab/oj',
+  'app-page production-shell': route.path === '/lab/petroleum',
   'app-page well-log-shell': route.path === '/lab/well-log',
 }))
 </script>

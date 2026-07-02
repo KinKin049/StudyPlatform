@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue'
+import { RouterLink } from 'vue-router'
 import PumpIndicatorPanel from './PumpIndicatorPanel.vue'
 import ReservoirDynamicsPanel from './ReservoirDynamicsPanel.vue'
 import WaterfloodPanel from './WaterfloodPanel.vue'
@@ -20,7 +21,7 @@ const activeTab = ref('wellLog')
         <p class="production-kicker">Petroleum & Gas Simulation</p>
         <h1>石油气仿真平台</h1>
       </div>
-      <a class="production-home-link" href="/">返回首页</a>
+      <RouterLink class="production-home-link" to="/lab">返回实验平台</RouterLink>
     </header>
 
     <el-tabs v-model="activeTab" class="production-tabs petroleum-tabs" type="border-card">

@@ -8,10 +8,7 @@ const openOjPlatform = () => {
 }
 
 const openPetroleumSimulation = () => {
-  window.history.pushState({}, '', '/lab/petroleum')
-  window.dispatchEvent(new Event('popstate'))
-const openWellLogSimulation = () => {
-  router.push('/lab/well-log')
+  router.push('/lab/petroleum')
 }
 </script>
 
@@ -21,7 +18,7 @@ const openWellLogSimulation = () => {
       <p class="lab-kicker">Experimental Platform</p>
       <h1 id="lab-title">实验平台</h1>
       <p>
-        面向课程实践、工程训练和虚拟仿真的统一入口。当前已接入在线编程平台，石油仿真模块处于规划阶段。
+        面向课程实践、工程训练和虚拟仿真的统一入口。当前已接入在线编程平台与石油气仿真平台。
       </p>
     </section>
 
@@ -69,7 +66,7 @@ const openWellLogSimulation = () => {
         </div>
 
         <p class="lab-panel-copy">
-          面向油藏认知、钻采流程、测井解释和生产调度的虚拟实验模块。当前已接入测井曲线仿真与采油生产仿真。
+          面向测井解释、抽油机功图、油藏动态和注水开发的虚拟仿真模块，支持参数调节、实时曲线和实验报告。
         </p>
 
         <div class="lab-feature-grid">
