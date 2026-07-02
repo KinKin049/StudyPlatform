@@ -1,19 +1,7 @@
 <script setup>
-import { computed } from 'vue'
-import AcademyGeneralCourses from './academy/AcademyGeneralCourses.vue'
-import AcademyHome from './academy/AcademyHome.vue'
-import AcademyMicroMajors from './academy/AcademyMicroMajors.vue'
-import AcademyOpenCourses from './academy/AcademyOpenCourses.vue'
-import AcademyTextbooks from './academy/AcademyTextbooks.vue'
+import { RouterView, useRouter } from 'vue-router'
 
-const props = defineProps({
-  currentPath: {
-    type: String,
-    required: true,
-  },
-})
-
-const emit = defineEmits(['navigate'])
+const router = useRouter()
 
 const academyNavItems = [
   {
@@ -48,20 +36,8 @@ const academyNavItems = [
   },
 ]
 
-const currentAcademyComponent = computed(() => {
-  const academyRoutes = {
-    '/academy/home': AcademyHome,
-    '/academy/open-courses': AcademyOpenCourses,
-    '/academy/general-courses': AcademyGeneralCourses,
-    '/academy/micro-majors': AcademyMicroMajors,
-    '/academy/textbooks': AcademyTextbooks,
-  }
-
-  return academyRoutes[props.currentPath] || AcademyHome
-})
-
 const navigateTo = (path) => {
-  emit('navigate', path)
+  router.push(path)
 }
 </script>
 
@@ -90,6 +66,6 @@ const navigateTo = (path) => {
       </div>
     </nav>
 
-    <component :is="currentAcademyComponent" />
+    <RouterView />
   </div>
 </template>
