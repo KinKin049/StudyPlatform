@@ -3,6 +3,18 @@
   min-height: 100vh;
   padding: 0 22px 24px;
   background: linear-gradient(to right, #4aa6a8, #b9fbc0);
+  --petroleum-primary: #178f86;
+  --petroleum-primary-dark: #117b75;
+  --petroleum-primary-soft: #4aa6a8;
+  --petroleum-green: #7ccf8a;
+  --petroleum-button-gradient: linear-gradient(135deg, #178f86 0%, #4aa6a8 48%, #86d58f 100%);
+  --el-color-primary: #178f86;
+  --el-color-primary-light-3: #4aa6a8;
+  --el-color-primary-light-5: #74c9ac;
+  --el-color-primary-light-7: #a8e4be;
+  --el-color-primary-light-8: #c8efd3;
+  --el-color-primary-light-9: #e5f8ea;
+  --el-color-primary-dark-2: #117b75;
 }
 
 /* 顶部模块栏。 */
@@ -18,7 +30,7 @@
 .production-kicker {
   margin: 0 0 4px;
   color: rgba(35, 63, 77, 0.76);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 800;
   letter-spacing: 0;
   text-transform: uppercase;
@@ -39,10 +51,63 @@
   padding: 0 14px;
   border: 1px solid rgba(255, 255, 255, 0.58);
   border-radius: 6px;
-  color: #1b1a55;
-  background: rgba(255, 255, 255, 0.34);
+  color: #ffffff;
+  background: var(--petroleum-button-gradient);
   text-decoration: none;
+  font-size: 15px;
+  font-weight: 800;
+  box-shadow: 0 10px 20px rgba(23, 143, 134, 0.16);
   backdrop-filter: blur(12px);
+}
+
+.production-page .el-button {
+  min-height: 34px;
+  border-color: rgba(255, 255, 255, 0.52);
+  color: #ffffff;
+  background: var(--petroleum-button-gradient);
+  font-size: 15px;
+  font-weight: 800;
+  box-shadow: 0 10px 20px rgba(23, 143, 134, 0.14);
+}
+
+.production-page .el-button:hover,
+.production-page .el-button:focus {
+  border-color: rgba(255, 255, 255, 0.72);
+  color: #ffffff;
+  background: linear-gradient(135deg, #117b75 0%, #3b9c9f 48%, #74c982 100%);
+}
+
+.production-page .el-button:active {
+  background: linear-gradient(135deg, #0f6f69 0%, #318f91 48%, #66bc75 100%);
+}
+
+.production-page .el-button.is-disabled,
+.production-page .el-button.is-disabled:hover {
+  color: rgba(255, 255, 255, 0.78);
+  background: linear-gradient(135deg, rgba(23, 143, 134, 0.48), rgba(74, 166, 168, 0.48));
+  box-shadow: none;
+}
+
+.production-page .el-slider {
+  --el-slider-main-bg-color: var(--petroleum-primary);
+  --el-slider-runway-bg-color: rgba(23, 143, 134, 0.18);
+  --el-slider-stop-bg-color: rgba(255, 255, 255, 0.92);
+  --el-slider-disabled-color: rgba(23, 143, 134, 0.42);
+  --el-slider-button-size: 16px;
+  --el-slider-height: 6px;
+}
+
+.production-page .el-slider__button {
+  border-color: var(--petroleum-primary);
+  background: var(--petroleum-primary);
+  box-shadow: 0 0 0 4px rgba(23, 143, 134, 0.14);
+}
+
+.production-page .el-slider__button-wrapper:hover .el-slider__button,
+.production-page .el-slider__button.hover,
+.production-page .el-slider__button:hover {
+  border-color: var(--petroleum-primary-dark);
+  background: var(--petroleum-primary-dark);
 }
 
 /* Element Plus 标签页作为四个子模块的顶层容器。 */
@@ -57,6 +122,44 @@
 .production-tabs > .el-tabs__header {
   border-radius: 8px 8px 0 0;
   background: rgba(255, 255, 255, 0.58);
+}
+
+.production-tabs .el-tabs__item {
+  color: #275163;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.petroleum-tabs.el-tabs--border-card > .el-tabs__header .el-tabs__item,
+.petroleum-tabs.el-tabs--border-card > .el-tabs__header .el-tabs__item:not(.is-disabled) {
+  color: #275163;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.production-tabs .el-tabs__item:hover,
+.petroleum-tabs.el-tabs--border-card > .el-tabs__header .el-tabs__item:hover,
+.petroleum-tabs.el-tabs--border-card > .el-tabs__header .el-tabs__item:not(.is-disabled):hover {
+  color: var(--petroleum-primary) !important;
+  background: rgba(23, 143, 134, 0.08);
+}
+
+.production-tabs .el-tabs__item.is-active,
+.petroleum-tabs.el-tabs--border-card > .el-tabs__header .el-tabs__item.is-active,
+.petroleum-tabs.el-tabs--border-card > .el-tabs__header .el-tabs__item:not(.is-disabled).is-active {
+  color: var(--petroleum-primary-dark) !important;
+  background: rgba(23, 143, 134, 0.14) !important;
+}
+
+.production-tabs > .el-tabs__header .el-tabs__item.is-active,
+.petroleum-tabs.el-tabs--border-card > .el-tabs__header .el-tabs__item.is-active {
+  border-right-color: rgba(23, 143, 134, 0.22) !important;
+  border-left-color: rgba(23, 143, 134, 0.22) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.68) !important;
+}
+
+.production-tabs .el-tabs__active-bar {
+  background-color: var(--petroleum-primary);
 }
 
 .production-tabs > .el-tabs__content {
@@ -92,7 +195,13 @@
 .production-control .el-card__header,
 .production-visual .el-card__header {
   color: #233f4d;
+  font-size: 16px;
   font-weight: 850;
+}
+
+.production-control .el-card__body,
+.production-visual .el-card__body {
+  font-size: 15px;
 }
 
 .production-page .control-item {
@@ -105,6 +214,7 @@
   justify-content: space-between;
   margin-bottom: 10px;
   color: #275163;
+  font-size: 15px;
   font-weight: 800;
 }
 
@@ -127,8 +237,8 @@
 .simulation-intro-card p {
   margin: 0 0 10px;
   color: #526a75;
-  font-size: 14px;
-  line-height: 1.75;
+  font-size: 15px;
+  line-height: 1.68;
 }
 
 .simulation-intro-card p:last-child {
@@ -145,6 +255,7 @@
 .summary-list p {
   margin: 0 0 8px;
   color: #526a75;
+  font-size: 15px;
   font-weight: 700;
 }
 
@@ -278,19 +389,25 @@
   stroke-linecap: round;
 }
 
-.pump-head-sling,
-.pump-head-plate {
+.pump-head-shell {
+  fill: #233f4d;
+  stroke: #162936;
+  stroke-width: 2;
+}
+
+.pump-head-inner,
+.pump-head-rib {
   fill: none;
-  stroke: #526a75;
+  stroke: rgba(255, 255, 255, 0.42);
   stroke-linecap: round;
 }
 
-.pump-head-sling {
-  stroke-width: 3;
+.pump-head-inner {
+  stroke-width: 4;
 }
 
-.pump-head-plate {
-  stroke-width: 4;
+.pump-head-rib {
+  stroke-width: 3;
 }
 
 .pump-wheel {
@@ -344,7 +461,7 @@
 
 .pump-label {
   fill: #526a75;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 800;
 }
 
@@ -364,6 +481,7 @@
 
 .metric-grid span {
   color: #526a75;
+  font-size: 15px;
   font-weight: 800;
 }
 

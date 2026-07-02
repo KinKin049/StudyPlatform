@@ -98,6 +98,16 @@
   backdrop-filter: blur(14px);
 }
 
+.well-log-control .el-card__header {
+  color: #233f4d;
+  font-size: 16px;
+  font-weight: 850;
+}
+
+.well-log-control .el-card__body {
+  font-size: 15px;
+}
+
 /* 单个参数控制项。 */
 .control-item {
   margin-bottom: 24px;
@@ -110,6 +120,7 @@
   justify-content: space-between;
   margin-bottom: 10px;
   color: #275163;
+  font-size: 15px;
   font-weight: 800;
 }
 
@@ -132,6 +143,7 @@
 .formula-card p {
   margin: 0 0 10px;
   color: #526a75;
+  font-size: 15px;
   line-height: 1.6;
 }
 
@@ -167,9 +179,17 @@
   font-weight: 850;
 }
 
+.chart-header > span {
+  color: #233f4d;
+  font-size: 18px;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
 /* 图表标题右侧深度说明。 */
 .chart-header small {
   color: #6a7f8a;
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -210,7 +230,7 @@
   min-height: 18px;
   border-radius: 4px;
   color: #233f4d;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 800;
   opacity: 1;
 }
@@ -249,6 +269,7 @@
 .report-section p {
   margin: 0 0 8px;
   color: #526a75;
+  font-size: 15px;
 }
 
 /* 窄屏布局：上下排列参数面板和图表面板，保留足够图表高度。 */

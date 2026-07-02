@@ -72,6 +72,14 @@ const pumpGeometry = computed(() => {
     x: crankCenter.x + Math.cos(phase + Math.PI) * (crankRadius + 10),
     y: crankCenter.y + Math.sin(phase + Math.PI) * (crankRadius + 10),
   }
+  const headOuterTop = { x: horseHead.x - 10, y: horseHead.y - 54 }
+  const headOuterBottom = { x: horseHead.x - 10, y: horseHead.y + 54 }
+  const headOuterControl = { x: horseHead.x + 54, y: horseHead.y }
+  const headInnerTop = { x: horseHead.x - 34, y: horseHead.y - 38 }
+  const headInnerBottom = { x: horseHead.x - 34, y: horseHead.y + 38 }
+  const headInnerControl = { x: horseHead.x + 20, y: horseHead.y }
+  const cableX = horseHead.x + 5
+  const cableTopY = horseHead.y + 43
   return {
     crankCenter,
     crankPin,
@@ -82,8 +90,12 @@ const pumpGeometry = computed(() => {
     polishedRodY,
     counterWeight,
     beamBodyPath: `M ${rearBeam.x} ${rearBeam.y - 9} L ${horseHead.x - 10} ${horseHead.y - 13} L ${horseHead.x - 6} ${horseHead.y + 13} L ${rearBeam.x + 4} ${rearBeam.y + 9} Z`,
-    headArcPath: `M ${horseHead.x - 14} ${horseHead.y - 48} Q ${horseHead.x + 46} ${horseHead.y} ${horseHead.x - 12} ${horseHead.y + 52}`,
-    slingPath: `M ${horseHead.x + 10} ${horseHead.y - 28} Q ${horseHead.x + 28} ${horseHead.y + 6} ${horseHead.x + 8} ${horseHead.y + 40}`,
+    headShellPath: `M ${headOuterTop.x} ${headOuterTop.y} Q ${headOuterControl.x} ${headOuterControl.y} ${headOuterBottom.x} ${headOuterBottom.y} L ${headInnerBottom.x} ${headInnerBottom.y} Q ${headInnerControl.x} ${headInnerControl.y} ${headInnerTop.x} ${headInnerTop.y} Z`,
+    headInnerPath: `M ${headInnerTop.x} ${headInnerTop.y} Q ${headInnerControl.x} ${headInnerControl.y} ${headInnerBottom.x} ${headInnerBottom.y}`,
+    headTopRibPath: `M ${headInnerTop.x} ${headInnerTop.y} L ${headOuterTop.x} ${headOuterTop.y}`,
+    headBottomRibPath: `M ${headInnerBottom.x} ${headInnerBottom.y} L ${headOuterBottom.x} ${headOuterBottom.y}`,
+    cableX,
+    cableTopY,
   }
 })
 
@@ -318,9 +330,10 @@ onBeforeUnmount(() => {
           <path :d="pumpGeometry.beamBodyPath" class="pump-beam-body" />
           <line :x1="pumpGeometry.leftBeam.x" :y1="pumpGeometry.leftBeam.y" :x2="pumpGeometry.horseHead.x" :y2="pumpGeometry.horseHead.y" class="pump-beam" />
           <circle :cx="pumpGeometry.rearBeam.x" :cy="pumpGeometry.rearBeam.y" r="12" class="pump-tail-bearing" />
-          <path :d="pumpGeometry.headArcPath" class="pump-head" />
-          <path :d="pumpGeometry.slingPath" class="pump-head-sling" />
-          <path :d="`M ${pumpGeometry.horseHead.x + 16} ${pumpGeometry.horseHead.y - 44} L ${pumpGeometry.horseHead.x + 32} ${pumpGeometry.horseHead.y - 20} L ${pumpGeometry.horseHead.x + 28} ${pumpGeometry.horseHead.y + 22} L ${pumpGeometry.horseHead.x + 8} ${pumpGeometry.horseHead.y + 48}`" class="pump-head-plate" />
+          <path :d="pumpGeometry.headShellPath" class="pump-head-shell" />
+          <path :d="pumpGeometry.headInnerPath" class="pump-head-inner" />
+          <path :d="pumpGeometry.headTopRibPath" class="pump-head-rib" />
+          <path :d="pumpGeometry.headBottomRibPath" class="pump-head-rib" />
           <line :x1="pumpGeometry.crankCenter.x" :y1="pumpGeometry.crankCenter.y" :x2="pumpGeometry.crankPin.x" :y2="pumpGeometry.crankPin.y" class="pump-crank" />
           <line :x1="pumpGeometry.crankPin.x" :y1="pumpGeometry.crankPin.y" :x2="pumpGeometry.leftBeam.x" :y2="pumpGeometry.leftBeam.y" class="pump-rod" />
           <circle :cx="pumpGeometry.counterWeight.x" :cy="pumpGeometry.counterWeight.y" r="15" class="pump-counterweight" />
@@ -328,16 +341,16 @@ onBeforeUnmount(() => {
           <circle :cx="pumpGeometry.crankCenter.x" :cy="pumpGeometry.crankCenter.y" r="38" class="pump-wheel" />
           <circle :cx="pumpGeometry.crankCenter.x" :cy="pumpGeometry.crankCenter.y" r="9" class="pump-joint" />
           <circle :cx="pumpGeometry.crankPin.x" :cy="pumpGeometry.crankPin.y" r="6" class="pump-pin" />
-          <line :x1="pumpGeometry.horseHead.x" :y1="pumpGeometry.horseHead.y + 40" :x2="pumpGeometry.horseHead.x" :y2="pumpGeometry.polishedRodY" class="pump-cable" />
-          <rect :x="pumpGeometry.horseHead.x - 13" :y="pumpGeometry.polishedRodY" width="26" height="44" rx="4" class="pump-carrier" />
-          <line :x1="pumpGeometry.horseHead.x" :y1="pumpGeometry.polishedRodY + 44" :x2="pumpGeometry.horseHead.x" y2="346" class="pump-well-line" />
-          <rect :x="pumpGeometry.horseHead.x - 34" y="313" width="68" height="10" rx="3" class="pump-wellhead" />
-          <rect :x="pumpGeometry.horseHead.x - 18" y="323" width="36" height="32" rx="4" class="pump-wellhead-body" />
-          <path :d="`M ${pumpGeometry.horseHead.x - 36} 333 H ${pumpGeometry.horseHead.x - 82} M ${pumpGeometry.horseHead.x + 36} 333 H ${pumpGeometry.horseHead.x + 82}`" class="pump-flowline" />
+          <line :x1="pumpGeometry.cableX" :y1="pumpGeometry.cableTopY" :x2="pumpGeometry.cableX" :y2="pumpGeometry.polishedRodY" class="pump-cable" />
+          <rect :x="pumpGeometry.cableX - 13" :y="pumpGeometry.polishedRodY" width="26" height="44" rx="4" class="pump-carrier" />
+          <line :x1="pumpGeometry.cableX" :y1="pumpGeometry.polishedRodY + 44" :x2="pumpGeometry.cableX" y2="346" class="pump-well-line" />
+          <rect :x="pumpGeometry.cableX - 34" y="313" width="68" height="10" rx="3" class="pump-wellhead" />
+          <rect :x="pumpGeometry.cableX - 18" y="323" width="36" height="32" rx="4" class="pump-wellhead-body" />
+          <path :d="`M ${pumpGeometry.cableX - 36} 333 H ${pumpGeometry.cableX - 82} M ${pumpGeometry.cableX + 36} 333 H ${pumpGeometry.cableX + 82}`" class="pump-flowline" />
           <text x="54" y="366" class="pump-label">Motor</text>
           <text x="112" y="246" class="pump-label">Gearbox & crank</text>
           <text x="360" y="128" class="pump-label">Walking beam</text>
-          <text :x="pumpGeometry.horseHead.x - 28" y="374" class="pump-label">Wellhead</text>
+          <text :x="pumpGeometry.cableX - 28" y="374" class="pump-label">Wellhead</text>
         </svg>
       </el-card>
 
