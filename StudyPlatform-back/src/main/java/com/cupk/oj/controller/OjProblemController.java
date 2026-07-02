@@ -35,8 +35,14 @@ public class OjProblemController {
     }
 
     @GetMapping
-    public List<ProblemSummary> listProblems(@RequestParam(required = false) ProblemStatus status) {
-        return problemService.listProblems(status);
+    public List<ProblemSummary> listProblems(
+            @RequestParam(required = false) ProblemStatus status,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String tags,
+            @RequestParam(required = false) String difficulties,
+            @RequestParam(required = false) String languages
+    ) {
+        return problemService.listProblems(status, keyword, tags, difficulties, languages);
     }
 
     @GetMapping("/{id}")

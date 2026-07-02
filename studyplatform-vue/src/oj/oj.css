@@ -23,7 +23,9 @@ textarea {
 }
 
 .oj-shell {
-  min-height: 100vh;
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .oj-header {
@@ -69,8 +71,10 @@ textarea {
   display: grid;
   grid-template-columns: 320px minmax(0, 1fr);
   gap: 20px;
-  min-height: calc(100vh - 82px);
+  height: calc(100vh - 82px);
+  min-height: 0;
   padding: 20px;
+  overflow: hidden;
 }
 
 .problem-list,
@@ -82,8 +86,11 @@ textarea {
 }
 
 .problem-list {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   padding: 16px;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .list-header,
@@ -108,10 +115,171 @@ textarea {
   font-size: 13px;
 }
 
+.problem-search {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto auto;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.problem-search input {
+  min-width: 0;
+  height: 46px;
+  padding: 0 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  color: #202a3a;
+  background: #ffffff;
+  font-size: 15px;
+  outline: 0;
+}
+
+.problem-search input:focus {
+  border-color: #2f6fed;
+  box-shadow: 0 0 0 3px rgba(47, 111, 237, 0.12);
+}
+
+.problem-search button {
+  height: 46px;
+  padding: 0 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  color: #344256;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.problem-search .filter-toggle.active {
+  border-color: #2f6fed;
+  color: #ffffff;
+  background: #2f6fed;
+}
+
+.quick-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.quick-filter-row button {
+  min-height: 30px;
+  padding: 0 9px;
+  border: 1px solid #d6ddeb;
+  border-radius: 999px;
+  color: #445166;
+  background: #ffffff;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.quick-filter-row button.active {
+  border-color: #2f6fed;
+  color: #ffffff;
+  background: #2f6fed;
+}
+
+.filter-dropdown {
+  display: grid;
+  gap: 16px;
+  max-height: min(420px, 42vh);
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid #d8deea;
+  border-radius: 8px;
+  background: #f8fafc;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.filter-dropdown::-webkit-scrollbar {
+  width: 8px;
+}
+
+.filter-dropdown::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #cbd5e1;
+}
+
+.filter-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.filter-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  color: #202a3a;
+}
+
+.filter-title span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.filter-option {
+  display: grid;
+  grid-template-columns: 18px minmax(54px, auto) minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  min-height: 30px;
+  color: #344256;
+  font-size: 14px;
+}
+
+.filter-option input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.filter-option em {
+  overflow: hidden;
+  color: #64748b;
+  font-size: 12px;
+  font-style: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filter-clear {
+  height: 34px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  color: #344256;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.problem-results {
+  flex: 1;
+  min-height: 0;
+  margin-top: 12px;
+  padding-right: 4px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.problem-results::-webkit-scrollbar {
+  width: 8px;
+}
+
+.problem-results::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #cbd5e1;
+}
+
+.problem-results::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 .problem-item {
   display: block;
   width: 100%;
-  margin-top: 12px;
+  margin-top: 0;
+  margin-bottom: 12px;
   padding: 14px;
   border: 1px solid #d8deea;
   border-radius: 6px;
@@ -142,6 +310,21 @@ textarea {
   gap: 8px;
   color: #64748b;
   font-size: 13px;
+}
+
+.problem-tag-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.problem-tag-preview span {
+  padding: 3px 6px;
+  border-radius: 5px;
+  color: #526071;
+  background: #eef2f7;
+  font-size: 12px;
 }
 
 .difficulty,
@@ -178,7 +361,9 @@ textarea {
 
 .problem-workspace {
   min-width: 0;
+  min-height: 0;
   padding: 20px;
+  overflow: auto;
 }
 
 .workspace-toolbar {
@@ -381,8 +566,16 @@ select {
 }
 
 @media (max-width: 920px) {
+  .oj-shell {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
   .oj-layout {
     grid-template-columns: 1fr;
+    height: auto;
+    overflow: visible;
   }
 
   .problem-list {

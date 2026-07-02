@@ -1,12 +1,14 @@
-import { request } from '../../api/request'
-
 /**
- * 向后端保存前端仿真结果。
- * 后端只做持久化，所有仿真计算仍保留在前端组件内。
+ * 将报告内容下载到用户本地。
  */
-export function postSimulationRecord(url, payload) {
-  return request(url, {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  })
+export function downloadTextReport(filename, content) {
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
 }
