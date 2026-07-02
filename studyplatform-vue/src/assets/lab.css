@@ -140,6 +140,16 @@
   cursor: pointer;
 }
 
+.lab-action-group {
+  display: grid;
+  gap: 10px;
+  margin-top: auto;
+}
+
+.lab-action-group .lab-action {
+  margin-top: 0;
+}
+
 .lab-action:hover {
   background: #117b75;
 }

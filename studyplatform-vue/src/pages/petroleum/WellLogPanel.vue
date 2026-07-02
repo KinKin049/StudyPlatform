@@ -1,43 +1,34 @@
 <script setup>
-import PetroleumSimulation from './petroleum/PetroleumSimulation.vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
-import { request } from '../api/request'
+import { postSimulationRecord } from './api'
 
 /**
- * 旧测井仿真页面兼容入口。
- * 实际页面已统一迁移到石油气仿真模块。
+ * 测井曲线仿真面板。
+ * 前端完成岩性判别、曲线计算、层段合并和图表渲染。
  */
 
-// 岩石物理固定参数，与题目要求保持一致。
 const AC_MATRIX = 180
 const AC_FLUID = 600
 const ARCHIE_A = 1
 const ARCHIE_M = 2
 const ARCHIE_N = 2
 const WATER_RESISTIVITY = 0.12
-
-// 默认剖面范围与采样间隔，四道曲线共享同一深度轴。
 const MAX_DEPTH = 2000
 const DEPTH_STEP = 20
 
-// 图表 DOM、ECharts 实例和尺寸监听器引用。
 const chartWrapRef = ref(null)
 const chartRef = ref(null)
 const chartInstance = ref(null)
 const chartResizeObserver = ref(null)
-
-// 页面交互状态，滑块变化会直接触发曲线重算和图表重绘。
 const porosityPercent = ref(20)
 const oilSaturationPercent = ref(60)
 const reportVisible = ref(false)
 const savingReport = ref(false)
 
-// 内置默认深度序列，单位 m。
 const depthArray = Array.from({ length: MAX_DEPTH / DEPTH_STEP + 1 }, (_, index) => index * DEPTH_STEP)
 
-// 内置基础GR数据。GR只反映岩性，不受孔隙度和含油饱和度滑块影响。
 const grBase = depthArray.map((depth) => {
   if (depth < 260) return 95 + Math.sin(depth / 38) * 8
   if (depth < 620) return 42 + Math.sin(depth / 44) * 7
@@ -48,7 +39,6 @@ const grBase = depthArray.map((depth) => {
   return 86 + Math.sin(depth / 40) * 7
 })
 
-// 根据 GR 阈值生成岩性柱状图层段，连续相同岩性会合并为一个绘制块。
 const lithologyIntervals = computed(() =>
   mergeIntervals(
     depthArray.map((depth, index) => ({
@@ -58,10 +48,8 @@ const lithologyIntervals = computed(() =>
   ),
 )
 
-// GR 曲线只由内置基础数据生成，不随滑块变化。
 const grCurve = computed(() => depthArray.map((depth, index) => [Number(grBase[index].toFixed(2)), depth]))
 
-// 声波时差曲线由威利公式反算，叠加轻微岩性纹理便于默认状态下观察层间差异。
 const acCurve = computed(() => {
   const porosity = porosityPercent.value / 100
   const acValue = porosity * (AC_FLUID - AC_MATRIX) + AC_MATRIX
@@ -72,7 +60,6 @@ const acCurve = computed(() => {
   })
 })
 
-// 电阻率曲线由简化阿尔奇公式反算，使用对数轴显示行业常见的跨度变化。
 const rtCurve = computed(() => {
   const porosity = Math.max(porosityPercent.value / 100, 0.001)
   const waterSaturation = Math.max(1 - oilSaturationPercent.value / 100, 0.001)
@@ -87,13 +74,11 @@ const rtCurve = computed(() => {
   })
 })
 
-// 对数电阻率轴上限按数据自动扩展，避免高含油饱和度时曲线越界。
 const rtAxisMax = computed(() => {
   const maxValue = Math.max(...rtCurve.value.map(([value]) => value))
   return Math.max(1000, Math.pow(10, Math.ceil(Math.log10(maxValue))))
 })
 
-// 逐深度点判别层位，并合并连续同类型层段供图表和报告复用。
 const interpretedLayers = computed(() => {
   const classifiedPoints = depthArray.map((depth, index) => ({
     depth,
@@ -107,7 +92,6 @@ const interpretedLayers = computed(() => {
   }))
 })
 
-// ECharts markArea 背景色保持不透明，避免影响岩性块和曲线辨识。
 const markAreaData = computed(() =>
   interpretedLayers.value.map((layer) => [
     {
@@ -122,9 +106,6 @@ const markAreaData = computed(() =>
   ]),
 )
 
-/**
- * 按 GR、孔隙度和含油饱和度识别层位类型。
- */
 function classifyLayer(grValue, porosity, oilSaturation) {
   if (grValue > 80) return '泥岩'
   if (porosity < 10) return '干层'
@@ -133,9 +114,6 @@ function classifyLayer(grValue, porosity, oilSaturation) {
   return '干层'
 }
 
-/**
- * 将逐点判别结果合并为连续层段，减少图表绘制对象和报告行数。
- */
 function mergeIntervals(points) {
   const intervals = []
   let current = null
@@ -160,9 +138,6 @@ function mergeIntervals(points) {
   return intervals
 }
 
-/**
- * 返回层位可视化颜色，图表标注与右侧层位文本共用同一套色值。
- */
 function layerColor(type) {
   const colorMap = {
     泥岩: '#3f454f',
@@ -173,9 +148,6 @@ function layerColor(type) {
   return colorMap[type] || '#d8dee8'
 }
 
-/**
- * 返回层位解释结论，用于生成报告表格。
- */
 function layerConclusion(type) {
   const conclusionMap = {
     泥岩: 'GR高于80API，解释为泥质层，非优质储层。',
@@ -186,7 +158,6 @@ function layerConclusion(type) {
   return conclusionMap[type] || '需结合更多资料复核。'
 }
 
-// 标题样式统一封装，保证四道标题视觉一致。
 function titleStyle() {
   return {
     color: '#233f4d',
@@ -195,10 +166,6 @@ function titleStyle() {
   }
 }
 
-/**
- * 创建单道 X 轴配置。
- * 岩心道隐藏刻度标签，GR/RT/AC 曲线道显示行业单位刻度。
- */
 function coreAxis(gridIndex, type, min, max, axisColor, showLabel) {
   return {
     type,
@@ -212,9 +179,6 @@ function coreAxis(gridIndex, type, min, max, axisColor, showLabel) {
   }
 }
 
-/**
- * 创建测井曲线序列配置。
- */
 function curveSeries(name, data, axisIndex, color) {
   return {
     name,
@@ -227,9 +191,6 @@ function curveSeries(name, data, axisIndex, color) {
   }
 }
 
-/**
- * 绘制岩心柱状图的单个岩性矩形块。
- */
 function renderLithologyBlock(interval) {
   return (_params, api) => {
     const start = api.coord([0, interval.topDepth])
@@ -253,10 +214,6 @@ function renderLithologyBlock(interval) {
   }
 }
 
-/**
- * 组装完整 ECharts 配置。
- * 四个 grid 横向排列并共享 0-2000m 反向深度轴，实现测井剖面对齐。
- */
 function createChartOption() {
   const axisColor = '#526a75'
   const grid = [
@@ -336,10 +293,6 @@ function createChartOption() {
   }
 }
 
-/**
- * 渲染或更新图表。
- * 当容器尺寸尚未稳定时延后到下一帧，避免 ECharts 初始化到 0 高度容器。
- */
 function renderChart() {
   if (!chartRef.value) return
   const { width, height } = chartRef.value.getBoundingClientRect()
@@ -353,12 +306,10 @@ function renderChart() {
   chartInstance.value.setOption(createChartOption(), true)
 }
 
-// 浏览器窗口或分割面板尺寸变化时同步调整 ECharts 画布。
 function resizeChart() {
   chartInstance.value?.resize()
 }
 
-// 将尺寸更新推迟到下一帧，等待 Element Plus 布局完成。
 function scheduleResizeChart() {
   window.requestAnimationFrame(() => {
     if (!chartInstance.value) {
@@ -369,7 +320,6 @@ function scheduleResizeChart() {
   })
 }
 
-// 构造解释报告数据，保存接口直接接收该对象的 JSON 字符串。
 function buildReportPayload() {
   return {
     porosity: porosityPercent.value,
@@ -378,31 +328,19 @@ function buildReportPayload() {
   }
 }
 
-// 打开报告抽屉，报告内容由当前响应式计算结果即时生成。
-function openReport() {
-  reportVisible.value = true
-}
-
-/**
- * 保存报告到后端。
- * 保存失败时不影响前端报告生成，便于离线演示仿真功能。
- */
 async function saveReport() {
   const reportPayload = buildReportPayload()
   savingReport.value = true
 
   try {
-    // 后端持久化接口调用位置：仿真计算仍全部在前端完成，只提交参数与解释报告JSON。
-    await request('/api/well-log/record/save', {
-      method: 'POST',
-      body: JSON.stringify({
-        userId: null,
-        porosity: porosityPercent.value,
-        oilSaturation: oilSaturationPercent.value,
-        reportJson: JSON.stringify(reportPayload),
-      }),
+    const response = await postSimulationRecord('/api/well-log/record/save', {
+      userId: null,
+      porosity: porosityPercent.value,
+      oilSaturation: oilSaturationPercent.value,
+      reportJson: JSON.stringify(reportPayload),
     })
 
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
     ElMessage.success('报告已保存')
   } catch (error) {
     console.error('保存测井解释报告失败', error)
@@ -412,12 +350,10 @@ async function saveReport() {
   }
 }
 
-// 双滑块变化时实时刷新曲线和层位识别结果。
 watch([porosityPercent, oilSaturationPercent], () => {
   renderChart()
 })
 
-// 页面挂载后初始化图表，并监听外层容器尺寸变化。
 onMounted(async () => {
   await nextTick()
   window.requestAnimationFrame(() => {
@@ -432,7 +368,6 @@ onMounted(async () => {
   window.addEventListener('resize', resizeChart)
 })
 
-// 页面销毁时释放监听器和 ECharts 实例，避免重复进入页面时残留资源。
 onBeforeUnmount(() => {
   window.removeEventListener('resize', resizeChart)
   chartResizeObserver.value?.disconnect()
@@ -441,5 +376,100 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <PetroleumSimulation />
+  <section class="well-log-content petroleum-embedded-content">
+    <el-splitter class="well-log-layout" @resize="resizeChart" @resize-end="resizeChart">
+      <el-splitter-panel size="20%" min="260px" class="well-log-control">
+        <div class="well-log-panel well-log-control-panel">
+          <el-card shadow="never">
+            <template #header>
+              <span>仿真参数</span>
+            </template>
+
+            <div class="control-item">
+              <div class="control-label">
+                <span>孔隙度 φ</span>
+                <strong>{{ porosityPercent }}%</strong>
+              </div>
+              <el-slider v-model="porosityPercent" :min="0" :max="35" :step="0.5" />
+            </div>
+
+            <div class="control-item">
+              <div class="control-label">
+                <span>含油饱和度 So</span>
+                <strong>{{ oilSaturationPercent }}%</strong>
+              </div>
+              <el-slider v-model="oilSaturationPercent" :min="0" :max="100" :step="1" />
+            </div>
+
+            <el-button type="primary" class="report-button" @click="reportVisible = true">
+              生成解释报告
+            </el-button>
+          </el-card>
+
+          <el-card shadow="never" class="formula-card">
+            <template #header>
+              <span>计算模型</span>
+            </template>
+            <p>AC = φ × (600 - 180) + 180</p>
+            <p>RT = (1 × 0.12) / (φ² × (1 - So)²)</p>
+            <p>GR为岩性基础曲线，仅用于岩性判别。</p>
+          </el-card>
+        </div>
+      </el-splitter-panel>
+
+      <el-splitter-panel size="80%" min="620px" class="well-log-main">
+        <div class="well-log-panel well-log-main-panel">
+          <el-card shadow="never" class="well-log-chart-card">
+            <template #header>
+              <div class="chart-header">
+                <span>岩心 + 测井曲线联动剖面</span>
+                <small>深度 0-2000m，自上而下递增</small>
+              </div>
+            </template>
+
+            <div ref="chartWrapRef" class="chart-wrap">
+              <div ref="chartRef" class="well-log-chart"></div>
+              <aside class="layer-labels" aria-label="层位标注">
+                <div
+                  v-for="layer in interpretedLayers"
+                  :key="`${layer.index}-${layer.topDepth}`"
+                  class="layer-label"
+                  :style="{
+                    top: `${(layer.topDepth / MAX_DEPTH) * 100}%`,
+                    height: `${((layer.bottomDepth - layer.topDepth) / MAX_DEPTH) * 100}%`,
+                    backgroundColor: layerColor(layer.type),
+                  }"
+                >
+                  <span>{{ layer.type }}</span>
+                </div>
+              </aside>
+            </div>
+          </el-card>
+        </div>
+      </el-splitter-panel>
+    </el-splitter>
+  </section>
+
+  <el-drawer v-model="reportVisible" title="测井解释报告" size="46%">
+    <section class="report-section">
+      <h3>当前仿真参数</h3>
+      <p>孔隙度 φ：{{ porosityPercent }}%</p>
+      <p>含油饱和度 So：{{ oilSaturationPercent }}%</p>
+    </section>
+
+    <section class="report-section">
+      <h3>分层结果</h3>
+      <el-table :data="interpretedLayers" border>
+        <el-table-column prop="index" label="层号" width="72" />
+        <el-table-column prop="topDepth" label="顶深 m" width="92" />
+        <el-table-column prop="bottomDepth" label="底深 m" width="92" />
+        <el-table-column prop="type" label="层位类型" width="100" />
+        <el-table-column prop="conclusion" label="评价结论" />
+      </el-table>
+    </section>
+
+    <el-button type="primary" :loading="savingReport" @click="saveReport">
+      保存报告
+    </el-button>
+  </el-drawer>
 </template>
