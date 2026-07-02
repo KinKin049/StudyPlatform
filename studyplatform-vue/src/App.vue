@@ -107,4 +107,9 @@ onUnmounted(() => {
   </div>
 
   <HomePage v-else :nav-items="navItems" @navigate="navigateTo" />
+import AppShell from './layouts/AppShell.vue'
+</script>
+
+<template>
+  <AppShell />
 </template>

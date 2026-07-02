@@ -1,11 +1,17 @@
 <script setup>
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
 const openOjPlatform = () => {
-  window.location.href = '/oj.html'
+  router.push('/lab/oj')
 }
 
 const openPetroleumSimulation = () => {
   window.history.pushState({}, '', '/lab/petroleum')
   window.dispatchEvent(new Event('popstate'))
+const openWellLogSimulation = () => {
+  router.push('/lab/well-log')
 }
 </script>
 

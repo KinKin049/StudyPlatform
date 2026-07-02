@@ -1,4 +1,6 @@
 <script setup>
+import { useRouter } from 'vue-router'
+
 const props = defineProps({
   navItems: {
     type: Array,
@@ -6,18 +8,18 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['navigate'])
+const router = useRouter()
 
 const navigateTo = (path) => {
-  emit('navigate', path)
+  router.push(path)
 }
 </script>
 
 <template>
   <header class="site-header">
-    <a class="site-brand" href="/" aria-label="返回首页" @click.prevent="navigateTo('/')">
+    <RouterLink class="site-brand" to="/" aria-label="返回首页">
       EpistemeHub
-    </a>
+    </RouterLink>
 
     <nav class="site-nav" aria-label="主导航">
       <div v-for="item in props.navItems" :key="item.path" class="nav-item">
