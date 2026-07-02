@@ -3,8 +3,8 @@ const openOjPlatform = () => {
   window.location.href = '/oj.html'
 }
 
-const openWellLogSimulation = () => {
-  window.history.pushState({}, '', '/lab/well-log')
+const openPetroleumSimulation = () => {
+  window.history.pushState({}, '', '/lab/petroleum')
   window.dispatchEvent(new Event('popstate'))
 }
 </script>
@@ -58,31 +58,31 @@ const openWellLogSimulation = () => {
           <span class="lab-panel-index">02</span>
           <div>
             <p>Petroleum Simulation</p>
-            <h2>石油仿真</h2>
+            <h2>石油气仿真</h2>
           </div>
         </div>
 
         <p class="lab-panel-copy">
-          面向油藏认知、钻采流程、管网运行和生产调度的虚拟实验模块。该模块尚未实现，当前仅作为实验平台入口占位展示。
+          面向油藏认知、钻采流程、测井解释和生产调度的虚拟实验模块。当前已接入测井曲线仿真与采油生产仿真。
         </p>
 
         <div class="lab-feature-grid">
           <section>
-            <h3>场景仿真</h3>
-            <p>计划提供油藏剖面、井场设备和生产流程的可视化实验场景。</p>
+            <h3>测井解释</h3>
+            <p>提供岩心柱状图、GR、RT、AC 四道联动剖面和层位自动识别。</p>
           </section>
           <section>
-            <h3>参数实验</h3>
-            <p>计划支持压力、流量、含水率等参数调节，观察生产状态变化。</p>
+            <h3>采油生产</h3>
+            <p>支持抽油机、油藏动态、注水开发的前端实时仿真。</p>
           </section>
           <section>
             <h3>实验报告</h3>
-            <p>计划记录实验过程、关键数据和操作结论，服务课程考核。</p>
+            <p>可保存关键参数和仿真结果，后端仅负责记录持久化。</p>
           </section>
         </div>
 
-        <button class="lab-action" type="button" @click="openWellLogSimulation">
-          进入测井仿真平台
+        <button class="lab-action" type="button" @click="openPetroleumSimulation">
+          进入石油气仿真平台
         </button>
       </article>
     </section>

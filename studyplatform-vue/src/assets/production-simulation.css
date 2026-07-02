@@ -1,0 +1,302 @@
+/* 采油生产仿真独立页面外壳。 */
+.production-page {
+  min-height: 100vh;
+  padding: 0 22px 24px;
+  background: linear-gradient(to right, #4aa6a8, #b9fbc0);
+}
+
+/* 顶部模块栏。 */
+.production-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 82px;
+  padding: 18px 10px;
+}
+
+.production-kicker {
+  margin: 0 0 4px;
+  color: rgba(35, 63, 77, 0.76);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.production-header h1 {
+  margin: 0;
+  color: #1b1a55;
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.production-home-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  border-radius: 6px;
+  color: #1b1a55;
+  background: rgba(255, 255, 255, 0.34);
+  text-decoration: none;
+  backdrop-filter: blur(12px);
+}
+
+/* Element Plus 标签页作为四个子模块的顶层容器。 */
+.production-tabs {
+  min-height: calc(100vh - 116px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(14px);
+}
+
+.production-tabs > .el-tabs__header {
+  border-radius: 8px 8px 0 0;
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.production-tabs > .el-tabs__content {
+  min-height: calc(100vh - 172px);
+  padding: 18px;
+}
+
+/* 每个标签页的左右分栏布局。 */
+.production-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 25%) minmax(0, 1fr);
+  gap: 18px;
+  min-height: calc(100vh - 210px);
+}
+
+.production-control,
+.production-visual {
+  min-width: 0;
+}
+
+.production-visual {
+  overflow-x: auto;
+  scrollbar-gutter: stable;
+}
+
+.production-control .el-card,
+.production-visual .el-card {
+  border-radius: 8px;
+  border-color: rgba(255, 255, 255, 0.62);
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.production-control .el-card__header,
+.production-visual .el-card__header {
+  color: #233f4d;
+  font-weight: 850;
+}
+
+.production-page .control-item {
+  margin-bottom: 22px;
+}
+
+.production-page .control-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  color: #275163;
+  font-weight: 800;
+}
+
+.production-page .control-label strong {
+  color: #178f86;
+}
+
+.production-page .full-control {
+  width: 100%;
+}
+
+.production-page .secondary-action {
+  margin: 12px 0 0;
+}
+
+.summary-list {
+  margin: 8px 0 14px;
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(23, 143, 134, 0.08);
+}
+
+.summary-list p {
+  margin: 0 0 8px;
+  color: #526a75;
+  font-weight: 700;
+}
+
+.summary-list p:last-child {
+  margin-bottom: 0;
+}
+
+/* 抽油机模块的动画和展示功图布局。 */
+.pump-visual {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px;
+}
+
+.pump-wide-visual {
+  grid-template-columns: 1fr;
+  align-content: start;
+}
+
+.pump-chart-card {
+  min-width: 0;
+  width: 100%;
+}
+
+.pump-svg {
+  width: 100%;
+  height: 380px;
+  border-radius: 8px;
+  background: #f8fbfc;
+}
+
+.pump-base {
+  fill: #637381;
+}
+
+.pump-tower {
+  fill: rgba(23, 143, 134, 0.08);
+  stroke: #526a75;
+  stroke-width: 6;
+}
+
+.pump-beam,
+.pump-crank,
+.pump-rod,
+.pump-cable,
+.pump-well-line {
+  stroke-linecap: round;
+}
+
+.pump-beam {
+  stroke: #233f4d;
+  stroke-width: 9;
+}
+
+.pump-crank {
+  stroke: #f2b94b;
+  stroke-width: 7;
+}
+
+.pump-rod {
+  stroke: #178f86;
+  stroke-width: 5;
+}
+
+.pump-cable,
+.pump-well-line {
+  stroke: #526a75;
+  stroke-width: 3;
+}
+
+.pump-head {
+  fill: none;
+  stroke: #233f4d;
+  stroke-width: 10;
+  stroke-linecap: round;
+}
+
+.pump-wheel {
+  fill: none;
+  stroke: #8b9bab;
+  stroke-width: 6;
+}
+
+.pump-joint,
+.pump-pin {
+  fill: #f2b94b;
+  stroke: #ffffff;
+  stroke-width: 3;
+}
+
+.pump-carrier {
+  fill: #178f86;
+}
+
+/* 指标卡片和图表容器。 */
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.metric-grid .el-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.metric-grid span {
+  color: #526a75;
+  font-weight: 800;
+}
+
+.metric-grid strong {
+  color: #178f86;
+  font-size: 26px;
+}
+
+.chart-card-fill {
+  min-height: 520px;
+}
+
+.waterflood-chart-card {
+  min-height: 620px;
+}
+
+.production-chart {
+  width: 100%;
+  height: 360px;
+}
+
+.pump-indicator-chart {
+  width: max(100%, 960px);
+  min-width: 960px;
+  height: 460px;
+}
+
+.large-chart,
+.tall-chart {
+  height: 470px;
+}
+
+.waterflood-visual {
+  min-width: 760px;
+}
+
+.waterflood-chart {
+  width: max(100%, 920px);
+  min-width: 920px;
+  height: 600px;
+}
+
+@media (max-width: 1080px) {
+  .production-layout,
+  .pump-visual,
+  .metric-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pump-wide-visual,
+  .waterflood-visual,
+  .waterflood-chart {
+    min-width: 0;
+  }
+
+  .production-tabs > .el-tabs__content,
+  .production-layout {
+    min-height: auto;
+  }
+}

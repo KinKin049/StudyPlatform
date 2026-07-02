@@ -2,6 +2,7 @@ import './assets/main.css'
 import './assets/lab.css'
 import 'element-plus/dist/index.css'
 import './assets/well-log.css'
+import './assets/production-simulation.css'
 
 import { createApp } from 'vue'
 import ElementPlus from 'element-plus'

@@ -1,0 +1,475 @@
+<script setup>
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { ElMessage } from 'element-plus'
+import * as echarts from 'echarts'
+import { postSimulationRecord } from './api'
+
+/**
+ * 测井曲线仿真面板。
+ * 前端完成岩性判别、曲线计算、层段合并和图表渲染。
+ */
+
+const AC_MATRIX = 180
+const AC_FLUID = 600
+const ARCHIE_A = 1
+const ARCHIE_M = 2
+const ARCHIE_N = 2
+const WATER_RESISTIVITY = 0.12
+const MAX_DEPTH = 2000
+const DEPTH_STEP = 20
+
+const chartWrapRef = ref(null)
+const chartRef = ref(null)
+const chartInstance = ref(null)
+const chartResizeObserver = ref(null)
+const porosityPercent = ref(20)
+const oilSaturationPercent = ref(60)
+const reportVisible = ref(false)
+const savingReport = ref(false)
+
+const depthArray = Array.from({ length: MAX_DEPTH / DEPTH_STEP + 1 }, (_, index) => index * DEPTH_STEP)
+
+const grBase = depthArray.map((depth) => {
+  if (depth < 260) return 95 + Math.sin(depth / 38) * 8
+  if (depth < 620) return 42 + Math.sin(depth / 44) * 7
+  if (depth < 880) return 88 + Math.sin(depth / 35) * 9
+  if (depth < 1260) return 36 + Math.sin(depth / 50) * 8
+  if (depth < 1500) return 92 + Math.sin(depth / 42) * 8
+  if (depth < 1840) return 48 + Math.sin(depth / 45) * 9
+  return 86 + Math.sin(depth / 40) * 7
+})
+
+const lithologyIntervals = computed(() =>
+  mergeIntervals(
+    depthArray.map((depth, index) => ({
+      depth,
+      type: grBase[index] > 80 ? '泥岩' : '砂岩',
+    })),
+  ),
+)
+
+const grCurve = computed(() => depthArray.map((depth, index) => [Number(grBase[index].toFixed(2)), depth]))
+
+const acCurve = computed(() => {
+  const porosity = porosityPercent.value / 100
+  const acValue = porosity * (AC_FLUID - AC_MATRIX) + AC_MATRIX
+  return depthArray.map((depth, index) => {
+    const lithologyOffset = grBase[index] > 80 ? -10 : 10
+    const layerTexture = Math.sin(depth / 80) * 4
+    return [Number((acValue + lithologyOffset + layerTexture).toFixed(2)), depth]
+  })
+})
+
+const rtCurve = computed(() => {
+  const porosity = Math.max(porosityPercent.value / 100, 0.001)
+  const waterSaturation = Math.max(1 - oilSaturationPercent.value / 100, 0.001)
+  const rtValue =
+    (ARCHIE_A * WATER_RESISTIVITY) /
+    (Math.pow(porosity, ARCHIE_M) * Math.pow(waterSaturation, ARCHIE_N))
+
+  return depthArray.map((depth, index) => {
+    const lithologyFactor = grBase[index] > 80 ? 0.45 : 1.35
+    const layerTexture = 1 + Math.sin(depth / 90) * 0.08
+    return [Number((rtValue * lithologyFactor * layerTexture).toFixed(3)), depth]
+  })
+})
+
+const rtAxisMax = computed(() => {
+  const maxValue = Math.max(...rtCurve.value.map(([value]) => value))
+  return Math.max(1000, Math.pow(10, Math.ceil(Math.log10(maxValue))))
+})
+
+const interpretedLayers = computed(() => {
+  const classifiedPoints = depthArray.map((depth, index) => ({
+    depth,
+    type: classifyLayer(grBase[index], porosityPercent.value, oilSaturationPercent.value),
+  }))
+
+  return mergeIntervals(classifiedPoints).map((layer, index) => ({
+    ...layer,
+    index: index + 1,
+    conclusion: layerConclusion(layer.type),
+  }))
+})
+
+const markAreaData = computed(() =>
+  interpretedLayers.value.map((layer) => [
+    {
+      yAxis: layer.topDepth,
+      itemStyle: {
+        color: layerColor(layer.type),
+        opacity: 1,
+      },
+      label: { show: false },
+    },
+    { yAxis: layer.bottomDepth },
+  ]),
+)
+
+function classifyLayer(grValue, porosity, oilSaturation) {
+  if (grValue > 80) return '泥岩'
+  if (porosity < 10) return '干层'
+  if (oilSaturation < 20) return '水层'
+  if (oilSaturation >= 50) return '油气层'
+  return '干层'
+}
+
+function mergeIntervals(points) {
+  const intervals = []
+  let current = null
+
+  points.forEach((point, index) => {
+    const nextDepth = points[index + 1]?.depth ?? Math.min(point.depth + DEPTH_STEP, MAX_DEPTH)
+
+    if (!current || current.type !== point.type) {
+      if (current) intervals.push(current)
+      current = {
+        type: point.type,
+        topDepth: point.depth,
+        bottomDepth: nextDepth,
+      }
+      return
+    }
+
+    current.bottomDepth = nextDepth
+  })
+
+  if (current) intervals.push(current)
+  return intervals
+}
+
+function layerColor(type) {
+  const colorMap = {
+    泥岩: '#3f454f',
+    干层: '#c9d1d9',
+    水层: '#8fd3ff',
+    油气层: '#f2b94b',
+  }
+  return colorMap[type] || '#d8dee8'
+}
+
+function layerConclusion(type) {
+  const conclusionMap = {
+    泥岩: 'GR高于80API，解释为泥质层，非优质储层。',
+    干层: 'GR较低但孔隙度不足10%，储集能力弱，解释为干层。',
+    水层: '孔隙度达标但含油饱和度低于20%，解释为水层。',
+    油气层: '低GR、孔隙度达标且含油饱和度高，建议重点评价。',
+  }
+  return conclusionMap[type] || '需结合更多资料复核。'
+}
+
+function titleStyle() {
+  return {
+    color: '#233f4d',
+    fontSize: 14,
+    fontWeight: 800,
+  }
+}
+
+function coreAxis(gridIndex, type, min, max, axisColor, showLabel) {
+  return {
+    type,
+    gridIndex,
+    min,
+    max,
+    axisLine: { show: true, lineStyle: { color: axisColor } },
+    axisTick: { show: showLabel },
+    axisLabel: { show: showLabel, color: axisColor },
+    splitLine: { show: true, lineStyle: { color: '#edf2f7' } },
+  }
+}
+
+function curveSeries(name, data, axisIndex, color) {
+  return {
+    name,
+    type: 'line',
+    xAxisIndex: axisIndex,
+    yAxisIndex: axisIndex,
+    data,
+    showSymbol: false,
+    lineStyle: { color, width: 2 },
+  }
+}
+
+function renderLithologyBlock(interval) {
+  return (_params, api) => {
+    const start = api.coord([0, interval.topDepth])
+    const end = api.coord([1, interval.bottomDepth])
+
+    return {
+      type: 'rect',
+      shape: {
+        x: start[0],
+        y: start[1],
+        width: end[0] - start[0],
+        height: Math.max(1, end[1] - start[1]),
+      },
+      style: {
+        fill: interval.type === '砂岩' ? '#f7e2a4' : '#3f454f',
+        stroke: '#ffffff',
+        lineWidth: 1,
+        opacity: 1,
+      },
+    }
+  }
+}
+
+function createChartOption() {
+  const axisColor = '#526a75'
+  const grid = [
+    { left: '3%', width: '18%', top: 42, bottom: 38, containLabel: true },
+    { left: '25%', width: '18%', top: 42, bottom: 38, containLabel: true },
+    { left: '47%', width: '18%', top: 42, bottom: 38, containLabel: true },
+    { left: '69%', width: '18%', top: 42, bottom: 38, containLabel: true },
+  ]
+
+  return {
+    animation: false,
+    backgroundColor: '#ffffff',
+    title: [
+      { text: '岩心', left: '11%', top: 8, textAlign: 'center', textStyle: titleStyle() },
+      { text: 'GR API', left: '33%', top: 8, textAlign: 'center', textStyle: titleStyle() },
+      { text: 'RT Ω·m', left: '55%', top: 8, textAlign: 'center', textStyle: titleStyle() },
+      { text: 'AC μs/m', left: '77%', top: 8, textAlign: 'center', textStyle: titleStyle() },
+    ],
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'cross' },
+      valueFormatter: (value) => Number(value).toFixed(2),
+    },
+    grid,
+    xAxis: [
+      coreAxis(0, 'value', 0, 1, axisColor, false),
+      coreAxis(1, 'value', 0, 150, axisColor, true),
+      coreAxis(2, 'log', 0.1, rtAxisMax.value, axisColor, true),
+      coreAxis(3, 'value', 150, 360, axisColor, true),
+    ],
+    yAxis: [0, 1, 2, 3].map((gridIndex) => ({
+      type: 'value',
+      gridIndex,
+      inverse: true,
+      min: 0,
+      max: MAX_DEPTH,
+      name: gridIndex === 0 ? '深度 m' : '',
+      nameLocation: 'middle',
+      nameGap: 48,
+      axisLine: { show: true, lineStyle: { color: axisColor } },
+      axisTick: { show: true },
+      axisLabel: { color: axisColor },
+      splitLine: { show: true, lineStyle: { color: '#edf2f7' } },
+    })),
+    series: [
+      ...lithologyIntervals.value.map((interval) => ({
+        name: interval.type,
+        type: 'custom',
+        xAxisIndex: 0,
+        yAxisIndex: 0,
+        renderItem: renderLithologyBlock(interval),
+        data: [[0, interval.topDepth, interval.bottomDepth]],
+        silent: true,
+      })),
+      {
+        ...curveSeries('GR', grCurve.value, 1, '#2f7ed8'),
+        markArea: {
+          silent: true,
+          data: markAreaData.value,
+        },
+      },
+      {
+        ...curveSeries('RT', rtCurve.value, 2, '#c86b2d'),
+        markArea: {
+          silent: true,
+          data: markAreaData.value,
+        },
+      },
+      {
+        ...curveSeries('AC', acCurve.value, 3, '#178f86'),
+        markArea: {
+          silent: true,
+          data: markAreaData.value,
+        },
+      },
+    ],
+  }
+}
+
+function renderChart() {
+  if (!chartRef.value) return
+  const { width, height } = chartRef.value.getBoundingClientRect()
+  if (width < 20 || height < 20) {
+    scheduleResizeChart()
+    return
+  }
+  if (!chartInstance.value) {
+    chartInstance.value = echarts.init(chartRef.value)
+  }
+  chartInstance.value.setOption(createChartOption(), true)
+}
+
+function resizeChart() {
+  chartInstance.value?.resize()
+}
+
+function scheduleResizeChart() {
+  window.requestAnimationFrame(() => {
+    if (!chartInstance.value) {
+      renderChart()
+      return
+    }
+    resizeChart()
+  })
+}
+
+function buildReportPayload() {
+  return {
+    porosity: porosityPercent.value,
+    oilSaturation: oilSaturationPercent.value,
+    layers: interpretedLayers.value,
+  }
+}
+
+async function saveReport() {
+  const reportPayload = buildReportPayload()
+  savingReport.value = true
+
+  try {
+    const response = await postSimulationRecord('/api/well-log/record/save', {
+      userId: null,
+      porosity: porosityPercent.value,
+      oilSaturation: oilSaturationPercent.value,
+      reportJson: JSON.stringify(reportPayload),
+    })
+
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    ElMessage.success('报告已保存')
+  } catch (error) {
+    console.error('保存测井解释报告失败', error)
+    ElMessage.warning('当前未连接后端，报告已在前端生成')
+  } finally {
+    savingReport.value = false
+  }
+}
+
+watch([porosityPercent, oilSaturationPercent], () => {
+  renderChart()
+})
+
+onMounted(async () => {
+  await nextTick()
+  window.requestAnimationFrame(() => {
+    renderChart()
+  })
+  chartResizeObserver.value = new ResizeObserver(() => {
+    scheduleResizeChart()
+  })
+  if (chartWrapRef.value) {
+    chartResizeObserver.value.observe(chartWrapRef.value)
+  }
+  window.addEventListener('resize', resizeChart)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', resizeChart)
+  chartResizeObserver.value?.disconnect()
+  chartInstance.value?.dispose()
+})
+</script>
+
+<template>
+  <section class="well-log-content petroleum-embedded-content">
+    <el-splitter class="well-log-layout" @resize="resizeChart" @resize-end="resizeChart">
+      <el-splitter-panel size="20%" min="260px" class="well-log-control">
+        <div class="well-log-panel well-log-control-panel">
+          <el-card shadow="never">
+            <template #header>
+              <span>仿真参数</span>
+            </template>
+
+            <div class="control-item">
+              <div class="control-label">
+                <span>孔隙度 φ</span>
+                <strong>{{ porosityPercent }}%</strong>
+              </div>
+              <el-slider v-model="porosityPercent" :min="0" :max="35" :step="0.5" />
+            </div>
+
+            <div class="control-item">
+              <div class="control-label">
+                <span>含油饱和度 So</span>
+                <strong>{{ oilSaturationPercent }}%</strong>
+              </div>
+              <el-slider v-model="oilSaturationPercent" :min="0" :max="100" :step="1" />
+            </div>
+
+            <el-button type="primary" class="report-button" @click="reportVisible = true">
+              生成解释报告
+            </el-button>
+          </el-card>
+
+          <el-card shadow="never" class="formula-card">
+            <template #header>
+              <span>计算模型</span>
+            </template>
+            <p>AC = φ × (600 - 180) + 180</p>
+            <p>RT = (1 × 0.12) / (φ² × (1 - So)²)</p>
+            <p>GR为岩性基础曲线，仅用于岩性判别。</p>
+          </el-card>
+        </div>
+      </el-splitter-panel>
+
+      <el-splitter-panel size="80%" min="620px" class="well-log-main">
+        <div class="well-log-panel well-log-main-panel">
+          <el-card shadow="never" class="well-log-chart-card">
+            <template #header>
+              <div class="chart-header">
+                <span>岩心 + 测井曲线联动剖面</span>
+                <small>深度 0-2000m，自上而下递增</small>
+              </div>
+            </template>
+
+            <div ref="chartWrapRef" class="chart-wrap">
+              <div ref="chartRef" class="well-log-chart"></div>
+              <aside class="layer-labels" aria-label="层位标注">
+                <div
+                  v-for="layer in interpretedLayers"
+                  :key="`${layer.index}-${layer.topDepth}`"
+                  class="layer-label"
+                  :style="{
+                    top: `${(layer.topDepth / MAX_DEPTH) * 100}%`,
+                    height: `${((layer.bottomDepth - layer.topDepth) / MAX_DEPTH) * 100}%`,
+                    backgroundColor: layerColor(layer.type),
+                  }"
+                >
+                  <span>{{ layer.type }}</span>
+                </div>
+              </aside>
+            </div>
+          </el-card>
+        </div>
+      </el-splitter-panel>
+    </el-splitter>
+  </section>
+
+  <el-drawer v-model="reportVisible" title="测井解释报告" size="46%">
+    <section class="report-section">
+      <h3>当前仿真参数</h3>
+      <p>孔隙度 φ：{{ porosityPercent }}%</p>
+      <p>含油饱和度 So：{{ oilSaturationPercent }}%</p>
+    </section>
+
+    <section class="report-section">
+      <h3>分层结果</h3>
+      <el-table :data="interpretedLayers" border>
+        <el-table-column prop="index" label="层号" width="72" />
+        <el-table-column prop="topDepth" label="顶深 m" width="92" />
+        <el-table-column prop="bottomDepth" label="底深 m" width="92" />
+        <el-table-column prop="type" label="层位类型" width="100" />
+        <el-table-column prop="conclusion" label="评价结论" />
+      </el-table>
+    </section>
+
+    <el-button type="primary" :loading="savingReport" @click="saveReport">
+      保存报告
+    </el-button>
+  </el-drawer>
+</template>

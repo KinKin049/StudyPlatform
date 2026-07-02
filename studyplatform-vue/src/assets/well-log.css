@@ -55,6 +55,12 @@
   padding: 22px;
 }
 
+.petroleum-embedded-content {
+  height: calc(100vh - 210px);
+  min-height: 620px;
+  padding: 0;
+}
+
 /* Element Plus 分割面板主体，保持左右两栏可拖动。 */
 .well-log-page .well-log-layout {
   height: 100%;

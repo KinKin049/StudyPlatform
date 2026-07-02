@@ -4,7 +4,7 @@ import AppNavigation from './components/AppNavigation.vue'
 import AcademyPage from './pages/AcademyPage.vue'
 import HomePage from './pages/HomePage.vue'
 import LabPlatform from './pages/LabPlatform.vue'
-import WellLogSimulation from './pages/WellLogSimulation.vue'
+import PetroleumSimulation from './pages/petroleum/PetroleumSimulation.vue'
 
 const navItems = [
   {
@@ -42,8 +42,8 @@ const navItems = [
         path: '/oj.html',
       },
       {
-        label: '测井仿真平台',
-        path: '/lab/well-log',
+        label: '石油气仿真',
+        path: '/lab/petroleum',
       },
     ],
   },
@@ -63,7 +63,9 @@ const currentPath = ref(window.location.pathname)
 
 const isAcademyPage = computed(() => currentPath.value.startsWith('/academy'))
 const isLabPage = computed(() => currentPath.value === '/lab')
-const isWellLogPage = computed(() => currentPath.value === '/lab/well-log')
+const isPetroleumPage = computed(() =>
+  ['/lab/petroleum', '/lab/well-log', '/lab/production'].includes(currentPath.value),
+)
 
 const navigateTo = (path) => {
   if (path.endsWith('.html')) {
@@ -94,9 +96,9 @@ onUnmounted(() => {
     <AcademyPage :current-path="currentPath" @navigate="navigateTo" />
   </div>
 
-  <div v-else-if="isWellLogPage" class="app-page well-log-shell">
+  <div v-else-if="isPetroleumPage" class="app-page production-shell">
     <AppNavigation :nav-items="navItems" @navigate="navigateTo" />
-    <WellLogSimulation />
+    <PetroleumSimulation />
   </div>
 
   <div v-else-if="isLabPage" class="app-page lab-shell">
