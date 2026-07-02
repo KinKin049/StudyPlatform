@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
+import { request } from '../api/request'
 
 /**
  * 测井曲线仿真页面。
@@ -20,9 +21,6 @@ const WATER_RESISTIVITY = 0.12
 // 默认剖面范围与采样间隔，四道曲线共享同一深度轴。
 const MAX_DEPTH = 2000
 const DEPTH_STEP = 20
-
-// 后端接口基础地址，可通过 Vite 环境变量覆盖。
-const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 
 // 图表 DOM、ECharts 实例和尺寸监听器引用。
 const chartWrapRef = ref(null)
@@ -395,9 +393,8 @@ async function saveReport() {
 
   try {
     // 后端持久化接口调用位置：仿真计算仍全部在前端完成，只提交参数与解释报告JSON。
-    const response = await fetch(`${API_BASE}/api/well-log/record/save`, {
+    await request('/api/well-log/record/save', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         userId: null,
         porosity: porosityPercent.value,
@@ -405,10 +402,6 @@ async function saveReport() {
         reportJson: JSON.stringify(reportPayload),
       }),
     })
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`)
-    }
 
     ElMessage.success('报告已保存')
   } catch (error) {

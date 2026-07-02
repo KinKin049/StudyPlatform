@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
+import { RouterLink } from 'vue-router'
 import {
   createSubmission,
   getProblem,
@@ -219,7 +220,7 @@ onMounted(loadProblems)
         <p class="oj-kicker">StudyPlatform OJ</p>
         <h1>在线判题平台</h1>
       </div>
-      <a class="home-link" href="/">返回首页</a>
+      <RouterLink class="home-link" to="/lab">返回实验平台</RouterLink>
     </header>
 
     <main class="oj-layout">
