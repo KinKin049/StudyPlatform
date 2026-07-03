@@ -1,0 +1,72 @@
+<script setup>
+import { computed } from 'vue'
+import { RouterLink } from 'vue-router'
+import {
+  calculusModelOptions,
+  physicsModelOptions,
+  probabilityModelOptions,
+  subjectOptions,
+} from './spaceModelCatalog'
+
+const subjectModels = {
+  calculus: calculusModelOptions,
+  physics: physicsModelOptions,
+  probability: probabilityModelOptions,
+}
+
+const subjectNotes = {
+  calculus: '曲面、空间曲线、二重积分、梯度场与切平面',
+  physics: '量子轨道、电磁场、波动、热运动与刚体旋转',
+  probability: '联合密度、分布函数、区间概率、相关性与收敛',
+}
+
+const subjects = computed(() => subjectOptions.map((subject) => ({
+  ...subject,
+  note: subjectNotes[subject.id],
+  models: subjectModels[subject.id] ?? [],
+})))
+
+const totalModelCount = computed(() => subjects.value.reduce((sum, subject) => sum + subject.models.length, 0))
+
+const modelRoute = (subjectId, modelId) => ({
+  path: '/visualization/space-3d',
+  query: {
+    subject: subjectId,
+    model: modelId,
+  },
+})
+</script>
+
+<template>
+  <main class="visual-page space-guide-page">
+    <section class="space-guide-simple-hero">
+      <RouterLink class="space-guide-back" to="/visualization">返回可视化</RouterLink>
+      <p>3D Model Atlas</p>
+      <h1>空间模型实验室</h1>
+      <span>
+        选择一个科目下的模型名称，直接进入对应的三维实验台。当前共 {{ subjects.length }} 个科目，
+        {{ totalModelCount }} 个模型。
+      </span>
+    </section>
+
+    <section class="space-guide-directory" aria-label="空间模型目录">
+      <section v-for="subject in subjects" :key="subject.id" class="space-guide-group">
+        <div class="space-guide-group-head">
+          <h2>{{ subject.label }}</h2>
+          <span>{{ subject.note }}</span>
+        </div>
+
+        <nav :aria-label="`${subject.label}模型`" class="space-guide-link-list">
+          <RouterLink
+            v-for="model in subject.models"
+            :key="model.id"
+            :to="modelRoute(subject.id, model.id)"
+          >
+            <span>{{ model.name }}</span>
+            <small>{{ model.formula }}</small>
+          </RouterLink>
+        </nav>
+      </section>
+    </section>
+  </main>
+</template>
