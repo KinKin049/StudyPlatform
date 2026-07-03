@@ -265,7 +265,7 @@ function updatePlayer(delta) {
   const movingLeft = pressedKeys.has('KeyA') || pressedKeys.has('ArrowLeft')
   const movingRight = pressedKeys.has('KeyD') || pressedKeys.has('ArrowRight')
   const nextPlayer = { ...player.value }
-  const bounds = leftBounds.value[currentQuestionKey.value]
+  const bounds = resolvePlayerBounds()
 
   nextPlayer.vx = 0
   if (movingLeft) {
@@ -311,6 +311,26 @@ function updatePlayer(delta) {
   rescuePlayerFromVoid()
   syncSelectedPlatform(findStandingOptionPlatform())
   maybeConfirmSelection()
+}
+
+function resolvePlayerBounds() {
+  const bounds = leftBounds.value[currentQuestionKey.value]
+  const isCurrentQuestionAnswered = answeredQuestionIds.value.includes(currentQuestionKey.value)
+
+  if (isCurrentQuestionAnswered) {
+    return {
+      min: bounds?.min ?? 0,
+      max: bounds?.max ?? Number.POSITIVE_INFINITY,
+    }
+  }
+
+  const currentQuestionPlatforms = optionPlatforms.value.filter((platform) => platform.questionId === currentQuestionKey.value)
+  const rightmostOptionEdge = Math.max(...currentQuestionPlatforms.map((platform) => platform.x + platform.width))
+
+  return {
+    min: bounds?.min ?? 0,
+    max: Number.isFinite(rightmostOptionEdge) ? rightmostOptionEdge - playerSize.width : Number.POSITIVE_INFINITY,
+  }
 }
 
 function findStandingOptionPlatform() {
