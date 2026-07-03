@@ -46,6 +46,12 @@ const academyNavItems = [
     children: [],
     dropdown: true,
   },
+  {
+    label: '题库',
+    path: '/academy/question-bank',
+    children: [],
+    dropdown: false,
+  },
 ]
 
 const navItemsWithCategories = computed(() =>

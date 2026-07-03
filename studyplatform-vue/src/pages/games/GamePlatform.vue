@@ -84,13 +84,8 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <main class="game-page" aria-labelledby="game-title">
+  <main class="game-page" aria-label="游戏模块">
     <section v-if="!isDetailPage" class="game-split-stage" :style="splitStyle">
-      <header class="game-split-header">
-        <p class="game-kicker">Game Module</p>
-        <h1 id="game-title">游戏模块</h1>
-      </header>
-
       <button
         class="game-split-panel game-split-left"
         type="button"

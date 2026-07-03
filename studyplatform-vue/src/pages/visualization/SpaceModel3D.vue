@@ -1017,6 +1017,18 @@ onBeforeUnmount(() => {
 
 <template>
   <main class="visual-page space-model-page">
+    <nav class="algorithm-viewer-breadcrumb visual-page-breadcrumb" aria-label="当前位置">
+      <RouterLink to="/visualization">可视化</RouterLink>
+      <span>&gt;</span>
+      <RouterLink to="/visualization/space-models">空间模型实验室</RouterLink>
+      <span>&gt;</span>
+      <RouterLink :to="{ path: '/visualization/space-3d', query: { subject: state.subject, model: modelOptions[0].id } }">
+        {{ activeSubject.label }}
+      </RouterLink>
+      <span>&gt;</span>
+      <strong>{{ activeModel.name }}</strong>
+    </nav>
+
     <section class="visual-hero compact space-hero">
       <p class="visual-kicker">{{ activeSubject.kicker }}</p>
       <h1>{{ activeSubject.title }}</h1>

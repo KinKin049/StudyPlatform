@@ -1,5 +1,6 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { RouterLink } from 'vue-router'
 import * as echarts from 'echarts'
 
 const expression = ref('sin(x) + 0.2 * x')
@@ -110,6 +111,12 @@ watch([expression, xMin, xMax, samples], renderChart)
 
 <template>
   <main class="visual-page function-lab-page">
+    <nav class="algorithm-viewer-breadcrumb visual-page-breadcrumb" aria-label="当前位置">
+      <RouterLink to="/visualization">可视化</RouterLink>
+      <span>&gt;</span>
+      <strong>函数图像实验室</strong>
+    </nav>
+
     <section class="visual-hero compact">
       <p class="visual-kicker">2D Math</p>
       <h1>函数图像实验室</h1>

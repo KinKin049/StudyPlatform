@@ -49,7 +49,20 @@ const navItems = [
   {
     label: '可视化',
     path: '/visualization',
-    children: [],
+    children: [
+      {
+        label: '算法结构可视化',
+        path: '/visualization/data-structure',
+      },
+      {
+        label: '函数图像实验室',
+        path: '/visualization/function-2d',
+      },
+      {
+        label: '空间模型实验室',
+        path: '/visualization/space-models',
+      },
+    ],
   },
   {
     label: '游戏',
@@ -67,13 +80,17 @@ const shellClass = computed(() => ({
   'app-page production-shell': route.path === '/lab/petroleum',
   'app-page well-log-shell': route.path === '/lab/well-log',
   'app-page visual-shell': route.path.startsWith('/visualization'),
+  'visual-home-shell': route.path === '/visualization',
   'app-page games-shell': route.path.startsWith('/games'),
+  'immersive-game-shell': route.path === '/games/ladder-jump',
 }))
+
+const showNavigation = computed(() => route.path !== '/games/ladder-jump')
 </script>
 
 <template>
   <div :class="shellClass">
-    <AppNavigation :nav-items="navItems" />
+    <AppNavigation v-if="showNavigation" :nav-items="navItems" />
     <RouterView />
   </div>
 </template>

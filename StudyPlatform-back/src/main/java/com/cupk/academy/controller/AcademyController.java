@@ -6,6 +6,7 @@ import com.cupk.academy.dto.AcademyCourseEnrollmentResponse;
 import com.cupk.academy.dto.AcademyCourseReviewRequest;
 import com.cupk.academy.dto.AcademyCourseReviewResponse;
 import com.cupk.academy.dto.AcademyCourseResponse;
+import com.cupk.academy.dto.AcademyHomeSectionResponse;
 import com.cupk.academy.dto.AcademyTextbookResponse;
 import com.cupk.academy.service.AcademyService;
 import jakarta.validation.Valid;
@@ -24,6 +25,11 @@ public class AcademyController {
 
     public AcademyController(AcademyService academyService) {
         this.academyService = academyService;
+    }
+
+    @GetMapping("/home")
+    public List<AcademyHomeSectionResponse> getAcademyHome() {
+        return academyService.getAcademyHome();
     }
 
     @GetMapping("/online-open-courses")
