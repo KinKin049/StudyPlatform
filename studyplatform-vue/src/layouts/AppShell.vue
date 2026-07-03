@@ -67,6 +67,7 @@ const shellClass = computed(() => ({
   'app-page production-shell': route.path === '/lab/petroleum',
   'app-page well-log-shell': route.path === '/lab/well-log',
   'app-page visual-shell': route.path.startsWith('/visualization'),
+  'app-page games-shell': route.path.startsWith('/games'),
 }))
 </script>
 

@@ -4,6 +4,7 @@ import './oj/oj.css'
 import 'element-plus/dist/index.css'
 import './assets/well-log.css'
 import './assets/production-simulation.css'
+import './assets/games.css'
 
 import { createApp } from 'vue'
 import ElementPlus from 'element-plus'
