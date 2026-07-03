@@ -99,6 +99,12 @@ button {
   color: #4b70f5;
 }
 
+.immersive-game-shell {
+  min-height: 100vh;
+  overflow: hidden;
+  background: #071327;
+}
+
 .site-header {
   position: relative;
   z-index: 100;
