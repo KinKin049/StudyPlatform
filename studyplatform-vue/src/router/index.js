@@ -6,6 +6,7 @@ const AcademyHome = () => import('../pages/academy/AcademyHome.vue')
 const AcademyMicroMajors = () => import('../pages/academy/AcademyMicroMajors.vue')
 const AcademyOpenCourses = () => import('../pages/academy/AcademyOpenCourses.vue')
 const AcademyCourseDetail = () => import('../pages/academy/AcademyCourseDetail.vue')
+const AcademyQuestionBank = () => import('../pages/academy/AcademyQuestionBank.vue')
 const AcademyTextbooks = () => import('../pages/academy/AcademyTextbooks.vue')
 const HomePage = () => import('../pages/HomePage.vue')
 const LabPlatform = () => import('../pages/LabPlatform.vue')
@@ -92,6 +93,11 @@ const routes = [
         path: 'textbooks',
         name: 'academy-textbooks',
         component: AcademyTextbooks,
+      },
+      {
+        path: 'question-bank',
+        name: 'academy-question-bank',
+        component: AcademyQuestionBank,
       },
     ],
   },
