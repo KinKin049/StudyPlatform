@@ -1,5 +1,7 @@
 import { request } from './request'
 
+export const fetchAcademyHome = () => request('/api/academy/home')
+
 export const fetchAcademyCourses = (resource) => request(`/api/academy/${resource}`)
 
 export const fetchAcademyCourse = (resource, id) =>
