@@ -747,6 +747,17 @@
   animation: ladder-coin-pop 820ms ease-out both;
 }
 
+.ladder-coin.is-travel-coin {
+  width: 38px;
+  height: 38px;
+  border-color: rgba(255, 244, 181, 0.96);
+  background: radial-gradient(circle at 35% 35%, #fffbe1 0 16%, #ffd968 17% 68%, #d99018 69%);
+  font-size: 20px;
+  animation:
+    ladder-coin-pop 620ms ease-out both,
+    ladder-travel-coin-float 1.8s ease-in-out infinite;
+}
+
 .ladder-confirm-line {
   position: absolute;
   z-index: var(--z-confirm-line);
@@ -1035,6 +1046,17 @@
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes ladder-travel-coin-float {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+
+  50% {
+    translate: 0 -8px;
   }
 }
 
