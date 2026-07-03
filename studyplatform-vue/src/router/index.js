@@ -18,6 +18,7 @@ const AlgorithmDemoViewer = () => import('../pages/visualization/AlgorithmDemoVi
 const FunctionGraph2D = () => import('../pages/visualization/FunctionGraph2D.vue')
 const SpaceModelGuide = () => import('../pages/visualization/SpaceModelGuide.vue')
 const SpaceModel3D = () => import('../pages/visualization/SpaceModel3D.vue')
+const GamePlatform = () => import('../pages/games/GamePlatform.vue')
 
 const routes = [
   {
@@ -147,6 +148,16 @@ const routes = [
     path: '/visualization/space-3d',
     name: 'visualization-space-3d',
     component: SpaceModel3D,
+  },
+  {
+    path: '/games',
+    name: 'games',
+    component: GamePlatform,
+  },
+  {
+    path: '/games/:gameId',
+    name: 'game-detail',
+    component: GamePlatform,
   },
   {
     path: '/:pathMatch(.*)*',

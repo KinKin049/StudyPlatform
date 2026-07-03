@@ -19,7 +19,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/academy/**", "/api/oj/**", "/files/**").permitAll()
+                        .requestMatchers("/api/academy/**", "/api/oj/**", "/api/games/**", "/files/**").permitAll()
                         .anyRequest().permitAll()
                 )
                 .build();
