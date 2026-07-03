@@ -423,14 +423,14 @@
   position: absolute;
   top: 18px;
   left: 18px;
-  z-index: 20;
+  z-index: var(--z-floating-ui);
 }
 
 .ladder-floating-stats {
   position: absolute;
   top: 18px;
   right: 18px;
-  z-index: 20;
+  z-index: var(--z-floating-ui);
 }
 
 .ladder-stats {
@@ -457,6 +457,20 @@
 }
 
 .ladder-stage {
+  --z-far-house: 1;
+  --z-mid-house: 2;
+  --z-house: 3;
+  --z-tree: 7;
+  --z-road: 6;
+  --z-car: 91;
+  --z-floating-ui: 40;
+  --z-control-hint: 41;
+  --z-question-card: 80;
+  --z-option-platform: 81;
+  --z-confirm-line: 82;
+  --z-coin: 90;
+  --z-player: 90;
+  --z-game-over: 100;
   position: relative;
   height: 100vh;
   min-height: 720px;
@@ -492,6 +506,7 @@
 }
 
 .ladder-bg-far {
+  z-index: var(--z-far-house);
   background-image: url('/games/ladder-jump/scene/farHouse.webp');
   background-size: auto 720px;
   background-position: left bottom 100px, left bottom 100px;
@@ -499,6 +514,7 @@
 }
 
 .ladder-bg-mid {
+  z-index: var(--z-mid-house);
   background-image: url('/games/ladder-jump/scene/midHouse.webp');
   background-size: auto 720px;
   background-position: left bottom 100px, left bottom 100px;
@@ -506,6 +522,7 @@
 }
 
 .ladder-bg-house {
+  z-index: var(--z-house);
   background-image: url('/games/ladder-jump/scene/house.webp');
   background-size: auto 720px;
   background-position: left bottom 100px;
@@ -513,6 +530,7 @@
 }
 
 .ladder-bg-tree {
+  z-index: var(--z-tree);
   background-image: url('/games/ladder-jump/scene/tree.webp');
   background-size: auto 720px;
   background-position: left bottom 100px;
@@ -522,7 +540,7 @@
 .ladder-question-card {
   position: absolute;
   top: 72px;
-  z-index: 6;
+  z-index: var(--z-question-card);
   width: 680px;
   padding: 18px 20px;
   border: 1px solid rgba(255, 255, 255, 0.32);
@@ -558,7 +576,7 @@
 
 .ladder-platform {
   position: absolute;
-  z-index: 5;
+  z-index: var(--z-option-platform);
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -646,7 +664,7 @@
   position: absolute;
   left: 0;
   bottom: 0;
-  z-index: 6;
+  z-index: var(--z-road);
   width: 100%;
   height: var(--road-size);
   background-image: url('/games/ladder-jump/scene/sidewalk.webp');
@@ -659,10 +677,11 @@
 }
 
 .ladder-car {
+  --car-height: 166px;
   position: absolute;
-  z-index: 6;
-  width: 166px;
-  height: auto;
+  z-index: var(--z-car);
+  width: auto;
+  height: var(--car-height);
   image-rendering: pixelated;
   filter: drop-shadow(0 12px 8px rgba(0, 0, 0, 0.32));
   pointer-events: none;
@@ -671,7 +690,7 @@
 
 .ladder-player {
   position: absolute;
-  z-index: 8;
+  z-index: var(--z-player);
   width: 114px;
   height: 135px;
   will-change: left, top, transform;
@@ -691,7 +710,7 @@
 
 .ladder-coin {
   position: absolute;
-  z-index: 7;
+  z-index: var(--z-coin);
   display: grid;
   width: 42px;
   height: 42px;
@@ -708,7 +727,7 @@
 
 .ladder-confirm-line {
   position: absolute;
-  z-index: 9;
+  z-index: var(--z-confirm-line);
   width: 4px;
   border-radius: 999px;
   background: linear-gradient(180deg, transparent, #ffd36a 18%, #ffd36a 82%, transparent);
@@ -734,7 +753,7 @@
   position: absolute;
   right: 18px;
   bottom: 18px;
-  z-index: 12;
+  z-index: var(--z-control-hint);
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
@@ -755,7 +774,7 @@
 .ladder-game-over {
   position: absolute;
   inset: 0;
-  z-index: 30;
+  z-index: var(--z-game-over);
   display: grid;
   align-content: center;
   justify-items: center;

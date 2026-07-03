@@ -67,10 +67,10 @@ const selectedPlatform = ref(null)
 const lockedQuestionIds = ref([])
 const leftBounds = ref({})
 const cars = ref([
-  { id: 'car-taxi', file: 'taxi.png', x: 260, y: groundY - 122, direction: 1, speed: 2.4 },
-  { id: 'car-red', file: 'red.png', x: 980, y: groundY - 120, direction: -1, speed: 1.9 },
-  { id: 'car-blue', file: 'blue.png', x: 1540, y: groundY - 121, direction: 1, speed: 2.1 },
-  { id: 'car-white', file: 'white.png', x: 2280, y: groundY - 120, direction: -1, speed: 2.7 },
+  { id: 'car-taxi', file: 'taxi.png', x: 260, bottom: 4, direction: 1, speed: 2.4 },
+  { id: 'car-red', file: 'red.png', x: 980, bottom: 6, direction: -1, speed: 1.9 },
+  { id: 'car-blue', file: 'blue.png', x: 1540, bottom: 5, direction: 1, speed: 2.1 },
+  { id: 'car-white', file: 'white.png', x: 2280, bottom: 6, direction: -1, speed: 2.7 },
 ])
 const pressedKeys = new Set()
 let animationId = 0
@@ -161,10 +161,10 @@ const worldStyle = computed(() => ({
   transform: `translateX(${-cameraX.value}px)`,
 }))
 const sceneLayers = [
-  { key: 'far-house', className: 'ladder-bg-layer ladder-bg-far', zIndex: 1 },
-  { key: 'mid-house', className: 'ladder-bg-layer ladder-bg-mid', zIndex: 2 },
-  { key: 'house', className: 'ladder-bg-layer ladder-bg-house', zIndex: 3 },
-  { key: 'tree', className: 'ladder-bg-layer ladder-bg-tree', zIndex: 7 },
+  { key: 'far-house', className: 'ladder-bg-layer ladder-bg-far' },
+  { key: 'mid-house', className: 'ladder-bg-layer ladder-bg-mid' },
+  { key: 'house', className: 'ladder-bg-layer ladder-bg-house' },
+  { key: 'tree', className: 'ladder-bg-layer ladder-bg-tree' },
 ]
 const playerStyle = computed(() => ({
   left: `${player.value.x}px`,
@@ -509,7 +509,6 @@ onBeforeUnmount(() => {
           v-for="layer in sceneLayers"
           :key="layer.key"
           :class="layer.className"
-          :style="{ zIndex: layer.zIndex }"
         ></div>
 
         <section
@@ -568,7 +567,7 @@ onBeforeUnmount(() => {
           class="ladder-car"
           :src="`${assetBase}/cars/${car.file}`"
           alt=""
-          :style="{ left: `${car.x}px`, top: `${car.y}px`, transform: `scaleX(${car.direction})` }"
+          :style="{ left: `${car.x}px`, bottom: `${car.bottom}px`, transform: `scaleX(${car.direction})` }"
         />
 
         <div class="ladder-player" :class="{ 'is-damaged': damageFlash }" :style="playerStyle">
