@@ -16,6 +16,7 @@ const VisualizationHome = () => import('../pages/visualization/VisualizationHome
 const DataStructureVisualization = () => import('../pages/visualization/DataStructureVisualization.vue')
 const AlgorithmDemoViewer = () => import('../pages/visualization/AlgorithmDemoViewer.vue')
 const FunctionGraph2D = () => import('../pages/visualization/FunctionGraph2D.vue')
+const SpaceModelGuide = () => import('../pages/visualization/SpaceModelGuide.vue')
 const SpaceModel3D = () => import('../pages/visualization/SpaceModel3D.vue')
 
 const routes = [
@@ -136,6 +137,11 @@ const routes = [
     path: '/visualization/function-2d',
     name: 'visualization-function-2d',
     component: FunctionGraph2D,
+  },
+  {
+    path: '/visualization/space-models',
+    name: 'visualization-space-models',
+    component: SpaceModelGuide,
   },
   {
     path: '/visualization/space-3d',
