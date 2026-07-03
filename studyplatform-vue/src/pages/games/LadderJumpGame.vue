@@ -161,10 +161,13 @@ const worldStyle = computed(() => ({
   transform: `translateX(${-cameraX.value}px)`,
 }))
 const sceneLayers = [
+  { key: 'sky', className: 'ladder-bg-layer ladder-bg-sky' },
+  { key: 'cloud', className: 'ladder-bg-layer ladder-bg-cloud' },
   { key: 'far-house', className: 'ladder-bg-layer ladder-bg-far' },
   { key: 'mid-house', className: 'ladder-bg-layer ladder-bg-mid' },
   { key: 'house', className: 'ladder-bg-layer ladder-bg-house' },
   { key: 'tree', className: 'ladder-bg-layer ladder-bg-tree' },
+  { key: 'lamp', className: 'ladder-bg-layer ladder-bg-lamp' },
 ]
 const playerStyle = computed(() => ({
   left: `${player.value.x}px`,
