@@ -9,6 +9,7 @@ export const TYPE_WARRIOR_CONFIG = {
   keyBurstDuration: 0.68,
   spawnOffset: 28,
   rollingBufferLimit: 36,
+  blastEffectDuration: 0.42,
 }
 
 /**
@@ -18,7 +19,7 @@ export const TYPE_WARRIOR_CONFIG = {
 export const TYPE_WARRIOR_BALANCE = {
   ui: {
     // 是否显示左下角技能调试面板。正式上线时改为 false 即可隐藏。
-    showSkillDebugPanel: false,
+    showSkillDebugPanel: true,
   },
   player: {
     // 玩家基础属性。
@@ -55,6 +56,8 @@ export const TYPE_WARRIOR_BALANCE = {
       normalLift: 10,
       failedLift: 12,
     },
+    explosionShakeDuration: 0.22,
+    explosionShakeStrength: 7,
   },
   waves: {
     baseTargetCount: 3,
@@ -76,6 +79,7 @@ export const TYPE_WARRIOR_BALANCE = {
     radius: 30,
     orbitRadius: 308,
     orbitEnterDistance: 338,
+    orbitAngularSpeed: 0.552,
     emissionDuration: 0.34,
     emissionDistance: 64,
     emissionJitter: 0.18,
@@ -92,6 +96,23 @@ export const TYPE_WARRIOR_BALANCE = {
     speedPerWave: 1.05,
     dotRadius: 12,
     shapedRadius: 16,
+    wordLengthScaling: {
+      shortMaxLength: 4,
+      mediumMaxLength: 7,
+      longMaxLength: 10,
+      speedMultiplier: {
+        short: 1.22,
+        medium: 1,
+        long: 0.86,
+        extraLong: 0.74,
+      },
+      contactDamageMultiplier: {
+        short: 0.72,
+        medium: 1,
+        long: 1.24,
+        extraLong: 1.52,
+      },
+    },
   },
   skills: {
     // 下方每个技能数组都按“索引 = 技能等级”读取。
@@ -109,11 +130,19 @@ export const TYPE_WARRIOR_BALANCE = {
     shield: {
       maxHealthBonus: [0, 12, 24, 36, 48, 60],
     },
+    lifelong: {
+      maxHealthBonus: [0, 10, 20, 30, 40, 50],
+    },
     focus: {
       comboDamageBonusPerCombo: [0, 0.6, 1.2, 1.8, 2.4, 3.0],
     },
     beam: {
       flatDamageBonus: [0, 2, 4, 6, 8, 10],
+    },
+    blast: {
+      radius: [0, 76, 83.6, 91.96, 101.156, 111.2716],
+      damageMultiplier: [0, 1, 1, 1, 1, 1],
+      minimumDamageRatio: [0, 0.2, 0.22, 0.24, 0.26, 0.28],
     },
     reserve: {
       maxEnergyBonus: [0, 18, 36, 54, 72, 90],
@@ -126,7 +155,8 @@ export const TYPE_WARRIOR_BALANCE = {
     },
     repair: {
       onHitHeal: [0, 1, 2, 3, 4, 5],
-      onSkillPickHeal: [0, 10, 12, 14, 16, 18],
+      onKillHeal: [0, 1, 2, 3, 4, 5],
+      waveEndMissingHealthRestoreRatio: 0.5,
     },
     solid: {
       trailDamageMultiplier: [0, 1.0, 1.15, 1.3, 1.45, 1.6],
@@ -180,12 +210,14 @@ export const TYPE_WARRIOR_SKILL_POOL = [
   { id: 'shield', name: '护场编织', type: '被动', description: '提升生命上限并增强容错。' },
   { id: 'focus', name: '连击聚焦', type: '被动', description: '连击层数会额外提高每次命中的伤害。' },
   { id: 'beam', name: '束流强化', type: '被动', description: '子弹命中主目标时附加固定伤害。' },
+  { id: 'blast', name: '爆炸伤害', type: '被动', description: '子弹击杀敌人后在周围引发衰减爆炸，中心伤害等同当前子弹伤害。' },
   { id: 'reserve', name: '能量储备', type: '被动', description: '提高能量上限，并强化击杀后的回能。' },
   { id: 'overclock', name: '过载弹群', type: '被动', description: '提高子弹飞行速度与基础伤害。' },
-  { id: 'repair', name: '稳态修复', type: '被动', description: '命中敌人与获得技能时恢复生命值。' },
+  { id: 'repair', name: '稳态修复', type: '被动', description: '命中与击杀敌人均可回血，关卡结束后额外恢复当前损失生命的一半。' },
   { id: 'solid', name: '实体子弹', type: '被动', description: '子弹飞向主目标途中会伤害沿途敌人。' },
   { id: 'pierce', name: '子弹穿透', type: '被动', description: '子弹命中目标后沿原路径继续前进，并伤害后续敌人。' },
   { id: 'purge', name: '清屏指令', type: '主动', description: '按 1 激活，冷却 60 秒，每回合最多使用一次。' },
+  { id: 'lifelong', name: '终身治疗', type: '被动', description: '固定提升生命上限，1 级 +10，每升 1 级再 +10。' },
 ]
 
 export const TYPE_WARRIOR_ENEMY_KINDS = [

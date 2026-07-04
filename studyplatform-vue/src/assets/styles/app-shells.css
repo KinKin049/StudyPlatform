@@ -106,9 +106,23 @@ button {
 }
 
 .games-home-shell .site-header {
-  background: #0B486B;
-  background: -webkit-linear-gradient(to right, #0B486B, #F56217);
-  background: linear-gradient(to right, #0B486B, #F56217);
+  background: #d8d1c4;
+  background: -webkit-linear-gradient(
+    to right,
+    #d8d1c4 0%,
+    #d8d1c4 42%,
+    #d2b895 50%,
+    #d96c4f 58%,
+    #d96c4f 100%
+  );
+  background: linear-gradient(
+    to right,
+    #d8d1c4 0%,
+    #d8d1c4 42%,
+    #d2b895 50%,
+    #d96c4f 58%,
+    #d96c4f 100%
+  );
 }
 
 .games-home-shell .site-header::before {
@@ -124,17 +138,17 @@ button {
 
 .games-home-shell .site-brand,
 .games-home-shell .nav-button {
-  color: #ffffff;
+  color: #5c3b00;
 }
 
 .games-home-shell .user-avatar {
-  color: #0B486B;
+  color: #7a5200;
 }
 
 .games-home-shell .nav-button:hover,
 .games-home-shell .nav-button:focus-visible,
 .games-home-shell .nav-item:hover .nav-button {
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(92, 59, 0, 0.1);
 }
 
 .immersive-game-shell {

@@ -17,6 +17,8 @@ import com.cupk.academy.dto.QuestionBankImportResponse;
 import com.cupk.academy.dto.QuestionBankProblemPageResponse;
 import com.cupk.academy.dto.QuestionBankProblemResponse;
 import com.cupk.academy.dto.QuestionBankSubjectResponse;
+import com.cupk.academy.dto.TypeWarriorWordPoolResponse;
+import com.cupk.academy.dto.TypeWarriorWordResponse;
 import com.cupk.academy.repository.QuestionBankRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,6 +32,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,7 +50,6 @@ public class QuestionBankService {
     private static final int MAX_IMPORT_PAGES = 3;
     private static final int MAX_IMPORT_PROBLEMS = 30;
     private static final long DEFAULT_USER_ID = 1L;
-    private static final int MISTAKE_MASTERED_THRESHOLD = 2;
 
     private final QuestionBankRepository questionBankRepository;
     private final ObjectMapper objectMapper;
@@ -119,131 +121,53 @@ public class QuestionBankService {
         );
     }
 
-    public QuestionBankMistakeSummaryResponse getMistakeSummary() {
-        return questionBankRepository.findMistakeSummary(DEFAULT_USER_ID);
-    }
+    public TypeWarriorWordPoolResponse getTypeWarriorWordPool() {
+        Map<String, AggregatedTypeWarriorWord> wordsByKeyword = new LinkedHashMap<>();
+        for (QuestionBankRepository.TypeWarriorVocabularyRow row : questionBankRepository.findTypeWarriorVocabularyRows(DEFAULT_USER_ID)) {
+            String normalizedWord = normalizeTypeWarriorWord(row.stem());
+            if (normalizedWord.isBlank()) {
+                continue;
+            }
 
-    public QuestionBankFavoriteSummaryResponse getFavoriteSummary() {
-        return questionBankRepository.findFavoriteSummary(DEFAULT_USER_ID);
-    }
+            String familiarity = normalizeFamiliarity(row.familiarity());
+            AggregatedTypeWarriorWord existing = wordsByKeyword.get(normalizedWord);
+            if (existing == null) {
+                wordsByKeyword.put(normalizedWord, new AggregatedTypeWarriorWord(
+                        row.questionId(),
+                        row.setCode(),
+                        normalizedWord,
+                        summarizeTranslation(row.answer()),
+                        familiarity,
+                        inferTypeWarriorTier(normalizedWord, row.setCode())
+                ));
+                continue;
+            }
 
-    public QuestionBankFavoritePageResponse listFavorites(String setCode, String keyword, int page, int size) {
-        int normalizedPage = Math.max(page, 0);
-        int normalizedSize = Math.max(1, Math.min(size, 100));
-        return questionBankRepository.findFavorites(
-                DEFAULT_USER_ID,
-                setCode,
-                keyword,
-                normalizedPage,
-                normalizedSize
-        );
-    }
-
-    public QuestionBankFavoriteToggleResponse addFavorite(QuestionBankFavoriteRequest request) {
-        long questionId = validateFavoriteQuestion(request);
-        questionBankRepository.addFavorite(DEFAULT_USER_ID, questionId);
-        return new QuestionBankFavoriteToggleResponse(
-                questionId,
-                true,
-                questionBankRepository.countFavorites(DEFAULT_USER_ID),
-                "已收藏题目"
-        );
-    }
-
-    public QuestionBankFavoriteToggleResponse removeFavorite(long questionId) {
-        if (questionId <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "题目编号无效");
-        }
-        questionBankRepository.findCourseQuestionAnswerReference(questionId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "题目不存在"));
-        questionBankRepository.removeFavorite(DEFAULT_USER_ID, questionId);
-        return new QuestionBankFavoriteToggleResponse(
-                questionId,
-                false,
-                questionBankRepository.countFavorites(DEFAULT_USER_ID),
-                "已取消收藏"
-        );
-    }
-
-    public QuestionBankMistakePageResponse listMistakes(
-            String setCode,
-            String status,
-            String keyword,
-            int page,
-            int size
-    ) {
-        int normalizedPage = Math.max(page, 0);
-        int normalizedSize = Math.max(1, Math.min(size, 100));
-        return questionBankRepository.findMistakes(
-                DEFAULT_USER_ID,
-                setCode,
-                status,
-                keyword,
-                normalizedPage,
-                normalizedSize
-        );
-    }
-
-    public QuestionBankMistakeAnswerResponse recordMistakeAnswer(QuestionBankMistakeAnswerRequest request) {
-        if (request == null || request.questionId() <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "题目编号无效");
-        }
-        String selectedAnswer = request.selectedAnswer() == null ? "" : request.selectedAnswer().trim();
-        if (selectedAnswer.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请选择答案后再提交");
+            String mergedFamiliarity = familiarityRank(familiarity) > familiarityRank(existing.familiarity())
+                    ? familiarity
+                    : existing.familiarity();
+            String mergedText = existing.text().isBlank() ? summarizeTranslation(row.answer()) : existing.text();
+            wordsByKeyword.put(normalizedWord, new AggregatedTypeWarriorWord(
+                    existing.questionId(),
+                    existing.setCode(),
+                    existing.word(),
+                    mergedText,
+                    mergedFamiliarity,
+                    Math.max(existing.tier(), inferTypeWarriorTier(normalizedWord, row.setCode()))
+            ));
         }
 
-        var answerReference = questionBankRepository.findCourseQuestionAnswerReference(request.questionId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "题目不存在"));
-        String correctAnswer = answerReference.answer() == null ? "" : answerReference.answer().trim();
-        boolean correct = isCourseQuestionAnswerCorrect(answerReference.type(), selectedAnswer, correctAnswer);
-
-        if (correct) {
-            questionBankRepository.applyCorrectMistakeReview(
-                    DEFAULT_USER_ID,
-                    answerReference.questionId(),
-                    selectedAnswer,
-                    correctAnswer,
-                    MISTAKE_MASTERED_THRESHOLD
-            );
-            return questionBankRepository.findMistakeState(DEFAULT_USER_ID, answerReference.questionId())
-                    .map(state -> new QuestionBankMistakeAnswerResponse(
-                            answerReference.questionId(),
-                            true,
-                            !state.mastered(),
-                            state.wrongCount(),
-                            state.correctStreak(),
-                            state.mastered(),
-                            state.mastered() ? "连续答对，已标记为已掌握" : "回答正确，再巩固一次即可掌握"
-                    ))
-                    .orElseGet(() -> new QuestionBankMistakeAnswerResponse(
-                            answerReference.questionId(),
-                            true,
-                            false,
-                            0,
-                            0,
-                            false,
-                            "回答正确"
-                    ));
-        }
-
-        questionBankRepository.upsertWrongMistake(
-                DEFAULT_USER_ID,
-                answerReference.questionId(),
-                selectedAnswer,
-                correctAnswer
-        );
-        var state = questionBankRepository.findMistakeState(DEFAULT_USER_ID, answerReference.questionId())
-                .orElse(new QuestionBankRepository.QuestionBankMistakeState(1, 0, false));
-        return new QuestionBankMistakeAnswerResponse(
-                answerReference.questionId(),
-                false,
-                true,
-                state.wrongCount(),
-                state.correctStreak(),
-                state.mastered(),
-                state.wrongCount() <= 1 ? "已加入错题本" : "已更新错题本，累计错误 " + state.wrongCount() + " 次"
-        );
+        List<TypeWarriorWordResponse> words = wordsByKeyword.values().stream()
+                .map(word -> new TypeWarriorWordResponse(
+                        word.questionId(),
+                        word.setCode(),
+                        word.word(),
+                        word.text(),
+                        word.familiarity(),
+                        word.tier()
+                ))
+                .toList();
+        return new TypeWarriorWordPoolResponse(words);
     }
 
     public QuestionBankImportResponse importLuoguProblems(int pages, int limit) {
@@ -436,6 +360,60 @@ public class QuestionBankService {
         return "";
     }
 
+    private String normalizeTypeWarriorWord(String word) {
+        if (word == null) {
+            return "";
+        }
+        return word.toLowerCase().replaceAll("[^a-z]", "");
+    }
+
+    private String summarizeTranslation(String answer) {
+        if (answer == null || answer.isBlank()) {
+            return "";
+        }
+        String normalized = answer.replace("；", "，").replace(";", "，");
+        int separatorIndex = normalized.indexOf('，');
+        return (separatorIndex >= 0 ? normalized.substring(0, separatorIndex) : normalized).trim();
+    }
+
+    private String normalizeFamiliarity(String familiarity) {
+        if (familiarity == null || familiarity.isBlank()) {
+            return "unmarked";
+        }
+        String normalized = familiarity.trim().toLowerCase();
+        return switch (normalized) {
+            case "known", "fuzzy", "unknown" -> normalized;
+            default -> "unmarked";
+        };
+    }
+
+    private int familiarityRank(String familiarity) {
+        return switch (normalizeFamiliarity(familiarity)) {
+            case "unknown" -> 4;
+            case "fuzzy" -> 3;
+            case "known" -> 2;
+            default -> 1;
+        };
+    }
+
+    private int inferTypeWarriorTier(String normalizedWord, String setCode) {
+        int length = normalizedWord.length();
+        int tier;
+        if (length <= 4) {
+            tier = 1;
+        } else if (length <= 7) {
+            tier = 2;
+        } else if (length <= 10) {
+            tier = 3;
+        } else {
+            tier = 4;
+        }
+        if ("cet6".equalsIgnoreCase(setCode) && tier < 4) {
+            tier += 1;
+        }
+        return Math.max(1, Math.min(4, tier));
+    }
+
     private String get(String url) throws IOException, InterruptedException {
         String currentUrl = url;
         for (int redirectCount = 0; redirectCount < 5; redirectCount += 1) {
@@ -559,6 +537,16 @@ public class QuestionBankService {
             String inputDescription,
             String outputDescription,
             String hint
+    ) {
+    }
+
+    private record AggregatedTypeWarriorWord(
+            long questionId,
+            String setCode,
+            String word,
+            String text,
+            String familiarity,
+            int tier
     ) {
     }
 }

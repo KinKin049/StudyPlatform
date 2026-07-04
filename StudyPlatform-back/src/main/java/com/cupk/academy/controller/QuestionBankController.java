@@ -14,6 +14,7 @@ import com.cupk.academy.dto.QuestionBankImportResponse;
 import com.cupk.academy.dto.QuestionBankProblemPageResponse;
 import com.cupk.academy.dto.QuestionBankProblemResponse;
 import com.cupk.academy.dto.QuestionBankSubjectResponse;
+import com.cupk.academy.dto.TypeWarriorWordPoolResponse;
 import com.cupk.academy.service.QuestionBankService;
 import java.util.List;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -118,6 +119,11 @@ public class QuestionBankController {
             @RequestParam(required = false) String keyword
     ) {
         return questionBankService.getCourseQuestionBank(code, page, size, keyword);
+    }
+
+    @GetMapping("/type-warrior/words")
+    public TypeWarriorWordPoolResponse getTypeWarriorWordPool() {
+        return questionBankService.getTypeWarriorWordPool();
     }
 
     @PostMapping("/import/luogu")
