@@ -30,6 +30,10 @@ const navItems = [
         label: '精品教材',
         path: '/academy/textbooks',
       },
+      {
+        label: '题库',
+        path: '/academy/question-bank',
+      },
     ],
   },
   {

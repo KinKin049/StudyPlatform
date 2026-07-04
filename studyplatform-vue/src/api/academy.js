@@ -51,6 +51,48 @@ export const fetchQuestionBankCourse = (code, { page = 0, size = 30, keyword = '
   return request(`/api/academy/question-bank/courses/${encodeURIComponent(code)}?${params.toString()}`)
 }
 
+export const fetchQuestionBankMistakeSummary = () =>
+  request('/api/academy/question-bank/mistakes/summary')
+
+export const fetchQuestionBankMistakes = ({ setCode = '', status = 'active', keyword = '', page = 0, size = 20 } = {}) => {
+  const params = new URLSearchParams()
+  if (setCode) params.set('setCode', setCode)
+  if (status) params.set('status', status)
+  if (keyword) params.set('keyword', keyword)
+  params.set('page', page)
+  params.set('size', size)
+  return request(`/api/academy/question-bank/mistakes?${params.toString()}`)
+}
+
+export const recordQuestionBankAnswer = (payload) =>
+  request('/api/academy/question-bank/mistakes/answers', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+
+export const fetchQuestionBankFavoriteSummary = () =>
+  request('/api/academy/question-bank/favorites/summary')
+
+export const fetchQuestionBankFavorites = ({ setCode = '', keyword = '', page = 0, size = 20 } = {}) => {
+  const params = new URLSearchParams()
+  if (setCode) params.set('setCode', setCode)
+  if (keyword) params.set('keyword', keyword)
+  params.set('page', page)
+  params.set('size', size)
+  return request(`/api/academy/question-bank/favorites?${params.toString()}`)
+}
+
+export const addQuestionBankFavorite = (questionId) =>
+  request('/api/academy/question-bank/favorites', {
+    method: 'POST',
+    body: JSON.stringify({ questionId }),
+  })
+
+export const removeQuestionBankFavorite = (questionId) =>
+  request(`/api/academy/question-bank/favorites/${encodeURIComponent(questionId)}`, {
+    method: 'DELETE',
+  })
+
 export const fetchTypeWarriorWordPool = () =>
   request('/api/academy/question-bank/type-warrior/words')
 
