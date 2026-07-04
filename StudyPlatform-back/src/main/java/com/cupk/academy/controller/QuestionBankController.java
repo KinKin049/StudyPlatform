@@ -2,12 +2,22 @@ package com.cupk.academy.controller;
 
 import com.cupk.academy.dto.CourseQuestionBankCategoryResponse;
 import com.cupk.academy.dto.CourseQuestionBankDetailResponse;
+import com.cupk.academy.dto.QuestionBankFavoritePageResponse;
+import com.cupk.academy.dto.QuestionBankFavoriteRequest;
+import com.cupk.academy.dto.QuestionBankFavoriteSummaryResponse;
+import com.cupk.academy.dto.QuestionBankFavoriteToggleResponse;
+import com.cupk.academy.dto.QuestionBankMistakeAnswerRequest;
+import com.cupk.academy.dto.QuestionBankMistakeAnswerResponse;
+import com.cupk.academy.dto.QuestionBankMistakePageResponse;
+import com.cupk.academy.dto.QuestionBankMistakeSummaryResponse;
 import com.cupk.academy.dto.QuestionBankImportResponse;
 import com.cupk.academy.dto.QuestionBankProblemPageResponse;
 import com.cupk.academy.dto.QuestionBankProblemResponse;
 import com.cupk.academy.dto.QuestionBankSubjectResponse;
 import com.cupk.academy.service.QuestionBankService;
 import java.util.List;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -48,6 +58,56 @@ public class QuestionBankController {
     @GetMapping("/course-catalog")
     public List<CourseQuestionBankCategoryResponse> listCourseCatalog() {
         return questionBankService.listCourseQuestionBankCatalog();
+    }
+
+    @GetMapping("/mistakes/summary")
+    public QuestionBankMistakeSummaryResponse getMistakeSummary() {
+        return questionBankService.getMistakeSummary();
+    }
+
+    @GetMapping("/mistakes")
+    public QuestionBankMistakePageResponse listMistakes(
+            @RequestParam(required = false) String setCode,
+            @RequestParam(defaultValue = "active") String status,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        return questionBankService.listMistakes(setCode, status, keyword, page, size);
+    }
+
+    @PostMapping("/mistakes/answers")
+    public QuestionBankMistakeAnswerResponse recordMistakeAnswer(
+            @RequestBody QuestionBankMistakeAnswerRequest request
+    ) {
+        return questionBankService.recordMistakeAnswer(request);
+    }
+
+    @GetMapping("/favorites/summary")
+    public QuestionBankFavoriteSummaryResponse getFavoriteSummary() {
+        return questionBankService.getFavoriteSummary();
+    }
+
+    @GetMapping("/favorites")
+    public QuestionBankFavoritePageResponse listFavorites(
+            @RequestParam(required = false) String setCode,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        return questionBankService.listFavorites(setCode, keyword, page, size);
+    }
+
+    @PostMapping("/favorites")
+    public QuestionBankFavoriteToggleResponse addFavorite(
+            @RequestBody QuestionBankFavoriteRequest request
+    ) {
+        return questionBankService.addFavorite(request);
+    }
+
+    @DeleteMapping("/favorites/{questionId}")
+    public QuestionBankFavoriteToggleResponse removeFavorite(@PathVariable long questionId) {
+        return questionBankService.removeFavorite(questionId);
     }
 
     @GetMapping("/courses/{code}")

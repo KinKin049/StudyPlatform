@@ -1,9 +1,15 @@
 package com.cupk.academy.dto;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
-public record CourseQuestionBankQuestionResponse(
+public record QuestionBankFavoriteResponse(
         long id,
+        long questionId,
+        String setCode,
+        String setTitle,
+        String categoryCode,
+        String categoryName,
         String type,
         String stem,
         List<String> options,
@@ -11,6 +17,6 @@ public record CourseQuestionBankQuestionResponse(
         String explanation,
         String difficultyLabel,
         String sourceUrl,
-        boolean favorite
+        LocalDateTime createdAt
 ) {
 }

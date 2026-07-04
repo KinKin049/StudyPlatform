@@ -455,11 +455,8 @@ const createCroppedAvatarFile = async () => {
   canvas.width = canvasSize
   canvas.height = canvasSize
   const context = canvas.getContext('2d')
-  context.clearRect(0, 0, canvasSize, canvasSize)
-  context.save()
-  context.beginPath()
-  context.arc(canvasSize / 2, canvasSize / 2, canvasSize / 2, 0, Math.PI * 2)
-  context.clip()
+  context.fillStyle = '#ffffff'
+  context.fillRect(0, 0, canvasSize, canvasSize)
   context.drawImage(
     image,
     sourceX,
@@ -471,7 +468,6 @@ const createCroppedAvatarFile = async () => {
     canvasSize,
     canvasSize,
   )
-  context.restore()
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'))
   if (!blob) {
     throw new Error('头像裁剪失败')

@@ -7,6 +7,14 @@ import com.cupk.academy.dto.CourseQuestionBankCategoryResponse;
 import com.cupk.academy.dto.CourseQuestionBankQuestionPageResponse;
 import com.cupk.academy.dto.CourseQuestionBankQuestionResponse;
 import com.cupk.academy.dto.CourseQuestionBankSetResponse;
+import com.cupk.academy.dto.QuestionBankFavoritePageResponse;
+import com.cupk.academy.dto.QuestionBankFavoriteResponse;
+import com.cupk.academy.dto.QuestionBankFavoriteSetSummaryResponse;
+import com.cupk.academy.dto.QuestionBankFavoriteSummaryResponse;
+import com.cupk.academy.dto.QuestionBankMistakePageResponse;
+import com.cupk.academy.dto.QuestionBankMistakeResponse;
+import com.cupk.academy.dto.QuestionBankMistakeSetSummaryResponse;
+import com.cupk.academy.dto.QuestionBankMistakeSummaryResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -240,7 +248,13 @@ public class QuestionBankRepository {
         }
     }
 
-    public CourseQuestionBankQuestionPageResponse findCourseQuestionBankQuestions(String code, String keyword, int page, int size) {
+    public CourseQuestionBankQuestionPageResponse findCourseQuestionBankQuestions(
+            String code,
+            String keyword,
+            int page,
+            int size,
+            long userId
+    ) {
         List<Object> params = new ArrayList<>();
         params.add(code);
         String keywordCondition = "";
@@ -264,14 +278,18 @@ public class QuestionBankRepository {
                 params.toArray()
         );
         int offset = Math.max(0, page) * size;
-        List<Object> listParams = new ArrayList<>(params);
+        List<Object> listParams = new ArrayList<>();
+        listParams.add(userId);
+        listParams.addAll(params);
         listParams.add(size);
         listParams.add(offset);
         String sql = """
                 SELECT q.id, q.question_type, q.stem, CAST(q.options_json AS CHAR) AS options_json,
-                       q.answer, q.explanation, q.difficulty_label, q.source_url
+                       q.answer, q.explanation, q.difficulty_label, q.source_url,
+                       CASE WHEN f.question_id IS NULL THEN 0 ELSE 1 END AS favorite
                 FROM course_question_bank_questions q
                 JOIN course_question_bank_sets s ON s.id = q.set_id
+                LEFT JOIN course_question_bank_favorites f ON f.question_id = q.id AND f.user_id = ?
                 WHERE s.set_code = ?
                 %s
                 ORDER BY q.sort_order ASC, q.id ASC
@@ -282,6 +300,336 @@ public class QuestionBankRepository {
         long safeTotal = total == null ? 0 : total;
         int totalPages = size <= 0 ? 0 : (int) Math.ceil((double) safeTotal / size);
         return new CourseQuestionBankQuestionPageResponse(items, Math.max(0, page), size, safeTotal, totalPages);
+    }
+
+    public QuestionBankMistakeSummaryResponse findMistakeSummary(long userId) {
+        String totalsSql = """
+                SELECT
+                  COUNT(*) AS total_count,
+                  COALESCE(SUM(CASE WHEN mastered = 0 THEN 1 ELSE 0 END), 0) AS active_count,
+                  COALESCE(SUM(CASE WHEN mastered = 1 THEN 1 ELSE 0 END), 0) AS mastered_count
+                FROM course_question_bank_mistakes
+                WHERE user_id = ?
+                """;
+        QuestionBankMistakeTotals totals = jdbcTemplate.queryForObject(
+                totalsSql,
+                (rs, rowNum) -> new QuestionBankMistakeTotals(
+                        rs.getLong("total_count"),
+                        rs.getLong("active_count"),
+                        rs.getLong("mastered_count")
+                ),
+                userId
+        );
+
+        String setsSql = """
+                SELECT s.set_code, s.title AS set_title, c.category_name,
+                       COUNT(*) AS total_count,
+                       COALESCE(SUM(CASE WHEN m.mastered = 0 THEN 1 ELSE 0 END), 0) AS active_count,
+                       COALESCE(SUM(CASE WHEN m.mastered = 1 THEN 1 ELSE 0 END), 0) AS mastered_count,
+                       MAX(COALESCE(m.last_reviewed_at, m.last_wrong_at, m.updated_at)) AS latest_at
+                FROM course_question_bank_mistakes m
+                JOIN course_question_bank_questions q ON q.id = m.question_id
+                JOIN course_question_bank_sets s ON s.id = q.set_id
+                JOIN course_question_bank_categories c ON c.id = s.category_id
+                WHERE m.user_id = ?
+                GROUP BY s.id, s.set_code, s.title, c.category_name
+                ORDER BY active_count DESC, latest_at DESC, s.sort_order ASC
+                """;
+        List<QuestionBankMistakeSetSummaryResponse> sets = jdbcTemplate.query(
+                setsSql,
+                (rs, rowNum) -> new QuestionBankMistakeSetSummaryResponse(
+                        rs.getString("set_code"),
+                        rs.getString("set_title"),
+                        rs.getString("category_name"),
+                        rs.getLong("total_count"),
+                        rs.getLong("active_count"),
+                        rs.getLong("mastered_count"),
+                        rs.getObject("latest_at", LocalDateTime.class)
+                ),
+                userId
+        );
+
+        QuestionBankMistakeTotals safeTotals =
+                totals == null ? new QuestionBankMistakeTotals(0, 0, 0) : totals;
+        return new QuestionBankMistakeSummaryResponse(
+                safeTotals.total(),
+                safeTotals.active(),
+                safeTotals.mastered(),
+                sets
+        );
+    }
+
+    public QuestionBankMistakePageResponse findMistakes(
+            long userId,
+            String setCode,
+            String status,
+            String keyword,
+            int page,
+            int size
+    ) {
+        List<Object> params = new ArrayList<>();
+        List<String> conditions = new ArrayList<>();
+        conditions.add("m.user_id = ?");
+        params.add(userId);
+
+        if (setCode != null && !setCode.isBlank()) {
+            conditions.add("s.set_code = ?");
+            params.add(setCode.trim());
+        }
+
+        if ("mastered".equalsIgnoreCase(status)) {
+            conditions.add("m.mastered = 1");
+        } else if (!"all".equalsIgnoreCase(status)) {
+            conditions.add("m.mastered = 0");
+        }
+
+        if (keyword != null && !keyword.isBlank()) {
+            conditions.add("""
+                    (q.stem LIKE ? OR q.answer LIKE ? OR q.explanation LIKE ? OR m.selected_answer LIKE ? OR s.title LIKE ?)
+                    """);
+            String like = "%" + keyword.trim() + "%";
+            params.add(like);
+            params.add(like);
+            params.add(like);
+            params.add(like);
+            params.add(like);
+        }
+
+        String where = "WHERE " + String.join(" AND ", conditions);
+        String from = """
+                FROM course_question_bank_mistakes m
+                JOIN course_question_bank_questions q ON q.id = m.question_id
+                JOIN course_question_bank_sets s ON s.id = q.set_id
+                JOIN course_question_bank_categories c ON c.id = s.category_id
+                """;
+        Long total = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) " + from + " " + where,
+                Long.class,
+                params.toArray()
+        );
+
+        int offset = Math.max(0, page) * size;
+        List<Object> listParams = new ArrayList<>(params);
+        listParams.add(size);
+        listParams.add(offset);
+        String sql = """
+                SELECT m.id AS mistake_id, m.question_id, m.selected_answer, m.correct_answer,
+                       m.wrong_count, m.correct_streak, m.mastered, m.first_wrong_at,
+                       m.last_wrong_at, m.last_reviewed_at,
+                       s.set_code, s.title AS set_title, c.category_code, c.category_name,
+                       q.question_type, q.stem, CAST(q.options_json AS CHAR) AS options_json,
+                       q.answer, q.explanation, q.difficulty_label, q.source_url
+                %s
+                %s
+                ORDER BY m.mastered ASC, COALESCE(m.last_wrong_at, m.updated_at) DESC, m.id DESC
+                LIMIT ? OFFSET ?
+                """.formatted(from, where);
+        List<QuestionBankMistakeResponse> items =
+                jdbcTemplate.query(sql, this::mapMistake, listParams.toArray());
+        long safeTotal = total == null ? 0 : total;
+        int totalPages = size <= 0 ? 0 : (int) Math.ceil((double) safeTotal / size);
+        return new QuestionBankMistakePageResponse(items, Math.max(0, page), size, safeTotal, totalPages);
+    }
+
+    public QuestionBankFavoriteSummaryResponse findFavoriteSummary(long userId) {
+        Long total = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM course_question_bank_favorites WHERE user_id = ?",
+                Long.class,
+                userId
+        );
+        String setsSql = """
+                SELECT s.set_code, s.title AS set_title, c.category_name,
+                       COUNT(*) AS total_count,
+                       MAX(f.created_at) AS latest_at
+                FROM course_question_bank_favorites f
+                JOIN course_question_bank_questions q ON q.id = f.question_id
+                JOIN course_question_bank_sets s ON s.id = q.set_id
+                JOIN course_question_bank_categories c ON c.id = s.category_id
+                WHERE f.user_id = ?
+                GROUP BY s.id, s.set_code, s.title, c.category_name
+                ORDER BY total_count DESC, latest_at DESC, s.sort_order ASC
+                """;
+        List<QuestionBankFavoriteSetSummaryResponse> sets = jdbcTemplate.query(
+                setsSql,
+                (rs, rowNum) -> new QuestionBankFavoriteSetSummaryResponse(
+                        rs.getString("set_code"),
+                        rs.getString("set_title"),
+                        rs.getString("category_name"),
+                        rs.getLong("total_count"),
+                        rs.getObject("latest_at", LocalDateTime.class)
+                ),
+                userId
+        );
+        return new QuestionBankFavoriteSummaryResponse(total == null ? 0 : total, sets);
+    }
+
+    public QuestionBankFavoritePageResponse findFavorites(
+            long userId,
+            String setCode,
+            String keyword,
+            int page,
+            int size
+    ) {
+        List<Object> params = new ArrayList<>();
+        List<String> conditions = new ArrayList<>();
+        conditions.add("f.user_id = ?");
+        params.add(userId);
+
+        if (setCode != null && !setCode.isBlank()) {
+            conditions.add("s.set_code = ?");
+            params.add(setCode.trim());
+        }
+
+        if (keyword != null && !keyword.isBlank()) {
+            conditions.add("(q.stem LIKE ? OR q.answer LIKE ? OR q.explanation LIKE ? OR s.title LIKE ?)");
+            String like = "%" + keyword.trim() + "%";
+            params.add(like);
+            params.add(like);
+            params.add(like);
+            params.add(like);
+        }
+
+        String where = "WHERE " + String.join(" AND ", conditions);
+        String from = """
+                FROM course_question_bank_favorites f
+                JOIN course_question_bank_questions q ON q.id = f.question_id
+                JOIN course_question_bank_sets s ON s.id = q.set_id
+                JOIN course_question_bank_categories c ON c.id = s.category_id
+                """;
+        Long total = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) " + from + " " + where,
+                Long.class,
+                params.toArray()
+        );
+
+        int offset = Math.max(0, page) * size;
+        List<Object> listParams = new ArrayList<>(params);
+        listParams.add(size);
+        listParams.add(offset);
+        String sql = """
+                SELECT f.id AS favorite_id, f.question_id, f.created_at,
+                       s.set_code, s.title AS set_title, c.category_code, c.category_name,
+                       q.question_type, q.stem, CAST(q.options_json AS CHAR) AS options_json,
+                       q.answer, q.explanation, q.difficulty_label, q.source_url
+                %s
+                %s
+                ORDER BY f.created_at DESC, f.id DESC
+                LIMIT ? OFFSET ?
+                """.formatted(from, where);
+        List<QuestionBankFavoriteResponse> items =
+                jdbcTemplate.query(sql, this::mapFavorite, listParams.toArray());
+        long safeTotal = total == null ? 0 : total;
+        int totalPages = size <= 0 ? 0 : (int) Math.ceil((double) safeTotal / size);
+        return new QuestionBankFavoritePageResponse(items, Math.max(0, page), size, safeTotal, totalPages);
+    }
+
+    public void addFavorite(long userId, long questionId) {
+        String sql = """
+                INSERT IGNORE INTO course_question_bank_favorites (user_id, question_id)
+                VALUES (?, ?)
+                """;
+        jdbcTemplate.update(sql, userId, questionId);
+    }
+
+    public void removeFavorite(long userId, long questionId) {
+        jdbcTemplate.update(
+                "DELETE FROM course_question_bank_favorites WHERE user_id = ? AND question_id = ?",
+                userId,
+                questionId
+        );
+    }
+
+    public long countFavorites(long userId) {
+        Long total = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM course_question_bank_favorites WHERE user_id = ?",
+                Long.class,
+                userId
+        );
+        return total == null ? 0 : total;
+    }
+
+    public Optional<CourseQuestionAnswerReference> findCourseQuestionAnswerReference(long questionId) {
+        String sql = """
+                SELECT q.id, s.set_code, q.question_type, q.answer
+                FROM course_question_bank_questions q
+                JOIN course_question_bank_sets s ON s.id = q.set_id
+                WHERE q.id = ?
+                LIMIT 1
+                """;
+        try {
+            return Optional.ofNullable(jdbcTemplate.queryForObject(
+                    sql,
+                    (rs, rowNum) -> new CourseQuestionAnswerReference(
+                            rs.getLong("id"),
+                            rs.getString("set_code"),
+                            rs.getString("question_type"),
+                            rs.getString("answer")
+                    ),
+                    questionId
+            ));
+        } catch (EmptyResultDataAccessException ex) {
+            return Optional.empty();
+        }
+    }
+
+    public void upsertWrongMistake(long userId, long questionId, String selectedAnswer, String correctAnswer) {
+        String sql = """
+                INSERT INTO course_question_bank_mistakes
+                  (user_id, question_id, selected_answer, correct_answer, wrong_count, correct_streak,
+                   mastered, first_wrong_at, last_wrong_at, last_reviewed_at)
+                VALUES (?, ?, ?, ?, 1, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                ON DUPLICATE KEY UPDATE
+                  selected_answer = VALUES(selected_answer),
+                  correct_answer = VALUES(correct_answer),
+                  wrong_count = wrong_count + 1,
+                  correct_streak = 0,
+                  mastered = 0,
+                  last_wrong_at = CURRENT_TIMESTAMP,
+                  last_reviewed_at = CURRENT_TIMESTAMP
+                """;
+        jdbcTemplate.update(sql, userId, questionId, selectedAnswer, correctAnswer);
+    }
+
+    public int applyCorrectMistakeReview(
+            long userId,
+            long questionId,
+            String selectedAnswer,
+            String correctAnswer,
+            int masteredThreshold
+    ) {
+        String sql = """
+                UPDATE course_question_bank_mistakes
+                SET selected_answer = ?,
+                    correct_answer = ?,
+                    correct_streak = correct_streak + 1,
+                    mastered = CASE WHEN correct_streak + 1 >= ? THEN 1 ELSE mastered END,
+                    last_reviewed_at = CURRENT_TIMESTAMP
+                WHERE user_id = ? AND question_id = ?
+                """;
+        return jdbcTemplate.update(sql, selectedAnswer, correctAnswer, masteredThreshold, userId, questionId);
+    }
+
+    public Optional<QuestionBankMistakeState> findMistakeState(long userId, long questionId) {
+        String sql = """
+                SELECT wrong_count, correct_streak, mastered
+                FROM course_question_bank_mistakes
+                WHERE user_id = ? AND question_id = ?
+                LIMIT 1
+                """;
+        try {
+            return Optional.ofNullable(jdbcTemplate.queryForObject(
+                    sql,
+                    (rs, rowNum) -> new QuestionBankMistakeState(
+                            rs.getInt("wrong_count"),
+                            rs.getInt("correct_streak"),
+                            rs.getBoolean("mastered")
+                    ),
+                    userId,
+                    questionId
+            ));
+        } catch (EmptyResultDataAccessException ex) {
+            return Optional.empty();
+        }
     }
 
     public long countCourseQuestionBankQuestions(String code, String questionType) {
@@ -422,7 +770,53 @@ public class QuestionBankRepository {
                 rs.getString("answer"),
                 rs.getString("explanation"),
                 rs.getString("difficulty_label"),
-                rs.getString("source_url")
+                rs.getString("source_url"),
+                rs.getBoolean("favorite")
+        );
+    }
+
+    private QuestionBankFavoriteResponse mapFavorite(ResultSet rs, int rowNum) throws SQLException {
+        return new QuestionBankFavoriteResponse(
+                rs.getLong("favorite_id"),
+                rs.getLong("question_id"),
+                rs.getString("set_code"),
+                rs.getString("set_title"),
+                rs.getString("category_code"),
+                rs.getString("category_name"),
+                rs.getString("question_type"),
+                rs.getString("stem"),
+                parseStringList(rs.getString("options_json")),
+                rs.getString("answer"),
+                rs.getString("explanation"),
+                rs.getString("difficulty_label"),
+                rs.getString("source_url"),
+                rs.getObject("created_at", LocalDateTime.class)
+        );
+    }
+
+    private QuestionBankMistakeResponse mapMistake(ResultSet rs, int rowNum) throws SQLException {
+        return new QuestionBankMistakeResponse(
+                rs.getLong("mistake_id"),
+                rs.getLong("question_id"),
+                rs.getString("set_code"),
+                rs.getString("set_title"),
+                rs.getString("category_code"),
+                rs.getString("category_name"),
+                rs.getString("question_type"),
+                rs.getString("stem"),
+                parseStringList(rs.getString("options_json")),
+                rs.getString("answer"),
+                rs.getString("explanation"),
+                rs.getString("difficulty_label"),
+                rs.getString("source_url"),
+                rs.getString("selected_answer"),
+                rs.getString("correct_answer"),
+                rs.getInt("wrong_count"),
+                rs.getInt("correct_streak"),
+                rs.getBoolean("mastered"),
+                rs.getObject("first_wrong_at", LocalDateTime.class),
+                rs.getObject("last_wrong_at", LocalDateTime.class),
+                rs.getObject("last_reviewed_at", LocalDateTime.class)
         );
     }
 
@@ -462,6 +856,28 @@ public class QuestionBankRepository {
             String difficultyLabel,
             String sourceUrl,
             int sortOrder
+    ) {
+    }
+
+    public record CourseQuestionAnswerReference(
+            long questionId,
+            String setCode,
+            String type,
+            String answer
+    ) {
+    }
+
+    public record QuestionBankMistakeState(
+            int wrongCount,
+            int correctStreak,
+            boolean mastered
+    ) {
+    }
+
+    private record QuestionBankMistakeTotals(
+            long total,
+            long active,
+            long mastered
     ) {
     }
 
