@@ -9,6 +9,8 @@ const AcademyCourseDetail = () => import('../pages/academy/AcademyCourseDetail.v
 const AcademyQuestionBank = () => import('../pages/academy/AcademyQuestionBank.vue')
 const AcademyQuestionBankCourseDetail = () => import('../pages/academy/AcademyQuestionBankCourseDetail.vue')
 const AcademyQuestionBankCourses = () => import('../pages/academy/AcademyQuestionBankCourses.vue')
+const AcademyQuestionBankFavorites = () => import('../pages/academy/AcademyQuestionBankFavorites.vue')
+const AcademyQuestionBankMistakes = () => import('../pages/academy/AcademyQuestionBankMistakes.vue')
 const AcademyTextbooks = () => import('../pages/academy/AcademyTextbooks.vue')
 const HomePage = () => import('../pages/HomePage.vue')
 const LabPlatform = () => import('../pages/LabPlatform.vue')
@@ -106,6 +108,16 @@ const routes = [
         path: 'question-bank/courses',
         name: 'academy-question-bank-courses',
         component: AcademyQuestionBankCourses,
+      },
+      {
+        path: 'question-bank/mistakes',
+        name: 'academy-question-bank-mistakes',
+        component: AcademyQuestionBankMistakes,
+      },
+      {
+        path: 'question-bank/favorites',
+        name: 'academy-question-bank-favorites',
+        component: AcademyQuestionBankFavorites,
       },
       {
         path: 'question-bank/courses/:courseCode',

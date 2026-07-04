@@ -1,65 +1,74 @@
 <script setup>
-import { useRouter } from 'vue-router'
+import { computed, onMounted, ref } from 'vue'
+import { Collection, Connection, Notebook, Reading } from '@element-plus/icons-vue'
+import { RouterLink, useRouter } from 'vue-router'
+import { fetchQuestionBankFavoriteSummary, fetchQuestionBankMistakeSummary } from '../../api/academy'
 
 const router = useRouter()
+const mistakeSummary = ref({
+  total: 0,
+  active: 0,
+  mastered: 0,
+  sets: [],
+})
+const favoriteSummary = ref({
+  total: 0,
+  sets: [],
+})
 
-const questionBankModules = [
-  {
-    key: 'course-questions',
-    title: '课程题库',
-    label: '按课程练习',
-    description: '按计算机专业、英语四六级、公共课和职业资格组织课程题库。',
-    count: '课程',
-    meta: '/academy/question-bank/courses',
-    path: '/academy/question-bank/courses',
-  },
-  {
-    key: 'mistakes',
-    title: '错题本',
-    label: '重点复盘',
-    description: '收集练习和考试中的错题，后续支持按知识点复习。',
-    count: '0',
-    meta: '预留 /api/academy/question-bank/mistakes',
-  },
-  {
-    key: 'favorites',
-    title: '收藏题目',
-    label: '个人收藏',
-    description: '保存重点题目和高频题型，方便反复查看。',
-    count: '0',
-    meta: '预留 /api/academy/question-bank/favorites',
-  },
+const reservedModules = [
   {
     key: 'mock-exam',
     title: '随机组卷',
-    label: '模拟训练',
     description: '按课程、难度和题型随机生成模拟试卷。',
     count: '智能',
-    meta: '预留 /api/academy/question-bank/mock-exams',
   },
 ]
 
-const studyStats = [
+const activeMistakeCount = computed(() => Number(mistakeSummary.value.active || 0))
+const masteredMistakeCount = computed(() => Number(mistakeSummary.value.mastered || 0))
+const favoriteCount = computed(() => Number(favoriteSummary.value.total || 0))
+
+const studyStats = computed(() => [
   { label: '今日练习', value: '0 题' },
-  { label: '正确率', value: '--' },
-  { label: '连续学习', value: '0 天' },
-]
+  { label: '待复习错题', value: `${activeMistakeCount.value} 题` },
+  { label: '收藏题目', value: `${favoriteCount.value} 题` },
+])
+
+const loadMistakeSummary = async () => {
+  try {
+    mistakeSummary.value = await fetchQuestionBankMistakeSummary()
+  } catch (error) {
+    console.warn('failed to load question bank mistake summary:', error)
+  }
+}
+
+const loadFavoriteSummary = async () => {
+  try {
+    favoriteSummary.value = await fetchQuestionBankFavoriteSummary()
+  } catch (error) {
+    console.warn('failed to load question bank favorite summary:', error)
+  }
+}
 
 const handleModuleClick = (module) => {
   if (module.path) {
     router.push(module.path)
     return
   }
-  // TODO: 接入题库模块路由或后端 API，例如 /academy/question-bank/questions?module=...
   console.info('question bank module action reserved:', module.key)
 }
+
+onMounted(() => {
+  loadMistakeSummary()
+  loadFavoriteSummary()
+})
 </script>
 
 <template>
   <main class="academy-main question-bank-main">
     <section class="question-bank-hero" aria-labelledby="question-bank-title">
       <div>
-        <p>Question Bank</p>
         <h1 id="question-bank-title">题库</h1>
         <span>围绕课程学习建立练习、错题、收藏和模拟组卷入口，后续可接入统一题目 API。</span>
       </div>
@@ -77,22 +86,44 @@ const handleModuleClick = (module) => {
           <h2>学习入口</h2>
           <span>选择一个入口开始练习或整理题目。</span>
         </div>
-        <button type="button" @click="handleModuleClick({ key: 'overview' })">学习记录</button>
+        <button type="button" @click="router.push('/academy/question-bank/mistakes')">我的错题</button>
       </div>
 
       <div class="question-bank-grid">
+        <RouterLink to="/academy/question-bank/courses" class="question-bank-card">
+          <div>
+            <h3><el-icon class="question-bank-card-icon"><Reading /></el-icon>课程题库</h3>
+            <span>按计算机专业、英语四六级、公共课和职业资格组织课程题库。</span>
+          </div>
+          <strong>课程</strong>
+        </RouterLink>
+
+        <RouterLink to="/academy/question-bank/mistakes" class="question-bank-card">
+          <div>
+            <h3><el-icon class="question-bank-card-icon"><Notebook /></el-icon>错题本</h3>
+            <span>自动收集课程题库中的错误答案，支持按题库筛选、分页复习和连续答对后标记掌握。</span>
+          </div>
+          <strong>{{ activeMistakeCount }}</strong>
+        </RouterLink>
+
+        <RouterLink to="/academy/question-bank/favorites" class="question-bank-card">
+          <div>
+            <h3><el-icon class="question-bank-card-icon"><Collection /></el-icon>收藏题目</h3>
+            <span>保存重点题目和高频题型，支持按题库筛选、快速查看和一键取消收藏。</span>
+          </div>
+          <strong>{{ favoriteCount }}</strong>
+        </RouterLink>
+
         <button
-          v-for="module in questionBankModules"
+          v-for="module in reservedModules"
           :key="module.key"
           type="button"
           class="question-bank-card"
           @click="handleModuleClick(module)"
         >
           <div>
-            <p>{{ module.label }}</p>
-            <h3>{{ module.title }}</h3>
+            <h3><el-icon class="question-bank-card-icon"><Connection /></el-icon>{{ module.title }}</h3>
             <span>{{ module.description }}</span>
-            <small>{{ module.meta }}</small>
           </div>
           <strong>{{ module.count }}</strong>
         </button>
