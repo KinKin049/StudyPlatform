@@ -900,6 +900,28 @@ public class QuestionBankRepository {
     ) {
     }
 
+    public record CourseQuestionAnswerReference(
+            long questionId,
+            String setCode,
+            String questionType,
+            String answer
+    ) {
+    }
+
+    public record QuestionBankMistakeState(
+            int wrongCount,
+            int correctStreak,
+            boolean mastered
+    ) {
+    }
+
+    private record QuestionBankMistakeTotals(
+            long total,
+            long active,
+            long mastered
+    ) {
+    }
+
     private record CourseQuestionBankCategoryBuilder(
             String code,
             String name,

@@ -170,6 +170,121 @@ public class QuestionBankService {
         return new TypeWarriorWordPoolResponse(words);
     }
 
+    public QuestionBankMistakeSummaryResponse getMistakeSummary() {
+        return questionBankRepository.findMistakeSummary(DEFAULT_USER_ID);
+    }
+
+    public QuestionBankMistakePageResponse listMistakes(
+            String setCode,
+            String status,
+            String keyword,
+            int page,
+            int size
+    ) {
+        int normalizedPage = Math.max(page, 0);
+        int normalizedSize = Math.max(1, Math.min(size, 100));
+        return questionBankRepository.findMistakes(
+                DEFAULT_USER_ID,
+                setCode,
+                status,
+                keyword,
+                normalizedPage,
+                normalizedSize
+        );
+    }
+
+    public QuestionBankMistakeAnswerResponse recordMistakeAnswer(QuestionBankMistakeAnswerRequest request) {
+        if (request == null || request.questionId() <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "题目编号无效");
+        }
+        String selectedAnswer = request.selectedAnswer() == null ? "" : request.selectedAnswer().trim();
+        if (selectedAnswer.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "答案不能为空");
+        }
+
+        QuestionBankRepository.CourseQuestionAnswerReference reference =
+                questionBankRepository.findCourseQuestionAnswerReference(request.questionId())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "题目不存在"));
+        String correctAnswer = reference.answer() == null ? "" : reference.answer();
+        boolean correct = isCourseQuestionAnswerCorrect(reference.questionType(), selectedAnswer, correctAnswer);
+        int masteredThreshold = 2;
+
+        if (correct) {
+            questionBankRepository.applyCorrectMistakeReview(
+                    DEFAULT_USER_ID,
+                    reference.questionId(),
+                    selectedAnswer,
+                    correctAnswer,
+                    masteredThreshold
+            );
+        } else {
+            questionBankRepository.upsertWrongMistake(
+                    DEFAULT_USER_ID,
+                    reference.questionId(),
+                    selectedAnswer,
+                    correctAnswer
+            );
+        }
+
+        QuestionBankRepository.QuestionBankMistakeState state =
+                questionBankRepository.findMistakeState(DEFAULT_USER_ID, reference.questionId())
+                        .orElse(new QuestionBankRepository.QuestionBankMistakeState(0, 0, false));
+        boolean inMistakeBook = state.wrongCount() > 0 && !state.mastered();
+        String message;
+        if (!correct) {
+            message = "已加入错题本";
+        } else if (state.mastered()) {
+            message = "连续答对，已标记掌握";
+        } else if (state.wrongCount() > 0) {
+            message = "回答正确，再答对一次即可掌握";
+        } else {
+            message = "回答正确";
+        }
+        return new QuestionBankMistakeAnswerResponse(
+                reference.questionId(),
+                correct,
+                inMistakeBook,
+                state.wrongCount(),
+                state.correctStreak(),
+                state.mastered(),
+                message
+        );
+    }
+
+    public QuestionBankFavoriteSummaryResponse getFavoriteSummary() {
+        return questionBankRepository.findFavoriteSummary(DEFAULT_USER_ID);
+    }
+
+    public QuestionBankFavoritePageResponse listFavorites(String setCode, String keyword, int page, int size) {
+        int normalizedPage = Math.max(page, 0);
+        int normalizedSize = Math.max(1, Math.min(size, 100));
+        return questionBankRepository.findFavorites(DEFAULT_USER_ID, setCode, keyword, normalizedPage, normalizedSize);
+    }
+
+    public QuestionBankFavoriteToggleResponse addFavorite(QuestionBankFavoriteRequest request) {
+        long questionId = validateFavoriteQuestion(request);
+        questionBankRepository.addFavorite(DEFAULT_USER_ID, questionId);
+        return new QuestionBankFavoriteToggleResponse(
+                questionId,
+                true,
+                questionBankRepository.countFavorites(DEFAULT_USER_ID),
+                "已收藏题目"
+        );
+    }
+
+    public QuestionBankFavoriteToggleResponse removeFavorite(long questionId) {
+        if (questionId <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "题目编号无效");
+        }
+        questionBankRepository.removeFavorite(DEFAULT_USER_ID, questionId);
+        return new QuestionBankFavoriteToggleResponse(
+                questionId,
+                false,
+                questionBankRepository.countFavorites(DEFAULT_USER_ID),
+                "已取消收藏"
+        );
+    }
+
     public QuestionBankImportResponse importLuoguProblems(int pages, int limit) {
         int normalizedPages = Math.max(1, Math.min(pages, MAX_IMPORT_PAGES));
         int normalizedLimit = Math.max(1, Math.min(limit, MAX_IMPORT_PROBLEMS));
