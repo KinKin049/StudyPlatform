@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import LadderJumpGame from './LadderJumpGame.vue'
+import TypeWarriorGame from './TypeWarriorGame.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -10,20 +11,20 @@ const games = [
   {
     id: 'type-warrior',
     name: 'type warrior',
-    nameEn: 'Typing Combat',
-    status: '游戏尚未实现',
-    background: '#1f7a8c',
-    foreground: '#f7fbfc',
-    description: '预留打字闯关、键盘反应和英文输入训练类小游戏入口。',
+    nameEn: 'Typing Survival',
+    status: '2D 俯视角打字生存',
+    background: '#d8d1c4',
+    foreground: '#2e2a27',
+    description: '中文语义词条敌人会持续压近，输入对应英文单词即可锁定并自动开火，持续生存直到击败首领。',
   },
   {
     id: 'ladder-jump',
     name: '万题天梯跳',
     nameEn: 'Question Ladder Jump',
-    status: '游戏尚未实现',
+    status: '平台跳跃题库闯关',
     background: '#d96c4f',
     foreground: '#fff8f4',
-    description: '预留题库闯关、跳跃答题和积分晋级类小游戏入口。',
+    description: '通过跳跃与题目选择推进关卡，跨越平台、确认答案并持续向前闯关。',
   },
 ]
 
@@ -127,6 +128,10 @@ onBeforeUnmount(() => {
       </button>
 
       <div class="game-split-line" aria-hidden="true"></div>
+    </section>
+
+    <section v-else-if="currentGame.id === 'type-warrior'" class="game-type-warrior-detail-stage">
+      <TypeWarriorGame @back="returnToSelector" />
     </section>
 
     <section v-else-if="currentGame.id === 'ladder-jump'" class="game-ladder-detail-stage">
