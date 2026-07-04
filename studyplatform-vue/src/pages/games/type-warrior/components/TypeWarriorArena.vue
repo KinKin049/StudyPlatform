@@ -28,6 +28,10 @@ defineProps({
     type: Array,
     required: true,
   },
+  explosionEffects: {
+    type: Array,
+    required: true,
+  },
   energy: {
     type: Number,
     required: true,
@@ -68,11 +72,19 @@ defineProps({
     type: Function,
     required: true,
   },
+  explosionStyle: {
+    type: Function,
+    required: true,
+  },
   fragmentStyle: {
     type: Function,
     required: true,
   },
   getEnemyWordParts: {
+    type: Function,
+    required: true,
+  },
+  isEnemyBulletTarget: {
     type: Function,
     required: true,
   },
@@ -121,6 +133,7 @@ defineProps({
         `is-${enemy.shape}`,
         {
           'is-target': currentTarget && currentTarget.id === enemy.id,
+          'is-bullet-target': isEnemyBulletTarget(enemy) && (!currentTarget || currentTarget.id !== enemy.id),
           'is-boss': enemy.boss,
           'is-emitting': enemy.emitFeedback > 0,
           'is-error': enemy.errorFeedback > 0,
@@ -152,6 +165,13 @@ defineProps({
       class="type-warrior-bullet"
       :class="{ 'is-trail': bullet.trail > 0 }"
       :style="bulletStyle(bullet)"
+    ></div>
+
+    <div
+      v-for="effect in explosionEffects"
+      :key="effect.id"
+      class="type-warrior-explosion"
+      :style="explosionStyle(effect)"
     ></div>
 
     <div

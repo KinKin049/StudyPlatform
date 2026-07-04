@@ -10,11 +10,8 @@ import { useTypeWarriorGame } from './composables/useTypeWarriorGame'
 
 const emit = defineEmits(['back'])
 
-// 是否显示技能调试面板由配置文件统一控制。
-// 调参时改 `TYPE_WARRIOR_BALANCE.ui.showSkillDebugPanel` 即可。
 const enableSkillDebugPanel = TYPE_WARRIOR_BALANCE.ui.showSkillDebugPanel
 
-// 页面本身只负责组装展示组件，运行时状态和战斗逻辑都在 composable 内。
 const {
   arenaRef,
   banner,
@@ -27,6 +24,7 @@ const {
   currentTarget,
   enemies,
   enemyFragments,
+  explosionEffects,
   energy,
   health,
   hasGameStarted,
@@ -35,6 +33,7 @@ const {
   isGameOver,
   isPaused,
   isVictory,
+  isWordPoolLoading,
   keyBursts,
   purgeCooldownLabel,
   resultStats,
@@ -55,8 +54,10 @@ const {
   enemyHealthStyle,
   enemyStyle,
   enemyWordTransitionStyle,
+  explosionStyle,
   fragmentStyle,
   getEnemyWordParts,
+  isEnemyBulletTarget,
   grantSkillById,
   keyBurstStyle,
   resetSkills,
@@ -88,6 +89,7 @@ const {
         :current-target="currentTarget"
         :enemies="enemies"
         :enemy-fragments="enemyFragments"
+        :explosion-effects="explosionEffects"
         :energy="energy"
         :health="health"
         :key-bursts="keyBursts"
@@ -98,8 +100,10 @@ const {
         :enemy-health-style="enemyHealthStyle"
         :enemy-style="enemyStyle"
         :enemy-word-transition-style="enemyWordTransitionStyle"
+        :explosion-style="explosionStyle"
         :fragment-style="fragmentStyle"
         :get-enemy-word-parts="getEnemyWordParts"
+        :is-enemy-bullet-target="isEnemyBulletTarget"
         :key-burst-style="keyBurstStyle"
         :show-field-rings="true"
       />
@@ -116,8 +120,10 @@ const {
         <div class="type-warrior-start-panel">
           <p>type warrior</p>
           <h2>开始游戏</h2>
-          <span>输入敌人上方的英文单词击退词潮。按 Esc 暂停，按 1 使用主动技能。</span>
-          <button type="button" class="type-warrior-start-button" @click="startGame">开始游戏</button>
+          <span>输入敌人上方的英文单词即可自动锁定开火。按 `Esc` 暂停，按 `1` 触发主动技能。</span>
+          <button type="button" class="type-warrior-start-button" :disabled="isWordPoolLoading" @click="startGame">
+            {{ isWordPoolLoading ? '词库加载中...' : '开始游戏' }}
+          </button>
         </div>
       </div>
     </section>
@@ -131,11 +137,13 @@ const {
     />
 
     <TypeWarriorResultOverlay
+      :is-paused="isPaused"
       :is-game-over="isGameOver"
       :is-victory="isVictory"
       :result-stats="resultStats"
       :wave="wave"
       :weapon-level="weaponLevel"
+      @resume="togglePause"
       @restart="restartGame"
     />
   </section>

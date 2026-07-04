@@ -9,6 +9,8 @@ import com.cupk.academy.dto.QuestionBankImportResponse;
 import com.cupk.academy.dto.QuestionBankProblemPageResponse;
 import com.cupk.academy.dto.QuestionBankProblemResponse;
 import com.cupk.academy.dto.QuestionBankSubjectResponse;
+import com.cupk.academy.dto.TypeWarriorWordPoolResponse;
+import com.cupk.academy.dto.TypeWarriorWordResponse;
 import com.cupk.academy.repository.QuestionBankRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -38,6 +41,7 @@ public class QuestionBankService {
     private static final String LUOGU_BASE_URL = "https://www.luogu.com.cn";
     private static final int MAX_IMPORT_PAGES = 3;
     private static final int MAX_IMPORT_PROBLEMS = 30;
+    private static final long DEFAULT_USER_ID = 1L;
 
     private final QuestionBankRepository questionBankRepository;
     private final ObjectMapper objectMapper;
@@ -101,6 +105,55 @@ public class QuestionBankService {
                 questionPage.total(),
                 questionPage.totalPages()
         );
+    }
+
+    public TypeWarriorWordPoolResponse getTypeWarriorWordPool() {
+        Map<String, AggregatedTypeWarriorWord> wordsByKeyword = new LinkedHashMap<>();
+        for (QuestionBankRepository.TypeWarriorVocabularyRow row : questionBankRepository.findTypeWarriorVocabularyRows(DEFAULT_USER_ID)) {
+            String normalizedWord = normalizeTypeWarriorWord(row.stem());
+            if (normalizedWord.isBlank()) {
+                continue;
+            }
+
+            String familiarity = normalizeFamiliarity(row.familiarity());
+            AggregatedTypeWarriorWord existing = wordsByKeyword.get(normalizedWord);
+            if (existing == null) {
+                wordsByKeyword.put(normalizedWord, new AggregatedTypeWarriorWord(
+                        row.questionId(),
+                        row.setCode(),
+                        normalizedWord,
+                        summarizeTranslation(row.answer()),
+                        familiarity,
+                        inferTypeWarriorTier(normalizedWord, row.setCode())
+                ));
+                continue;
+            }
+
+            String mergedFamiliarity = familiarityRank(familiarity) > familiarityRank(existing.familiarity())
+                    ? familiarity
+                    : existing.familiarity();
+            String mergedText = existing.text().isBlank() ? summarizeTranslation(row.answer()) : existing.text();
+            wordsByKeyword.put(normalizedWord, new AggregatedTypeWarriorWord(
+                    existing.questionId(),
+                    existing.setCode(),
+                    existing.word(),
+                    mergedText,
+                    mergedFamiliarity,
+                    Math.max(existing.tier(), inferTypeWarriorTier(normalizedWord, row.setCode()))
+            ));
+        }
+
+        List<TypeWarriorWordResponse> words = wordsByKeyword.values().stream()
+                .map(word -> new TypeWarriorWordResponse(
+                        word.questionId(),
+                        word.setCode(),
+                        word.word(),
+                        word.text(),
+                        word.familiarity(),
+                        word.tier()
+                ))
+                .toList();
+        return new TypeWarriorWordPoolResponse(words);
     }
 
     public QuestionBankImportResponse importLuoguProblems(int pages, int limit) {
@@ -248,6 +301,60 @@ public class QuestionBankService {
         return "";
     }
 
+    private String normalizeTypeWarriorWord(String word) {
+        if (word == null) {
+            return "";
+        }
+        return word.toLowerCase().replaceAll("[^a-z]", "");
+    }
+
+    private String summarizeTranslation(String answer) {
+        if (answer == null || answer.isBlank()) {
+            return "";
+        }
+        String normalized = answer.replace("；", "，").replace(";", "，");
+        int separatorIndex = normalized.indexOf('，');
+        return (separatorIndex >= 0 ? normalized.substring(0, separatorIndex) : normalized).trim();
+    }
+
+    private String normalizeFamiliarity(String familiarity) {
+        if (familiarity == null || familiarity.isBlank()) {
+            return "unmarked";
+        }
+        String normalized = familiarity.trim().toLowerCase();
+        return switch (normalized) {
+            case "known", "fuzzy", "unknown" -> normalized;
+            default -> "unmarked";
+        };
+    }
+
+    private int familiarityRank(String familiarity) {
+        return switch (normalizeFamiliarity(familiarity)) {
+            case "unknown" -> 4;
+            case "fuzzy" -> 3;
+            case "known" -> 2;
+            default -> 1;
+        };
+    }
+
+    private int inferTypeWarriorTier(String normalizedWord, String setCode) {
+        int length = normalizedWord.length();
+        int tier;
+        if (length <= 4) {
+            tier = 1;
+        } else if (length <= 7) {
+            tier = 2;
+        } else if (length <= 10) {
+            tier = 3;
+        } else {
+            tier = 4;
+        }
+        if ("cet6".equalsIgnoreCase(setCode) && tier < 4) {
+            tier += 1;
+        }
+        return Math.max(1, Math.min(4, tier));
+    }
+
     private String get(String url) throws IOException, InterruptedException {
         String currentUrl = url;
         for (int redirectCount = 0; redirectCount < 5; redirectCount += 1) {
@@ -371,6 +478,16 @@ public class QuestionBankService {
             String inputDescription,
             String outputDescription,
             String hint
+    ) {
+    }
+
+    private record AggregatedTypeWarriorWord(
+            long questionId,
+            String setCode,
+            String word,
+            String text,
+            String familiarity,
+            int tier
     ) {
     }
 }

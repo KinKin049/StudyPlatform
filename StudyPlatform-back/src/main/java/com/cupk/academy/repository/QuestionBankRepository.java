@@ -341,6 +341,38 @@ public class QuestionBankRepository {
         });
     }
 
+    public List<TypeWarriorVocabularyRow> findTypeWarriorVocabularyRows(long userId) {
+        String sql = """
+                SELECT q.id,
+                       s.set_code,
+                       q.stem,
+                       q.answer,
+                       COALESCE(latest_status.vocabulary_status, 'unmarked') AS familiarity
+                FROM course_question_bank_questions q
+                JOIN course_question_bank_sets s ON s.id = q.set_id
+                LEFT JOIN (
+                  SELECT e.question_id, e.vocabulary_status
+                  FROM profile_learning_events e
+                  JOIN (
+                    SELECT question_id, MAX(id) AS latest_id
+                    FROM profile_learning_events
+                    WHERE user_id = ? AND event_type = 'vocabulary' AND question_id IS NOT NULL
+                    GROUP BY question_id
+                  ) latest ON latest.latest_id = e.id
+                ) latest_status ON latest_status.question_id = q.id
+                WHERE q.question_type = 'vocabulary'
+                  AND s.set_code IN ('cet4', 'cet6')
+                ORDER BY s.set_code ASC, q.sort_order ASC, q.id ASC
+                """;
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new TypeWarriorVocabularyRow(
+                rs.getLong("id"),
+                rs.getString("set_code"),
+                rs.getString("stem"),
+                rs.getString("answer"),
+                rs.getString("familiarity")
+        ), userId);
+    }
+
     private String buildProblemWhere(String subjectCode, String keyword, Integer difficulty, List<Object> params) {
         List<String> conditions = new ArrayList<>();
         if (subjectCode != null && !subjectCode.isBlank()) {
@@ -462,6 +494,15 @@ public class QuestionBankRepository {
             String difficultyLabel,
             String sourceUrl,
             int sortOrder
+    ) {
+    }
+
+    public record TypeWarriorVocabularyRow(
+            long questionId,
+            String setCode,
+            String stem,
+            String answer,
+            String familiarity
     ) {
     }
 

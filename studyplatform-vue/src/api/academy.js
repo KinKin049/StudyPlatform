@@ -51,6 +51,9 @@ export const fetchQuestionBankCourse = (code, { page = 0, size = 30, keyword = '
   return request(`/api/academy/question-bank/courses/${encodeURIComponent(code)}?${params.toString()}`)
 }
 
+export const fetchTypeWarriorWordPool = () =>
+  request('/api/academy/question-bank/type-warrior/words')
+
 export const importLuoguQuestionBank = ({ pages = 1, limit = 20 } = {}) =>
   request(`/api/academy/question-bank/import/luogu?pages=${pages}&limit=${limit}`, {
     method: 'POST',

@@ -1,11 +1,15 @@
 <script setup>
 /**
- * 对局结束弹层。
- * 通关和失败共用这一套结果展示。
+ * 统一承载暂停、失败和胜利后的统计面板。
+ * 暂停时也复用结算统计，避免两套数据展示分叉。
  */
-defineEmits(['restart'])
+defineEmits(['restart', 'resume'])
 
 defineProps({
+  isPaused: {
+    type: Boolean,
+    default: false,
+  },
   isGameOver: {
     type: Boolean,
     required: true,
@@ -30,11 +34,11 @@ defineProps({
 </script>
 
 <template>
-  <div v-if="isGameOver || isVictory" class="type-warrior-overlay">
+  <div v-if="isPaused || isGameOver || isVictory" class="type-warrior-overlay">
     <div class="type-warrior-overlay-panel">
-      <p>{{ isVictory ? '通关完成' : '战斗结束' }}</p>
-      <h2>{{ isVictory ? 'type warrior通关' : '本轮挑战结束' }}</h2>
-      <span>到达关卡 {{ wave }} / 武器等级 {{ weaponLevel.toFixed(0) }}</span>
+      <p>{{ isPaused ? '游戏暂停' : isVictory ? '通关完成' : '战斗结束' }}</p>
+      <h2>{{ isPaused ? '暂停中' : isVictory ? 'type warrior 通关' : '本轮挑战结束' }}</h2>
+      <span>当前关卡 {{ wave }} / 武器等级 {{ weaponLevel.toFixed(0) }}</span>
 
       <div class="type-warrior-result-grid">
         <div class="type-warrior-result-item">
@@ -54,7 +58,7 @@ defineProps({
           <span>拼对单词</span>
         </div>
         <div class="type-warrior-result-item">
-          <strong>{{ resultStats.durationSeconds.toFixed(1) }}秒</strong>
+          <strong>{{ resultStats.durationSeconds.toFixed(1) }} 秒</strong>
           <span>用时</span>
         </div>
         <div class="type-warrior-result-item">
@@ -67,7 +71,10 @@ defineProps({
         </div>
       </div>
 
-      <button type="button" @click="$emit('restart')">重新开始</button>
+      <div class="type-warrior-overlay-actions">
+        <button v-if="isPaused" type="button" @click="$emit('resume')">继续游戏</button>
+        <button type="button" @click="$emit('restart')">{{ isPaused ? '重新开始' : '重新开始' }}</button>
+      </div>
     </div>
   </div>
 </template>

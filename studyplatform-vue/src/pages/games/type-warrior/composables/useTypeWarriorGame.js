@@ -7,12 +7,14 @@ import {
   TYPE_WARRIOR_SKILL_POOL,
   TYPE_WARRIOR_WORD_BANK,
 } from '../config/typeWarriorConfig'
+import { fetchTypeWarriorWordPool } from '../../../../api/academy'
 import { getTypeWarriorFinalWave, getTypeWarriorWaveProfile } from '../config/typeWarriorWaveConfig'
 import { clamp, getDistance, getSuffixMatchLength, normalizeWord, pickRandomItems, randomFrom } from '../utils/typeWarriorMath'
 import { buildEnemyKeywordTrie, findBestTrieSuffixMatch } from '../utils/typeWarriorTrie'
 
 const {
   arenaSize,
+  blastEffectDuration,
   playerCollisionRadius,
   maxCards,
   keyBurstDuration,
@@ -30,6 +32,8 @@ const {
 
 const centerPoint = arenaSize / 2
 const { wordTransitionDuration } = COMBAT_BALANCE
+const RECENT_WORD_COOLDOWN_SIZE = 18
+const LOW_USAGE_SPREAD = 1
 
 /**
  * Owns all runtime state for the Type Warrior scene.
@@ -49,10 +53,12 @@ export function useTypeWarriorGame() {
   const enemies = ref([])
   const bullets = ref([])
   const enemyFragments = ref([])
+  const explosionEffects = ref([])
   const cards = ref([])
   const isGameOver = ref(false)
   const isVictory = ref(false)
   const isChoosingSkill = ref(false)
+  const isWordPoolLoading = ref(false)
   const skillChoices = ref([])
   const banner = ref('直接输入敌人上方的英文单词，系统会自动锁定并开火。')
   const bossState = ref('idle')
@@ -73,6 +79,7 @@ export function useTypeWarriorGame() {
   const comboFeedbackCount = ref(0)
   const comboFeedbackTimer = ref(0)
   const comboShakeTimer = ref(0)
+  const explosionShakeTimer = ref(0)
   const isPaused = ref(false)
   const maxCombo = ref(0)
   const score = ref(0)
@@ -90,7 +97,9 @@ export function useTypeWarriorGame() {
   })
   const arenaRef = ref(null)
   const pendingWaveNumber = ref(null)
+  const pendingWaveEndHeal = ref(0)
   const currentWaveProfile = ref(getTypeWarriorWaveProfile(1))
+  const wordPools = ref(buildWordPools(TYPE_WARRIOR_WORD_BANK.map((item) => ({ ...item, familiarity: 'unmarked' }))))
   const viewportSpawnBounds = ref({
     left: -spawnOffset,
     right: arenaSize + spawnOffset,
@@ -110,6 +119,11 @@ export function useTypeWarriorGame() {
   let bulletIdSeed = 0
   let keyBurstIdSeed = 0
   let fragmentIdSeed = 0
+  let explosionEffectIdSeed = 0
+  let wordPoolLoadPromise = null
+  let hasPreloadedWordPool = false
+  let recentWordQueue = []
+  let wordUsageCounts = new Map()
   let enemyKeywordTrie = buildEnemyKeywordTrie([])
   let enemyKeywordTrieDirty = true
 
@@ -139,6 +153,7 @@ export function useTypeWarriorGame() {
   }))
   const boardClass = computed(() => ({
     'is-combo-shake': comboShakeTimer.value > 0,
+    'is-explosion-shake': explosionShakeTimer.value > 0,
     'is-paused': isPaused.value,
   }))
   const hudStageLabel = computed(() => {
@@ -232,7 +247,10 @@ export function useTypeWarriorGame() {
   }
 
   function syncDerivedStats({ restoreHealth = false, restoreEnergy = false } = {}) {
-    const nextMaxHealth = PLAYER_BALANCE.baseHealth + getSkillValue('shield', 'maxHealthBonus')
+    const nextMaxHealth =
+      PLAYER_BALANCE.baseHealth +
+      getSkillValue('shield', 'maxHealthBonus') +
+      getSkillValue('lifelong', 'maxHealthBonus')
     const nextMaxEnergy = PLAYER_BALANCE.baseMaxEnergy + getSkillValue('reserve', 'maxEnergyBonus')
     const healthDelta = nextMaxHealth - maxHealth.value
     const energyDelta = nextMaxEnergy - maxEnergy.value
@@ -267,6 +285,24 @@ export function useTypeWarriorGame() {
     keyBursts.value = [...keyBursts.value, createKeyBurstEntry(letter, true)]
   }
 
+  function triggerExplosionShake() {
+    explosionShakeTimer.value = COMBAT_BALANCE.explosionShakeDuration
+  }
+
+  function createExplosionEffect(x, y, radius) {
+    explosionEffects.value = [
+      ...explosionEffects.value,
+      {
+        id: `explosion-${explosionEffectIdSeed++}`,
+        x,
+        y,
+        radius,
+        life: blastEffectDuration,
+        maxLife: blastEffectDuration,
+      },
+    ]
+  }
+
   function updateViewportSpawnBounds() {
     const arenaElement = arenaRef.value
     if (!arenaElement) return
@@ -289,10 +325,210 @@ export function useTypeWarriorGame() {
     }
   }
 
+  function normalizeWordStatus(status) {
+    return ['unknown', 'unmarked', 'fuzzy', 'known'].includes(status) ? status : 'unmarked'
+  }
+
+  function buildWordPools(words) {
+    const pools = {
+      unknown: [],
+      unmarked: [],
+      fuzzy: [],
+      known: [],
+      all: [],
+    }
+
+    for (const word of words) {
+      const normalizedKeyword = normalizeWord(word.word)
+      if (!normalizedKeyword) continue
+
+      const normalizedStatus = normalizeWordStatus(word.familiarity)
+      const normalizedEntry = {
+        text: word.text || normalizedKeyword,
+        word: normalizedKeyword,
+        tier: Math.max(1, Math.min(4, Number(word.tier) || 1)),
+        familiarity: normalizedStatus,
+      }
+
+      pools[normalizedStatus].push(normalizedEntry)
+      pools.all.push(normalizedEntry)
+    }
+
+    return pools
+  }
+
+  function resetWordSelectionState() {
+    recentWordQueue = []
+    wordUsageCounts = new Map()
+  }
+
+  function markWordRecentlyUsed(word) {
+    const keyword = normalizeWord(word?.word)
+    if (!keyword) return
+
+    recentWordQueue = recentWordQueue.filter((item) => item !== keyword)
+    recentWordQueue.push(keyword)
+    if (recentWordQueue.length > RECENT_WORD_COOLDOWN_SIZE) {
+      recentWordQueue = recentWordQueue.slice(-RECENT_WORD_COOLDOWN_SIZE)
+    }
+    wordUsageCounts.set(keyword, (wordUsageCounts.get(keyword) ?? 0) + 1)
+  }
+
+  function getActiveKeywordSet() {
+    return new Set(enemies.value.map((enemy) => enemy.keyword))
+  }
+
+  function filterWordCandidates(candidates, { excludeRecent = true, excludeActive = true } = {}) {
+    const activeKeywordSet = excludeActive ? getActiveKeywordSet() : null
+    const recentKeywordSet = excludeRecent ? new Set(recentWordQueue) : null
+
+    return candidates.filter((candidate) => {
+      if (excludeActive && activeKeywordSet?.has(candidate.word)) return false
+      if (excludeRecent && recentKeywordSet?.has(candidate.word)) return false
+      return true
+    })
+  }
+
+  function pickWordFromCandidates(candidates) {
+    if (candidates.length === 0) return null
+
+    let minUsage = Number.POSITIVE_INFINITY
+    for (const candidate of candidates) {
+      minUsage = Math.min(minUsage, wordUsageCounts.get(candidate.word) ?? 0)
+    }
+
+    const lowUsageCandidates = candidates.filter((candidate) => (wordUsageCounts.get(candidate.word) ?? 0) <= minUsage + LOW_USAGE_SPREAD)
+    return randomFrom(lowUsageCandidates.length > 0 ? lowUsageCandidates : candidates)
+  }
+
+  async function loadWordPool(force = false) {
+    if (!force && hasPreloadedWordPool) {
+      return wordPools.value
+    }
+    if (!force && wordPoolLoadPromise) {
+      return wordPoolLoadPromise
+    }
+
+    isWordPoolLoading.value = true
+    wordPoolLoadPromise = fetchTypeWarriorWordPool()
+      .then((response) => {
+        const remoteWords = Array.isArray(response?.words) ? response.words : []
+        if (remoteWords.length > 0) {
+          wordPools.value = buildWordPools(remoteWords)
+        }
+        hasPreloadedWordPool = true
+        return wordPools.value
+      })
+      .catch((error) => {
+        console.warn('failed to load type warrior word pool from database:', error)
+        hasPreloadedWordPool = true
+        return wordPools.value
+      })
+      .finally(() => {
+        isWordPoolLoading.value = false
+        wordPoolLoadPromise = null
+      })
+
+    return wordPoolLoadPromise
+  }
+
+  function getWaveWordTier(currentWave) {
+    if (currentWave >= 5) return 4
+    if (currentWave >= 4) return 3
+    if (currentWave >= 2) return 2
+    return 1
+  }
+
+  function getWordLengthTier(word) {
+    const length = normalizeWord(word).length
+    const scaling = ENEMY_BALANCE.wordLengthScaling
+
+    if (length <= scaling.shortMaxLength) return 'short'
+    if (length <= scaling.mediumMaxLength) return 'medium'
+    if (length <= scaling.longMaxLength) return 'long'
+    return 'extraLong'
+  }
+
+  function pickWeightedStatus(availablePools, weights) {
+    const entries = Object.entries(weights || {})
+      .map(([status, weight]) => ({
+        status,
+        weight: Math.max(0, Number(weight) || 0),
+      }))
+      .filter((entry) => entry.weight > 0 && availablePools[entry.status]?.length)
+
+    if (entries.length === 0) return null
+
+    const totalWeight = entries.reduce((sum, entry) => sum + entry.weight, 0)
+    let randomValue = Math.random() * totalWeight
+    for (const entry of entries) {
+      randomValue -= entry.weight
+      if (randomValue <= 0) {
+        return entry.status
+      }
+    }
+    return entries[entries.length - 1]?.status ?? null
+  }
+
+  function dedupeWordCandidates(candidates) {
+    const seen = new Set()
+    return candidates.filter((candidate) => {
+      if (seen.has(candidate.word)) return false
+      seen.add(candidate.word)
+      return true
+    })
+  }
+
   function pickWordForWave(currentWave) {
-    const tier = currentWave >= 5 ? 4 : currentWave >= 4 ? 3 : currentWave >= 2 ? 2 : 1
-    const options = TYPE_WARRIOR_WORD_BANK.filter((item) => item.tier <= tier)
-    return randomFrom(options)
+    const tier = getWaveWordTier(currentWave)
+    const tierPools = {
+      unknown: wordPools.value.unknown.filter((item) => item.tier <= tier),
+      unmarked: wordPools.value.unmarked.filter((item) => item.tier <= tier),
+      fuzzy: wordPools.value.fuzzy.filter((item) => item.tier <= tier),
+      known: wordPools.value.known.filter((item) => item.tier <= tier),
+    }
+    const filteredPools = {
+      unknown: filterWordCandidates(tierPools.unknown),
+      unmarked: filterWordCandidates(tierPools.unmarked),
+      fuzzy: filterWordCandidates(tierPools.fuzzy),
+      known: filterWordCandidates(tierPools.known),
+    }
+    const relaxedRecentPools = {
+      unknown: filterWordCandidates(tierPools.unknown, { excludeRecent: false }),
+      unmarked: filterWordCandidates(tierPools.unmarked, { excludeRecent: false }),
+      fuzzy: filterWordCandidates(tierPools.fuzzy, { excludeRecent: false }),
+      known: filterWordCandidates(tierPools.known, { excludeRecent: false }),
+    }
+    const selectedStatus =
+      pickWeightedStatus(filteredPools, currentWaveProfile.value.wordFamiliarityWeights) ??
+      pickWeightedStatus(relaxedRecentPools, currentWaveProfile.value.wordFamiliarityWeights) ??
+      pickWeightedStatus(tierPools, currentWaveProfile.value.wordFamiliarityWeights)
+
+    const selectedCandidates = selectedStatus
+      ? filteredPools[selectedStatus].length > 0
+        ? filteredPools[selectedStatus]
+        : relaxedRecentPools[selectedStatus].length > 0
+          ? relaxedRecentPools[selectedStatus]
+          : tierPools[selectedStatus]
+      : []
+
+    const fallbackCandidates = dedupeWordCandidates([
+      ...filteredPools.unknown,
+      ...filteredPools.unmarked,
+      ...filteredPools.fuzzy,
+      ...filteredPools.known,
+      ...relaxedRecentPools.unknown,
+      ...relaxedRecentPools.unmarked,
+      ...relaxedRecentPools.fuzzy,
+      ...relaxedRecentPools.known,
+      ...tierPools.unknown,
+      ...tierPools.unmarked,
+      ...tierPools.fuzzy,
+      ...tierPools.known,
+    ])
+
+    const pickedWord = pickWordFromCandidates(selectedCandidates) || pickWordFromCandidates(fallbackCandidates)
+    return pickedWord || randomFrom(TYPE_WARRIOR_WORD_BANK)
   }
 
   function createSpawnPosition() {
@@ -311,6 +547,9 @@ export function useTypeWarriorGame() {
 
   function buildEnemy(currentWave, boss = false, options = {}) {
     const word = pickWordForWave(currentWave)
+    markWordRecentlyUsed(word)
+    const normalizedKeyword = normalizeWord(word.word)
+    const wordLengthTier = getWordLengthTier(normalizedKeyword)
     const kind = boss
       ? { type: 'boss', shape: 'boss', baseHealth: BOSS_BALANCE.baseHealth, baseSpeed: BOSS_BALANCE.baseSpeed, accent: BOSS_BALANCE.accent }
       : randomFrom(TYPE_WARRIOR_ENEMY_KINDS)
@@ -318,14 +557,17 @@ export function useTypeWarriorGame() {
     const healthMultiplier = options.healthMultiplier ?? 1
     const baseHealth = boss ? kind.baseHealth + currentWave * BOSS_BALANCE.healthPerWave : kind.baseHealth + currentWave * ENEMY_BALANCE.healthPerWave
     const baseSpeed = boss ? kind.baseSpeed + currentWave * BOSS_BALANCE.speedPerWave : kind.baseSpeed + currentWave * ENEMY_BALANCE.speedPerWave
+    const speedMultiplier = ENEMY_BALANCE.wordLengthScaling.speedMultiplier[wordLengthTier] ?? 1
+    const contactDamageMultiplier = ENEMY_BALANCE.wordLengthScaling.contactDamageMultiplier[wordLengthTier] ?? 1
     const orbitAngle = Math.atan2(spawnPoint.y - centerPoint, spawnPoint.x - centerPoint)
     const emissionVector = options.emissionVector ?? null
     const scaledHealth = Math.max(1, Math.round(baseHealth * healthMultiplier))
+    const contactDamage = boss ? 0 : Math.max(1, Math.round(COMBAT_BALANCE.collisionDamage * contactDamageMultiplier))
 
     return {
       id: `enemy-${enemyIdSeed++}`,
       text: word.text,
-      keyword: normalizeWord(word.word),
+      keyword: normalizedKeyword,
       displayWord: word.word.toLowerCase(),
       x: spawnPoint.x,
       y: spawnPoint.y,
@@ -334,7 +576,9 @@ export function useTypeWarriorGame() {
       radius: boss ? BOSS_BALANCE.radius : kind.shape === 'dot' ? ENEMY_BALANCE.dotRadius : ENEMY_BALANCE.shapedRadius,
       health: scaledHealth,
       maxHealth: scaledHealth,
-      speed: baseSpeed,
+      speed: baseSpeed * speedMultiplier,
+      contactDamage,
+      wordLengthTier,
       accent: kind.accent,
       boss,
       orbitAngle,
@@ -430,12 +674,57 @@ export function useTypeWarriorGame() {
     return getDistance(closestX, closestY, px, py)
   }
 
-  function applyDamageToEnemy(enemy, damage, { refreshWord = true } = {}) {
+  function applyDamageToEnemy(enemy, damage, { refreshWord = true, source = 'bullet', sourceDamage = damage } = {}) {
+    const repairHitHeal = getSkillValue('repair', 'onHitHeal')
     enemy.health -= damage
     enemy.incomingDamage = Math.max(0, enemy.incomingDamage - damage)
     enemy.hitFeedback = 0.22
+    enemy.lastDamageSource = source
+    enemy.lastSourceDamage = sourceDamage
+    if (damage > 0 && repairHitHeal > 0) {
+      health.value = clamp(health.value + repairHitHeal, 0, maxHealth.value)
+    }
+    if (enemy.health <= 0) {
+      enemy.deathSource = source
+      enemy.deathSourceDamage = sourceDamage
+    }
     if (refreshWord && enemy.health > 0) {
       triggerEnemyWordRefresh(enemy)
+    }
+  }
+
+  function triggerBlastExplosion(defeatedEnemy) {
+    const blastLevel = getSkillLevel('blast')
+    if (blastLevel <= 0) return
+    if (defeatedEnemy.deathSource !== 'bullet') return
+
+    const radius = getSkillValue('blast', 'radius')
+    const damageMultiplier = getSkillValue('blast', 'damageMultiplier')
+    const minimumDamageRatio = getSkillValue('blast', 'minimumDamageRatio')
+    const baseDamage = Math.max(0, Number(defeatedEnemy.deathSourceDamage) || 0)
+
+    if (radius <= 0 || baseDamage <= 0) return
+
+    createExplosionEffect(defeatedEnemy.x, defeatedEnemy.y, radius)
+    triggerExplosionShake()
+
+    for (const enemy of enemies.value) {
+      if (enemy.id === defeatedEnemy.id) continue
+      if (enemy.health <= 0) continue
+
+      const distance = getDistance(defeatedEnemy.x, defeatedEnemy.y, enemy.x, enemy.y)
+      if (distance > radius) continue
+
+      const distanceRatio = clamp(1 - distance / radius, 0, 1)
+      const damageRatio = minimumDamageRatio + (1 - minimumDamageRatio) * distanceRatio
+      const explosionDamage = baseDamage * damageMultiplier * damageRatio
+      if (explosionDamage <= 0) continue
+
+      applyDamageToEnemy(enemy, explosionDamage, {
+        refreshWord: true,
+        source: 'explosion',
+        sourceDamage: baseDamage,
+      })
     }
   }
 
@@ -455,6 +744,7 @@ export function useTypeWarriorGame() {
     if (enemy.wordTransitionState !== 'idle' || enemy.health <= 0) return
 
     enemy.pendingWord = pickReplacementWord(enemy)
+    markWordRecentlyUsed(enemy.pendingWord)
     enemy.wordTransitionState = 'fade-out'
     enemy.wordTransitionTimer = wordTransitionDuration
   }
@@ -523,7 +813,8 @@ export function useTypeWarriorGame() {
     banner.value = isPaused.value ? '游戏已暂停。' : '游戏继续。'
   }
 
-  function startGame() {
+  async function startGame() {
+    await loadWordPool()
     hasGameStarted.value = true
     restartGame()
     banner.value = '游戏开始，保持节奏清理词潮。'
@@ -548,10 +839,6 @@ export function useTypeWarriorGame() {
 
     syncDerivedStats({ restoreHealth: true, restoreEnergy: true })
 
-    if (choice.id === 'repair') {
-      health.value = clamp(health.value + getSkillValue('repair', 'onSkillPickHeal'), 0, maxHealth.value)
-    }
-
     const nextWave = pendingWaveNumber.value
     isChoosingSkill.value = false
     pendingWaveNumber.value = null
@@ -563,7 +850,12 @@ export function useTypeWarriorGame() {
       weaponLevel.value = clamp(weaponLevel.value + COMBAT_BALANCE.skillChoiceWeaponLevelGain, 1, COMBAT_BALANCE.maxWeaponLevel)
       banner.value = `${choice.name} 已装配，第 ${nextWave} 关开始。`
       startWave(nextWave)
+      if (pendingWaveEndHeal.value > 0) {
+        health.value = clamp(health.value + pendingWaveEndHeal.value, 0, maxHealth.value)
+      }
     }
+
+    pendingWaveEndHeal.value = 0
   }
 
   /**
@@ -620,6 +912,7 @@ export function useTypeWarriorGame() {
   }
 
   function restartGame() {
+    resetWordSelectionState()
     wave.value = 1
     weaponLevel.value = 1
     health.value = PLAYER_BALANCE.baseHealth
@@ -633,6 +926,7 @@ export function useTypeWarriorGame() {
     markEnemyKeywordTrieDirty()
     bullets.value = []
     enemyFragments.value = []
+    explosionEffects.value = []
     cards.value = []
     isGameOver.value = false
     isVictory.value = false
@@ -656,6 +950,7 @@ export function useTypeWarriorGame() {
     comboFeedbackCount.value = 0
     comboFeedbackTimer.value = 0
     comboShakeTimer.value = 0
+    explosionShakeTimer.value = 0
     isPaused.value = false
     maxCombo.value = 0
     score.value = 0
@@ -666,6 +961,7 @@ export function useTypeWarriorGame() {
     purgeCooldownRemaining.value = 0
     purgeUsesThisWave.value = 0
     pendingWaveNumber.value = null
+    pendingWaveEndHeal.value = 0
     currentWaveProfile.value = getTypeWarriorWaveProfile(1)
     markEnemyKeywordTrieDirty()
     resetPurgeWordState()
@@ -826,7 +1122,6 @@ export function useTypeWarriorGame() {
     const projectileCount = weaponLevel.value + getSkillValue('echo', 'extraProjectiles')
     const overclockDamageBonus = getSkillValue('overclock', 'damageBonus')
     const overclockSpeedBonus = getSkillValue('overclock', 'projectileSpeedBonus')
-    const repairBonus = getSkillValue('repair', 'onHitHeal')
     const baseDamage =
       COMBAT_BALANCE.baseDamage +
       weaponLevel.value * COMBAT_BALANCE.weaponDamagePerLevel +
@@ -879,9 +1174,6 @@ export function useTypeWarriorGame() {
     }
 
     energy.value = clamp(energy.value + COMBAT_BALANCE.wordEnergyGain + rapidBonus, 0, maxEnergy.value)
-    if (repairBonus > 0) {
-      health.value = clamp(health.value + repairBonus, 0, maxHealth.value)
-    }
     typedBuffer.value = ''
     targetEnemyId.value = null
     selectedMatchLength.value = 0
@@ -1095,12 +1387,18 @@ export function useTypeWarriorGame() {
       for (const enemy of sortedPathCandidates) {
         if (nextBullet.flightMode === 'tracking') {
           if (nextBullet.solidTrailEnabled && enemy.id !== nextBullet.targetId && !solidTrailEnemyIds.has(enemy.id)) {
-            applyDamageToEnemy(enemy, nextBullet.damage * nextBullet.solidTrailMultiplier)
+            applyDamageToEnemy(enemy, nextBullet.damage * nextBullet.solidTrailMultiplier, {
+              source: 'bullet',
+              sourceDamage: nextBullet.damage,
+            })
             solidTrailEnemyIds.add(enemy.id)
           }
 
           if (enemy.id === nextBullet.targetId) {
-            applyDamageToEnemy(enemy, nextBullet.damage)
+            applyDamageToEnemy(enemy, nextBullet.damage, {
+              source: 'bullet',
+              sourceDamage: nextBullet.damage,
+            })
 
             if (nextBullet.pierceEnabled) {
               piercedEnemyIds.add(enemy.id)
@@ -1118,7 +1416,10 @@ export function useTypeWarriorGame() {
             break
           }
         } else if (!piercedEnemyIds.has(enemy.id)) {
-          applyDamageToEnemy(enemy, nextBullet.damage * nextBullet.pierceTrailMultiplier)
+          applyDamageToEnemy(enemy, nextBullet.damage * nextBullet.pierceTrailMultiplier, {
+            source: 'bullet',
+            sourceDamage: nextBullet.damage,
+          })
           piercedEnemyIds.add(enemy.id)
         }
       }
@@ -1168,6 +1469,7 @@ export function useTypeWarriorGame() {
     if (defeated.length === 0) return
 
     const shieldLevel = getSkillLevel('shield')
+    const repairKillHeal = getSkillValue('repair', 'onKillHeal')
     const burstWeaponGrowth = getSkillValue('burst', 'weaponGrowthPerKill')
     let defeatedBossCount = 0
 
@@ -1182,9 +1484,13 @@ export function useTypeWarriorGame() {
       }
 
       createEnemyFragments(enemy)
+      triggerBlastExplosion(enemy)
       weaponLevel.value = clamp(weaponLevel.value + (enemy.boss ? 1 : 0) + burstWeaponGrowth, 1, COMBAT_BALANCE.maxWeaponLevel)
       scoreWaveProgress(enemy)
       score.value += enemy.boss ? COMBAT_BALANCE.bossKillScore : COMBAT_BALANCE.nonBossKillScore
+      if (repairKillHeal > 0) {
+        health.value = clamp(health.value + repairKillHeal, 0, maxHealth.value)
+      }
       defeatedBossCount += enemy.boss ? 1 : 0
     }
 
@@ -1224,7 +1530,7 @@ export function useTypeWarriorGame() {
             orbitAngle: Math.atan2(enemy.y - centerPoint, enemy.x - centerPoint),
           }
         } else {
-          const nextAngle = enemy.orbitAngle + 0.92 * deltaSeconds
+          const nextAngle = enemy.orbitAngle + BOSS_BALANCE.orbitAngularSpeed * deltaSeconds
           nextEnemy = {
             ...enemy,
             orbitAngle: nextAngle,
@@ -1304,7 +1610,7 @@ export function useTypeWarriorGame() {
     let totalDamage = 0
     for (const enemy of collidedEnemies) {
       if (!enemy.boss) {
-        totalDamage += COMBAT_BALANCE.collisionDamage
+        totalDamage += enemy.contactDamage ?? COMBAT_BALANCE.collisionDamage
       }
     }
 
@@ -1366,9 +1672,19 @@ export function useTypeWarriorGame() {
       .filter((fragment) => fragment.life > 0)
   }
 
+  function updateExplosionEffects(deltaSeconds) {
+    explosionEffects.value = explosionEffects.value
+      .map((effect) => ({
+        ...effect,
+        life: effect.life - deltaSeconds,
+      }))
+      .filter((effect) => effect.life > 0)
+  }
+
   function updateComboFeedback(deltaSeconds) {
     comboFeedbackTimer.value = Math.max(0, comboFeedbackTimer.value - deltaSeconds)
     comboShakeTimer.value = Math.max(0, comboShakeTimer.value - deltaSeconds)
+    explosionShakeTimer.value = Math.max(0, explosionShakeTimer.value - deltaSeconds)
   }
 
   function updateKeyBursts(deltaSeconds) {
@@ -1451,6 +1767,14 @@ export function useTypeWarriorGame() {
       return
     }
 
+    const waveEndRestoreRatio = SKILL_BALANCE.repair.waveEndMissingHealthRestoreRatio ?? 0
+    if (waveEndRestoreRatio > 0) {
+      const missingHealth = Math.max(0, maxHealth.value - health.value)
+      pendingWaveEndHeal.value = missingHealth * waveEndRestoreRatio
+    } else {
+      pendingWaveEndHeal.value = 0
+    }
+
     openSkillSelection(wave.value + 1)
   }
 
@@ -1471,6 +1795,7 @@ export function useTypeWarriorGame() {
       purgeCooldownRemaining.value = Math.max(0, purgeCooldownRemaining.value - deltaSeconds)
       updateEnemyFeedbacks(deltaSeconds)
       updateEnemyFragments(deltaSeconds)
+      updateExplosionEffects(deltaSeconds)
       updateComboFeedback(deltaSeconds)
       updateKeyBursts(deltaSeconds)
 
@@ -1560,6 +1885,10 @@ export function useTypeWarriorGame() {
     }
   }
 
+  function isEnemyBulletTarget(enemy) {
+    return bullets.value.some((bullet) => bullet.flightMode === 'tracking' && bullet.targetId === enemy.id)
+  }
+
   function keyBurstStyle(burst) {
     return {
       '--burst-dx': `${burst.dx}px`,
@@ -1580,8 +1909,23 @@ export function useTypeWarriorGame() {
     }
   }
 
+  function explosionStyle(effect) {
+    const lifeRatio = Math.max(0, effect.life / effect.maxLife)
+    const expandRatio = 1 - lifeRatio
+
+    return {
+      left: `${(effect.x / arenaSize) * 100}%`,
+      top: `${(effect.y / arenaSize) * 100}%`,
+      width: `${effect.radius * 2}px`,
+      height: `${effect.radius * 2}px`,
+      opacity: `${lifeRatio * 0.94}`,
+      transform: `translate(-50%, -50%) scale(${0.28 + expandRatio * 1.06})`,
+    }
+  }
+
   onMounted(() => {
     restartGame()
+    loadWordPool()
     lastFrameAt = performance.now()
     updateViewportSpawnBounds()
     window.addEventListener('keydown', handleKeydown)
@@ -1606,6 +1950,7 @@ export function useTypeWarriorGame() {
     currentTarget,
     enemies,
     enemyFragments,
+    explosionEffects,
     energy,
     hasGameStarted,
     health,
@@ -1614,6 +1959,7 @@ export function useTypeWarriorGame() {
     isGameOver,
     isPaused,
     isVictory,
+    isWordPoolLoading,
     keyBursts,
     purgeCooldownLabel,
     resultStats,
@@ -1639,8 +1985,10 @@ export function useTypeWarriorGame() {
     enemyHealthStyle,
     enemyStyle,
     enemyWordTransitionStyle,
+    explosionStyle,
     fragmentStyle,
     getEnemyWordParts,
+    isEnemyBulletTarget,
     keyBurstStyle,
   }
 }

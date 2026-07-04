@@ -12,6 +12,12 @@ export const TYPE_WARRIOR_WAVE_SETTINGS = {
  * 只要某一关没有显式覆盖，就会从这里继承基础字段。
  */
 export const TYPE_WARRIOR_WAVE_DEFAULT = {
+  wordFamiliarityWeights: {
+    unknown: 3,
+    unmarked: 3,
+    fuzzy: 3,
+    known: 1,
+  },
   normal: {
     totalCount: 5,
     spawnRatePerSecond: 1.2,
@@ -66,7 +72,7 @@ export const TYPE_WARRIOR_WAVE_PROFILES = {
       totalCount: 1,
       spawnRatePerSecond: 0.2,
       spawnProbabilityRange: [1, 1],
-      healthMultiplierRange: [0.96, 1.06],
+      healthMultiplierRange: [3, 3],
     },
   },
   4: {
@@ -96,7 +102,7 @@ export const TYPE_WARRIOR_WAVE_PROFILES = {
       totalCount: 1,
       spawnRatePerSecond: 0.2,
       spawnProbabilityRange: [1, 1],
-      healthMultiplierRange: [1.06, 1.18],
+      healthMultiplierRange: [4, 4],
     },
   },
   7: {
@@ -134,7 +140,7 @@ export const TYPE_WARRIOR_WAVE_PROFILES = {
       totalCount: 1,
       spawnRatePerSecond: 0.22,
       spawnProbabilityRange: [1, 1],
-      healthMultiplierRange: [1.22, 1.42],
+      healthMultiplierRange: [5, 5],
     },
   },
 }
@@ -165,9 +171,14 @@ function buildExtendedWaveProfile(waveNumber) {
   const extraWaveCount = Math.max(0, waveNumber - lastDefinedWaveNumber)
   const baseNormal = mergeWaveSection(TYPE_WARRIOR_WAVE_DEFAULT.normal, lastDefinedProfile.normal)
   const baseBoss = mergeWaveSection(TYPE_WARRIOR_WAVE_DEFAULT.boss, lastDefinedProfile.boss)
+  const baseWordFamiliarityWeights = {
+    ...TYPE_WARRIOR_WAVE_DEFAULT.wordFamiliarityWeights,
+    ...(lastDefinedProfile.wordFamiliarityWeights ?? {}),
+  }
   const isFinalWave = waveNumber >= getTypeWarriorFinalWave()
 
   return {
+    wordFamiliarityWeights: baseWordFamiliarityWeights,
     normal: {
       ...baseNormal,
       totalCount: baseNormal.totalCount + extraWaveCount,
@@ -207,6 +218,10 @@ export function getTypeWarriorWaveProfile(waveNumber) {
   }
 
   return {
+    wordFamiliarityWeights: {
+      ...TYPE_WARRIOR_WAVE_DEFAULT.wordFamiliarityWeights,
+      ...(overrideProfile.wordFamiliarityWeights ?? {}),
+    },
     normal: mergeWaveSection(TYPE_WARRIOR_WAVE_DEFAULT.normal, overrideProfile.normal),
     boss: mergeWaveSection(TYPE_WARRIOR_WAVE_DEFAULT.boss, overrideProfile.boss),
   }
