@@ -83,10 +83,11 @@ const shellClass = computed(() => ({
   'app-page visual-shell': route.path.startsWith('/visualization'),
   'visual-home-shell': route.path === '/visualization',
   'app-page games-shell': route.path.startsWith('/games'),
-  'immersive-game-shell': route.path === '/games/ladder-jump',
+  'games-home-shell': route.path === '/games',
+  'immersive-game-shell': route.path.startsWith('/games/'),
 }))
 
-const showNavigation = computed(() => route.path !== '/games/ladder-jump')
+const showNavigation = computed(() => !route.path.startsWith('/games/'))
 </script>
 
 <template>
