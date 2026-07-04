@@ -25,3 +25,34 @@ export const createAcademyCourseReview = (resource, id, payload) =>
 export const fetchAcademyCategories = (resource) =>
   request(`/api/academy/${resource}/categories`)
 
+export const fetchQuestionBankSubjects = () => request('/api/academy/question-bank/subjects')
+
+export const fetchQuestionBankProblems = ({ subject, keyword, difficulty, page = 0, size = 12 } = {}) => {
+  const params = new URLSearchParams()
+  if (subject) params.set('subject', subject)
+  if (keyword) params.set('keyword', keyword)
+  if (difficulty !== undefined && difficulty !== null && difficulty !== '') params.set('difficulty', difficulty)
+  params.set('page', page)
+  params.set('size', size)
+  return request(`/api/academy/question-bank/problems?${params.toString()}`)
+}
+
+export const fetchQuestionBankProblem = (id) =>
+  request(`/api/academy/question-bank/problems/${encodeURIComponent(id)}`)
+
+export const fetchQuestionBankCourseCatalog = () =>
+  request('/api/academy/question-bank/course-catalog')
+
+export const fetchQuestionBankCourse = (code, { page = 0, size = 30, keyword = '' } = {}) => {
+  const params = new URLSearchParams()
+  params.set('page', page)
+  params.set('size', size)
+  if (keyword) params.set('keyword', keyword)
+  return request(`/api/academy/question-bank/courses/${encodeURIComponent(code)}?${params.toString()}`)
+}
+
+export const importLuoguQuestionBank = ({ pages = 1, limit = 20 } = {}) =>
+  request(`/api/academy/question-bank/import/luogu?pages=${pages}&limit=${limit}`, {
+    method: 'POST',
+  })
+

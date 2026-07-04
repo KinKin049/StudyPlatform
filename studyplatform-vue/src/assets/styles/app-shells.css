@@ -1,0 +1,113 @@
+#app {
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+}
+
+.home-page {
+  min-height: 100vh;
+  background: #ffc1cb;
+  background: -webkit-linear-gradient(to right, #bfe9ff, #ffc1cb);
+  background: linear-gradient(to right, #bfe9ff, #ffc1cb);
+}
+
+.app-page {
+  min-height: 100vh;
+  background: transparent;
+}
+
+.lab-shell {
+  background: #c8fff1;
+  background: -webkit-linear-gradient(to right, #4aa6a8, #b9fbc0);
+  background: linear-gradient(to right, #4aa6a8, #b9fbc0);
+}
+
+.lab-shell .site-brand,
+.lab-shell .nav-button,
+.lab-shell .user-avatar {
+  color: #4D3C77;
+}
+
+.production-shell {
+  background: #c8fff1;
+  background: -webkit-linear-gradient(to right, #4aa6a8, #b9fbc0);
+  background: linear-gradient(to right, #4aa6a8, #b9fbc0);
+}
+
+.production-shell .site-brand,
+.production-shell .nav-button,
+.production-shell .user-avatar {
+  color: #4D3C77;
+}
+
+.production-shell .site-header {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04)),
+    rgba(255, 255, 255, 0.02);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.58),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.16);
+}
+
+.academy-shell {
+  min-height: 100vh;
+  background: #74ebd5;
+  background: -webkit-linear-gradient(to right, #acb6e5, #74ebd5);
+  background: linear-gradient(to right, #acb6e5, #74ebd5);
+}
+
+.academy-course-detail-shell {
+  background: #f5fafc;
+}
+
+.academy-course-detail-shell .site-header {
+  background: #74ebd5;
+  background: -webkit-linear-gradient(to right, #acb6e5, #74ebd5);
+  background: linear-gradient(to right, #acb6e5, #74ebd5);
+}
+
+.visual-shell {
+  background: #3494e6;
+  background: -webkit-linear-gradient(to right, #ec6ead, #3494e6);
+  background: linear-gradient(to right, #ec6ead, #3494e6);
+}
+
+.visual-shell .site-header {
+  background: #3494e6;
+  background: -webkit-linear-gradient(to right, #ec6ead, #3494e6);
+  background: linear-gradient(to right, #ec6ead, #3494e6);
+}
+
+.visual-home-shell .site-header {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.visual-home-shell .site-header::after {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.16), transparent);
+}
+
+.visual-shell .site-brand,
+.visual-shell .nav-button,
+.visual-shell .user-avatar {
+  color: #ffffff;
+}
+
+.academy-shell .site-brand,
+.academy-shell .nav-button,
+.academy-shell .user-avatar {
+  color: #4b70f5;
+}
+
+.immersive-game-shell {
+  min-height: 100vh;
+  overflow: hidden;
+  background: #071327;
+}
+

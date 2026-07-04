@@ -18,6 +18,10 @@ const groundY = 660
 const answerPlatformWidth = 990
 const confirmOffset = 430
 const answeredLeftPadding = 240
+const travelCoinCountPerQuestion = 7
+const travelCoinBetweenStartOffset = questionGap - 220
+const travelCoinBetweenWidth = 520
+const travelCoinLanes = [groundY - 92, 520 - 64, 405 - 64]
 const defaultQuestions = [
   {
     id: 1,
@@ -62,6 +66,7 @@ const player = ref({
 })
 const cameraX = ref(0)
 const answeredQuestionIds = ref([])
+const collectedTravelCoinIds = ref([])
 const routes = ref([])
 const selectedPlatform = ref(null)
 const lockedQuestionIds = ref([])
@@ -154,6 +159,27 @@ const coins = computed(() => {
       })),
     )
 })
+const visibleTravelCoinIndexes = computed(() =>
+  [questionIndex.value - 1, questionIndex.value, questionIndex.value + 1, questionIndex.value + 2].filter((index) => index >= 0),
+)
+const travelCoins = computed(() =>
+  visibleTravelCoinIndexes.value.flatMap((questionOrder) =>
+    Array.from({ length: travelCoinCountPerQuestion }, (_, index) => {
+      const id = `travel-${questionOrder}-${index}`
+      const baseX = questionStartX + questionOrder * questionGap
+      const laneIndex = Math.floor(seededRandom(questionOrder * 97 + index * 31 + 13) * travelCoinLanes.length)
+      const xOffset =
+        travelCoinBetweenStartOffset + seededRandom(questionOrder * 131 + index * 43 + 7) * travelCoinBetweenWidth
+
+      return {
+        id,
+        x: baseX + xOffset,
+        y: travelCoinLanes[laneIndex],
+        collected: collectedTravelCoinIds.value.includes(id),
+      }
+    }),
+  )
+)
 const worldWidth = computed(() => stageWidth + (questionIndex.value + 3) * questionGap + 1800)
 const worldStyle = computed(() => ({
   width: `${worldWidth.value}px`,
@@ -161,10 +187,13 @@ const worldStyle = computed(() => ({
   transform: `translateX(${-cameraX.value}px)`,
 }))
 const sceneLayers = [
+  { key: 'sky', className: 'ladder-bg-layer ladder-bg-sky' },
+  { key: 'cloud', className: 'ladder-bg-layer ladder-bg-cloud' },
   { key: 'far-house', className: 'ladder-bg-layer ladder-bg-far' },
   { key: 'mid-house', className: 'ladder-bg-layer ladder-bg-mid' },
   { key: 'house', className: 'ladder-bg-layer ladder-bg-house' },
   { key: 'tree', className: 'ladder-bg-layer ladder-bg-tree' },
+  { key: 'lamp', className: 'ladder-bg-layer ladder-bg-lamp' },
 ]
 const playerStyle = computed(() => ({
   left: `${player.value.x}px`,
@@ -180,6 +209,11 @@ async function loadQuestions() {
   } catch {
     feedback.value = '后端题库暂不可用，已启用本地默认题库。使用键盘继续游戏'
   }
+}
+
+function seededRandom(seed) {
+  const value = Math.sin(seed) * 10000
+  return value - Math.floor(value)
 }
 
 function handleKeyDown(event) {
@@ -441,6 +475,20 @@ function collectCoins() {
     score.value += 3
     playAudio('data.mp3')
   })
+
+  travelCoins.value.forEach((coin) => {
+    if (coin.collected) return
+    const hit =
+      player.value.x + playerSize.width > coin.x &&
+      player.value.x < coin.x + 38 &&
+      player.value.y + playerSize.height > coin.y &&
+      player.value.y < coin.y + 38
+    if (!hit) return
+
+    collectedTravelCoinIds.value = [...new Set([...collectedTravelCoinIds.value, coin.id])]
+    score.value += 2
+    playAudio('data.mp3')
+  })
 }
 
 function advanceQuestionAfterLeavingCurrentArea() {
@@ -467,6 +515,7 @@ function restartGame() {
   combo.value = 0
   questionIndex.value = 0
   answeredQuestionIds.value = []
+  collectedTravelCoinIds.value = []
   routes.value = []
   selectedPlatform.value = null
   lockedQuestionIds.value = []
@@ -566,6 +615,16 @@ onBeforeUnmount(() => {
           v-show="!coin.collected"
           :key="coin.id"
           class="ladder-coin"
+          :style="{ left: `${coin.x}px`, top: `${coin.y}px` }"
+        >
+          ¥
+        </div>
+
+        <div
+          v-for="coin in travelCoins"
+          v-show="!coin.collected"
+          :key="coin.id"
+          class="ladder-coin is-travel-coin"
           :style="{ left: `${coin.x}px`, top: `${coin.y}px` }"
         >
           ¥

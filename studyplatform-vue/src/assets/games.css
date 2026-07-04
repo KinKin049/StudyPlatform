@@ -457,10 +457,13 @@
 }
 
 .ladder-stage {
-  --z-far-house: 1;
-  --z-mid-house: 2;
-  --z-house: 3;
+  --z-sky: 0;
+  --z-cloud: 1;
+  --z-far-house: 2;
+  --z-mid-house: 3;
+  --z-house: 4;
   --z-tree: 7;
+  --z-lamp: 8;
   --z-road: 6;
   --z-car: 91;
   --z-floating-ui: 40;
@@ -477,9 +480,7 @@
   overflow: hidden;
   border: 0;
   border-radius: 0;
-  background:
-    url('/games/ladder-jump/scene/sky.png') center / cover no-repeat,
-    #87ceeb;
+  background: #A9D2FD;
   box-shadow: none;
   outline: none;
 }
@@ -501,8 +502,20 @@
 }
 
 .ladder-bg-sky {
-  background-image: none;
+  z-index: var(--z-sky);
+  background-image: url('/games/ladder-jump/scene/sky.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   image-rendering: pixelated;
+}
+
+.ladder-bg-cloud {
+  z-index: var(--z-cloud);
+  background-image: url('/games/ladder-jump/scene/cloud.webp');
+  background-size: auto 190px;
+  background-position: left 120px top 10px;
+  opacity: 0.74;
 }
 
 .ladder-bg-far {
@@ -535,6 +548,15 @@
   background-size: auto 720px;
   background-position: left bottom 100px;
   opacity: 0.96;
+}
+
+.ladder-bg-lamp {
+  z-index: var(--z-lamp);
+  background-image: url('/games/ladder-jump/scene/lamp.webp');
+  background-size: auto 650px;
+  background-position: left 80px bottom 84px;
+  opacity: 0.96;
+  filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.22));
 }
 
 .ladder-question-card {
@@ -723,6 +745,17 @@
   font-weight: 900;
   box-shadow: 0 0 20px rgba(255, 211, 106, 0.7);
   animation: ladder-coin-pop 820ms ease-out both;
+}
+
+.ladder-coin.is-travel-coin {
+  width: 38px;
+  height: 38px;
+  border-color: rgba(255, 244, 181, 0.96);
+  background: radial-gradient(circle at 35% 35%, #fffbe1 0 16%, #ffd968 17% 68%, #d99018 69%);
+  font-size: 20px;
+  animation:
+    ladder-coin-pop 620ms ease-out both,
+    ladder-travel-coin-float 1.8s ease-in-out infinite;
 }
 
 .ladder-confirm-line {
@@ -1014,6 +1047,17 @@
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes ladder-travel-coin-float {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+
+  50% {
+    translate: 0 -8px;
   }
 }
 

@@ -1,12 +1,17 @@
 <script setup>
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
 const questionBankModules = [
   {
     key: 'course-questions',
     title: '课程题库',
     label: '按课程练习',
-    description: '按课程归档题目，后续可接入在线开放课程、通识课程和微专业课程题目。',
-    count: '1200+',
-    meta: '预留 /api/academy/question-bank/courses',
+    description: '按计算机专业、英语四六级、公共课和职业资格组织课程题库。',
+    count: '课程',
+    meta: '/academy/question-bank/courses',
+    path: '/academy/question-bank/courses',
   },
   {
     key: 'mistakes',
@@ -41,6 +46,10 @@ const studyStats = [
 ]
 
 const handleModuleClick = (module) => {
+  if (module.path) {
+    router.push(module.path)
+    return
+  }
   // TODO: 接入题库模块路由或后端 API，例如 /academy/question-bank/questions?module=...
   console.info('question bank module action reserved:', module.key)
 }

@@ -73,6 +73,7 @@ const navItems = [
 
 const shellClass = computed(() => ({
   'home-page': route.path === '/',
+  'profile-shell': route.path.startsWith('/profile'),
   'academy-shell': route.path.startsWith('/academy'),
   'academy-course-detail-shell': route.path.startsWith('/academy/open-courses/'),
   'app-page lab-shell': route.path === '/lab',

@@ -7,11 +7,14 @@ const AcademyMicroMajors = () => import('../pages/academy/AcademyMicroMajors.vue
 const AcademyOpenCourses = () => import('../pages/academy/AcademyOpenCourses.vue')
 const AcademyCourseDetail = () => import('../pages/academy/AcademyCourseDetail.vue')
 const AcademyQuestionBank = () => import('../pages/academy/AcademyQuestionBank.vue')
+const AcademyQuestionBankCourseDetail = () => import('../pages/academy/AcademyQuestionBankCourseDetail.vue')
+const AcademyQuestionBankCourses = () => import('../pages/academy/AcademyQuestionBankCourses.vue')
 const AcademyTextbooks = () => import('../pages/academy/AcademyTextbooks.vue')
 const HomePage = () => import('../pages/HomePage.vue')
 const LabPlatform = () => import('../pages/LabPlatform.vue')
 const OjPlatform = () => import('../pages/OjPlatform.vue')
 const PetroleumSimulation = () => import('../pages/petroleum/PetroleumSimulation.vue')
+const ProfilePage = () => import('../pages/ProfilePage.vue')
 const WellLogSimulation = () => import('../pages/WellLogSimulation.vue')
 const VisualizationHome = () => import('../pages/visualization/VisualizationHome.vue')
 const DataStructureVisualization = () => import('../pages/visualization/DataStructureVisualization.vue')
@@ -99,12 +102,27 @@ const routes = [
         name: 'academy-question-bank',
         component: AcademyQuestionBank,
       },
+      {
+        path: 'question-bank/courses',
+        name: 'academy-question-bank-courses',
+        component: AcademyQuestionBankCourses,
+      },
+      {
+        path: 'question-bank/courses/:courseCode',
+        name: 'academy-question-bank-course-detail',
+        component: AcademyQuestionBankCourseDetail,
+      },
     ],
   },
   {
     path: '/lab',
     name: 'lab',
     component: LabPlatform,
+  },
+  {
+    path: '/profile',
+    name: 'profile',
+    component: ProfilePage,
   },
   {
     path: '/lab/oj',
