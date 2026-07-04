@@ -1,0 +1,450 @@
+@media (max-width: 760px) {
+  .site-header {
+    grid-template-columns: 1fr auto;
+    gap: 14px;
+    padding: 16px 20px;
+  }
+
+  .site-brand {
+    margin-left: 0;
+    font-size: 28px;
+  }
+
+  .site-nav {
+    grid-column: 1 / -1;
+    order: 3;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+
+  .nav-button {
+    min-width: auto;
+    height: 44px;
+    padding: 0 14px;
+    font-size: 17px;
+  }
+
+  .dropdown-menu {
+    left: 0;
+    transform: translate(0, 8px);
+  }
+
+  .nav-item:hover .dropdown-menu {
+    transform: translate(0, 0);
+    transition-delay: 0s;
+  }
+
+  .home-main {
+    min-height: calc(100vh - 152px);
+    padding: 48px 24px;
+  }
+
+  .intro-panel h1 {
+    font-size: 38px;
+  }
+
+  .intro-copy {
+    font-size: 16px;
+  }
+
+  .academy-header {
+    min-height: 82px;
+    padding: 0 22px;
+  }
+
+  .academy-brand {
+    font-size: 32px;
+  }
+
+  .academy-subnav {
+    justify-content: flex-start;
+    overflow-x: auto;
+    min-height: 64px;
+    width: calc(100% - 28px);
+    margin-top: 14px;
+    padding: 8px 18px;
+    border-radius: 14px;
+  }
+
+  .academy-nav-button {
+    min-width: max-content;
+    height: 44px;
+    font-size: 16px;
+  }
+
+  .academy-dropdown-menu {
+    left: 0;
+    transform: translate(0, 8px);
+  }
+
+  .academy-nav-item:hover .academy-dropdown-menu {
+    transform: translate(0, 0);
+  }
+
+  .academy-main {
+    padding: 34px 22px 56px;
+  }
+
+  .academy-hero {
+    grid-template-columns: 1fr;
+    gap: 26px;
+    min-height: auto;
+  }
+
+  .academy-hero h1 {
+    font-size: 44px;
+  }
+
+  .academy-hero p {
+    font-size: 17px;
+  }
+
+  .academy-search {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .academy-search button {
+    width: 100%;
+  }
+
+  .academy-content {
+    padding: 22px;
+  }
+
+  .course-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .question-bank-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .question-bank-hero,
+  .question-bank-stats,
+  .question-bank-card {
+    grid-template-columns: 1fr;
+  }
+
+  .question-bank-hero h1 {
+    font-size: 44px;
+  }
+
+  .question-bank-panel {
+    padding: 22px;
+  }
+
+  .question-bank-panel-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .question-bank-card > strong {
+    text-align: left;
+  }
+
+  .question-catalog-hero,
+  .question-catalog-stats,
+  .question-catalog-tabs,
+  .question-catalog-grid,
+  .question-bank-detail-hero,
+  .question-bank-source-panel,
+  .question-bank-options,
+  .vocabulary-progress-grid,
+  .vocabulary-workbench {
+    grid-template-columns: 1fr;
+  }
+
+  .question-catalog-hero h1 {
+    font-size: 42px;
+  }
+
+  .question-catalog-shell,
+  .question-bank-detail-hero,
+  .question-bank-source-panel,
+  .question-bank-question-list {
+    padding: 20px;
+  }
+
+  .question-catalog-section header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .question-bank-list-header,
+  .question-bank-pagination {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .question-bank-filter {
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .question-bank-filter input {
+    width: 100%;
+  }
+
+  .question-catalog-card {
+    min-height: auto;
+  }
+
+  .question-bank-detail-hero img {
+    min-height: 220px;
+  }
+
+  .question-bank-question-head {
+    grid-template-columns: 1fr;
+  }
+
+  .question-bank-options,
+  .question-bank-answer-toggle,
+  .question-bank-answer {
+    margin-left: 0;
+  }
+
+  .online-course-main {
+    padding: 34px 22px 56px;
+  }
+
+  .online-course-hero {
+    display: block;
+  }
+
+  .online-course-hero h1 {
+    font-size: 42px;
+  }
+
+  .online-course-tools {
+    padding: 18px;
+  }
+
+  .online-course-hero-search {
+    width: 100%;
+    min-width: 0;
+    margin-top: 22px;
+  }
+
+  .online-course-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .textbook-grid {
+    column-count: 1;
+  }
+
+  .course-detail-main {
+    padding: 30px 5vw 62px;
+  }
+
+  .course-hero-panel,
+  .course-body-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .course-info-card {
+    padding: 22px;
+  }
+
+  .course-info-card h1 {
+    font-size: 30px;
+  }
+
+  .course-info-topline,
+  .course-opening-grid,
+  .course-action-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .smart-feature-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .course-tabs {
+    gap: 18px;
+    overflow-x: auto;
+    padding: 0 12px;
+  }
+
+  .course-tabs button {
+    flex: 0 0 auto;
+  }
+
+  .course-side-card {
+    position: static;
+  }
+
+  .course-player-placeholder,
+  .course-player-placeholder > img {
+    min-height: 260px;
+  }
+
+  .visual-page {
+    padding: 34px 22px 56px;
+  }
+
+  .visual-hero h1 {
+    font-size: 40px;
+  }
+
+  .visual-command-hero {
+    grid-template-columns: 1fr;
+    gap: 26px;
+  }
+
+  .algorithm-lab-hero,
+  .algorithm-lab-grid,
+  .algorithm-demo-card {
+    grid-template-columns: 1fr;
+  }
+
+  .algorithm-demo-index {
+    min-height: 72px;
+    align-items: center;
+  }
+
+  .algorithm-demo-index span {
+    writing-mode: horizontal-tb;
+  }
+
+  .algorithm-demo-content {
+    grid-template-columns: 1fr;
+    padding-top: 0;
+  }
+
+  .algorithm-demo-card a {
+    margin-top: 18px;
+  }
+
+  .visual-command-copy > span {
+    font-size: 17px;
+  }
+
+  .visual-command-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .visual-module-card {
+    min-height: 300px;
+  }
+
+  .space-subject-switch {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .space-subject-switch button {
+    flex: 1 1 auto;
+  }
+
+  .visual-module-grid,
+  .algorithm-demo-grid,
+  .function-lab-layout,
+  .space-guide-group,
+  .space-guide-link-list,
+  .calculus-3d-workbench,
+  .calculus-learning-zone,
+  .space-subject-card {
+    grid-template-columns: 1fr;
+  }
+
+  .calculus-3d-workbench {
+    min-height: auto;
+  }
+
+  .calculus-scene-stage {
+    min-height: 430px;
+  }
+
+  .calculus-control-panel {
+    padding: 18px;
+  }
+
+  .calculus-panel-head h2 {
+    font-size: 27px;
+  }
+
+  .calculus-explanation-card,
+  .calculus-qa-card {
+    padding: 20px;
+  }
+
+  .function-range-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .function-chart-panel {
+    min-height: 380px;
+  }
+
+  .function-chart {
+    height: 340px;
+  }
+
+  .space-guide-directory {
+    gap: 34px;
+    margin-top: 38px;
+  }
+
+  .space-guide-group {
+    gap: 16px;
+    padding-top: 24px;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1180px) {
+  .textbook-grid {
+    column-count: 2;
+  }
+
+  .course-hero-panel,
+  .course-body-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .smart-feature-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .course-side-card {
+    position: static;
+  }
+
+  .visual-module-grid,
+  .algorithm-demo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .function-lab-layout,
+  .algorithm-lab-hero,
+  .question-bank-hero,
+  .question-catalog-hero,
+  .question-bank-detail-hero,
+  .question-bank-source-panel,
+  .vocabulary-workbench,
+  .space-guide-group,
+  .calculus-3d-workbench,
+  .calculus-learning-zone,
+  .space-subject-card {
+    grid-template-columns: 1fr;
+  }
+
+  .question-catalog-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .calculus-scene-stage {
+    min-height: 560px;
+  }
+
+  .visual-command-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .algorithm-lab-grid {
+    grid-template-columns: 1fr;
+  }
+}

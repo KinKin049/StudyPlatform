@@ -1,5 +1,8 @@
 <script setup>
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { fetchProfileUser } from '../api/profile'
+import { resolveResourceUrl } from '../api/request'
 
 const props = defineProps({
   navItems: {
@@ -9,11 +12,43 @@ const props = defineProps({
 })
 
 const router = useRouter()
+const navigationUser = ref({
+  name: 'Kinkin',
+  avatarUrl: '',
+})
+
+const avatarSrc = computed(() => resolveResourceUrl(navigationUser.value.avatarUrl))
+const avatarInitial = computed(() => (navigationUser.value.name || 'K').trim().slice(0, 1).toUpperCase())
 
 const navigateTo = (path, event) => {
   event?.currentTarget?.blur()
   router.push(path)
 }
+
+const loadNavigationUser = async () => {
+  try {
+    navigationUser.value = await fetchProfileUser()
+  } catch (error) {
+    console.warn('failed to load navigation profile:', error)
+  }
+}
+
+const handleProfileUpdated = (event) => {
+  if (event.detail) {
+    navigationUser.value = event.detail
+    return
+  }
+  loadNavigationUser()
+}
+
+onMounted(() => {
+  loadNavigationUser()
+  window.addEventListener('study-platform:profile-updated', handleProfileUpdated)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('study-platform:profile-updated', handleProfileUpdated)
+})
 </script>
 
 <template>
@@ -45,8 +80,11 @@ const navigateTo = (path, event) => {
       </div>
     </nav>
 
-    <button class="user-entry" type="button" aria-label="用户中心">
-      <span class="user-avatar">U</span>
+    <button class="user-entry" type="button" aria-label="个人主页" @click="navigateTo('/profile', $event)">
+      <span class="user-avatar">
+        <img v-if="avatarSrc" :src="avatarSrc" :alt="navigationUser.name" />
+        <span v-else>{{ avatarInitial }}</span>
+      </span>
     </button>
   </header>
 </template>

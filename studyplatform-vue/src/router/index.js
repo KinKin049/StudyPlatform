@@ -14,6 +14,7 @@ const HomePage = () => import('../pages/HomePage.vue')
 const LabPlatform = () => import('../pages/LabPlatform.vue')
 const OjPlatform = () => import('../pages/OjPlatform.vue')
 const PetroleumSimulation = () => import('../pages/petroleum/PetroleumSimulation.vue')
+const ProfilePage = () => import('../pages/ProfilePage.vue')
 const WellLogSimulation = () => import('../pages/WellLogSimulation.vue')
 const VisualizationHome = () => import('../pages/visualization/VisualizationHome.vue')
 const DataStructureVisualization = () => import('../pages/visualization/DataStructureVisualization.vue')
@@ -117,6 +118,11 @@ const routes = [
     path: '/lab',
     name: 'lab',
     component: LabPlatform,
+  },
+  {
+    path: '/profile',
+    name: 'profile',
+    component: ProfilePage,
   },
   {
     path: '/lab/oj',

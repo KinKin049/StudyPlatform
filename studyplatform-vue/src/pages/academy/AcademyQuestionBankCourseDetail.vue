@@ -1,7 +1,8 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { fetchQuestionBankCourse } from '../../api/academy'
+import { recordProfileLearningEvent } from '../../api/profile'
 import { resolveResourceUrl } from '../../api/request'
 
 const route = useRoute()
@@ -11,15 +12,40 @@ const loading = ref(false)
 const errorMessage = ref('')
 const openedAnswers = ref(new Set())
 const selectedOptions = ref({})
+const page = ref(0)
+const pageSize = ref(30)
+const pageJumpInput = ref('1')
+const keyword = ref('')
+const keywordInput = ref('')
+const vocabularyMode = ref('sequence')
+const currentCardIndex = ref(0)
+const cardAnswerVisible = ref(false)
+const shuffleTick = ref(0)
+const vocabularyProgress = ref({})
+const vocabularyCache = ref({})
+const questionListRef = ref(null)
 
 const bank = computed(() => detail.value?.bank)
 const questions = computed(() => detail.value?.questions || [])
+const total = computed(() => detail.value?.total ?? questions.value.length)
+const totalPages = computed(() => detail.value?.totalPages || 0)
+const responsePageSize = computed(() => detail.value?.size || pageSize.value)
+const safeTotalPages = computed(() => Math.max(totalPages.value || 1, 1))
+
+const isVocabularyBank = computed(() => {
+  return ['cet4', 'cet6'].includes(bank.value?.code) || questions.value.some((question) => question.type === 'vocabulary')
+})
+
+const itemUnit = computed(() => (isVocabularyBank.value ? '词' : '题'))
+const pageStart = computed(() => (total.value ? page.value * responsePageSize.value + 1 : 0))
+const pageEnd = computed(() => Math.min(total.value, page.value * responsePageSize.value + questions.value.length))
 
 const questionTypeLabel = (type) => {
   const labels = {
     single: '单选题',
     multiple: '多选题',
     short: '应用题',
+    vocabulary: '词汇卡片',
   }
   return labels[type] || '题目'
 }
@@ -30,25 +56,91 @@ const optionKey = (option) => {
 }
 
 const answerKeys = (question) => {
-  return String(question.answer || '')
+  const keys = String(question.answer || '')
     .split(/[,，、\s]+/)
     .map((item) => item.trim().toUpperCase())
     .filter(Boolean)
+  if (keys.length === 1 && /^[A-Z]{2,}$/.test(keys[0])) {
+    return keys[0].split('')
+  }
+  return keys
 }
 
-const selectedOption = (question) => selectedOptions.value[question.id]
+const isMultipleQuestion = (question) => question.type === 'multiple' || answerKeys(question).length > 1
+
+const selectedOptionKeys = (question) => {
+  const selected = selectedOptions.value[question.id]
+  if (Array.isArray(selected)) {
+    return selected
+  }
+  return selected ? [selected] : []
+}
+
+const isOptionSelected = (question, option) => {
+  return selectedOptionKeys(question).includes(optionKey(option))
+}
+
+const hasAnswered = (question) => selectedOptionKeys(question).length > 0
+
+const hasSameKeys = (left, right) => {
+  return left.length === right.length && left.every((item) => right.includes(item))
+}
+
+const isQuestionCorrect = (question) => {
+  return hasSameKeys(selectedOptionKeys(question), answerKeys(question))
+}
 
 const isOptionCorrect = (question, option) => {
   return answerKeys(question).includes(optionKey(option))
 }
 
+const recordLearningEvent = (payload) => {
+  recordProfileLearningEvent({
+    setCode: bank.value?.code || route.params.courseCode,
+    ...payload,
+  }).catch((error) => {
+    console.warn('failed to record profile learning event:', error)
+  })
+}
+
+const recordChoiceAnswer = (question, selectedKeys) => {
+  const correctKeys = answerKeys(question)
+  if (!question?.id || !selectedKeys.length || !correctKeys.length) {
+    return
+  }
+  recordLearningEvent({
+    eventType: 'answer',
+    questionId: question.id,
+    questionType: question.type,
+    selectedAnswer: selectedKeys.join(','),
+    correctAnswer: correctKeys.join(','),
+    isCorrect: hasSameKeys(selectedKeys, correctKeys),
+  })
+}
+
 const selectOption = (question, option) => {
+  const key = optionKey(option)
+  if (isMultipleQuestion(question)) {
+    const selected = selectedOptionKeys(question)
+    const nextSelected = selected.includes(key)
+      ? selected.filter((item) => item !== key)
+      : [...selected, key]
+    selectedOptions.value = {
+      ...selectedOptions.value,
+      [question.id]: nextSelected,
+    }
+    if (nextSelected.length >= answerKeys(question).length) {
+      recordChoiceAnswer(question, nextSelected)
+    }
+    console.info('course question option toggled:', question.id, key)
+    return
+  }
   selectedOptions.value = {
     ...selectedOptions.value,
-    [question.id]: optionKey(option),
+    [question.id]: key,
   }
-  // TODO: 接入答题记录接口，例如 POST /api/academy/question-bank/courses/{code}/answers
-  console.info('course question option selected:', question.id, optionKey(option))
+  recordChoiceAnswer(question, [key])
+  console.info('course question option selected:', question.id, key)
 }
 
 const coverSrc = computed(() => {
@@ -64,34 +156,264 @@ const handleCoverError = (event) => {
   event.currentTarget.src = bank.value.fallbackCoverUrl
 }
 
-const toggleAnswer = (id) => {
+const toggleAnswer = (question) => {
+  const id = question?.id
+  if (!id) return
   const next = new Set(openedAnswers.value)
   if (next.has(id)) {
     next.delete(id)
   } else {
     next.add(id)
+    recordLearningEvent({
+      eventType: 'reveal',
+      questionId: question.id,
+      questionType: question.type,
+      correctAnswer: question.answer,
+    })
   }
   openedAnswers.value = next
 }
 
+const vocabularyStorageKey = (suffix) => {
+  return bank.value?.code ? `study-platform:vocabulary:${bank.value.code}:${suffix}` : ''
+}
+
+const readStorageObject = (key) => {
+  if (!key) return {}
+  try {
+    return JSON.parse(localStorage.getItem(key) || '{}')
+  } catch (error) {
+    console.warn('failed to read vocabulary storage:', key, error)
+    return {}
+  }
+}
+
+const writeStorageObject = (key, value) => {
+  if (!key) return
+  localStorage.setItem(key, JSON.stringify(value))
+}
+
+const loadVocabularyState = () => {
+  vocabularyProgress.value = readStorageObject(vocabularyStorageKey('progress'))
+  vocabularyCache.value = readStorageObject(vocabularyStorageKey('review-cache'))
+}
+
+const saveVocabularyState = () => {
+  writeStorageObject(vocabularyStorageKey('progress'), vocabularyProgress.value)
+  writeStorageObject(vocabularyStorageKey('review-cache'), vocabularyCache.value)
+}
+
+const progressFor = (question) => vocabularyProgress.value[question?.stem] || ''
+
+const progressLabel = (status) => {
+  const labels = {
+    known: '认识',
+    fuzzy: '模糊',
+    unknown: '不认识',
+  }
+  return labels[status] || '未标记'
+}
+
+const progressSummary = computed(() => {
+  return Object.values(vocabularyProgress.value).reduce(
+    (summary, status) => ({
+      ...summary,
+      [status]: (summary[status] || 0) + 1,
+    }),
+    { known: 0, fuzzy: 0, unknown: 0 },
+  )
+})
+
+const reviewCards = computed(() => {
+  return Object.values(vocabularyCache.value).filter((question) => {
+    const status = progressFor(question)
+    return status === 'fuzzy' || status === 'unknown'
+  })
+})
+
+const currentPageReviewCards = computed(() => {
+  return questions.value.filter((question) => {
+    const status = progressFor(question)
+    return status === 'fuzzy' || status === 'unknown'
+  })
+})
+
+const randomCards = computed(() => {
+  shuffleTick.value
+  const items = [...questions.value]
+  for (let index = items.length - 1; index > 0; index -= 1) {
+    const target = Math.floor(Math.random() * (index + 1))
+    ;[items[index], items[target]] = [items[target], items[index]]
+  }
+  return items
+})
+
+const activeVocabularyDeck = computed(() => {
+  if (vocabularyMode.value === 'review') {
+    return reviewCards.value.length ? reviewCards.value : currentPageReviewCards.value
+  }
+  if (vocabularyMode.value === 'random') {
+    return randomCards.value
+  }
+  return questions.value
+})
+
+const currentVocabularyCard = computed(() => activeVocabularyDeck.value[currentCardIndex.value] || null)
+
+const resetVocabularyCard = () => {
+  currentCardIndex.value = 0
+  cardAnswerVisible.value = false
+}
+
+const setVocabularyMode = (mode) => {
+  vocabularyMode.value = mode
+  if (mode === 'random') {
+    shuffleTick.value += 1
+  }
+  resetVocabularyCard()
+}
+
+const nextVocabularyCard = () => {
+  if (!activeVocabularyDeck.value.length) return
+  currentCardIndex.value = Math.min(currentCardIndex.value + 1, activeVocabularyDeck.value.length - 1)
+  cardAnswerVisible.value = false
+}
+
+const previousVocabularyCard = () => {
+  currentCardIndex.value = Math.max(currentCardIndex.value - 1, 0)
+  cardAnswerVisible.value = false
+}
+
+const markVocabularyCard = (question, status) => {
+  if (!question?.stem) return
+  vocabularyProgress.value = {
+    ...vocabularyProgress.value,
+    [question.stem]: status,
+  }
+  const nextCache = { ...vocabularyCache.value }
+  if (status === 'known') {
+    delete nextCache[question.stem]
+  } else {
+    nextCache[question.stem] = question
+  }
+  vocabularyCache.value = nextCache
+  saveVocabularyState()
+  recordLearningEvent({
+    eventType: 'vocabulary',
+    questionId: question.id,
+    questionType: question.type,
+    selectedAnswer: status,
+    correctAnswer: question.answer,
+    isCorrect: status === 'known',
+    vocabularyStatus: status,
+  })
+  nextVocabularyCard()
+}
+
+const selectVocabularyCard = (question) => {
+  const activeIndex = activeVocabularyDeck.value.findIndex((item) => item.stem === question.stem)
+  if (activeIndex >= 0) {
+    currentCardIndex.value = activeIndex
+    cardAnswerVisible.value = false
+    return
+  }
+  vocabularyMode.value = 'sequence'
+  currentCardIndex.value = Math.max(
+    questions.value.findIndex((item) => item.stem === question.stem),
+    0,
+  )
+  cardAnswerVisible.value = false
+}
+
+const scrollToFirstQuestion = () => {
+  requestAnimationFrame(() => {
+    const target = questionListRef.value?.querySelector(
+      '.vocabulary-card, .question-bank-question-card, .question-course-empty',
+    )
+    ;(target || questionListRef.value)?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    })
+  })
+}
+
 const handleStartPractice = () => {
-  // TODO: 接入答题提交接口，例如 POST /api/academy/question-bank/courses/{code}/sessions
-  console.info('start course question bank practice reserved:', bank.value?.code)
+  if (isVocabularyBank.value) {
+    setVocabularyMode('sequence')
+  }
+  scrollToFirstQuestion()
 }
 
 const loadDetail = async () => {
   loading.value = true
   errorMessage.value = ''
   try {
-    detail.value = await fetchQuestionBankCourse(route.params.courseCode)
+    const data = await fetchQuestionBankCourse(route.params.courseCode, {
+      page: page.value,
+      size: pageSize.value,
+      keyword: keyword.value,
+    })
+    detail.value = data
+    page.value = data?.page ?? page.value
+    pageSize.value = data?.size ?? pageSize.value
+    pageJumpInput.value = String(page.value + 1)
     selectedOptions.value = {}
     openedAnswers.value = new Set()
+    if (isVocabularyBank.value) {
+      loadVocabularyState()
+      resetVocabularyCard()
+    }
   } catch (error) {
     errorMessage.value = error.message || '课程题库加载失败'
   } finally {
     loading.value = false
   }
 }
+
+const submitSearch = () => {
+  keyword.value = keywordInput.value.trim()
+  page.value = 0
+  loadDetail()
+}
+
+const clearSearch = () => {
+  keywordInput.value = ''
+  keyword.value = ''
+  page.value = 0
+  loadDetail()
+}
+
+const goToPage = (nextPage, shouldScroll = false) => {
+  if (nextPage < 0 || (totalPages.value && nextPage >= totalPages.value)) {
+    return
+  }
+  page.value = nextPage
+  loadDetail().then(() => {
+    if (shouldScroll) {
+      scrollToFirstQuestion()
+    }
+  })
+}
+
+const jumpToPage = () => {
+  const requestedPage = Number(pageJumpInput.value)
+  if (!Number.isFinite(requestedPage)) {
+    pageJumpInput.value = String(page.value + 1)
+    return
+  }
+  const targetPage = Math.min(Math.max(Math.trunc(requestedPage), 1), safeTotalPages.value) - 1
+  goToPage(targetPage, true)
+}
+
+watch(activeVocabularyDeck, () => {
+  if (currentCardIndex.value >= activeVocabularyDeck.value.length) {
+    currentCardIndex.value = Math.max(activeVocabularyDeck.value.length - 1, 0)
+  }
+})
+
+watch(currentVocabularyCard, () => {
+  cardAnswerVisible.value = false
+})
 
 onMounted(loadDetail)
 </script>
@@ -103,7 +425,9 @@ onMounted(loadDetail)
       <span>&gt;</span>
       <RouterLink to="/academy/question-bank">题库</RouterLink>
       <span>&gt;</span>
-      <RouterLink to="/academy/question-bank/courses">课程题库</RouterLink>
+      <RouterLink :to="{ path: '/academy/question-bank/courses', query: { category: bank?.categoryCode } }">
+        课程题库
+      </RouterLink>
       <span>&gt;</span>
       <strong>{{ bank?.title || '题库详情' }}</strong>
     </nav>
@@ -119,94 +443,224 @@ onMounted(loadDetail)
           <h1>{{ bank.title }}</h1>
           <span>{{ bank.description }}</span>
           <div class="question-bank-detail-meta">
-            <strong>{{ bank.questionCount }} 题</strong>
+            <strong>{{ bank.questionCount }} {{ itemUnit }}</strong>
             <strong>{{ bank.difficultyLabel }}</strong>
             <strong>{{ bank.statusLabel }}</strong>
           </div>
-          <button type="button" @click="handleStartPractice">开始练习</button>
+          <button type="button" @click="handleStartPractice">
+            {{ isVocabularyBank ? '开始背词' : '开始练习' }}
+          </button>
         </div>
       </section>
 
-      <section class="question-bank-source-panel" aria-label="题库来源">
-        <div>
-          <h2>数据来源</h2>
-          <p>
-            当前题库数据由后端 API 从 MySQL 读取，来源入口已记录在数据库中，后续可继续扩展批量导入和审核流程。
-          </p>
-        </div>
-        <div>
-          <a
-            v-for="source in bank.sourceRefs"
-            :key="source"
-            :href="source"
-            target="_blank"
-            rel="noreferrer"
-          >
-            {{ source }}
-          </a>
-        </div>
-      </section>
-
-      <section class="question-bank-question-list" :aria-label="`${bank.title}题目列表`">
-        <header>
+      <section ref="questionListRef" class="question-bank-question-list" :aria-label="`${bank.title}题目列表`">
+        <header class="question-bank-list-header">
           <div>
-            <h2>题目预览</h2>
-            <p>选择题点击选项后显示判定和标准答案，后续可在这里接入做题记录、判分和错题本。</p>
+            <h2>{{ isVocabularyBank ? '背单词工作台' : '题目预览' }}</h2>
+            <p>
+              {{
+                isVocabularyBank
+                  ? '按页加载词汇卡片，支持顺序背词、随机抽词和本地错词复习。'
+                  : '选择题点击选项后显示判定和标准答案，非选择题可展开参考答案。'
+              }}
+            </p>
           </div>
+          <form class="question-bank-filter" @submit.prevent="submitSearch">
+            <input
+              v-model="keywordInput"
+              type="search"
+              :placeholder="isVocabularyBank ? '搜索单词或释义' : '搜索题干或答案'"
+            />
+            <button type="submit">搜索</button>
+            <button v-if="keyword" type="button" @click="clearSearch">清空</button>
+          </form>
         </header>
 
-        <article v-for="(question, index) in questions" :key="question.id" class="question-bank-question-card">
-          <div class="question-bank-question-head">
-            <span>{{ index + 1 }}</span>
+        <template v-if="isVocabularyBank">
+          <div class="vocabulary-toolbar" aria-label="背词模式">
+            <button
+              type="button"
+              :class="{ 'is-active': vocabularyMode === 'sequence' }"
+              @click="setVocabularyMode('sequence')"
+            >
+              顺序背词
+            </button>
+            <button
+              type="button"
+              :class="{ 'is-active': vocabularyMode === 'random' }"
+              @click="setVocabularyMode('random')"
+            >
+              随机抽词
+            </button>
+            <button
+              type="button"
+              :class="{ 'is-active': vocabularyMode === 'review' }"
+              @click="setVocabularyMode('review')"
+            >
+              薄弱词复习
+            </button>
+          </div>
+
+          <div class="vocabulary-progress-grid" aria-label="背词进度">
             <div>
-              <p>{{ questionTypeLabel(question.type) }} · {{ question.difficultyLabel }}</p>
-              <h3>{{ question.stem }}</h3>
+              <strong>{{ progressSummary.known || 0 }}</strong>
+              <span>认识</span>
+            </div>
+            <div>
+              <strong>{{ progressSummary.fuzzy || 0 }}</strong>
+              <span>模糊</span>
+            </div>
+            <div>
+              <strong>{{ progressSummary.unknown || 0 }}</strong>
+              <span>不认识</span>
             </div>
           </div>
 
-          <ul v-if="question.options?.length" class="question-bank-options">
-            <li v-for="option in question.options" :key="option">
-              <button
-                type="button"
-                :class="{
-                  'is-selected': selectedOption(question) === optionKey(option),
-                  'is-correct': selectedOption(question) === optionKey(option) && isOptionCorrect(question, option),
-                  'is-wrong': selectedOption(question) === optionKey(option) && !isOptionCorrect(question, option),
-                }"
-                @click="selectOption(question, option)"
-              >
-                {{ option }}
+          <div v-if="!activeVocabularyDeck.length" class="question-course-empty">
+            当前模式下暂无词汇。可以先在顺序模式中标记“模糊”或“不认识”，它们会进入薄弱词复习。
+          </div>
+
+          <div v-else class="vocabulary-workbench">
+            <article class="vocabulary-card">
+              <p>{{ questionTypeLabel(currentVocabularyCard.type) }} · {{ currentVocabularyCard.difficultyLabel }}</p>
+              <h3>{{ currentVocabularyCard.stem }}</h3>
+              <span>第 {{ currentCardIndex + 1 }} / {{ activeVocabularyDeck.length }} 张</span>
+
+              <button type="button" class="vocabulary-reveal" @click="cardAnswerVisible = !cardAnswerVisible">
+                {{ cardAnswerVisible ? '收起释义' : '查看释义' }}
               </button>
-            </li>
-          </ul>
 
-          <div
-            v-if="question.options?.length && selectedOption(question)"
-            class="question-bank-answer"
-            :class="{
-              'is-correct': answerKeys(question).includes(selectedOption(question)),
-              'is-wrong': !answerKeys(question).includes(selectedOption(question)),
-            }"
-          >
-            <strong>{{ answerKeys(question).includes(selectedOption(question)) ? '回答正确' : '回答错误' }}</strong>
-            <p>标准答案：{{ question.answer }}</p>
-            <p>{{ question.explanation }}</p>
+              <div v-if="cardAnswerVisible" class="vocabulary-answer">
+                <strong>{{ currentVocabularyCard.answer }}</strong>
+                <p>{{ currentVocabularyCard.explanation }}</p>
+              </div>
+
+              <div class="vocabulary-actions">
+                <button type="button" class="is-known" @click="markVocabularyCard(currentVocabularyCard, 'known')">
+                  认识
+                </button>
+                <button type="button" class="is-fuzzy" @click="markVocabularyCard(currentVocabularyCard, 'fuzzy')">
+                  模糊
+                </button>
+                <button type="button" class="is-unknown" @click="markVocabularyCard(currentVocabularyCard, 'unknown')">
+                  不认识
+                </button>
+              </div>
+
+              <div class="vocabulary-card-nav">
+                <button type="button" :disabled="currentCardIndex === 0" @click="previousVocabularyCard">上一词</button>
+                <button
+                  type="button"
+                  :disabled="currentCardIndex >= activeVocabularyDeck.length - 1"
+                  @click="nextVocabularyCard"
+                >
+                  下一词
+                </button>
+              </div>
+            </article>
+
+            <aside class="vocabulary-page-list" aria-label="当前页词汇">
+              <h3>当前页词汇</h3>
+              <button
+                v-for="(question, index) in questions"
+                :key="question.id"
+                type="button"
+                :class="{ 'is-active': currentVocabularyCard?.stem === question.stem }"
+                @click="selectVocabularyCard(question)"
+              >
+                <strong>{{ question.stem }}</strong>
+                <span>{{ progressLabel(progressFor(question)) }}</span>
+              </button>
+            </aside>
           </div>
+        </template>
 
-          <button
-            v-if="!question.options?.length"
-            type="button"
-            class="question-bank-answer-toggle"
-            @click="toggleAnswer(question.id)"
-          >
-            {{ openedAnswers.has(question.id) ? '收起答案' : '查看答案' }}
-          </button>
+        <template v-else>
+          <article v-for="(question, index) in questions" :key="question.id" class="question-bank-question-card">
+            <div class="question-bank-question-head">
+              <span>{{ page * responsePageSize + index + 1 }}</span>
+              <div>
+                <p>{{ questionTypeLabel(question.type) }} · {{ question.difficultyLabel }}</p>
+                <h3>{{ question.stem }}</h3>
+              </div>
+            </div>
 
-          <div v-if="!question.options?.length && openedAnswers.has(question.id)" class="question-bank-answer">
-            <strong>参考答案：{{ question.answer }}</strong>
-            <p>{{ question.explanation }}</p>
+            <ul v-if="question.options?.length" class="question-bank-options">
+              <li v-for="option in question.options" :key="option">
+                <button
+                  type="button"
+                  :aria-pressed="isOptionSelected(question, option)"
+                  :class="{
+                    'is-selected': isOptionSelected(question, option),
+                    'is-correct':
+                      hasAnswered(question) &&
+                      isQuestionCorrect(question) &&
+                      isOptionSelected(question, option) &&
+                      isOptionCorrect(question, option),
+                    'is-wrong':
+                      hasAnswered(question) &&
+                      !isQuestionCorrect(question) &&
+                      isOptionSelected(question, option),
+                  }"
+                  @click="selectOption(question, option)"
+                >
+                  {{ option }}
+                </button>
+              </li>
+            </ul>
+
+            <div
+              v-if="question.options?.length && hasAnswered(question)"
+              class="question-bank-answer"
+              :class="{
+                'is-correct': isQuestionCorrect(question),
+                'is-wrong': !isQuestionCorrect(question),
+              }"
+            >
+              <strong>{{ isQuestionCorrect(question) ? '回答正确' : '回答错误' }}</strong>
+              <p>标准答案：{{ question.answer }}</p>
+              <p>{{ question.explanation }}</p>
+            </div>
+
+            <button
+              v-if="!question.options?.length"
+              type="button"
+              class="question-bank-answer-toggle"
+              @click="toggleAnswer(question)"
+            >
+              {{ openedAnswers.has(question.id) ? '收起答案' : '查看答案' }}
+            </button>
+
+            <div v-if="!question.options?.length && openedAnswers.has(question.id)" class="question-bank-answer">
+              <strong>参考答案：{{ question.answer }}</strong>
+              <p>{{ question.explanation }}</p>
+            </div>
+          </article>
+        </template>
+
+        <footer class="question-bank-pagination">
+          <span>当前 {{ pageStart }}-{{ pageEnd }} / 共 {{ total }} {{ itemUnit }}</span>
+          <div>
+            <button type="button" :disabled="page <= 0" @click="goToPage(page - 1)">上一页</button>
+            <strong>第 {{ page + 1 }} / {{ safeTotalPages }} 页</strong>
+            <button type="button" :disabled="page >= safeTotalPages - 1" @click="goToPage(page + 1)">
+              下一页
+            </button>
           </div>
-        </article>
+          <form class="question-bank-page-jump" @submit.prevent="jumpToPage">
+            <label for="question-bank-page-jump">跳转到</label>
+            <input
+              id="question-bank-page-jump"
+              v-model="pageJumpInput"
+              type="number"
+              min="1"
+              :max="safeTotalPages"
+              inputmode="numeric"
+            />
+            <span>页</span>
+            <button type="submit">跳转</button>
+          </form>
+        </footer>
       </section>
     </template>
   </main>

@@ -4,11 +4,13 @@ import com.cupk.academy.dto.QuestionBankProblemPageResponse;
 import com.cupk.academy.dto.QuestionBankProblemResponse;
 import com.cupk.academy.dto.QuestionBankSubjectResponse;
 import com.cupk.academy.dto.CourseQuestionBankCategoryResponse;
+import com.cupk.academy.dto.CourseQuestionBankQuestionPageResponse;
 import com.cupk.academy.dto.CourseQuestionBankQuestionResponse;
 import com.cupk.academy.dto.CourseQuestionBankSetResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -238,16 +240,105 @@ public class QuestionBankRepository {
         }
     }
 
-    public List<CourseQuestionBankQuestionResponse> findCourseQuestionBankQuestions(String code) {
+    public CourseQuestionBankQuestionPageResponse findCourseQuestionBankQuestions(String code, String keyword, int page, int size) {
+        List<Object> params = new ArrayList<>();
+        params.add(code);
+        String keywordCondition = "";
+        if (keyword != null && !keyword.isBlank()) {
+            keywordCondition = " AND (q.stem LIKE ? OR q.answer LIKE ? OR q.explanation LIKE ?)";
+            String like = "%" + keyword.trim() + "%";
+            params.add(like);
+            params.add(like);
+            params.add(like);
+        }
+
+        Long total = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM course_question_bank_questions q
+                JOIN course_question_bank_sets s ON s.id = q.set_id
+                WHERE s.set_code = ?
+                %s
+                """.formatted(keywordCondition),
+                Long.class,
+                params.toArray()
+        );
+        int offset = Math.max(0, page) * size;
+        List<Object> listParams = new ArrayList<>(params);
+        listParams.add(size);
+        listParams.add(offset);
         String sql = """
                 SELECT q.id, q.question_type, q.stem, CAST(q.options_json AS CHAR) AS options_json,
                        q.answer, q.explanation, q.difficulty_label, q.source_url
                 FROM course_question_bank_questions q
                 JOIN course_question_bank_sets s ON s.id = q.set_id
                 WHERE s.set_code = ?
+                %s
                 ORDER BY q.sort_order ASC, q.id ASC
+                LIMIT ? OFFSET ?
+                """.formatted(keywordCondition);
+        List<CourseQuestionBankQuestionResponse> items =
+                jdbcTemplate.query(sql, this::mapCourseQuestionBankQuestion, listParams.toArray());
+        long safeTotal = total == null ? 0 : total;
+        int totalPages = size <= 0 ? 0 : (int) Math.ceil((double) safeTotal / size);
+        return new CourseQuestionBankQuestionPageResponse(items, Math.max(0, page), size, safeTotal, totalPages);
+    }
+
+    public long countCourseQuestionBankQuestions(String code, String questionType) {
+        Long total = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM course_question_bank_questions q
+                JOIN course_question_bank_sets s ON s.id = q.set_id
+                WHERE s.set_code = ? AND q.question_type = ?
+                """,
+                Long.class,
+                code,
+                questionType
+        );
+        return total == null ? 0 : total;
+    }
+
+    public void deleteCourseQuestionBankQuestions(String code) {
+        jdbcTemplate.update(
+                """
+                DELETE q
+                FROM course_question_bank_questions q
+                JOIN course_question_bank_sets s ON s.id = q.set_id
+                WHERE s.set_code = ?
+                """,
+                code
+        );
+    }
+
+    public void batchInsertCourseQuestionBankQuestions(String code, List<CourseQuestionBankQuestionSeed> questions) {
+        if (questions == null || questions.isEmpty()) {
+            return;
+        }
+        Long setId = jdbcTemplate.queryForObject(
+                "SELECT id FROM course_question_bank_sets WHERE set_code = ?",
+                Long.class,
+                code
+        );
+        if (setId == null) {
+            return;
+        }
+        String sql = """
+                INSERT INTO course_question_bank_questions
+                  (set_id, question_type, stem, options_json, answer, explanation, difficulty_label, source_url, sort_order)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
-        return jdbcTemplate.query(sql, this::mapCourseQuestionBankQuestion, code);
+        jdbcTemplate.batchUpdate(sql, questions, 500, (PreparedStatement ps, CourseQuestionBankQuestionSeed question) -> {
+            ps.setLong(1, setId);
+            ps.setString(2, question.type());
+            ps.setString(3, question.stem());
+            ps.setString(4, toJson(question.options()));
+            ps.setString(5, question.answer());
+            ps.setString(6, question.explanation());
+            ps.setString(7, question.difficultyLabel());
+            ps.setString(8, question.sourceUrl());
+            ps.setInt(9, question.sortOrder());
+        });
     }
 
     private String buildProblemWhere(String subjectCode, String keyword, Integer difficulty, List<Object> params) {
@@ -360,6 +451,18 @@ public class QuestionBankRepository {
         } catch (JsonProcessingException ex) {
             return "[]";
         }
+    }
+
+    public record CourseQuestionBankQuestionSeed(
+            String type,
+            String stem,
+            List<String> options,
+            String answer,
+            String explanation,
+            String difficultyLabel,
+            String sourceUrl,
+            int sortOrder
+    ) {
     }
 
     private record CourseQuestionBankCategoryBuilder(

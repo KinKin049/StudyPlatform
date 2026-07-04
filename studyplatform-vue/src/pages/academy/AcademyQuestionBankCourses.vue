@@ -1,10 +1,11 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { computed, onMounted, ref, watch } from 'vue'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { fetchQuestionBankCourseCatalog } from '../../api/academy'
 import { resolveResourceUrl } from '../../api/request'
 
 const router = useRouter()
+const route = useRoute()
 
 const categories = ref([])
 const activeCategoryCode = ref('')
@@ -25,18 +26,35 @@ const readySets = computed(() => {
     .filter((item) => item.routePath && item.questionCount > 0).length
 })
 
+const syncActiveCategoryFromRoute = () => {
+  const categoryCode = String(route.query.category || '')
+  activeCategoryCode.value = categories.value.some((category) => category.code === categoryCode)
+    ? categoryCode
+    : categories.value[0]?.code || ''
+}
+
 const loadCatalog = async () => {
   loading.value = true
   errorMessage.value = ''
   try {
     const data = await fetchQuestionBankCourseCatalog()
     categories.value = data || []
-    activeCategoryCode.value = categories.value[0]?.code || ''
+    syncActiveCategoryFromRoute()
   } catch (error) {
     errorMessage.value = error.message || '课程题库目录加载失败'
   } finally {
     loading.value = false
   }
+}
+
+const setActiveCategory = (categoryCode) => {
+  activeCategoryCode.value = categoryCode
+  router.replace({
+    query: {
+      ...route.query,
+      category: categoryCode,
+    },
+  })
 }
 
 const coverSrc = (set) => {
@@ -59,6 +77,15 @@ const openSet = (set) => {
   // TODO: 接入未完成题库，例如 /api/academy/question-bank/courses/{code}
   console.info('course question bank action reserved:', set.code)
 }
+
+watch(
+  () => route.query.category,
+  () => {
+    if (categories.value.length) {
+      syncActiveCategoryFromRoute()
+    }
+  },
+)
 
 onMounted(loadCatalog)
 </script>
@@ -104,7 +131,7 @@ onMounted(loadCatalog)
           :key="category.code"
           type="button"
           :class="{ 'is-active': category.code === activeCategoryCode }"
-          @click="activeCategoryCode = category.code"
+          @click="setActiveCategory(category.code)"
         >
           <strong>{{ category.name }}</strong>
           <span>{{ category.sets?.length || 0 }} 个方向</span>
