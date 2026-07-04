@@ -149,8 +149,10 @@
   .question-catalog-tabs,
   .question-catalog-grid,
   .question-bank-detail-hero,
+  .question-bank-mistake-hero,
   .question-bank-source-panel,
   .question-bank-options,
+  .question-bank-favorite-options,
   .vocabulary-progress-grid,
   .vocabulary-workbench {
     grid-template-columns: 1fr;
@@ -183,7 +185,8 @@
     width: 100%;
   }
 
-  .question-bank-filter input {
+  .question-bank-filter input,
+  .question-bank-filter select {
     width: 100%;
   }
 
@@ -199,9 +202,17 @@
     grid-template-columns: 1fr;
   }
 
+  .question-bank-question-title,
+  .vocabulary-card-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
   .question-bank-options,
+  .question-bank-favorite-options,
   .question-bank-answer-toggle,
-  .question-bank-answer {
+  .question-bank-answer,
+  .question-bank-mistake-vocabulary {
     margin-left: 0;
   }
 

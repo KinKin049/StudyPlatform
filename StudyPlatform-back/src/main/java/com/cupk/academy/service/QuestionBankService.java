@@ -5,6 +5,14 @@ import com.cupk.academy.dto.CourseQuestionBankDetailResponse;
 import com.cupk.academy.dto.CourseQuestionBankQuestionPageResponse;
 import com.cupk.academy.dto.CourseQuestionBankQuestionResponse;
 import com.cupk.academy.dto.CourseQuestionBankSetResponse;
+import com.cupk.academy.dto.QuestionBankFavoritePageResponse;
+import com.cupk.academy.dto.QuestionBankFavoriteRequest;
+import com.cupk.academy.dto.QuestionBankFavoriteSummaryResponse;
+import com.cupk.academy.dto.QuestionBankFavoriteToggleResponse;
+import com.cupk.academy.dto.QuestionBankMistakeAnswerRequest;
+import com.cupk.academy.dto.QuestionBankMistakeAnswerResponse;
+import com.cupk.academy.dto.QuestionBankMistakePageResponse;
+import com.cupk.academy.dto.QuestionBankMistakeSummaryResponse;
 import com.cupk.academy.dto.QuestionBankImportResponse;
 import com.cupk.academy.dto.QuestionBankProblemPageResponse;
 import com.cupk.academy.dto.QuestionBankProblemResponse;
@@ -96,7 +104,13 @@ public class QuestionBankService {
         int normalizedPage = Math.max(page, 0);
         int normalizedSize = Math.max(1, Math.min(size, 100));
         CourseQuestionBankQuestionPageResponse questionPage =
-                questionBankRepository.findCourseQuestionBankQuestions(code, keyword, normalizedPage, normalizedSize);
+                questionBankRepository.findCourseQuestionBankQuestions(
+                        code,
+                        keyword,
+                        normalizedPage,
+                        normalizedSize,
+                        DEFAULT_USER_ID
+                );
         return new CourseQuestionBankDetailResponse(
                 bank,
                 questionPage.items(),
@@ -230,6 +244,51 @@ public class QuestionBankService {
             }
         }
         return tagNameMap;
+    }
+
+    private long validateFavoriteQuestion(QuestionBankFavoriteRequest request) {
+        if (request == null || request.questionId() <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "题目编号无效");
+        }
+        return questionBankRepository.findCourseQuestionAnswerReference(request.questionId())
+                .map(QuestionBankRepository.CourseQuestionAnswerReference::questionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "题目不存在"));
+    }
+
+    private boolean isCourseQuestionAnswerCorrect(String type, String selectedAnswer, String correctAnswer) {
+        if ("vocabulary".equalsIgnoreCase(type)) {
+            return "known".equalsIgnoreCase(selectedAnswer);
+        }
+        List<String> selectedKeys = normalizeAnswerKeys(selectedAnswer);
+        List<String> correctKeys = normalizeAnswerKeys(correctAnswer);
+        return !selectedKeys.isEmpty()
+                && !correctKeys.isEmpty()
+                && selectedKeys.size() == correctKeys.size()
+                && selectedKeys.containsAll(correctKeys)
+                && correctKeys.containsAll(selectedKeys);
+    }
+
+    private List<String> normalizeAnswerKeys(String answer) {
+        if (answer == null || answer.isBlank()) {
+            return List.of();
+        }
+        String[] parts = answer.trim().toUpperCase().split("[,，、\\s]+");
+        List<String> keys = new ArrayList<>();
+        for (String part : parts) {
+            String key = part.trim();
+            if (!key.isBlank()) {
+                keys.add(key);
+            }
+        }
+        if (keys.size() == 1 && keys.get(0).matches("[A-Z]{2,}")) {
+            String compact = keys.get(0);
+            List<String> splitKeys = new ArrayList<>();
+            for (int index = 0; index < compact.length(); index += 1) {
+                splitKeys.add(String.valueOf(compact.charAt(index)));
+            }
+            return splitKeys;
+        }
+        return keys;
     }
 
     private List<LuoguListProblem> fetchLuoguProblemList(int page, Map<Integer, String> tagNameMap)

@@ -1,7 +1,13 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
+import { Star, StarFilled } from '@element-plus/icons-vue'
 import { RouterLink, useRoute } from 'vue-router'
-import { fetchQuestionBankCourse } from '../../api/academy'
+import {
+  addQuestionBankFavorite,
+  fetchQuestionBankCourse,
+  recordQuestionBankAnswer,
+  removeQuestionBankFavorite,
+} from '../../api/academy'
 import { recordProfileLearningEvent } from '../../api/profile'
 import { resolveResourceUrl } from '../../api/request'
 
@@ -24,6 +30,7 @@ const shuffleTick = ref(0)
 const vocabularyProgress = ref({})
 const vocabularyCache = ref({})
 const questionListRef = ref(null)
+const favoriteSubmitting = ref({})
 
 const bank = computed(() => detail.value?.bank)
 const questions = computed(() => detail.value?.questions || [])
@@ -94,6 +101,43 @@ const isOptionCorrect = (question, option) => {
   return answerKeys(question).includes(optionKey(option))
 }
 
+const isQuestionFavorited = (question) => Boolean(question?.favorite)
+
+const updateQuestionFavorite = (questionId, favorite) => {
+  if (!detail.value?.questions) return
+  detail.value = {
+    ...detail.value,
+    questions: detail.value.questions.map((question) =>
+      question.id === questionId ? { ...question, favorite } : question,
+    ),
+  }
+}
+
+const toggleQuestionFavorite = async (question) => {
+  if (!question?.id || favoriteSubmitting.value[question.id]) return
+  favoriteSubmitting.value = {
+    ...favoriteSubmitting.value,
+    [question.id]: true,
+  }
+  try {
+    if (isQuestionFavorited(question)) {
+      await removeQuestionBankFavorite(question.id)
+      updateQuestionFavorite(question.id, false)
+      console.info('question favorite removed:', question.id)
+    } else {
+      await addQuestionBankFavorite(question.id)
+      updateQuestionFavorite(question.id, true)
+      console.info('question favorite added:', question.id)
+    }
+  } catch (error) {
+    console.warn('failed to sync question favorite:', error)
+  } finally {
+    const nextSubmitting = { ...favoriteSubmitting.value }
+    delete nextSubmitting[question.id]
+    favoriteSubmitting.value = nextSubmitting
+  }
+}
+
 const recordLearningEvent = (payload) => {
   recordProfileLearningEvent({
     setCode: bank.value?.code || route.params.courseCode,
@@ -116,6 +160,26 @@ const recordChoiceAnswer = (question, selectedKeys) => {
     correctAnswer: correctKeys.join(','),
     isCorrect: hasSameKeys(selectedKeys, correctKeys),
   })
+  recordQuestionBankAnswer({
+    questionId: question.id,
+    selectedAnswer: selectedKeys.join(','),
+  }).then((result) => {
+    console.info('question bank mistake state synced:', question.id, result.message)
+  }).catch((error) => {
+    console.warn('failed to sync question bank mistake:', error)
+  })
+}
+
+const shouldRecordChoiceAnswer = (question, selectedKeys) => {
+  const correctKeys = answerKeys(question)
+  if (!selectedKeys.length || !correctKeys.length) {
+    return false
+  }
+  if (!isMultipleQuestion(question)) {
+    return true
+  }
+  const hasWrongKey = selectedKeys.some((key) => !correctKeys.includes(key))
+  return hasWrongKey || selectedKeys.length >= correctKeys.length
 }
 
 const selectOption = (question, option) => {
@@ -129,7 +193,7 @@ const selectOption = (question, option) => {
       ...selectedOptions.value,
       [question.id]: nextSelected,
     }
-    if (nextSelected.length >= answerKeys(question).length) {
+    if (shouldRecordChoiceAnswer(question, nextSelected)) {
       recordChoiceAnswer(question, nextSelected)
     }
     console.info('course question option toggled:', question.id, key)
@@ -307,6 +371,14 @@ const markVocabularyCard = (question, status) => {
     isCorrect: status === 'known',
     vocabularyStatus: status,
   })
+  recordQuestionBankAnswer({
+    questionId: question.id,
+    selectedAnswer: status,
+  }).then((result) => {
+    console.info('vocabulary mistake state synced:', question.id, result.message)
+  }).catch((error) => {
+    console.warn('failed to sync vocabulary mistake:', error)
+  })
   nextVocabularyCard()
 }
 
@@ -447,9 +519,14 @@ onMounted(loadDetail)
             <strong>{{ bank.difficultyLabel }}</strong>
             <strong>{{ bank.statusLabel }}</strong>
           </div>
-          <button type="button" @click="handleStartPractice">
-            {{ isVocabularyBank ? '开始背词' : '开始练习' }}
-          </button>
+          <div class="question-bank-detail-actions">
+            <button type="button" @click="handleStartPractice">
+              {{ isVocabularyBank ? '开始背词' : '开始练习' }}
+            </button>
+            <RouterLink :to="{ path: '/academy/question-bank/mistakes', query: { setCode: bank.code } }">
+              本题库错题
+            </RouterLink>
+          </div>
         </div>
       </section>
 
@@ -522,7 +599,9 @@ onMounted(loadDetail)
 
           <div v-else class="vocabulary-workbench">
             <article class="vocabulary-card">
-              <p>{{ questionTypeLabel(currentVocabularyCard.type) }} · {{ currentVocabularyCard.difficultyLabel }}</p>
+              <div class="vocabulary-card-head">
+                <p>{{ questionTypeLabel(currentVocabularyCard.type) }} · {{ currentVocabularyCard.difficultyLabel }}</p>
+              </div>
               <h3>{{ currentVocabularyCard.stem }}</h3>
               <span>第 {{ currentCardIndex + 1 }} / {{ activeVocabularyDeck.length }} 张</span>
 
@@ -536,14 +615,28 @@ onMounted(loadDetail)
               </div>
 
               <div class="vocabulary-actions">
-                <button type="button" class="is-known" @click="markVocabularyCard(currentVocabularyCard, 'known')">
-                  认识
-                </button>
-                <button type="button" class="is-fuzzy" @click="markVocabularyCard(currentVocabularyCard, 'fuzzy')">
-                  模糊
-                </button>
-                <button type="button" class="is-unknown" @click="markVocabularyCard(currentVocabularyCard, 'unknown')">
-                  不认识
+                <div class="vocabulary-memory-actions">
+                  <button type="button" class="is-known" @click="markVocabularyCard(currentVocabularyCard, 'known')">
+                    认识
+                  </button>
+                  <button type="button" class="is-fuzzy" @click="markVocabularyCard(currentVocabularyCard, 'fuzzy')">
+                    模糊
+                  </button>
+                  <button type="button" class="is-unknown" @click="markVocabularyCard(currentVocabularyCard, 'unknown')">
+                    不认识
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  class="question-bank-favorite-button vocabulary-favorite-button"
+                  :class="{ 'is-favorite': isQuestionFavorited(currentVocabularyCard) }"
+                  :disabled="favoriteSubmitting[currentVocabularyCard.id]"
+                  :aria-label="isQuestionFavorited(currentVocabularyCard) ? '取消收藏' : '收藏题目'"
+                  :title="isQuestionFavorited(currentVocabularyCard) ? '取消收藏' : '收藏题目'"
+                  @click="toggleQuestionFavorite(currentVocabularyCard)"
+                >
+                  <StarFilled v-if="isQuestionFavorited(currentVocabularyCard)" aria-hidden="true" />
+                  <Star v-else aria-hidden="true" />
                 </button>
               </div>
 
@@ -579,9 +672,23 @@ onMounted(loadDetail)
           <article v-for="(question, index) in questions" :key="question.id" class="question-bank-question-card">
             <div class="question-bank-question-head">
               <span>{{ page * responsePageSize + index + 1 }}</span>
-              <div>
-                <p>{{ questionTypeLabel(question.type) }} · {{ question.difficultyLabel }}</p>
-                <h3>{{ question.stem }}</h3>
+              <div class="question-bank-question-title">
+                <div>
+                  <p>{{ questionTypeLabel(question.type) }} · {{ question.difficultyLabel }}</p>
+                  <h3>{{ question.stem }}</h3>
+                </div>
+                <button
+                  type="button"
+                  class="question-bank-favorite-button"
+                  :class="{ 'is-favorite': isQuestionFavorited(question) }"
+                  :disabled="favoriteSubmitting[question.id]"
+                  :aria-label="isQuestionFavorited(question) ? '取消收藏' : '收藏题目'"
+                  :title="isQuestionFavorited(question) ? '取消收藏' : '收藏题目'"
+                  @click="toggleQuestionFavorite(question)"
+                >
+                  <StarFilled v-if="isQuestionFavorited(question)" aria-hidden="true" />
+                  <Star v-else aria-hidden="true" />
+                </button>
               </div>
             </div>
 
