@@ -51,8 +51,13 @@ public class QuestionBankController {
     }
 
     @GetMapping("/courses/{code}")
-    public CourseQuestionBankDetailResponse getCourseQuestionBank(@PathVariable String code) {
-        return questionBankService.getCourseQuestionBank(code);
+    public CourseQuestionBankDetailResponse getCourseQuestionBank(
+            @PathVariable String code,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size,
+            @RequestParam(required = false) String keyword
+    ) {
+        return questionBankService.getCourseQuestionBank(code, page, size, keyword);
     }
 
     @PostMapping("/import/luogu")

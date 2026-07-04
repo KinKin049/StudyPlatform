@@ -2,6 +2,7 @@ package com.cupk.academy.service;
 
 import com.cupk.academy.dto.CourseQuestionBankCategoryResponse;
 import com.cupk.academy.dto.CourseQuestionBankDetailResponse;
+import com.cupk.academy.dto.CourseQuestionBankQuestionPageResponse;
 import com.cupk.academy.dto.CourseQuestionBankQuestionResponse;
 import com.cupk.academy.dto.CourseQuestionBankSetResponse;
 import com.cupk.academy.dto.QuestionBankImportResponse;
@@ -84,12 +85,22 @@ public class QuestionBankService {
                 .toList();
     }
 
-    public CourseQuestionBankDetailResponse getCourseQuestionBank(String code) {
+    public CourseQuestionBankDetailResponse getCourseQuestionBank(String code, int page, int size, String keyword) {
         CourseQuestionBankSetResponse bank = questionBankRepository.findCourseQuestionBankSet(code)
                 .map(this::withBankCover)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "课程题库不存在"));
-        List<CourseQuestionBankQuestionResponse> questions = questionBankRepository.findCourseQuestionBankQuestions(code);
-        return new CourseQuestionBankDetailResponse(bank, questions);
+        int normalizedPage = Math.max(page, 0);
+        int normalizedSize = Math.max(1, Math.min(size, 100));
+        CourseQuestionBankQuestionPageResponse questionPage =
+                questionBankRepository.findCourseQuestionBankQuestions(code, keyword, normalizedPage, normalizedSize);
+        return new CourseQuestionBankDetailResponse(
+                bank,
+                questionPage.items(),
+                questionPage.page(),
+                questionPage.size(),
+                questionPage.total(),
+                questionPage.totalPages()
+        );
     }
 
     public QuestionBankImportResponse importLuoguProblems(int pages, int limit) {

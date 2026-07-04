@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>思想道德与法治 - 刷题系统</title>
+<style>
+  :root {
+    --primary: #4f46e5;
+    --primary-light: #eef2ff;
+    --success: #16a34a;
+    --danger: #dc2626;
+    --warning: #f59e0b;
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --text-light: #64748b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* Top Header */
+  .header {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: white;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,.12);
+  }
+  .header h1 {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  .header-actions { display: flex; gap: 10px; align-items: center; }
+  .header-actions select, .header-actions button {
+    padding: 6px 14px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    background: rgba(255,255,255,.2);
+    color: white;
+    transition: background .2s;
+  }
+  .header-actions select option { color: #1e293b; }
+  .header-actions select:hover, .header-actions button:hover { background: rgba(255,255,255,.35); }
+  .header-actions .btn-primary {
+    background: white;
+    color: var(--primary);
+    font-weight: 600;
+  }
+  .header-actions .btn-primary:hover { background: #f1f5f9; }
+
+  .stats-bar {
+    display: flex;
+    gap: 16px;
+    padding: 10px 24px;
+    background: white;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--text-light);
+    flex-wrap: wrap;
+  }
+  .stats-bar .stat { display: flex; align-items: center; gap: 4px; }
+  .stats-bar .stat strong { color: var(--text); }
+  .stats-bar .dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 4px;
+  }
+  .dot-single { background: #3b82f6; }
+  .dot-multi { background: #f59e0b; }
+  .dot-judge { background: #10b981; }
+
+  /* Layout */
+  .layout {
+    display: flex;
+    max-width: 1400px;
+    margin: 0 auto;
+    min-height: calc(100vh - 100px);
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: white;
+    border-right: 1px solid var(--border);
+    padding: 16px 0;
+    overflow-y: auto;
+    position: sticky;
+    top: 100px;
+    height: calc(100vh - 100px);
+  }
+  .sidebar-title {
+    padding: 8px 20px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .ch-nav {
+    display: block;
+    width: 100%;
+    padding: 10px 20px;
+    border: none;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text);
+    transition: all .15s;
+    border-left: 3px solid transparent;
+  }
+  .ch-nav:hover { background: var(--primary-light); }
+  .ch-nav.active {
+    background: var(--primary-light);
+    color: var(--primary);
+    font-weight: 600;
+    border-left-color: var(--primary);
+  }
+  .ch-nav .badge {
+    float: right;
+    background: var(--border);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .ch-nav.active .badge { background: var(--primary); color: white; }
+
+  .sidebar-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 8px 16px;
+  }
+
+  .sidebar-footer {
+    padding: 12px 20px;
+    font-size: 12px;
+    color: var(--text-light);
+    text-align: center;
+  }
+
+  /* Main Content */
+  .main {
+    flex: 1;
+    padding: 20px 24px;
+    max-width: 900px;
+  }
+
+  /* Title area */
+  .section-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .section-title .totals { font-size: 14px; font-weight: 400; color: var(--text-light); }
+  .filter-btns { display: flex; gap: 8px; margin-bottom: 16px; }
+  .filter-btn {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all .15s;
+  }
+  .filter-btn:hover { border-color: var(--primary); color: var(--primary); }
+  .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+  /* Question Cards */
+  .q-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 16px;
+    transition: box-shadow .2s;
+  }
+  .q-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  .q-card.correct { border-left: 4px solid var(--success); }
+  .q-card.wrong { border-left: 4px solid var(--danger); }
+  .q-card .q-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    font-size: 13px;
+  }
+  .q-card .q-num {
+    background: var(--primary-light);
+    color: var(--primary);
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 12px;
+  }
+  .q-card .q-type-badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .q-type-badge.single { background: #dbeafe; color: #1d4ed8; }
+  .q-type-badge.multi { background: #fef3c7; color: #b45309; }
+  .q-type-badge.judge { background: #d1fae5; color: #047857; }
+
+  .q-card .q-text {
+    font-size: 15px;
+    line-height: 1.7;
+    margin-bottom: 14px;
+  }
+
+  .q-card .q-options { list-style: none; }
+  .q-card .q-options li {
+    padding: 10px 14px;
+    margin-bottom: 6px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all .15s;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .q-card .q-options li:hover { background: #f1f5f9; border-color: #94a3b8; }
+  .q-card .q-options li.selected { background: #dbeafe; border-color: var(--primary); }
+  .q-card .q-options li.correct-answer {
+    background: #dcfce7;
+    border-color: var(--success);
+    font-weight: 600;
+  }
+  .q-card .q-options li.wrong-answer {
+    background: #fee2e2;
+    border-color: var(--danger);
+  }
+  .q-card .q-options li.disabled {
+    cursor: default;
+    opacity: .85;
+  }
+
+  .q-card .q-judge-btns {
+    display: flex;
+    gap: 12px;
+    margin: 10px 0;
+  }
+  .q-card .q-judge-btns button {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all .15s;
+    font-weight: 600;
+  }
+  .q-card .q-judge-btns button:hover { background: #f1f5f9; }
+  .q-card .q-judge-btns button.selected-true { background: #dcfce7; border-color: var(--success); color: var(--success); }
+  .q-card .q-judge-btns button.selected-false { background: #fee2e2; border-color: var(--danger); color: var(--danger); }
+  .q-card .q-judge-btns button.correct-answer { background: #dcfce7; border-color: var(--success); color: var(--success); }
+  .q-card .q-judge-btns button.wrong-answer { background: #fee2e2; border-color: var(--danger); color: var(--danger); }
+  .q-card .q-judge-btns button.disabled { cursor: default; }
+
+  /* Answer reveal area */
+  .q-card .q-answer {
+    margin-top: 12px;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    display: none;
+  }
+  .q-card .q-answer.show { display: block; }
+  .q-card .q-answer.result-correct { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+  .q-card .q-answer.result-wrong { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+  .q-card .q-answer.result-info { background: #f0f9ff; color: #1e40af; border: 1px solid #bae6fd; }
+
+  .q-card .q-actions {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+  }
+  .q-card .q-actions button {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all .15s;
+  }
+  .q-card .q-actions button:hover { background: #f1f5f9; border-color: var(--primary); color: var(--primary); }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-light);
+  }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state p { font-size: 16px; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .main { padding: 16px; }
+    .header h1 { font-size: 16px; }
+    .header-actions select, .header-actions button { font-size: 12px; padding: 4px 10px; }
+    .stats-bar { font-size: 12px; padding: 8px 16px; gap: 10px; }
+  }
+
+  /* Mobile sidebar toggle */
+  .mobile-menu-btn {
+    display: none;
+    background: rgba(255,255,255,.2);
+    border: none;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 18px;
+  }
+  @media (max-width: 768px) {
+    .mobile-menu-btn { display: block; }
+  }
+  .mobile-sidebar {
+    display: none;
+    position: fixed;
+    top: 56px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: white;
+    z-index: 99;
+    padding: 16px;
+    overflow-y: auto;
+  }
+  .mobile-sidebar.open { display: block; }
+</style>
+</head>
+<body>
+
+<div class="header" id="appHeader">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <button class="mobile-menu-btn" onclick="toggleMobileSidebar()">☰</button>
+    <h1>📖 思想道德与法治 · 刷题</h1>
+  </div>
+  <div class="header-actions">
+    <select id="modeSelect" onchange="changeMode()">
+      <option value="all">📚 全部显示</option>
+      <option value="random">🔀 随机模式</option>
+      <option value="wrong">❌ 错题集</option>
+    </select>
+    <select id="typeFilter" onchange="applyFilters()">
+      <option value="all">📝 全部题型</option>
+      <option value="single">🔵 单选题</option>
+      <option value="multi">🟡 多选题</option>
+      <option value="judge">🟢 判断题</option>
+    </select>
+    <button class="btn-primary" onclick="resetProgress()">🔄 重置</button>
+  </div>
+</div>
+
+<div class="stats-bar" id="statsBar">
+  <span class="stat">📊 总题: <strong id="totalCount">0</strong></span>
+  <span class="stat">✅ 已做: <strong id="doneCount">0</strong></span>
+  <span class="stat">🎯 正确: <strong id="correctCount">0</strong></span>
+  <span class="stat">❌ 错误: <strong id="wrongCount">0</strong></span>
+  <span class="stat" style="margin-left:auto;">
+    <span class="dot dot-single"></span>单选 <strong id="singleCount">0</strong>
+    <span class="dot dot-multi" style="margin-left:8px;"></span>多选 <strong id="multiCount">0</strong>
+    <span class="dot dot-judge" style="margin-left:8px;"></span>判断 <strong id="judgeCount">0</strong>
+  </span>
+</div>
+
+<div class="layout">
+  <!-- Desktop Sidebar -->
+  <div class="sidebar" id="desktopSidebar">
+    <div class="sidebar-title">📂 章节导航</div>
+    <div id="chapterNav"></div>
+  </div>
+
+  <!-- Mobile Sidebar -->
+  <div class="mobile-sidebar" id="mobileSidebar">
+    <div class="sidebar-title" style="padding:8px 4px;">📂 章节导航</div>
+    <div id="mobileChapterNav"></div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main" id="mainContent">
+    <div id="questionsContainer"></div>
+  </div>
+</div>
+
+<script>const QUIZ_DATA = [{"chapter": "绪论", "type": "single", "num": 1, "text": "“培养担当民族复兴大任的时代新人”是党的(       )提出的战略要求。", "options": ["A、十八大", "B、十八届六中全会", "C、十九大", "D、十九届三中全会"], "answer": "C"}, {"chapter": "绪论", "type": "single", "num": 2, "text": "(       )是我们理解当前所处历史方位的关键词。", "options": ["A、新思想", "B、新举措", "C、新格局", "D、新时代"], "answer": "D"}, {"chapter": "绪论", "type": "single", "num": 3, "text": "(       )和法治素养,是新时代大学生必须具备的基本素质。", "options": ["A、思想政治素质", "B、思想道德素质", "C、道德素质", "D、个人修养"], "answer": "B"}, {"chapter": "绪论", "type": "single", "num": 4, "text": "“学如弓弩,才如箭镞,识以领之,方能中鹄。”这句话告诉我们要(       )。", "options": ["A、有本领", "B、有担当", "C、有责任", "D、有理想"], "answer": "A"}, {"chapter": "绪论", "type": "single", "num": 5, "text": "大学生在大学阶段的首要任务是(       )。", "options": ["A、学习", "B、笃实", "C、立行", "D、修德"], "answer": "A"}, {"chapter": "绪论", "type": "single", "num": 6, "text": "党的十九大,提出了“培养担当(       )大任的时代新人”的战略要求。", "options": ["A、国家富强", "B、民族复兴", "C、社会和谐", "D、国富民强"], "answer": "B"}, {"chapter": "绪论", "type": "single", "num": 7, "text": "青春是用来(       )的。", "options": ["A、享受", "B、实践", "C、奋斗", "D、梦想"], "answer": "C"}, {"chapter": "绪论", "type": "single", "num": 8, "text": "没有崇高的(       ),就会导致精神上的“软骨病”。", "options": ["A、信仰", "B、精神境界", "C、精神追求", "D、理想信念"], "answer": "D"}, {"chapter": "绪论", "type": "single", "num": 9, "text": "法律是成文的道德,道德是内心的法律。这句话是要强调(       )", "options": ["A、法律和道德两种规范调节的领域相同", "B、法律和道德两种规范的实现方式相同", "C、法律和道德两种规范的实施载体相同", "D、法律和道德都具有规范社会行为,维护社会秩序的作用"], "answer": "D"}, {"chapter": "绪论", "type": "single", "num": 10, "text": "法律和道德是维护社会秩序的两种基本手段,下列关于二者关系的说法中,正确的是(       )", "options": ["A、法律是道德形成的基础,能够为道德规范的制定提供依据", "B、凡是道德所反对和谴责的行为,必定是法律所制裁的行为", "C、法律的调节更具有广泛性,能够渗透到道德不能调节的领域", "D、凡是法律所禁止和制裁的行为,通常也是道德所反对和谴责的行为"], "answer": "D"}, {"chapter": "绪论", "type": "single", "num": 11, "text": "党的十八大以来,在奋进新时代的伟大实践中,以习近平同志为核心的党中央团结带领全国各族人民,实现了第一个百年奋斗目标,在中华大地上(       ),历史性地解决了绝对贫困问题。", "options": ["A、全面建成小康社会", "B、全面建成现代化国家", "C、全面实现共同富裕", "D、全面完成脱贫攻坚"], "answer": "A"}, {"chapter": "绪论", "type": "multi", "num": 1, "text": "大学生活相对于过去的中学生活有哪些变化?(       )", "options": ["A、学习方式", "B、生活环境", "C、知识要求", "D、奋斗目标", "E、校园活动"], "answer": "ABCDE"}, {"chapter": "绪论", "type": "multi", "num": 2, "text": "大学与中学有较大的差异,大学的学习有哪些特点?(       )", "options": ["A、专业教育", "B、自主学习", "C、只学习基础课", "D、创新学习", "E、合作学习"], "answer": "ABDE"}, {"chapter": "绪论", "type": "multi", "num": 3, "text": "大学生需要对新时代有深入的了解和真切的感悟,这个新时代具体是(       )。", "options": ["A、是承前启后、继往开来、在新的历史条件下继续夺取中国特色社会主义伟大胜利的时代", "B、是决胜全面建成小康社会、进而全面建设社会主义现代化强国的时代", "C、是全国各族人民团结奋斗、不断创造美好生活、逐步实现全体人民共同富裕的时代", "D、是全体中华儿女勠力同心、奋力实现中华民族伟大复兴中国梦的时代", "E、是我国日益走近世界舞台中央、不断为人类做出更大贡献的时代"], "answer": "ABCDE"}, {"chapter": "绪论", "type": "multi", "num": 4, "text": "对于当代大学生来说,思想道德素质和法治素养非常重要性,那如何提高呢,具体途径有(       )", "options": ["A、通过理论学习和实践体验", "B、树立坚定的理想信念和正确的价值观念", "C、陶冶高尚的道德情操", "D、增强尊法学法守法用法的自觉性", "E、违法犯法,亲自经历"], "answer": "ABCD"}, {"chapter": "绪论", "type": "multi", "num": 5, "text": "“思想道德与法治”课程的主要特点是(       )", "options": ["A、思想性", "B、政治性", "C、科学性", "D、理论性", "E、实践性"], "answer": "ABCDE"}, {"chapter": "绪论", "type": "multi", "num": 6, "text": "大学阶段是(       )形成的关键时期。", "options": ["A、世界观", "B、人生观", "C、价值观", "D、婚恋观"], "answer": "ABC"}, {"chapter": "绪论", "type": "multi", "num": 7, "text": "新时代意味着中国特色社会主义(       )不断发展,拓展了发展中国家走向现代化的途径。", "options": ["A、道路", "B、理论", "C、制度", "D、文化"], "answer": "ABCD"}, {"chapter": "绪论", "type": "multi", "num": 8, "text": "(       )的人生,才是有意义的人生。", "options": ["A、有信念", "B、有梦想", "C、有奋斗", "D、有奉献"], "answer": "ABCD"}, {"chapter": "绪论", "type": "multi", "num": 9, "text": "进入大学,同学们应该培养哪些能力?(       )", "options": ["A、生活独立性", "B、人际交往", "C、学会抽烟喝酒", "D、自主学习"], "answer": "ABD"}, {"chapter": "绪论", "type": "judge", "num": 1, "text": "思想政治素质是人们在为实现本阶级利益而进行的精神活动和实践活动中表现出来的素养和能力。", "options": [], "answer": "对"}, {"chapter": "绪论", "type": "judge", "num": 2, "text": "在人的成长与发展中,与专业素质相比,思想道德素质和法治素质是次要的。", "options": [], "answer": "错"}, {"chapter": "绪论", "type": "judge", "num": 3, "text": "大学与成才成完全正比,一流大学出一流的学生,三流的大学出三流的学生。", "options": [], "answer": "错"}, {"chapter": "绪论", "type": "judge", "num": 4, "text": "如果说把大学比作一个有血有肉的人,那么大学精神就是这个人的灵魂。", "options": [], "answer": "对"}, {"chapter": "第一章", "type": "single", "num": 1, "text": "(      )是我们理解当前所处历史方位的关键词。", "options": ["A、新时期", "B、新时代", "C、重要战略机遇期", "D、关键期"], "answer": "B"}, {"chapter": "第一章", "type": "single", "num": 2, "text": "(      )是人们的思想观念、政治立场、价值取向、道德情操和行为习惯等方面品质和能力的综合体现,反映着一个人的思想境界和道德风貌。", "options": ["A、思想政治素质", "B、道德素质", "C、思想道德素质", "D、法治素质"], "answer": "C"}, {"chapter": "第一章", "type": "single", "num": 3, "text": "“人的本质不是单个人所固有的抽象物,在其现实性上,它是一切社会关系的总和。”这句话说明(      )", "options": ["A、自然属性是人的本质属性", "B、社会属性是人的本质属性", "C、自然属性和社会属性都是人的本质属性", "D、自然属性和社会属性都不是人的本质属性"], "answer": "B"}, {"chapter": "第一章", "type": "single", "num": 4, "text": "马克思运用辩证唯物主义和历史唯物主义的立场、观点和方法,揭开了人的本质之谜,指出人的本质是(      )。", "options": ["A、单个人所固有的抽象物", "B、一切社会关系的总和", "C、人性本善", "D、人性本恶"], "answer": "B"}, {"chapter": "第一章", "type": "single", "num": 5, "text": "马克思指出:人的本质不是单个人所固有的抽象物,在其现实性上,它是一切(      )的总和。", "options": ["A、生产关系", "B、经济关系", "C、社会关系", "D、政治关系"], "answer": "C"}, {"chapter": "第一章", "type": "single", "num": 6, "text": "对人的认识,核心在于认识(      )。", "options": ["A、人的属性", "B、人的本质", "C、社会关系", "D、自然属性"], "answer": "B"}, {"chapter": "第一章", "type": "single", "num": 7, "text": "关于人生观与世界观的关系,以下说法错误的是(      )。", "options": ["A、人生观是世界观在对待人生问题上的具体体现。", "B、正确的人生观是正确世界观的基础。", "C、人生观对世界观的巩固、发展和变化起着重要的作用。", "D、有什么样的世界观,就有什么样的人生观。"], "answer": "B"}, {"chapter": "第一章", "type": "single", "num": 8, "text": "(      )是人生观的核心,在人生实践中具有重要的作用。", "options": ["A、人生态度", "B、人生目的", "C、人生价值", "D、人生道路"], "answer": "B"}, {"chapter": "第一章", "type": "single", "num": 9, "text": "人生观主要有三方面的内容,其中处于核心地位的是(      )", "options": ["A、人生目的", "B、人生态度", "C、人生价值", "D、人生理想"], "answer": "A"}, {"chapter": "第一章", "type": "single", "num": 10, "text": "(      )是指生活在一定历史条件下的人,对“人为什么活着”这一人生根本问题的认识和回答。", "options": ["A、人生目的", "B、人生态度", "C、人生价值", "D、人生准则"], "answer": "A"}, {"chapter": "第一章", "type": "single", "num": 11, "text": "人生目的是人在人生实践中关于自身行为的根本指向和人生追求,它所认识和回答的根本问题是(      )", "options": ["A、人为什么活着", "B、人如何对待生活", "C、怎样对待人生境遇", "D、怎样选择人生道路"], "answer": "A"}, {"chapter": "第一章", "type": "single", "num": 12, "text": "(      )是指人的生命及其实践活动对于社会和个人所具有的作用和意义。", "options": ["A、人生观", "B、人生目的", "C、人生态度", "D、人生价值"], "answer": "D"}, {"chapter": "第一章", "type": "single", "num": 13, "text": "(      )是个体的人生活动对社会、他人所具有的价值。", "options": ["A、人生的自我价值", "B、人生的社会价值", "C、价值观", "D、价值标准"], "answer": "B"}, {"chapter": "第一章", "type": "single", "num": 14, "text": "(      )是人们通过生活实践形成的对人生问题的一种稳定的心理倾向和基本意愿。", "options": ["A、人生目的", "B、人生态度", "C、人生价值", "D、人生追求"], "answer": "B"}, {"chapter": "第一章", "type": "single", "num": 15, "text": "人生态度与人生目的、人生价值的关系是(      )。", "options": ["A、人生态度与人生目的、人生价值无关", "B、人生态度既受人生目的、人生价值的决定,又影响人生目的、人生价值的实现", "C、人生态度决定人生价值", "D、人生态度决定人生目的"], "answer": "B"}, {"chapter": "第一章", "type": "single", "num": 16, "text": "(      )认为金钱可以主宰一切,把追求金钱作为人生至高目的。", "options": ["A、拜金主义", "B、享乐主义", "C、极端个人主义", "D、物质主义"], "answer": "A"}, {"chapter": "第一章", "type": "single", "num": 17, "text": "关于正确幸福观的理解,错误的是(      )。", "options": ["A、幸福是一个总体性的范畴,意味着人总体上生活得美好。", "B、个人的幸福要依靠自己的奋斗,与他人无关。", "C、幸福的实现需要一定的物质条件。", "D、精神生活的充实是幸福更重要的方面。"], "answer": "B"}, {"chapter": "第一章", "type": "single", "num": 18, "text": "(      )的思想以其科学而高尚的品质,代表了人类社会迄今为止最先进的人生追求。", "options": ["A、“人生在世、吃喝玩乐”", "B、“生当作人杰、死亦为鬼雄”", "C、“服务人民、奉献社会”", "D、追逐名利的人生观"], "answer": "C"}, {"chapter": "第一章", "type": "single", "num": 19, "text": "(      )是一种特殊的价值,是人的生活实践对于社会和个人所具有的作用和意义。", "options": ["A、价值观", "B、价格", "C、人生目的", "D、人生价值"], "answer": "D"}, {"chapter": "第一章", "type": "single", "num": 20, "text": "全国劳动模范徐虎说过:“你不奉献,我不奉献,谁来奉献?你也索取,我也索取,向谁索取?”这句话的意思是,社会需要每个人的奉献,只有有奉献才能有索取。这种观点认为,人生价值的本质在于(      )。", "options": ["A、个人的社会存在", "B、个人需要的最大满足", "C、个人对社会的责任和贡献", "D、社会对个人的尊重和满足"], "answer": "C"}, {"chapter": "第一章", "type": "single", "num": 21, "text": "人生价值评价的根本尺度,是看一个人的人生活动(      ),是否通过实践促进了历史的进步。", "options": ["A、是否促进个人的发展", "B、是否符合社会发展的客观规律", "C、是否促进生产力的发展", "D、是否促进生产关系的改善"], "answer": "B"}, {"chapter": "第一章", "type": "single", "num": 22, "text": "个体的人生活动不仅具有满足自我需要的价值属性,还必然包含着满足社会需要的价值属性。个人的需要能不能从社会中得到满足,在多大程度上得到满足,取决于他的(      )", "options": ["A、社会影响", "B、社会价值", "C、社会地位", "D、社会理想"], "answer": "B"}, {"chapter": "第一章", "type": "single", "num": 23, "text": "钱学森曾经说过:\"我作为一名中国的科技工作者,活着的目的就是为人民服务,如果人民最后对我的一生所做的工作表示满意的话,那才是最高的奖赏。\"这说明评价人生价值的根本尺度是(      )", "options": ["A、个体在社会中的地位", "B、个体在社会中的影响", "C、个体对社会和他人的生存和发展的贡献", "D、个体从社会获得的满足程度"], "answer": "C"}, {"chapter": "第一章", "type": "single", "num": 24, "text": "爱因斯坦说:“一个人对社会的价值,首先取决于他的感情、思想和行动对增进人类利益有多大作用,而不应看他取得什么。”这句话的意思是说,人生的价值首先在于(      )", "options": ["A、奉献", "B、索取", "C、存在", "D、享用"], "answer": "A"}, {"chapter": "第一章", "type": "single", "num": 25, "text": "人生价值是自我价值和社会价值的统一。人生的自我价值主要表现为(      )", "options": ["A、社会对个人的尊重和满足", "B、个体的人生活动对自己的生存和发展所具有的价值", "C、国家对个人的积极评价", "D、个人通过劳动、创造为社会和人民所做的贡献"], "answer": "B"}, {"chapter": "第一章", "type": "single", "num": 26, "text": "下列有关人生价值评价的说法中,正确的是(      )", "options": ["A、个人的能力越强,其人生价值也就越大", "B、个人的行为动机越高尚,其人生价值也就越大", "C、个人对社会的贡献越多,其人生价值也就越大", "D、个人从社会中得到的满足越多,其人生价值也就越大"], "answer": "C"}, {"chapter": "第一章", "type": "single", "num": 27, "text": "(      )对个人的思想行动具有鲜明的导向和调节作用。", "options": ["A、荣辱观", "B、生死观", "C、顺逆观", "D、苦乐观"], "answer": "A"}, {"chapter": "第一章", "type": "single", "num": 28, "text": "在现实生活中,由于人们的立场和观点不同,对人活着的意义理解也不同,存在着各种不同的人生观。人生观是(      )", "options": ["A、人们对美好未来的向往和追求", "B、人类社会中人们之间的相互需要关系", "C、人们对整个世界最根本的看法和观点的总和", "D、人们对人生目的和人生意义的根本看法和态度"], "answer": "D"}, {"chapter": "第一章", "type": "single", "num": 29, "text": "“知耻近乎勇”“礼义廉耻,国之四维”说的是人生矛盾中的(      )", "options": ["A、苦乐观", "B、荣辱观", "C、生死观", "D、顺逆观"], "answer": "B"}, {"chapter": "第一章", "type": "single", "num": 30, "text": "人生的社会价值是(      )", "options": ["A、个体对自己生命存在的肯定", "B、个体对自己生命活动需要的满足程度", "C、个体对自己的尊重和个人的自我完善", "D、个体的实践活动对社会、他人所具有的价值"], "answer": "D"}, {"chapter": "第一章", "type": "single", "num": 31, "text": "马克思说过,真正现实人的存在,就是他为别人的存在和别人为他的存在。这说明(      )", "options": ["A、人的价值就是人自身的存在", "B、人可以有受限制地创造出自己的价值", "C、人生价值的本质是社会对个人的尊重和满足", "D、人与自身的任何关系,只有通过人同其他人的关系才能得到实现和表现"], "answer": "D"}, {"chapter": "第一章", "type": "single", "num": 32, "text": "关于“人的本质”的正确观点是(      )", "options": ["A、人的本质就是人的自然属性", "B、人的本质是自由", "C、人的本质是自私", "D、人的本质是一切社会关系的总和"], "answer": "D"}, {"chapter": "第一章", "type": "single", "num": 33, "text": "人生观与世界观的关系是(      )。", "options": ["A、人生观决定世界观", "B、世界观决定人生观", "C、具有唯心主义世界观,人生观一定是不正确的", "D、具有唯物主义世界观,人生观一定是正确的"], "answer": "B"}, {"chapter": "第一章", "type": "single", "num": 34, "text": "评价一个人人生价值的大小,主要看他(      )", "options": ["A、对社会的责任和贡献", "B、从社会上获得的尊重和满足", "C、是否选择了正确的人生价值目标", "D、从事创造性实践活动的思想动机"], "answer": "A"}, {"chapter": "第一章", "type": "single", "num": 35, "text": "在我国现阶段,个人选择和确立的人生目的,应当(      )", "options": ["A、放弃个人的利益和追求", "B、有利于个人私利的实现", "C、以利己为主又兼利他人", "D、符合人民群众的根本利益"], "answer": "D"}, {"chapter": "第一章", "type": "single", "num": 36, "text": "人们通过生活实践所形成的对人生问题的一种相对稳定的心理倾向和精神状态,称为(      )", "options": ["A、人生观", "B、人生目的", "C、人生态度", "D、人生价值"], "answer": "C"}, {"chapter": "第一章", "type": "single", "num": 37, "text": "个体的人生活动对自己生存和发展所具有的价值,称为(      )", "options": ["A、自我价值", "B、社会价值", "C、经济价值", "D、文化价值"], "answer": "A"}, {"chapter": "第一章", "type": "single", "num": 38, "text": "人生观的作用主要通过人生目的、人生态度、人生价值三个方面体现出来。人生目的回答人为什么活着,人生态度表明人应当怎样对待生活,人生价值判断什么样的人生才有意义。这三个方面互相联系、互相制约,其中居于核心地位的是(      )", "options": ["A、人生目的", "B、人生态度", "C、人生价值", "D、人生价值观"], "answer": "A"}, {"chapter": "第一章", "type": "single", "num": 39, "text": "“个人的抱负不可能孤立地实现,只有把它同时代和人民的要求紧密结合起来,用自己的知识和本领为祖国、为人民服务,才能使自身价值得到充分实现。如果脱离时代、脱离人民,必将一事无成。”这段话的意思是(      )", "options": ["A、不实现个人抱负,就不会创造社会价值", "B、实现自我价值是因,创造社会价值是果", "C、社会价值的创造过程与自我价值的实现过程是不相关的", "D、人生的自我价值必须与社会价值相结合,并通过社会价值表现出来"], "answer": "D"}, {"chapter": "第一章", "type": "single", "num": 40, "text": "个人与他人的关系,在本质上是下列哪项关系的表现形式(      )", "options": ["A、社会利益关系", "B、政治关系", "C、相互利用关系", "D、血缘关系"], "answer": "A"}, {"chapter": "第一章", "type": "single", "num": 41, "text": "实现人生价值的根本途径是(      )", "options": ["A、树立服务人民、奉献社会的人生观", "B、自觉提高自我的主体意识", "C、选择正确的人生价值目标", "D、进行积极的创造性的实践活动"], "answer": "D"}, {"chapter": "第一章", "type": "single", "num": 42, "text": "人生态度属于人生观的范畴,是指(      )", "options": ["A、人生实践活动的总目标", "B、人的实践对于社会、他人和自身所具有的意义", "C、人们在实践中形成的对人生目的和意义的根本看法和态度", "D、人们通过生活实践所形成的对人生问题的一种相对稳定的心理倾向和精神状态"], "answer": "D"}, {"chapter": "第一章", "type": "single", "num": 43, "text": "在社会生活中,人生实践体现出一些价值。其中,个体的人生活动对自身的生存和发展所具有的价值,指的是人生的(      )", "options": ["A、自我价值", "B、群体价值", "C、外在价值", "D、社会价值"], "answer": "A"}, {"chapter": "第一章", "type": "single", "num": 44, "text": "在社会主义初级阶段,我们所提倡的高尚的人生目的是(      )", "options": ["A、“一切向钱看”的人生目的", "B、为个人求权力、求享乐的人生目的", "C、“平生无大志,但求足温饱”的人生目的", "D、以天下为已任、服务人民、奉献社会的人生目的"], "answer": "D"}, {"chapter": "第一章", "type": "single", "num": 45, "text": "“一个人对社会的价值,首先取决于他的感情、思想和行动对增进人类利益有多大作用,而不应看他取得什么。”这句话是说,衡量一个人社会价值的标准应该是(      )", "options": ["A、个人的社会存在", "B、个人的行为动机", "C、个人对社会的责任和贡献", "D、社会对个人的尊重和满足"], "answer": "C"}, {"chapter": "第一章", "type": "single", "num": 46, "text": "真正的快乐,只能由(      )转化而来", "options": ["A、家人的安康", "B、事业的成就", "C、爱情的甜蜜", "D、奋斗的艰苦"], "answer": "D"}, {"chapter": "第一章", "type": "single", "num": 47, "text": "(      )是生产资料私有制的产物,是资产阶级人生观的核心", "options": ["A、实用主义", "B、功利主义", "C、拜金主义", "D、个人主义"], "answer": "D"}, {"chapter": "第一章", "type": "single", "num": 48, "text": "(      )是科学理论、创新思维的源泉,是检验真理的试金石,也是青年锻炼成长的有效途径", "options": ["A、大胆假设、小心求证", "B、改革创新", "C、社会实践", "D、思辨"], "answer": "C"}, {"chapter": "第一章", "type": "single", "num": 49, "text": "(      )是引发自私自利、权钱交易、行贿受贿、贪赃枉法等丑恶现象的重要思想根源", "options": ["A、实用主义", "B、享乐主义", "C、个人主义", "D、拜金主义"], "answer": "D"}, {"chapter": "第一章", "type": "single", "num": 50, "text": "人们对人生目的和人生意义的根本看法和态度是(      )", "options": ["A、世界观", "B、人生观", "C、自然观", "D、历史观"], "answer": "B"}, {"chapter": "第一章", "type": "single", "num": 51, "text": "认识和处理人生问题的重要着眼点和出发点是(      )", "options": ["A、个人与群众的关系问题", "B、个人与社会的关系问题", "C、个人与国家的关系问题", "D、个人与集体的关系问题"], "answer": "B"}, {"chapter": "第一章", "type": "single", "num": 52, "text": "个人对社会的责任与贡献属于(      )", "options": ["A、自我价值", "B、社会价值", "C、人生价值的全部", "D、人生价值的必要条件"], "answer": "B"}, {"chapter": "第一章", "type": "single", "num": 53, "text": "当代大学生要正确认识世界和中国的发展大势,说的是与(      )同向", "options": ["A、历史", "B、祖国", "C、人民", "D、中华民族"], "answer": "A"}, {"chapter": "第一章", "type": "single", "num": 54, "text": "人生观人人都有。在现实生活中,由于人们的立场和观点不同,对人活着的意义的理解不同,存在着各种不同的人生观。其中,我们倡导的科学的人生观是(      )", "options": ["A、自私自利的人生观", "B、及时享乐的人生观", "C、服务人民、奉献社会的人生观", "D、合理利己主义的人生观"], "answer": "C"}, {"chapter": "第一章", "type": "single", "num": 55, "text": "社会发展的根本目标是(      )", "options": ["A、社会成员素质的不断提高", "B、人与自然的和谐", "C、推动和实现人的全面发展", "D、物质财富的极大丰富"], "answer": "C"}, {"chapter": "第一章", "type": "single", "num": 56, "text": "人类在脱离动物状态而转变为人的过程中,(      )发挥了决定性作用", "options": ["A、劳动", "B、工具", "C、文字", "D、实践"], "answer": "A"}, {"chapter": "第一章", "type": "single", "num": 57, "text": "人生价值是自我价值和社会价值的统一。人生的社会价值主要表现为(      )", "options": ["A、个人的社会存在", "B、社会对个人的尊重和满足", "C、个人对自己生命存在的肯定", "D、个人通过劳动和创造,对社会所作的贡献"], "answer": "D"}, {"chapter": "第一章", "type": "single", "num": 58, "text": "俗话说:“三百六十行,行行出状元”。上述俗话主要说明(      )", "options": ["A、人生的价值终究要通过自己所从事的事业展现出来", "B、人的创造力的形成和培养需要一定的社会条件", "C、要正确对待学习和工作中的成功和失败", "D、要正确处理个人活动和社会发展的关系"], "answer": "A"}, {"chapter": "第一章", "type": "single", "num": 59, "text": "美国兰德公司曾跟踪500家世界大公司,发现它们有一个共同的特点,即始终坚持四种价值观:人的价值高于物的价值,共同价值高于个人价值,社会价值高于利润价值,用户价值高于生产价值。这四种价值观都属于正确的价值观。判断一种价值观是否正确的标准,是看它是否:(      )", "options": ["A、反映了社会存在", "B、反映了事物发展的客观联系", "C、能促进经济的发展", "D、符合事物发展规律和人类根本利益"], "answer": "D"}, {"chapter": "第一章", "type": "single", "num": 60, "text": "一位哲学家说,青春是一种时限货币。当一个人尽情享受这种货币带来的欢乐时,就意味着青春逝去之时,他就沦为了乞丐。这句话蕴涵的哲理是(      )", "options": ["A、享乐主义人生观是社会存在的反映", "B、及时享乐是享乐主义人生价值观的本质", "C、享乐主义人生价值观把追求享受当成人生最大乐趣,对人们具有极大危害", "D、享乐主义人生价值观把个人欢乐建立在别人的痛苦之上"], "answer": "C"}, {"chapter": "第一章", "type": "single", "num": 61, "text": "21世纪,科技问题将越来越突出。核心问题是科学技术进步应服务于全人类、服务于世界和平、发展与进步的崇高事业,而不能危害人类自身。这就要求广大科技工作者(      )", "options": ["A、要从实际出发,实事求是", "B、要注意培养科学思维方法", "C、要树立和坚持符合人类根本利益的价值观", "D、要坚持理论与实践的有机统一"], "answer": "C"}, {"chapter": "第一章", "type": "single", "num": 62, "text": "大学生要学会对自己负责,对亲人负责,对周围的人和更多的人负责,进而对民族、国家、社会负责,做一个有价值、负责任的人。这里说的是(      )", "options": ["A、人生当务实", "B、人生须认真", "C、人生应乐观", "D、人生要进取"], "answer": "B"}, {"chapter": "第一章", "type": "single", "num": 63, "text": "历史上许多先进分子没有从社会上得到很好的尊重和满足,可他们最大限度地实现了自己的人生价值。这说明,人生价值的本质是(      )。", "options": ["A、个人在社会关系中的存在", "B、个人的社会性需要的满足", "C、社会对个人的尊重和满足", "D、个人对社会的责任和贡献"], "answer": "D"}, {"chapter": "第一章", "type": "single", "num": 64, "text": "有的人身处逆境而百折不挠,有的人在顺境中却长吁短叹,有的人笑对人生,有的人看破红尘,,这些都是(      )的表现。", "options": ["A、人生目的", "B、人生态度", "C、人生理想", "D、人生信念"], "answer": "B"}, {"chapter": "第一章", "type": "multi", "num": 1, "text": "以下关于思想道德和法律的关系表述正确的有(      )。", "options": ["A、法律为思想道德提供制度保障", "B、思想道德为法律提供思想指引和价值基础", "C、思想道德和法律都是调节人们思想行为、协调人际关系、维护社会秩序的重要手段。", "D、坚持和发展中国特色社会主义,既要发挥思想道德的引领和教化作用,又要发挥法律的规范和强制作用。", "E、思想道德能够促进人们自觉尊法学法守法用法,维护法律权威。"], "answer": "ABCDE"}, {"chapter": "第一章", "type": "multi", "num": 2, "text": "下列关于社会价值正确的说法是(      )", "options": ["A、社会价值是社会和他人对于个体的意义", "B、社会价值主要通过劳动、创造和贡献表现出来", "C、社会价值是作为客体的人满足作为主体的人的关系", "D、社会价值是个体的人生对于社会和他人的意义", "E、对社会贡献得越多,其人生价值就越大"], "answer": "BCDE"}, {"chapter": "第一章", "type": "multi", "num": 3, "text": "大学生要科学认识实际生活中的各种问题,勇敢面对和正确处理各种人生矛盾就应做到(      )。", "options": ["A、树立正确的得失观", "B、树立正确的生死观", "C、树立正确的幸福观", "D、树立正确的荣辱观", "E、树立正确的苦乐观"], "answer": "ABCDE"}, {"chapter": "第一章", "type": "multi", "num": 4, "text": "人生观与世界观的关系是(    )", "options": ["A、世界观包含人生观", "B、世界观决定人生观", "C、人生观决定世界观", "D、具有唯心主义世界观,人生观不一定就完全不正确", "E、具有唯物主义世界观,人生观不一定就是正确的"], "answer": "ABDE"}, {"chapter": "第一章", "type": "multi", "num": 5, "text": "人生观的主要内容包括(    )。", "options": ["A、人生目的", "B、人生态度", "C、人生价值", "D、人生问题"], "answer": "ABC"}, {"chapter": "第一章", "type": "multi", "num": 6, "text": "人生目的的作用有(      )", "options": ["A、决定走什么样的人生道路", "B、决定会有什么样的文化水平", "C、决定持什么样的人生态度", "D、决定人生价值选择"], "answer": "ACD"}, {"chapter": "第一章", "type": "multi", "num": 7, "text": "正确的人生态度应该是(    )。", "options": ["A、人生须务实", "B、人生须认真", "C、人生应乐观", "D、人生要进取"], "answer": "ABCD"}, {"chapter": "第一章", "type": "multi", "num": 8, "text": "人生价值的评价方法是(      )。", "options": ["A、坚持能力有大小与贡献须尽力相统一", "B、坚持物质贡献与精神贡献相统一", "C、坚持完善自身与贡献社会相统一", "D、坚持个人成就与自身理想相统一", "E、坚持理论学习和认真实践相统一"], "answer": "ABC"}, {"chapter": "第一章", "type": "multi", "num": 9, "text": "深圳青年歌手丛飞在8年时间内,捐资上百万元资助很多贫困山区的失学儿童,而自己却身患癌症,负债17万元。有人这样评价他:“丛飞能够从帮助别人的过程中得到快乐。”丛飞的行为表明(      )", "options": ["A、人的价值不包含个人的价值选择和目标设计等主观方面", "B、人的价值的大小取决于对社会的贡献", "C、人的价值不仅表现在物质方面,更表现在精神方面", "D、社会价值的实现总是以个人价值的牺牲为代价"], "answer": "BC"}, {"chapter": "第一章", "type": "multi", "num": 10, "text": "辩证对待人生矛盾,包括树立正确的(      )。", "options": ["A、生死观", "B、得失观", "C、苦乐观", "D、荣辱观"], "answer": "ABCD"}, {"chapter": "第一章", "type": "multi", "num": 11, "text": "在我国现阶段,确立科学高尚的人生追求,就是确立服务人民、奉献社会的人生追求。这是因为,一个人确立了服务人民、奉献社会的人生追求(      )", "options": ["A、清楚地把握人的生命历程和奋斗目标", "B、深刻理解人为什么活,应走什么样的人生之路", "C、以正确的人生态度对待人生", "D、掌握正确的人生价值标准"], "answer": "ABCD"}, {"chapter": "第一章", "type": "multi", "num": 12, "text": "端正人生态度应该(      )", "options": ["A、认真务实", "B、享受人生", "C、乐观进取", "D、怀疑批判"], "answer": "AC"}, {"chapter": "第一章", "type": "multi", "num": 13, "text": "人生观是人们对人生目的和人生意义的根本看法和态度。下列选项属于人生观范畴的有(      )", "options": ["A、人为什么活着", "B、怎样生活才有价值", "C、如何对待人生道路上的困难和矛盾", "D、人类社会的发展规律是什么"], "answer": "ABC"}, {"chapter": "第一章", "type": "multi", "num": 14, "text": "人生价值是自我价值和社会价值的统一。下列指人生的社会价值的有(      )", "options": ["A、个人的社会存在", "B、社会对个人的尊重和满足", "C、个体的人生对于社会和他人的意义", "D、个人通过劳动、创造对社会和人民所做的贡献"], "answer": "CD"}, {"chapter": "第一章", "type": "multi", "num": 15, "text": "人生观决定(      )", "options": ["A、人生道路", "B、人生态度", "C、人生价值选择", "D、人生意义"], "answer": "ABC"}, {"chapter": "第一章", "type": "multi", "num": 16, "text": "人生态度大致可分为积极进取的人生态度和消极无为的人生态度。大学生应当树立积极进取的人生态度。这是因为,积极进取的人生态度(      )", "options": ["A、容易使人好高骛远", "B、有助于实现人生价值", "C、有助于达到人生目的", "D、能够调整人生道路的方向"], "answer": "BCD"}, {"chapter": "第一章", "type": "multi", "num": 17, "text": "人生观与世界观的关系是(      )", "options": ["A、人生观从属于世界观", "B、世界观决定人生观", "C、人生观决定世界观", "D、人生观对世界观的巩固、发展和变化起着重要的作用"], "answer": "ABD"}, {"chapter": "第一章", "type": "multi", "num": 18, "text": "在当今中国,最重要的社会实践就是(      )", "options": ["A、全面建成小康社会的基础上继续奋斗", "B、加快推进社会主义现代化强国", "C、实现中华民族伟大复兴", "D、基本实现社会主义现代化"], "answer": "ABCD"}, {"chapter": "第一章", "type": "multi", "num": 19, "text": "与人民同在,体现在(      )", "options": ["A、走与人民群众相结合的道路", "B、向人民群众学习", "C、从人民群众中汲取营养", "D、做中国最广大人民根本利益的维护者"], "answer": "ABCD"}, {"chapter": "第一章", "type": "multi", "num": 20, "text": "以下顺逆观,正确的是(      )", "options": ["A、在顺境中滋生骄娇二气", "B、在顺境中自满自足", "C、在逆境中激流勇进", "D、在逆境中化压力为动力"], "answer": "CD"}, {"chapter": "第一章", "type": "multi", "num": 21, "text": "下列哪些选项内容代表了拜金主义的人生观(      )。", "options": ["A、人为财死,鸟为食亡", "B、金钱是万能的", "C、今朝有酒今朝醉", "D、人人为我,我为人人"], "answer": "AB"}, {"chapter": "第一章", "type": "multi", "num": 22, "text": "树立正确的得失观,不要(      )", "options": ["A、拘泥于个人利益的得失", "B、满足于一时的得", "C、惧怕一时的失", "D、以积极进取的态度对待得失"], "answer": "ABC"}, {"chapter": "第一章", "type": "multi", "num": 23, "text": "幸福是一个总体性范畴,它意味着人总体上生活得美好,(      )等都是幸福的重要因素", "options": ["A、家庭和睦", "B、职业成功", "C、行为正当", "D、人格完善"], "answer": "ABCD"}, {"chapter": "第一章", "type": "multi", "num": 24, "text": "人生目的的作用有(      )", "options": ["A、决定世界观", "B、决定人生道路", "C、决定人生态度", "D、决定人生价值标准"], "answer": "BCD"}, {"chapter": "第一章", "type": "multi", "num": 25, "text": "端正人生态度需要(      )", "options": ["A、人生需认真", "B、人生当务实", "C、人生应乐观", "D、人生要进取"], "answer": "ABCD"}, {"chapter": "第一章", "type": "multi", "num": 26, "text": "“苟利国家生死以,岂因祸福避趋之”民族英雄林则徐的这句诗体现的人生价值观是(      )", "options": ["A、人生的价值在于对社会的贡献", "B、有价值的人生不应考虑个人利益", "C、对社会的贡献大小决定了人生价值的高低", "D、个人对社会的贡献以社会对个人的尊重为基础"], "answer": "AC"}, {"chapter": "第一章", "type": "judge", "num": 1, "text": "人的自然属性是人的本质属性。(      )", "options": [], "answer": "错"}, {"chapter": "第一章", "type": "judge", "num": 2, "text": "世界观决定人生观,人生观从属于世界观,所以,一个人的人生观发生改变,对世界观不会产生影响。(      )", "options": [], "answer": "错"}, {"chapter": "第一章", "type": "judge", "num": 3, "text": "正确的人生观是正确的世界观的基础,世界观从属于人生观。(      )", "options": [], "answer": "错"}, {"chapter": "第一章", "type": "judge", "num": 4, "text": "个人与社会的关系,最根本的是个人利益与社会利益的关系。(      )", "options": [], "answer": "对"}, {"chapter": "第一章", "type": "judge", "num": 5, "text": "社会需要是个人需要的集中体现,是社会全体成员带有根本性、全局性、长远性需要的反映。(      )", "options": [], "answer": "对"}, {"chapter": "第一章", "type": "judge", "num": 6, "text": "人生价值是人生观的核心。(      )", "options": [], "answer": "错"}, {"chapter": "第一章", "type": "judge", "num": 7, "text": "人生态度是人生观的核心,在人生实践中具有重要的作用。(      )", "options": [], "answer": "错"}, {"chapter": "第一章", "type": "judge", "num": 8, "text": "人生目的是人生观的核心,在人生实践中具有重要的作用。(      )", "options": [], "answer": "对"}, {"chapter": "第一章", "type": "judge", "num": 9, "text": "我们要树立科学高尚的人生观,坚决抵制拜金主义、享乐主义和极端个人主义的错误人生观。(      )", "options": [], "answer": "对"}, {"chapter": "第一章", "type": "judge", "num": 10, "text": "评价人生价值的根本尺度,是看一个人的实践活动是否符合社会发展的客观规律,是否促进了历史的进步。(      )", "options": [], "answer": "对"}, {"chapter": "第一章", "type": "judge", "num": 11, "text": "在今天,衡量人生价值的标准,最重要的就是看一个人是否用自己的劳动和聪明才智为国家和社会真诚奉献,为人民群众尽心尽力服务。(      )", "options": [], "answer": "对"}, {"chapter": "第二章", "type": "single", "num": 1, "text": "(      )是人的精神世界的核心,是人精神上的“钙”。", "options": ["A、勇气担当", "B、品德修养", "C、宗教信仰", "D、理想信念"], "answer": "D"}, {"chapter": "第二章", "type": "single", "num": 2, "text": "信念的最集中、最高的表现形式是(      )", "options": ["A、信仰", "B、理想", "C、意志", "D、志向"], "answer": "A"}, {"chapter": "第二章", "type": "single", "num": 3, "text": "(      )是人们在实践中形成的具有现实可能性的对未来的向往和追求,是人们的世界观、人生观和价值观在奋斗目标上的集中体现。", "options": ["A、信仰", "B、信念", "C、兴趣", "D、理想"], "answer": "D"}, {"chapter": "第二章", "type": "single", "num": 4, "text": "下列属于科学信念的是(      )", "options": ["A、金钱万能,有钱就有一切", "B、个人本身就是目的,社会只是达到个人目的的一种手段", "C、生死有命,富贵在天", "D、社会主义必然代替资本主义,全世界最终必然实现共产主义"], "answer": "D"}, {"chapter": "第二章", "type": "single", "num": 5, "text": "个人理想要符合社会理想,下列选项中,表达准确的有(      )", "options": ["A、个人理想是无关紧要的", "B、个人理想与社会理想是完全一致的", "C、当两者有冲突时,个人理想要服从于全社会的共同理想", "D、个人理想的总和就是社会理想,各人追求个人理想就可以实现社会理想"], "answer": "C"}, {"chapter": "第二章", "type": "single", "num": 6, "text": "理想和现实的关系表现在(      )", "options": ["A、理想就是未来的现实", "B、有了坚定的信念,理想就能变为现实", "C、现实是理想的基础", "D、理想与现实是对立统一的"], "answer": "D"}, {"chapter": "第二章", "type": "single", "num": 7, "text": "“千里之行,始于足下。”理想的实现,需要每个人从我做起,从现在做起,从平凡的工作做起。这是因为(      )", "options": ["A、理想是人们的主观意志和想象", "B、社会实践是科学知识产生的源泉", "C、把理想变为现实,要靠实实在在的实践", "D、有了坚定的信念,理想就会自动变为现实"], "answer": "C"}, {"chapter": "第二章", "type": "single", "num": 8, "text": "追求崇高的理想,需要坚定的信念,信念是(      )", "options": ["A、一种单纯的知识或想法", "B、对事物发展规律的正确反映", "C、把理想变为现实的桥梁和中介", "D、认知、情感和意志的有机统一"], "answer": "D"}, {"chapter": "第二章", "type": "single", "num": 9, "text": "实现理想的根本途径是(      )", "options": ["A、正确认识理想与现实的关系", "B、坚定实现理想的信念", "C、争取实现理想的广泛支持", "D、勇于实践、艰苦奋斗"], "answer": "D"}, {"chapter": "第二章", "type": "single", "num": 10, "text": "“樱桃好吃树难栽,不下功夫花不开。”理想是美好的,但美好的理想是不会自动实现的。把理想转化为现实的根本途径是(      )", "options": ["A、认真学习科学理论", "B、积极投身社会实践", "C、牢固确立科学信念", "D、大胆畅想美好未来"], "answer": "B"}, {"chapter": "第二章", "type": "single", "num": 11, "text": "“理想变为现实不是一蹴而就、一帆风顺的,往往会遭遇波澜和坎坷。”这句话表明了(      )", "options": ["A、理想是难以实现的", "B、理想是一定可以实现的", "C、理想的实现是长期的、艰巨的、曲折的", "D、理想在顺境中容易实现,在逆境中不易实现"], "answer": "C"}, {"chapter": "第二章", "type": "single", "num": 12, "text": "信念是实现理想的(      )", "options": ["A、重要基础", "B、重要根据", "C、重要保障", "D、重要条件"], "answer": "C"}, {"chapter": "第二章", "type": "single", "num": 13, "text": "邓小平在总结中国历史经验时曾深刻地指出:“我们过去几十年艰苦奋斗,就是靠用坚定的信念把人民团结起来,为人民自己的利益而奋斗。没有这样的信念,就没有凝聚力。没有这样的信念,就没有一切。”这里强调说明的是(      )", "options": ["A、人与人之间必须团结互助", "B、人与人之间必须竞争合作", "C、集体利益和个人利益是对立统一的", "D、人们追求理想目标的强大动力"], "answer": "D"}, {"chapter": "第二章", "type": "single", "num": 14, "text": "“哲学家们只是用不同的方式解释世界,而问题在于改变世界。”马克思的这句名言突出了马克思主义的特点是(      )", "options": ["A、马克思主义是科学的", "B、马克思主义是崇高的", "C、马克思主义具有持久生命力", "D、马克思主义重视实践"], "answer": "D"}, {"chapter": "第二章", "type": "single", "num": 15, "text": "下列有关人们对未来的向往和追求中,属于社会理想的是(      )", "options": ["A、“三十亩地一头牛,老婆孩子热炕头”", "B、“富贵不能淫,贫贱不能移,威武不能屈”", "C、谋一个适合自己的职位,干一番益于人民的事业", "D、把我国建设成为富强、民主、文明的社会主义现代化国家"], "answer": "D"}, {"chapter": "第二章", "type": "single", "num": 16, "text": "现阶段我国各族人民建设中国特色社会主义的共同理想和我们党建立共产主义社会的最高理想,属于人生理想中(      )的内容。", "options": ["A、生活理想", "B、职业理想", "C、道德理想", "D、政治理想"], "answer": "D"}, {"chapter": "第二章", "type": "single", "num": 17, "text": "以下关于理想、幻想、空想的表述正确的是(      )", "options": ["A、理想是个人对幻想空想的改进", "B、理想源于实践具有实现可能是对未来的向往和追求", "C、理想是永恒的,幻想和空想可以随时间的变化而变化", "D、知识渊博的人具有崇高的理想,而空想幻想则源于无知"], "answer": "B"}, {"chapter": "第二章", "type": "single", "num": 18, "text": "理想的(      ),不仅体现为它受时代条件的制约,而且体现为它随着时代的发展而发展。", "options": ["A、超越性", "B、实践性", "C、时代性", "D、多样性"], "answer": "C"}, {"chapter": "第二章", "type": "single", "num": 19, "text": "(      )是中国特色社会主义最本质的特征。", "options": ["A、改革开放", "B、依法治国", "C、中国共产党的领导", "D、人民当家作主"], "answer": "C"}, {"chapter": "第二章", "type": "single", "num": 20, "text": "(      )是实现社会主义现代化、指引中国人民创造自己美好生活的必由之路。", "options": ["A、和平发展道路", "B、中国特色社会主义道路", "C、社会主义道路", "D、共产主义道路"], "answer": "B"}, {"chapter": "第二章", "type": "single", "num": 21, "text": "(      )是改革开放以来党的全部理论和实践的主题,是党和人民历尽千辛万苦、付出巨大代价取得的根本成就。", "options": ["A、科学社会主义", "B、马克思主义", "C、中国特色社会主义", "D、共产主义"], "answer": "C"}, {"chapter": "第二章", "type": "single", "num": 22, "text": "中国共产党从成立之日起,就确立了(      )的远大理想,始终团结带领中国人民朝着这个伟大理想前行。", "options": ["A、社会主义", "B、中国特色社会主义", "C、共产主义", "D、马克思主义"], "answer": "C"}, {"chapter": "第二章", "type": "single", "num": 23, "text": "(      )是党和人民事业不断发展的参天大树之根本,是党和人民不断奋进的万里长河之泉源。", "options": ["A、社会主义", "B、中国特色社会主义", "C、共产主义", "D、马克思主义"], "answer": "D"}, {"chapter": "第二章", "type": "single", "num": 24, "text": "(      )是指导党和人民沿着中国特色社会主义道路实现中华民族伟大复兴的正确理论,是立于时代前沿、与时俱进的科学理论。", "options": ["A、马克思主义理论", "B、中国特色社会主义理论体系", "C、习近平新时代中国特色社会主义思想", "D、马克思主义中国化理论体系"], "answer": "B"}, {"chapter": "第二章", "type": "single", "num": 25, "text": "个人理想与社会理想的关系实质上是(      )关系在理想层面的反映。", "options": ["A、公民与国家", "B、公民与社会", "C、个人与社会", "D、个人与集体"], "answer": "C"}, {"chapter": "第二章", "type": "single", "num": 26, "text": "加强思想修养、提高精神境界,必须牢牢把握理想信念这个(      )。", "options": ["A、基础", "B、本质", "C、核心", "D、关键​"], "answer": "C"}, {"chapter": "第二章", "type": "single", "num": 27, "text": "(      )具有与时俱进的理论品格和持久生命力。", "options": ["A、社会主义", "B、马克思主义", "C、共产主义", "D、中国特色社会主义"], "answer": "B"}, {"chapter": "第二章", "type": "single", "num": 28, "text": "(      )是人们在一定的认识基础上确立的对某种思想或事物坚信不疑并身体力行的精神状态。", "options": ["A、信仰", "B、意志", "C、信念", "D、理想"], "answer": "C"}, {"chapter": "第二章", "type": "single", "num": 29, "text": "(      )是衡量一个人精神境界高下的重要标尺。", "options": ["A、道德品质", "B、理想信念", "C、政治信仰", "D、修养品性"], "answer": "B"}, {"chapter": "第二章", "type": "single", "num": 30, "text": "在整个理想体系中,(      )是最根本、最重要的。", "options": ["A、社会理想", "B、个人理想", "C、共同理想", "D、共产主义理想"], "answer": "A"}, {"chapter": "第二章", "type": "single", "num": 31, "text": "个人理想的实现,必须以(      )的实现为前提和基础。", "options": ["A、社会理想", "B、社会主义理想", "C、共产主义理想", "D、共同理想"], "answer": "A"}, {"chapter": "第二章", "type": "single", "num": 32, "text": "(      )是现实运动和长远目标相统一的过程。", "options": ["A、马克思主义", "B、共产主义", "C、社会主义", "D、中国特色社会主义"], "answer": "B"}, {"chapter": "第二章", "type": "single", "num": 33, "text": "(      )是最高层次的信念,具有最大的统摄力。", "options": ["A、志向", "B、信仰", "C、理想", "D、意志"], "answer": "B"}, {"chapter": "第二章", "type": "single", "num": 34, "text": "马克思主义体现了(      )的统一。", "options": ["A、阶级性与实践性", "B、逻辑性与革命性", "C、科学性和革命性", "D、理论性与战斗性"], "answer": "C"}, {"chapter": "第二章", "type": "multi", "num": 1, "text": "邓小平说:“美好的前景如果没有切实的措施和工作去实现它,就有成为空话的危险。”这说明(      )", "options": ["A、社会实践是科学知识产生的源泉", "B、社会实践是联系理想和现实的桥梁", "C、有了理想并不意味着成功,更不意味着已经成功", "D、把理想转变为现实要付出辛勤的劳动,要靠实实在在的实践"], "answer": "BCD"}, {"chapter": "第二章", "type": "multi", "num": 2, "text": "理想信念的作用是(      )", "options": ["A、昭示奋斗目标", "B、催生前进动力", "C、提高精神境界", "D、提供精神支柱"], "answer": "ABCD"}, {"chapter": "第二章", "type": "multi", "num": 3, "text": "大学生坚信马克思主义信仰,最重要的学习和掌握马克思主义的(      ),确立正确的世界观和历史观。", "options": ["A、立场", "B、观点", "C、方法", "D、基本理论"], "answer": "ABC"}, {"chapter": "第二章", "type": "multi", "num": 4, "text": "马克思主义是我们立党立国的根本指导思想,也是社会主义核心价值体系的灵魂,马克思主义作为一种信仰,其具体内涵包括以下哪些选项?(      )", "options": ["A、唯物主义的世界图景", "B、共产主义的远大理想", "C、自由而全面发展的人生追求", "D、为人民服务的根本宗旨"], "answer": "ABCD"}, {"chapter": "第二章", "type": "multi", "num": 5, "text": "“理想信念”是由理想和信念两个概念结合而成,包含了理想和信念的各自含义,并使二者有机融合在一起。其中,理想是(      )", "options": ["A、人们凭空产生的脱离现实的主观想象", "B、人们的世界观、人生观和价值观在奋斗目标上的集中体现", "C、人们在实践中形成的具有实现可能性的对未来的向往和追求", "D、人们在一定的认识基础上确立的对某种思想或事物坚信不疑并身体力行的态度"], "answer": "BC"}, {"chapter": "第二章", "type": "multi", "num": 6, "text": "科学崇高的理想信念对人生价值的实现具有重要意义。在确立理想信念时,应该(      )", "options": ["A、把崇高的理想和坚定的信念结合起来", "B、学会对不同的理想信念进行辨别和选择", "C、把个人的理想信念与社会的理想信念结合起来", "D、离开人的生活体验和实际行动,单纯地读书学习"], "answer": "ABC"}, {"chapter": "第二章", "type": "multi", "num": 7, "text": "理想(      )", "options": ["A、是指在实践中形成的具有实现可能性的对未来的向往和追求", "B、是幻想", "C、既高于现实,又来源于现实", "D、是人类特有的一种精神现象"], "answer": "ACD"}, {"chapter": "第二章", "type": "multi", "num": 8, "text": "个人理想是指处于一定历史条件和社会关系中的个体对于自己未来的物质生活、精神生活所产生的种种向往和追求,以下关于个人理想的表述正确的是(      )", "options": ["A、个人理想包括个人具体的社会政治理想、道德理想、职业理想和生活理想等", "B、个人理想与社会理想有一定的区别,二者没有联系", "C、个人理想的实现具有长期性、艰巨性和曲折性", "D、个人理想的追求需要有执着的信念"], "answer": "ACD"}, {"chapter": "第二章", "type": "multi", "num": 9, "text": "理想与现实的关系是(      )", "options": ["A、理想来源于现实,是对现实的反映", "B、理想高于现实,是现实的升华", "C、理想是基于对客观事物的发展规律的认识,对事物发展趋势的一种特殊放映,是对现实存在的一种扬弃的反映", "D、理想可以转化为现实"], "answer": "ABCD"}, {"chapter": "第二章", "type": "multi", "num": 10, "text": "理想是否合理、进步与科学的判断标准为(      )。", "options": ["A、是否有益于社会的发展", "B、是否为多数人所认同", "C、是否具有现实可能性和是否合乎历史发展规律", "D、是否有益于社会的进步"], "answer": "ACD"}, {"chapter": "第二章", "type": "multi", "num": 11, "text": "下列内容中,属于理想特征的是(      )。", "options": ["A、时代性", "B、实践性", "C、超越性", "D、执着性"], "answer": "ABC"}, {"chapter": "第二章", "type": "multi", "num": 12, "text": "对于理想和信念的关系,正确的理解有(      )。", "options": ["A、信念是对理想的支持", "B、理想体现着信念和追求", "C、追求崇高的理想,需要坚定的信念", "D、没有信念,就无法使理想转化为行动"], "answer": "ABCD"}, {"chapter": "第二章", "type": "multi", "num": 13, "text": "历史和现实都告诉我们,只有(      )。", "options": ["A、中国特色社会主义才能救中国", "B、社会主义才能救中国", "C、社会主义才能发展中国", "D、中国特色社会主义才能发展中国"], "answer": "BD"}, {"chapter": "第二章", "type": "multi", "num": 14, "text": "信念是(      )的有机统一体,为人们矢志不渝、百折不挠地追求理想目标提供了强大的精神动力。", "options": ["A、认知", "B、情感", "C、道德", "D、意志"], "answer": "ABD"}, {"chapter": "第二章", "type": "multi", "num": 15, "text": "当一个人抱有坚定的信念时,他就会全身心投入到为实现目标而努力奋斗的事业中去,(      )。", "options": ["A、行为上坚定不移", "B、态度上充满热情", "C、情绪上的积极强烈", "D、精神上高度集中"], "answer": "ABD"}, {"chapter": "第二章", "type": "multi", "num": 16, "text": "中国特色社会主义制度是当代中国发展进步的根本制度保障,是具有(      )的先进制度。", "options": ["A、强大自我完善能力", "B、鲜明中国特色", "C、明显制度优势", "D、充满生机活力"], "answer": "ABC"}, {"chapter": "第二章", "type": "multi", "num": 17, "text": "信念具有(      )。", "options": ["A、多样性", "B、超越性", "C、执着性", "D、实践性"], "answer": "AC"}, {"chapter": "第二章", "type": "multi", "num": 18, "text": "中国共产党自诞生之日起,就把(      )作为自己的初心和使命,并团结带领全国各族人民不懈奋斗,战胜各种艰难险阻,不断取得革命、建设、改革的伟大胜利。", "options": ["A、为中华民族谋复兴", "B、全心全意为人民服务", "C、为中国人民谋幸福", "D、实现中华民族伟大复兴的中国梦"], "answer": "AC"}, {"chapter": "第二章", "type": "multi", "num": 19, "text": "墨子说“志不强者智不达”,诸葛亮说“志当存高远”。这里的“志”具有双重含义:(      )。", "options": ["A、对未来目标的向往", "B、对社会的不懈追求", "C、对真理的不断探索", "D、实现奋斗目标的顽强意志"], "answer": "AD"}, {"chapter": "第二章", "type": "multi", "num": 20, "text": "改革开放以来我们取得一切成绩和进步的根本原因,归结起来就是(      )。", "options": ["A、开辟了中国特色社会主义道路", "B、形成了中国特色社会主义理论体系", "C、发展了中国特色社会主义文化", "D、确立了中国特色社会主义制度"], "answer": "ABCD"}, {"chapter": "第二章", "type": "multi", "num": 21, "text": "理想的实现是一个过程,具有(      )。", "options": ["A、艰巨性", "B、曲折性", "C、复杂性", "D、长期性"], "answer": "ABD"}, {"chapter": "第二章", "type": "multi", "num": 22, "text": "共产主义社会是(      )。", "options": ["A、物质财富极大丰富", "B、实现按需分配", "C、人的精神境界极大提高", "D、每个人自由而全面发展的社会"], "answer": "ABCD"}, {"chapter": "第二章", "type": "multi", "num": 23, "text": "实践证明,马克思主义只要(      ),就能焕发出强大的生命力、创造力和感召力。", "options": ["A、与未来发展相契合", "B、与本国国情相结合", "C、与时代发展同进步", "D、与人民群众共命运"], "answer": "BCD"}, {"chapter": "第二章", "type": "multi", "num": 24, "text": "在信念体系中,(      )。", "options": ["A、高层次的信念决定低层次的信念", "B、低层次的信念决定高层次的信念", "C、高层次的信念服从低层次的信念", "D、低层次的信念服从高层次的信念"], "answer": "AD"}, {"chapter": "第二章", "type": "multi", "num": 25, "text": "新时代大学生应当(      )。", "options": ["A、在实践中化理想为现实", "B、坚定马克思主义的科学信仰", "C、树立共产主义的远大理想", "D、树立中国特色社会主义共同理想"], "answer": "ABCD"}, {"chapter": "第二章", "type": "multi", "num": 26, "text": "在伦敦海格特公墓的马克思墓碑上,镌刻着马克思的一句名言:“哲学家们只是用不同的方式解释世界,而问题在于改变世界。”这鲜明地表明了(      )。", "options": ["A、马克思主义对哲学家的基本要求", "B、马克思主义重视实践", "C、哲学家的基本特点", "D、以改造世界为己任的基本特征"], "answer": "BD"}, {"chapter": "第二章", "type": "judge", "num": 1, "text": "立志做大事,是为了实现个人的荣华富贵。(      )", "options": [], "answer": "错"}, {"chapter": "第二章", "type": "judge", "num": 2, "text": "理想信念是人的精神世界的核心。(      )", "options": [], "answer": "对"}, {"chapter": "第二章", "type": "judge", "num": 3, "text": "我们生活在一个没有信仰的时代,如果有信仰的话,只信仰金钱和自己。(      )", "options": [], "answer": "错"}, {"chapter": "第二章", "type": "judge", "num": 4, "text": "“理想理想,有利就想;前途前途,有钱才图。远大理想解决不了当前的实际问题,所以是无用的。”(      )", "options": [], "answer": "错"}, {"chapter": "第二章", "type": "judge", "num": 5, "text": "道德理想是指人们所向往的理想人格和做人的标准,是人们在道德生活中所期望达到的目标。(      )", "options": [], "answer": "对"}, {"chapter": "第二章", "type": "judge", "num": 6, "text": "信仰有盲目和科学之分。(      )", "options": [], "answer": "对"}, {"chapter": "第二章", "type": "judge", "num": 7, "text": "在信念系统中有诸多信念,但这些信念的地位与层次是一样的。(      )", "options": [], "answer": "错"}, {"chapter": "第二章", "type": "judge", "num": 8, "text": "信仰就应该是与科学和理性完全对立的。(      )", "options": [], "answer": "错"}, {"chapter": "第二章", "type": "judge", "num": 9, "text": "理想和现实的统一性表现在现实是理想的基础,理想是未来的现实。(      )", "options": [], "answer": "对"}, {"chapter": "第二章", "type": "judge", "num": 10, "text": "在一百七十多年的民族奋斗历程中,中华民族经历了历史的低点、国运的衰败、民族的危亡、三千年没有的大变局,在历史的转折点上支撑着中国人民救亡图存、民族复兴、走向未来的毅然是一种坚定的力量和信念。(      )", "options": [], "answer": "对"}, {"chapter": "第二章", "type": "judge", "num": 11, "text": "个人理想的实现依赖于社会理想的实现。(      )", "options": [], "answer": "对"}, {"chapter": "第二章", "type": "judge", "num": 12, "text": "信念可以说是最高层次的信仰,可以说,凡是信念,都是信仰。(      )", "options": [], "answer": "错"}, {"chapter": "第二章", "type": "judge", "num": 13, "text": "高层次的信念决定低层次的信念,低层次的信念服从高层次的信念。信仰是最高层次的信念。(      )", "options": [], "answer": "对"}, {"chapter": "第二章", "type": "judge", "num": 14, "text": "中国特色社会主义共同理想,就是在中国共产党领导下,坚持和发展中国特色社会主义,实现中华民族伟大复兴。(      )", "options": [], "answer": "对"}, {"chapter": "第二章", "type": "judge", "num": 15, "text": "艰苦奋斗是老一辈的事,当代青年不需要艰苦奋斗。(      )", "options": [], "answer": "错"}, {"chapter": "第三章", "type": "single", "num": 1, "text": "爱国主义是调节个人和祖国之间关系的道德要求、政治原则和(      )", "options": ["A、内心信念", "B、法律规范", "C、自觉行为", "D、传统美德"], "answer": "B"}, {"chapter": "第三章", "type": "single", "num": 2, "text": "在当代中国,爱国主义首先体现在(      )", "options": ["A、对社会主义中国的热爱", "B、对人民群众的热爱", "C、对港澳台同胞和海外侨胞的热爱", "D、对马克思主义的热爱"], "answer": "A"}, {"chapter": "第三章", "type": "single", "num": 3, "text": "爱国主义的基本要求不包括(      )", "options": ["A、爱祖国的大好河山", "B、爱自己的骨肉同胞", "C、爱自己的本职工作", "D、爱自己的国家"], "answer": "C"}, {"chapter": "第三章", "type": "single", "num": 4, "text": ",习近平在欧美同学会成立100周年庆祝大会上发表重要讲话,希望留学生坚守爱国主义精神,继承和发扬留学报国的光荣传统,做爱国主义的坚守者和传播者,自觉使个人成功的果实结在爱国主义这棵常青树上。检验一个人对祖国忠诚程度的试金石是(      )", "options": ["A、对人民群众感情的深浅程度", "B、对祖国灿烂文化的热爱程度", "C、对祖国大好河山的依赖程度", "D、对整个民族利益的认同程度"], "answer": "A"}, {"chapter": "第三章", "type": "single", "num": 5, "text": "国家安全是指一个国家不受内部和外部的威胁、破坏而保持稳定有序的状态。当前,我国国家安全内涵和外延比历史上任何时候都要丰富,时空领域比历史上任何时候都要宽广,内外因素比历史上任何时候都要复杂,必须坚持总体的国家安全观,其宗旨是(      )", "options": ["A、经济安全", "B、政治安全", "C、人民安全", "D、国际安全"], "answer": "C"}, {"chapter": "第三章", "type": "single", "num": 6, "text": "我们要大力弘扬的时代精神是当代中国人民精神风貌的集中写照,是激发社会创造活力的强大力量。其核心是(      )", "options": ["A、国际主义", "B、集体主义", "C、改革创新", "D、开拓进取"], "answer": "C"}, {"chapter": "第三章", "type": "single", "num": 7, "text": "时代精神体现了社会在一定历史时期的思想观念,价值取向(      )社会风尚。", "options": ["A、时代风貌", "B、精神风貌", "C、民族风貌", "D、国家风貌"], "answer": "B"}, {"chapter": "第三章", "type": "single", "num": 8, "text": "下列选项不属于树立改革创新的自觉意识的是(      )", "options": ["A、树立破除陈规陋习的自觉意识", "B、树立以创新创造为目标的志向", "C、树立大胆探索未知领域的信心和勇气", "D、树立正确人生价值观"], "answer": "D"}, {"chapter": "第三章", "type": "single", "num": 9, "text": "李大钊曾写下“铁肩担道义,妙手著文章”的警句。这句话表明,若想树立改革创新的自觉意识,我们应该(      )", "options": ["A、树立突破陈规陋习的自觉意识", "B、树立大胆探索未知领域的信心和勇气", "C、树立以创新创造为目标的走向", "D、增强改革创新的责任感"], "answer": "D"}, {"chapter": "第三章", "type": "single", "num": 10, "text": "王安石《游褒禅山记》中所言:“而世之奇伟、瑰怪,非常之观,常在于险远,而人之所罕至焉,故非有志者不能至也。”这句话表明,若想树立改革创新的自觉意识,我们应该(      )", "options": ["A、树立突破陈规陋习的自觉意识", "B、树立大胆探索未知领域的信心和勇气", "C、树立以创新创造为目标的走向", "D、增强改革创新的能力本领"], "answer": "B"}, {"chapter": "第三章", "type": "single", "num": 11, "text": "以下选项不属于推进祖国统一的是(      )", "options": ["A、坚持一个中国原则", "B、促进两岸同胞团结奋斗", "C、反对“台独”分裂阴谋", "D、增强大局观"], "answer": "D"}, {"chapter": "第三章", "type": "single", "num": 12, "text": "以下表述错误的是(      )", "options": ["A、时代精神是民族精神的时代性体现", "B、民族精神是时代精神形成的重要基础和依托", "C、时代精神的核心是爱国主义", "D、时代精神的核心是改革创新"], "answer": "C"}, {"chapter": "第三章", "type": "single", "num": 13, "text": "旗帜鲜明的反对历史虚无主义必须要做到:(      )", "options": ["A、“灭人之国,必先去其历史”", "B、“重评历史”", "C、“数典忘祖、妄自菲薄”", "D、“天地英雄气,千秋尚凛然”"], "answer": "D"}, {"chapter": "第三章", "type": "single", "num": 14, "text": "阿尔伯特.哈伯德曾经说过:“如果说,智慧和勤奋像金子一样珍贵的话,那么还有一种东西更为珍贵,那就是忠诚。”检验一个人对祖国忠诚程度的试金石是(      )", "options": ["A、对祖国大好河山的热爱程度", "B、对人民群众感情的深浅程度", "C、对祖国灿烂文化的热爱程度", "D、对祖国悠久历史的了解程度"], "answer": "B"}, {"chapter": "第三章", "type": "single", "num": 15, "text": "常常被称为国家和民族的“胎记”,是一个民族得以延续的“精神基因”,是培养民族心理、民族个性、民族精神的“摇篮”,是民族凝聚力的重要基础的是(      )", "options": ["A、风俗习惯", "B、文化传统", "C、社会环境", "D、自然条件"], "answer": "B"}, {"chapter": "第三章", "type": "single", "num": 16, "text": "1842年,林则徐被遣戍新疆伊犁,在西安与家人告别时,写出了“苟利国家生死以,岂因福祸避趋之”的佳句。林则徐的这句话集中反映的爱国主义优良传统是(      )", "options": ["A、热爱祖国,矢志不渝", "B、天下兴亡,匹夫有责", "C、维护统一,反对分裂", "D、同仇敌忾,抗御外侮"], "answer": "A"}, {"chapter": "第三章", "type": "single", "num": 17, "text": ",人民日报发表评论指出,正所谓“人心齐,泰山移”,我们相信,在以习近平为主席的中央国家安全委员会正确领导下,我们一定能够将各民族儿女团结起来,我们一定能够尽早筑牢实现“中国梦”的安全屏障。凝聚民族精神、实现中华民族伟大复兴的动力是(      )", "options": ["A、社会主义", "B、文化传统", "C、爱国主义", "D、马克思主义"], "answer": "C"}, {"chapter": "第三章", "type": "single", "num": 18, "text": "钱学森是功勋卓越的科学家,又是心系祖国母亲的赤子。新中国成立后,他放弃国外优越的生活和工作条件,历尽千难万险,投身到祖国的建设中。钱学森被评为“两弹一星”的功臣而受到国家的表彰。在荣誉面前,他是这样说的:“说是表彰我对中国火箭导弹技术、航天技术和系统工程论方面所做的一切工作。我想这里面‘中国’两个字是最重要的。”这段话表明(      )", "options": ["A、科学和科学家都是有国界的", "B、科学和科学家都没有国界", "C、科学没有国界,但是科学家有国界", "D、科学有国界,但是科学家没有国界"], "answer": "C"}, {"chapter": "第三章", "type": "single", "num": 19, "text": "中华民族精神源远流长,包含着丰富的内容。其中,“夸父追日”“大禹治水”“愚公移山”“精卫填海”等动人的传说集中体现出的是中华民族精神是(      )", "options": ["A、勤劳勇敢", "B、自强不息", "C、团结统一", "D、爱好和平"], "answer": "B"}, {"chapter": "第三章", "type": "single", "num": 20, "text": "以下规范性文件将我国关于解决台湾问题的大政方针具体化、法律化的是(      )", "options": ["A、国防法", "B、反分裂国家法", "C、国家安全法", "D、国法教育法"], "answer": "B"}, {"chapter": "第三章", "type": "single", "num": 21, "text": "(      )作为兴国强国之魂,是实现中华民族伟大复兴不可或缺的精神支撑。", "options": ["A、中国精神", "B、中华优秀传统文化", "C、中国共产党", "D、中国人民"], "answer": "A"}, {"chapter": "第三章", "type": "single", "num": 22, "text": "(      )是中国精神的忠实继承者和坚定弘扬者。", "options": ["A、中华民族", "B、中国人民", "C、中国共产党", "D、中国先进知识分子"], "answer": "C"}, {"chapter": "第三章", "type": "single", "num": 23, "text": "(      )体现了人们对自己祖国的深厚感情,揭示了个人对祖国的依存关系", "options": ["A、爱国主义", "B、民族精神", "C、时代精神", "D、改革创新"], "answer": "A"}, {"chapter": "第三章", "type": "single", "num": 24, "text": "中华民族精神的核心是(      )", "options": ["A、勤劳勇敢", "B、自强不息", "C、改革创新", "D、爱国主义"], "answer": "D"}, {"chapter": "第三章", "type": "single", "num": 25, "text": "(      )是一个民族在长期共同生活和社会实践中形成的,为本民族大多数所认同的价值取向、思维方式、道德规范、精神气质的总和。", "options": ["A、爱国主义", "B、集体主义", "C、文化传统", "D、民族精神"], "answer": "D"}, {"chapter": "第三章", "type": "single", "num": 26, "text": "重视并崇尚(      ),是中国古代思想家们的主流观点。", "options": ["A、物质生活", "B、精神生活", "C、文化生活", "D、政治生活"], "answer": "B"}, {"chapter": "第三章", "type": "single", "num": 27, "text": "以下(      )不是表现为对矢志不渝的坚守理想。", "options": ["A、“志士仁人,无求生以害仁,有杀身以成仁”", "B、“人言落日是天涯，望极天涯不见家”", "C、“穷且益坚，不坠青云之志”", "D、“为天地立心,为生民立命,为往圣继绝学,为万世开太平”"], "answer": "B"}, {"chapter": "第三章", "type": "single", "num": 28, "text": "都江堰设计巧妙,成效卓著,是闻名世界的水利工程,在2000多年中持续使用,体现的中国精神内涵是(      )。", "options": ["A、伟大创造精神", "B、伟大奋斗精神", "C、伟大团结精神", "D、伟大梦想精神"], "answer": "A"}, {"chapter": "第三章", "type": "single", "num": 29, "text": "19世纪波兰音乐家肖邦离开祖国时曾带了一瓶祖国的泥土,在巴黎临终时,他嘱托亲人和朋友“我希望至少把我的心脏带回祖国去。”肖邦的做法体现了爱国主义中的(      )", "options": ["A、爱祖国的大好河山", "B、爱自己的骨肉同胞", "C、爱祖国的灿烂文化", "D、爱自己的国家"], "answer": "D"}, {"chapter": "第三章", "type": "single", "num": 30, "text": "毛泽东高度赞扬鲁迅先生所提倡的“横眉冷对千夫指,俯首甘为孺子牛”精神,以鲁迅为榜样,做无产阶级和人民大众的“牛”,鞠躬尽瘁,死而后已,体现了(      )", "options": ["A、爱祖国的大好河山", "B、爱自己的骨肉同胞", "C、爱祖国的灿烂文化", "D、爱自己的国家"], "answer": "B"}, {"chapter": "第三章", "type": "single", "num": 31, "text": "爱国主义是人们自己故土家园、种族和文化的归属感、(      )、尊严感与荣誉感的统一", "options": ["A、自豪感", "B、认同感", "C、自信心", "D、自尊心"], "answer": "B"}, {"chapter": "第三章", "type": "single", "num": 32, "text": "爱国主义与(      )具有一致性,这是每一个中国公民必须坚持的立场和态度。", "options": ["A、爱社会主义", "B、爱中国共产党", "C、爱人民政府", "D、爱广大人民"], "answer": "A"}, {"chapter": "第三章", "type": "single", "num": 33, "text": "(      )是凝心聚力的兴国之魂、强国之魂。", "options": ["A、爱国主义", "B、民族精神", "C、时代精神", "D、中国精神"], "answer": "D"}, {"chapter": "第三章", "type": "single", "num": 34, "text": "邓小平曾经指出:“港澳、台湾、海外的爱国同胞,不能要求他们都拥护社会主义,但是至少也不能反对社会主义的新中国,否则怎么叫爱祖国呢?”这说明,在当代中国(      )", "options": ["A、爱国主义与爱社会主义是一致的", "B、爱国主义与拥护祖国统一是一致的", "C、爱国主义与爱中国共产党是一致的", "D、爱国主义与爱马克思主义是一致的"], "answer": "B"}, {"chapter": "第三章", "type": "single", "num": 35, "text": "做新时期忠诚坚定的爱国者,除了需要培育强烈的爱国情感、保持民族自尊和自信,努力学习和工作、以实际行动和贡献履行爱国义务外,还需要(      )", "options": ["A、拒绝接受其他国家的一切东西", "B、维护祖国统一和民族团结", "C、全面接受中国古代的传统文化和道德", "D、从经济基础到上层建筑的一切领域都与西方接轨"], "answer": "B"}, {"chapter": "第三章", "type": "single", "num": 36, "text": "“一方水土养一方人”,“禾苗离土即死,国家无土难存”,因此,作为中华儿女要(      )", "options": ["A、爱祖国的大好河山", "B、爱自己的骨肉同胞", "C、爱祖国的灿烂文化", "D、爱自己的国家"], "answer": "A"}, {"chapter": "第三章", "type": "single", "num": 37, "text": "国家安全的根本是(      )", "options": ["A、人民安全", "B、政治安全", "C、经济安全", "D、军事安全"], "answer": "B"}, {"chapter": "第三章", "type": "single", "num": 38, "text": "孙中山先生说过:“‘统一’是中国全体国民的希望。能够统一,全国人民便享福;不能统一,便要受害。”我们坚持(      )的基本方针,坚持一个中国原则和“九二共识”,推动两岸关系和平发展。", "options": ["A、和平团结,民族复兴", "B、兄弟齐心,其利断金", "C、不放弃使用武力", "D、和平统一、一国两制"], "answer": "D"}, {"chapter": "第三章", "type": "single", "num": 39, "text": "(      )是民族生生不息的丰厚滋养。", "options": ["A、人类文明", "B、社会发展", "C、历史文化", "D、政治进步"], "answer": "C"}, {"chapter": "第三章", "type": "single", "num": 40, "text": "(      )是当代中国最鲜明的特色。", "options": ["A、改革开放", "B、民族复兴", "C、爱国主义", "D、共产主义"], "answer": "A"}, {"chapter": "第三章", "type": "single", "num": 41, "text": "时代精神是在新的历史条件下形成和发展的,是体现民族特质、顺应时代潮流的思想观念、行为方式、价值取向、精神风貌和社会风尚的总和。时代精神的核心在于(      )", "options": ["A、实事求是", "B、与时俱进", "C、改革创新", "D、艰苦奋斗"], "answer": "C"}, {"chapter": "第三章", "type": "single", "num": 42, "text": "中华民族的民族精神和时代精神构成了(      )", "options": ["A、爱国主义", "B、中国精神", "C、民族素质", "D、共同理想"], "answer": "B"}, {"chapter": "第三章", "type": "single", "num": 43, "text": "(      )是当今国际竞争新优势的集中体现。", "options": ["A、民族复兴", "B、创新能力", "C、社会变革", "D、经济发展"], "answer": "B"}, {"chapter": "第三章", "type": "single", "num": 44, "text": "国家安全的基础是(      )", "options": ["A、政治安全", "B、国防安全", "C、经济安全", "D、科技安全"], "answer": "C"}, {"chapter": "第三章", "type": "single", "num": 45, "text": "实施创新驱动发展战略,最根本的是(      )", "options": ["A、要解放和激发科技作为第一生产力的巨大潜力", "B、要破除体制机制障碍", "C、要增强自主创新能力", "D、要打通从科技到产业、经济各个通道"], "answer": "C"}, {"chapter": "第三章", "type": "multi", "num": 1, "text": "下列选项中,体现了中华民族爱国主义优良传统的有(      )", "options": ["A、“先天下之忧而忧,后天下之乐而乐”", "B、“人生自古谁无死,留取丹心照汗青”", "C、“苟利国家生死以,岂因祸福避趋之”", "D、“各人自扫门前雪,莫管他人瓦上霜”"], "answer": "ABC"}, {"chapter": "第三章", "type": "multi", "num": 2, "text": "世界上没有哪个国家不主张爱国,没有哪个国家的人民不把爱国主义当作伟大的精神品格而加以敬仰和推崇。爱国主义是(      )", "options": ["A、一种重大的政治原则", "B、人们对自己祖国的浓厚感情", "C、民族精神的核心", "D、调整个人与国家、个人与民族关系的道德要求和法律规范"], "answer": "ABCD"}, {"chapter": "第三章", "type": "multi", "num": 3, "text": "在中华民族悠久的历史发展中,爱国主义从来就是一种巨大的精神力量,成为一种优良传统,这种优良传统包括(      )", "options": ["A、维护祖国统一,反对分裂", "B、同仇敌忾,抗御外侮", "C、热爱祖国,矢志不渝", "D、天下兴亡,匹夫有责"], "answer": "ABCD"}, {"chapter": "第三章", "type": "multi", "num": 4, "text": "爱国主义是中华民族宝贵的精神财富,爱国主义的历史作用:(      )", "options": ["A、全国各族人民共同的精神支柱", "B、全国人民团结奋斗的一面旗帜", "C、中华民族的优良传统", "D、推动我国经济发展、社会进步的巨大力量"], "answer": "ABCD"}, {"chapter": "第三章", "type": "multi", "num": 5, "text": "现阶段,爱国主义主要表现为(      )", "options": ["A、弘扬民族精神与时代精神", "B、全心全意为人民服务", "C、献身于建设和保卫社会主义现代化事业", "D、献身于促进祖国统一的事业"], "answer": "ACD"}, {"chapter": "第三章", "type": "multi", "num": 6, "text": "新时期中华民族的爱国主义,体现了(      )", "options": ["A、爱国主义与爱社会主义的统一性", "B、爱国主义与爱中国共产党和爱人民政府的统一性", "C、爱国主义与拥护祖国统一的统一性", "D、爱国主义与爱和谐社会的统一性"], "answer": "ABC"}, {"chapter": "第三章", "type": "multi", "num": 7, "text": "在经济全球化的条件下,爱国主义并没有也不会过时,因为(      )", "options": ["A、国家仍然是民族存在的最高组织形式", "B、国家是经济发展的实体", "C、国家是国际社会活动中的独立主体", "D、国家是联合国的成员"], "answer": "AC"}, {"chapter": "第三章", "type": "multi", "num": 8, "text": "爱国主义不是狭隘的民族主义,也不是大国沙文主义,要正确处理(      )", "options": ["A、热爱祖国与关爱世界的关系", "B、爱社会主义与大胆吸收资本主义先进经验的关系", "C、为祖国服务与尽国际义务的关系", "D、维护世界和平与促进共同发展的关系"], "answer": "ACD"}, {"chapter": "第三章", "type": "multi", "num": 9, "text": "当代大学生,在把握经济全球化与爱国主义相互关系上,需要着重树立的观念是(      )", "options": ["A、经济全球化过程中要始终抵制西方国家的腐朽文化", "B、经济全球化过程中要始终维护国家的主权和尊严", "C、人有地域和信仰的不同,但报效祖国之心不应有差别", "D、科学没有国界,但科学家有祖国"], "answer": "BCD"}, {"chapter": "第三章", "type": "multi", "num": 10, "text": "民族精神是一个民族在长期共同生活和社会实践中形成的,为本民族大多数成员所认同的价值取向、思维方式、道德规范、精神气质的总和。它(      )", "options": ["A、集中体现了一个民族在一定的自然环境和社会历史条件下生存和发展的独特方式", "B、反映了一个民族的心理特征、文化传统、精神风貌", "C、是一个民族赖以生存和发展的精神支柱", "D、具有差异性和阶级性"], "answer": "ABC"}, {"chapter": "第三章", "type": "multi", "num": 11, "text": "爱国主义的基本要求是(      )", "options": ["A、爱祖国的大好河山", "B、爱自己的骨肉同胞", "C、爱祖国的灿烂文化", "D、爱自己的国家"], "answer": "ABCD"}, {"chapter": "第三章", "type": "multi", "num": 12, "text": "爱国主义的时代价值是(      )", "options": ["A、它是中华民族继往开来的精神支柱", "B、它是维护祖国统一和民族团结的纽带", "C、它是实现中华民族伟大复兴的动力", "D、它是个人实现人生价值的力量源泉"], "answer": "ABCD"}, {"chapter": "第三章", "type": "multi", "num": 13, "text": "中国精神的丰富内涵包括:(      )", "options": ["A、伟大创造精神", "B、伟大奋斗精神", "C、伟大团结精神", "D、伟大梦想精神"], "answer": "ABCD"}, {"chapter": "第三章", "type": "multi", "num": 14, "text": "中国共产党在领导中国人民进行革命的实践中形成了许多优良的革命传统和精神,以下属于这些革命传统和精神的是(      )", "options": ["A、井冈山精神", "B、长征精神", "C、延安精神", "D、雷锋精神"], "answer": "ABC"}, {"chapter": "第三章", "type": "multi", "num": 15, "text": "中国共产党在领导中国人民进行社会主义建设和改革的伟大实践中,弘扬了民族精神,形成了许多新的优良精神,以下属于这些精神的是(      )", "options": ["A、雷锋精神", "B、“两弹一星”精神", "C、抗战精神", "D、抗震救灾精神"], "answer": "ABD"}, {"chapter": "第三章", "type": "multi", "num": 16, "text": "中国共产党在领导中国人民进行革命、建设和改革的伟大实践中,培育了井冈山精神、长征精神、延安精神、抗战精神、西柏坡精神、雷锋精神、“两弹一星”精神、大庆精神、抗洪精神、抗疫精神、抗震救灾精神、北京奥运精神等,这些精神是(      )", "options": ["A、时代精神的集中表现", "B、伟大的中华民族精神的发扬光大", "C、中华民族长期形成的民族精神在现当代历史中震撼人心的新表现", "D、为中华民族精神增添了富于时代精神的新内涵"], "answer": "BCD"}, {"chapter": "第三章", "type": "multi", "num": 17, "text": "中华民族精神的内涵,包括爱国主义、(      )", "options": ["A、团结统一", "B、爱好和平", "C、勤劳勇敢", "D、自强不息"], "answer": "ABCD"}, {"chapter": "第三章", "type": "multi", "num": 18, "text": "习近平指出,历史总是向前发展的,我们总结和吸收历史教训,目的是以史为鉴、更好前进,具体表现为(      )", "options": ["A、历史是一面镜子", "B、历史是一位智者", "C、历史最好的教科书", "D、历史是最好的清醒剂"], "answer": "ABCD"}, {"chapter": "第三章", "type": "multi", "num": 19, "text": "改革创新是时代精神的核心,改革创新精神表现为(      )", "options": ["A、突破陈规、大胆探索、勇于创造的思想观念", "B、不甘落后、奋勇争先、追求进步的责任感和使命感", "C、坚忍不拔、自强不息、锐意进取的精神状态", "D、固守经验、步伐稳健、游刃有余的处事风格"], "answer": "ABC"}, {"chapter": "第三章", "type": "multi", "num": 20, "text": "改革创新精神对于我们民族、国家和党的事业具有十分重要意义,它是(      )", "options": ["A、先进生产力发展的方向", "B、中华民族进步的灵魂", "C、我国兴旺发达的不竭动力", "D、中国共产党永葆生机的源泉"], "answer": "BCD"}, {"chapter": "第三章", "type": "multi", "num": 21, "text": "改革创新是新时代的迫切要求,表现在(      )", "options": ["A、创新决定未来,改革关乎国运", "B、创新是推动人类社会发展的第一动力", "C、创新能力是当今国际竞争新优势的集中体现", "D、创新是赢得未来的必然要求"], "answer": "ABCD"}, {"chapter": "第三章", "type": "multi", "num": 22, "text": "改革创新是多方面的,主要包括(      )", "options": ["A、理论创新", "B、制度创新", "C、科技创新", "D、文化创新"], "answer": "ABCD"}, {"chapter": "第三章", "type": "multi", "num": 23, "text": "弘扬以改革创新为核心的时代精神,必须(      )", "options": ["A、全方位、多层次的开展对外开放", "B、提高对外开放水平", "C、大力推进理论创新、制度创新、科技创新、文化创新和其他各方面的创新", "D、自觉投身于改革创新的伟大实践"], "answer": "CD"}, {"chapter": "第三章", "type": "multi", "num": 24, "text": "时代精神与民族精神是紧密相连的,表现在(      )", "options": ["A、时代精神是民族精神的时代性体现", "B、民族精神是时代精神形成的重要基础和依据", "C、民族精神与时代精神的有机统一,构成了社会主义核心价值体系的精髓", "D、民族精神与时代精神的有机结合,构成了社会主义道德体系的重要部分"], "answer": "ABCD"}, {"chapter": "第三章", "type": "multi", "num": 25, "text": "制度创新是其他一切创新的重要保障,制度建设具有(      )", "options": ["A、根本性", "B、全局性", "C、长期性", "D、稳定性"], "answer": "ABCD"}, {"chapter": "第三章", "type": "multi", "num": 26, "text": "当代大学生要培养改革创新品质,必须(      )", "options": ["A、夯实创新基础", "B、培养创新思维", "C、善于幻想", "D、积极投身于社会实践"], "answer": "ABD"}, {"chapter": "第三章", "type": "multi", "num": 27, "text": "做忠诚的爱国者,就要自觉维护国家利益,做到:(      )", "options": ["A、承担对国家应尽的义务", "B、维护改革发展稳定的大局", "C、以个人利益兼顾国家利益", "D、树立民族自尊心和自豪感"], "answer": "ABD"}, {"chapter": "第三章", "type": "multi", "num": 28, "text": "自觉维护国家利益,体现在:(      )", "options": ["A、自觉维护好集体利益", "B、当祖国的领土和主权受到外来侵略时,自觉地担负保卫祖国的神圣职责", "C、当国家利益受到损害时,同一切损害国家利益的行为做斗争", "D、当个人利益与国家利益发生矛盾时,个人利益服从国家利益"], "answer": "BCD"}, {"chapter": "第三章", "type": "multi", "num": 29, "text": "相信本民族的力量能够迎接挑战、战胜困难,使自己的祖国屹立于世界民族之林的情感,属于(      )", "options": ["A、民族自满感", "B、民族自尊心", "C、民族优越感", "D、民族自豪感"], "answer": "BD"}, {"chapter": "第三章", "type": "multi", "num": 30, "text": "中国特色国家安全道路是指:(      )", "options": ["A、必须既重视外部安全,又重视内部安全", "B、既重视国土安全,又重视国民安全", "C、既重视传统安全、又重视非传统安全", "D、既重视发展问题、又重视安全问题"], "answer": "ABCD"}, {"chapter": "第三章", "type": "multi", "num": 31, "text": "伟大建党精神是(      )", "options": ["A、坚持真理、坚守理想", "B、践行初心、担当使命", "C、不怕牺牲、英勇斗争", "D、对党忠诚、不负人民"], "answer": "ABCD"}, {"chapter": "第三章", "type": "multi", "num": 32, "text": "中国人民在长期奋斗中,培育、继承、发展起来的伟大中国精神,包括(      )", "options": ["A、伟大创造精神", "B、伟大奋斗精神", "C、伟大团结精神", "D、伟大梦想精神"], "answer": "ABCD"}, {"chapter": "第三章", "type": "multi", "num": 33, "text": "下列语句和典故体现“自强不息”的民族精神的是(      )", "options": ["A、富贵不能淫,贫贱不能移,威武不能屈", "B、亲仁善邻", "C、大禹治水", "D、愚公移山"], "answer": "ACD"}, {"chapter": "第三章", "type": "multi", "num": 34, "text": "鲁迅曾说:“没有民魂是值得宝贵的,没有他发扬起来,中国才有真进步。”实现中国梦必须弘扬中国精神,中国精神是兴国强国之魂是(      )", "options": ["A、激发创新创造的精神动力", "B、凝聚中国力量的精神纽带", "C、推进复兴伟业的精神支柱", "D、政治文明建设的重要内容"], "answer": "ABC"}, {"chapter": "第三章", "type": "multi", "num": 35, "text": "维护国家主权和领土完整、实现祖国统一要做到(      )", "options": ["A、坚持一个中国原则", "B、推进两岸交流合作", "C、促进两岸同胞团结奋斗", "D、反对台独分裂图谋"], "answer": "ABC"}, {"chapter": "第三章", "type": "multi", "num": 36, "text": "爱国主义是人民对自己故土家园、民族和文化的(      )的统一", "options": ["A、归属感", "B、认同感", "C、尊严感", "D、荣誉感"], "answer": "ABCD"}, {"chapter": "第三章", "type": "multi", "num": 37, "text": "时代精神与民族精神的关系表现在(      )", "options": ["A、都是中华民族赖以生存和发展的精神支撑", "B、都是中国精神的重要组成部分", "C、民族精神是时代精神的时代性体现", "D、两者紧密关联"], "answer": "ABD"}, {"chapter": "第三章", "type": "multi", "num": 38, "text": "民族精神是指一个民族在长期共同生活和社会实践中形成的,为本民族大多数成员所认同的(      )的总和", "options": ["A、价值取向", "B、思维方式", "C、道德规范", "D、精神气质"], "answer": "ABCD"}, {"chapter": "第三章", "type": "multi", "num": 39, "text": "中国传统文化强调道德修养和道德教化,“三不朽”指的是(      )", "options": ["A、立德", "B、立功", "C、立言", "D、立书"], "answer": "ABC"}, {"chapter": "第三章", "type": "multi", "num": 40, "text": "新时代大学生要树立大历史观和正确党史观,准确把握党的历史发展的主题主线、主流本质……真正(      )", "options": ["A、理解历史", "B、把握历史", "C、增强历史自觉", "D、增强历史自信"], "answer": "ABCD"}, {"chapter": "第三章", "type": "judge", "num": 1, "text": "爱祖国的骨肉同胞,意味着对整个民族利益共同体的自觉认同。(      )", "options": [], "answer": "对"}, {"chapter": "第三章", "type": "judge", "num": 2, "text": "“统则强、分则乱。”“台独”分裂势力及其分裂活动是对台海和平的现实威胁。(      )", "options": [], "answer": "对"}, {"chapter": "第三章", "type": "judge", "num": 3, "text": "改革创新是时代精神的核心。(      )", "options": [], "answer": "对"}, {"chapter": "第三章", "type": "judge", "num": 4, "text": "经济全球化形势下不必弘扬爱国主义了。(      )", "options": [], "answer": "错"}, {"chapter": "第三章", "type": "judge", "num": 5, "text": "爱国主义与拥护祖国统一是矛盾的。(      )", "options": [], "answer": "错"}, {"chapter": "第三章", "type": "judge", "num": 6, "text": "弘扬和培育民族精神,只要弘扬中国古代的民族精神就可以了。(      )", "options": [], "answer": "错"}, {"chapter": "第三章", "type": "judge", "num": 7, "text": "爱祖国不是抽象的,而是具体的。(      )", "options": [], "answer": "对"}, {"chapter": "第三章", "type": "judge", "num": 8, "text": "文化复古主义是一种正确的对待传统道德的思潮。(      )", "options": [], "answer": "错"}, {"chapter": "第三章", "type": "judge", "num": 9, "text": "爱国爱党爱社会主义统一于实现中华民族伟大复兴的历史进程。(      )", "options": [], "answer": "对"}, {"chapter": "第三章", "type": "judge", "num": 10, "text": "安全是发展的前提,发展是安全的保障,要有效防范化解各类风险挑战,确保社会主义现代化事业顺利推进。(      )", "options": [], "answer": "对"}, {"chapter": "第三章", "type": "judge", "num": 11, "text": "中国传统文化博大精深,学习和掌握其中的各种思想精华,对树立正确的世界观、人生观,价值观很有益处。(      )", "options": [], "answer": "对"}, {"chapter": "第四章", "type": "single", "num": 1, "text": "“人生的扣子从一开始就要扣好。”习总书记朴素又生动的比喻,蕴涵着丰富的人生哲理,深刻揭示了(      )", "options": ["A、青年处在价值观形成和确立的关键时刻,价值观教育要抓早抓实的重要性", "B、核心价值观的养成绝非一日之功,要坚持由易到难由近及远", "C、加强青少年道德修养,必须要注重道德实践", "D、青年人要善于明辨是非,扎扎实实干事踏踏实实做人"], "answer": "A"}, {"chapter": "第四章", "type": "single", "num": 2, "text": "社会主义核心价值观“三个倡导”中从个人行为层面对社会主义核心价值观基本理念的凝练是(      )", "options": ["A、倡导富强、民主、文明、和谐", "B、倡导自由、平等、公正、法治", "C、倡导民主、人权、自由、法治", "D、倡导爱国、敬业、诚信、友善"], "answer": "D"}, {"chapter": "第四章", "type": "single", "num": 3, "text": "社会主义核心价值观“三个倡导”中从社会层面对社会主义核心价值观基本理念的凝练是(      )", "options": ["A、倡导富强、民主、文明、和谐", "B、倡导自由、平等、公正、法治", "C、倡导民主、人权、自由、法治", "D、倡导爱国、敬业、诚信、友善"], "answer": "B"}, {"chapter": "第四章", "type": "single", "num": 4, "text": "社会主义核心价值观“三个倡导”中从国家层面对社会主义核心价值观基本理念的凝练是(      )", "options": ["A、倡导富强、民主、文明、和谐", "B、倡导自由、平等、公正、法治", "C、倡导民主、人权、自由、法治", "D、倡导爱国、敬业、诚信、友善"], "answer": "A"}, {"chapter": "第四章", "type": "single", "num": 5, "text": "社会主义核心价值观把涉及国家、社会、公民的价值要求融为一体,是对我们要建设什么样的国家、建设什么样的社会、培育什么样的公民等重大问题的深刻解答。其中,回答了我们要建设什么样的国家的重大问题价值追求的是(      )", "options": ["A、改革、创新、和谐、美丽", "B、富强、民主、文明、和谐", "C、自由、平等、公正、法治", "D、爱国、敬业、诚信、友善"], "answer": "B"}, {"chapter": "第四章", "type": "single", "num": 6, "text": "社会主义核心价值观把涉及国家、社会、公民的价值要求融为一体,是对我们要建设什么样的国家、建设什么样的社会、培育什么样的公民等重大问题的深刻解答。其中,回答了我们要建设什么样的社会的重大问题价值追求的是(      )", "options": ["A、改革、创新、和谐、美丽", "B、富强、民主、文明、和谐", "C、自由、平等、公正、法治", "D、爱国、敬业、诚信、友善"], "answer": "C"}, {"chapter": "第四章", "type": "single", "num": 7, "text": "社会主义核心价值观把涉及国家、社会、公民的价值要求融为一体,是对我们要建设什么样的国家、建设什么样的社会、培育什么样的公民等重大问题的深刻解答。其中,回答了我们要建设什么样的公民的重大问题价值追求的是(      )", "options": ["A、改革、创新、和谐、美丽", "B、富强、民主、文明、和谐", "C、自由、平等、公正、法治", "D、爱国、敬业、诚信、友善"], "answer": "D"}, {"chapter": "第四章", "type": "single", "num": 8, "text": "它是涵养社会主义核心价值观的重要源泉,中华民族的精神命脉。社会主义核心价值观历史底蕴的集中体现就是深深根植于(      )", "options": ["A、中华传统文化", "B、中国传统道德", "C、中国革命道德", "D、中华优秀传统文化"], "answer": "D"}, {"chapter": "第四章", "type": "single", "num": 9, "text": "习近平指出:“一个民主、一个国家的核心价值观必须同这个民族、这个国家的历史文化相契合,同这个民族、这个国家的人民正在进行的奋斗相结合,同这个民族、这个国家需要解决的时代问题相适应。”社会主义核心价值观的实践根据是(      )", "options": ["A、中国特色社会主义建设", "B、新民主主义革命", "C、社会主义革命和建设", "D、改革创新"], "answer": "A"}, {"chapter": "第四章", "type": "single", "num": 10, "text": "“爱国、敬业、诚信、友善”,反映了“中国梦”的实现主体是(      )", "options": ["A、中国特色社会主义主义", "B、社会主义性质", "C、公民的德性和品格", "D、人民群众"], "answer": "C"}, {"chapter": "第四章", "type": "single", "num": 11, "text": "(      )是社会主义核心价值体系的主题。", "options": ["A、马克思主义指导思想", "B、民族精神和时代精神", "C、中国特色社会主义共同理想", "D、社会主义荣辱观"], "answer": "C"}, {"chapter": "第四章", "type": "single", "num": 12, "text": "(      )是社会主义核心价值体系的基础", "options": ["A、马克思主义指导思想", "B、民族精神和时代精神", "C、中国特色社会主义共同理想", "D、社会主义荣辱观"], "answer": "D"}, {"chapter": "第四章", "type": "single", "num": 13, "text": "马克思主义是社会主义核心价值观的(      )", "options": ["A、基础", "B、精髓", "C、灵魂", "D、依据"], "answer": "C"}, {"chapter": "第四章", "type": "single", "num": 14, "text": "历史经验告诉我们,共同的价值观是一个民族共同体存在和发展的思想基础,核心价值观是凝聚一个民族的精神力量,是整合民族国家内部的根本要素,它(      )着一个民族、一个国家发展进程。", "options": ["A、引领", "B、伴随", "C、影响", "D、支撑"], "answer": "C"}, {"chapter": "第四章", "type": "single", "num": 15, "text": "公务员要(      )国家宪法,模范遵守法律法规,按照法定的权限、程序和方法执法,依法守法,维护法律尊严。", "options": ["A、学习", "B、牢记", "C、忠于", "D、了解"], "answer": "C"}, {"chapter": "第四章", "type": "single", "num": 16, "text": "进入改革开放历史新时期以后,我们党对效率和公平关系的认知发生了根本的变化,认识到在中国这样经济文化落后的社会主义国家,平均主义式的“公平”必然使社会陷入普通贫穷的状态。在此基础上,1992年召开的党的十四大进一步提出要“(      )”的原则。", "options": ["A、按需分配", "B、按劳分配", "C、兼顾效率与公平", "D、坚持社会主义道路"], "answer": "C"}, {"chapter": "第四章", "type": "single", "num": 17, "text": "(      )是马克思主义的终极追求,也是中国特色社会主义的内在逻辑。", "options": ["A、法治", "B、平等", "C、自由", "D、公正"], "answer": "C"}, {"chapter": "第四章", "type": "single", "num": 18, "text": "(      )是社会主义核心价值观体系和社会主义核心价值观的道德基础。", "options": ["A、民族精神", "B、社会主义荣辱观", "C、爱国主义", "D、时代精神"], "answer": "B"}, {"chapter": "第四章", "type": "single", "num": 19, "text": "公务员既是一般意义上的普通公民,又是特殊意义上的特殊群体,使他们在社会活动中的影响力与众不同,由于公务员独特身份的内在要求,在践行个人层面的价值准则时,就需要(      )一般意义上公民的价值标准和要求。", "options": ["A、遵守", "B、超越", "C、实行", "D、认同"], "answer": "B"}, {"chapter": "第四章", "type": "single", "num": 20, "text": "(      )作为一种社会价值,是指一个社会在处理各种利益关系时,体现自由、平等、正义的原则和精神,使权利和义务相统一,付出成本和分享利益相一致。", "options": ["A、平等", "B、公正", "C、自由", "D、法治"], "answer": "B"}, {"chapter": "第四章", "type": "single", "num": 21, "text": "社会主义核心价值观,把涉及国家、社会、公民的价值要求融为一体,既体现了社会主义本质要求,继承了(      ),也吸收了世界文明有益成果,体现了时代精神。", "options": ["A、中华优秀传统文化", "B、世界优秀传统文化", "C、民族优秀传统文化", "D、人类优秀传统文化"], "answer": "A"}, {"chapter": "第四章", "type": "single", "num": 22, "text": "社会主义核心价值体系的基本内容是由马克思主义指导思想、中国特色社会主义共同理想以（    ）为核心的民族精神和以_（      ）为核心的时代精神、社会主义荣辱观构成(      )", "options": ["A、社会主义、与时俱进", "B、爱国主义、改革创新", "C、爱国主义、团结奋斗", "D、艰苦奋斗、与时俱进"], "answer": "B"}, {"chapter": "第四章", "type": "single", "num": 23, "text": "(      )是马克思主义关于社会主义核心价值观论述的基本原则", "options": ["A、人的解放", "B、人的自由而全面发展", "C、公平正义", "D、自由博爱"], "answer": "C"}, {"chapter": "第四章", "type": "single", "num": 24, "text": "先秦时期就提出了“和而不同”“和合中庸”“政通人和”“天人合一”“协和万邦”、等丰富多彩、意蕴深远的(      )理念", "options": ["A、重和谐", "B、重伦理", "C、重民本", "D、重爱国"], "answer": "A"}, {"chapter": "第四章", "type": "single", "num": 25, "text": "科学发展观的核心是(      )", "options": ["A、发展", "B、以人为本", "C、全面协调可持续", "D、统筹兼顾"], "answer": "B"}, {"chapter": "第四章", "type": "single", "num": 26, "text": "(      ),是我们党面对多样化的思想文化,价值观念的一个基本原则。", "options": ["A、听任多样化的无序发展", "B、允许各种非马克思主义的社会思潮泛滥", "C、尊重差异,包容多样", "D、兼收并蓄"], "answer": "C"}, {"chapter": "第四章", "type": "single", "num": 27, "text": "(      )是中国特色社会主义的根本任务。", "options": ["A、让一部分人先富起来", "B、实现全体人民的共同富裕", "C、人民当家作主", "D、解放和发展社会生产力"], "answer": "D"}, {"chapter": "第四章", "type": "single", "num": 28, "text": "社会主义民主的本质是(      )", "options": ["A、人民当家作主", "B、和平统一", "C、坚持人民代表大会制度", "D、解放和发展社会生产力"], "answer": "A"}, {"chapter": "第四章", "type": "single", "num": 29, "text": "社会主义民主是社会主义(      )文明的重要标志。", "options": ["A、物质", "B、精神", "C、政治", "D、生态"], "answer": "C"}, {"chapter": "第四章", "type": "single", "num": 30, "text": "(      )是人类发展的终极诉求", "options": ["A、民主法治", "B、公平正义", "C、诚信友爱", "D、人与自然和谐相处"], "answer": "D"}, {"chapter": "第四章", "type": "single", "num": 31, "text": "推进人的自由全面发展的根本途径是(      )", "options": ["A、完善市场经济体制", "B、文化建设", "C、发展生产力", "D、制度创新"], "answer": "C"}, {"chapter": "第四章", "type": "single", "num": 32, "text": "推进人的自由全面发展的深层条件是(      )", "options": ["A、文化建设", "B、发展生产力", "C、素质教育", "D、制度创新"], "answer": "A"}, {"chapter": "第四章", "type": "single", "num": 33, "text": "美国“宪法之父”麦迪逊指出:既然人民和政府都不是天使,那么人民就需要政府管束,政府就需要人民监督。这说明我们要树立的新的法制观念是(      )", "options": ["A、权利义务观念", "B、自由平等的观念", "C、监督制约的观念", "D、法律至上的观念"], "answer": "C"}, {"chapter": "第四章", "type": "single", "num": 34, "text": "(      )反映了“中国梦”的实现道路:中国特色社会主义。", "options": ["A、倡导“富强、民主、文明、和谐”", "B、倡导“自由、平等、公正、法治”", "C、倡导“爱国、敬业、诚信、友善”", "D、倡导“富强、和谐、自由、敬业”"], "answer": "A"}, {"chapter": "第四章", "type": "single", "num": 35, "text": "近年来,我国加大在海外举办(      )学院、文化交流中心和文艺演出、艺术活动等有效地在对外文化交往中传播社会主义核心价值观的重要作用。", "options": ["A、马列", "B、孔子", "C、英语", "D、汉语"], "answer": "B"}, {"chapter": "第四章", "type": "single", "num": 36, "text": "中国特色社会主义的总布局是(      )", "options": ["A、经济、政治、文化、社会建设“四位一体”", "B、实现社会主义现代化和中华民族伟大复兴", "C、社会主义初级阶段", "D、经济、政治、文化、社会、生态文明建设“五位一体”"], "answer": "D"}, {"chapter": "第四章", "type": "single", "num": 37, "text": "党的十九大明确指出:文化是(      )。", "options": ["A、一个核心价值,一个动力源泉", "B、一个国家、一个民族的灵魂", "C、一个爱国的体现", "D、一个社会和生态的和谐"], "answer": "B"}, {"chapter": "第四章", "type": "single", "num": 38, "text": "以下哪个选项(      )不是我国社会主义现代化国家的建设目标,这是在党的十八大做出社会主义核心价值观基本理念凝练的基础上,对于国家层面价值目标进行的新的发展和完善,是与中国特色社会主义事业“五位一体”总体布局相一致的。", "options": ["A、富强", "B、民族", "C、文明", "D、和谐"], "answer": "B"}, {"chapter": "第四章", "type": "single", "num": 39, "text": "人类社会发展的历史表明,对一个民族,一个国家来说,最持久、最深层次的力量是全社会共同认同的(      )。", "options": ["A、财产保护", "B、价值追求", "C、文化自信", "D、价值自信"], "answer": "B"}, {"chapter": "第四章", "type": "single", "num": 40, "text": "(      )承载着一个民族、一个国家的精神追求,体现着一个社会评判是非曲直的价值标准。", "options": ["A、社会主义核心价值观", "B、核心价值观", "C、社会主义荣辱观", "D、中华民族伟大复兴的中国梦"], "answer": "B"}, {"chapter": "第四章", "type": "single", "num": 41, "text": "(      )是对待生产劳动和人类生存的一种根本价值态度。", "options": ["A、爱国", "B、诚信", "C、敬业", "D、友善"], "answer": "C"}, {"chapter": "第四章", "type": "single", "num": 42, "text": "(      )是社会主义核心价值观的根本特性。", "options": ["A、先进性", "B、人民性", "C、真实性", "D、实践性"], "answer": "B"}, {"chapter": "第四章", "type": "single", "num": 43, "text": "(      )反映了人们对美好社会的期望和憧憬,是衡量现代社会是否高度发展、充满活力、和谐有序的重要标志。", "options": ["A、富强、民主、文明、和谐", "B、爱国、敬业、诚信、友善", "C、爱岗、敬业、公平、正义", "D、自由、平等、公正、法治"], "answer": "D"}, {"chapter": "第四章", "type": "single", "num": 44, "text": "社会主义核心价值观之所以彰显出强大的生命力、吸引力和感召力,正因其深深地扎根于(      )的生动实践之中。", "options": ["A、中国特色社会主义经济建设", "B、中国特色社会主义政治建设", "C、中国特色社会主义建设", "D、中国特色社会主义文化建设"], "answer": "C"}, {"chapter": "第四章", "type": "single", "num": 45, "text": "(      )以无可辩驳的事实生动展示着社会主义核心价值观的生机活力。", "options": ["A、中国特色社会主义经济建设", "B、中国特色社会主义政治建设", "C、中国特色社会主义建设", "D、中国特色社会主义文化建设"], "answer": "C"}, {"chapter": "第四章", "type": "single", "num": 46, "text": "(      )是文化软实力的灵魂、文化软实力建设的重点。", "options": ["A、核心价值观", "B、民族精神", "C、文化承载力", "D、中华优秀传统文化"], "answer": "A"}, {"chapter": "第四章", "type": "single", "num": 47, "text": "(      )是我们党执政的最深厚的基础和最大底气。", "options": ["A、发展", "B、制度", "C、人民", "D、共同富裕"], "answer": "C"}, {"chapter": "第四章", "type": "single", "num": 48, "text": "(      )是人类社会进步的标尺,是社会主义制度的本质要求。", "options": ["A、公正", "B、友善", "C、爱国", "D、敬业"], "answer": "A"}, {"chapter": "第四章", "type": "single", "num": 49, "text": "有人说:“圣人是肯做工夫的庸人,庸人是不肯做工夫的圣人。”这句话表达的做人做事要(      )。", "options": ["A、笃实", "B、修德", "C、诚信", "D、爱国"], "answer": "A"}, {"chapter": "第四章", "type": "multi", "num": 1, "text": "党的十八大提出,要倡导富强、民主、文明、和谐,倡导自由、平等、公正、法治,倡导爱国、敬业、诚信、友善,积极培育和践行社会主义核心价值观。社会主义核心价值观(      )", "options": ["A、与中国特色社会主义发展要求相契合", "B、与中华优秀传统文化和人类文明优秀成果相承接", "C、是中国共产党凝聚全党全社会价值共识作出的重要论断补充", "D、生动展现了中国共产党和中华民族高度的价值自信与价值自觉"], "answer": "ABCD"}, {"chapter": "第四章", "type": "multi", "num": 2, "text": "加强社会主义核心价值体系的重要意义在于社会主义核心价值体系(      )", "options": ["A、指明了中国发展的前进方向", "B、凝聚了民族团结的力量", "C、提供了国家发展的强大动力", "D、奠定了社会和谐的思想基础"], "answer": "ABCD"}, {"chapter": "第四章", "type": "multi", "num": 3, "text": "加强社会主义核心价值体系建设的途径有(      )", "options": ["A、加强理论研究,提高认识水平", "B、加大宣传力度,营造舆论氛围", "C、领导示范带头,党员争当表率", "D、融入国民教育,注重实践运用"], "answer": "ABCD"}, {"chapter": "第四章", "type": "multi", "num": 4, "text": "为什么中国到了需要自信的时代,主要原因有(      )。", "options": ["A、实现“两个一百年”奋斗目标和和中华民族伟大复兴中国梦的迫切需要。", "B、从外部环境看,国外各种敌对势力对中国大陆的质疑和否定从未停止,各式各样的“中国崩溃论”,从来未中断过。", "C、从我们自身看,仍有人甚至包括一些党员干部对中国的道路和制度缺乏信心,使得坚定“四个自信”成为必要。", "D、统筹推进伟大斗争、伟大工程、伟大事业、伟大梦想的实践"], "answer": "ABC"}, {"chapter": "第四章", "type": "multi", "num": 5, "text": "社会主义核心价值观的作用有(      )。", "options": ["A、调适社会心态", "B、引领社会思潮", "C、促进人的全面发展", "D、培育文明风尚", "E、调和人际关系", "F、调节利益冲突", "G、弘扬社会正气"], "answer": "ABCDEFG"}, {"chapter": "第四章", "type": "multi", "num": 6, "text": "习近平总书记在“七一”讲话中指出:“在5000多年文明发展中孕育的中华优秀传统文化,在党和人民伟大斗争中孕育的(      ),积淀着中华民族最深层的精神追求,代表着中华民族独特的精神标识。”。", "options": ["A、革命文化", "B、社会主义先进文化", "C、克服重大阻力", "D、解决重大矛盾"], "answer": "AB"}, {"chapter": "第四章", "type": "multi", "num": 7, "text": "社会主义核心价值观以其(      )而居于人类社会的价值制高点。", "options": ["A、先进性", "B、人民性", "C、纯洁性", "D、真实性"], "answer": "ABD"}, {"chapter": "第四章", "type": "multi", "num": 8, "text": "“一种价值观要真正发挥作用,必须融入社会生活,让人们在实践中感知它、领悟它。”大学生要切实做到(      ),使社会主义核心价值观成为一言一行的基本遵循。", "options": ["A、勤学", "B、修德", "C、明辨", "D、笃实"], "answer": "ABCD"}, {"chapter": "第四章", "type": "multi", "num": 9, "text": "社会主义核心价值观从价值观的层面,清晰地展现了我们所推进的中国特色社会主义建设的(      )。", "options": ["A、核心", "B、基本特征", "C、根本追求", "D、重要引领"], "answer": "BC"}, {"chapter": "第四章", "type": "multi", "num": 10, "text": "社会主义核心价值观(      )。", "options": ["A、体现着中国特色社会主义的价值取向", "B、反映着我国社会主义基本制度的本质要求", "C、渗透于经济、政治、文化、社会、生态建设的各个方面", "D、是我国社会主义制度的内在精神之魂"], "answer": "BCD"}, {"chapter": "第四章", "type": "multi", "num": 11, "text": "社会主义核心价值观和社会主义核心价值体系,两者是(      )的。", "options": ["A、互为依存", "B、继承与发展", "C、紧密联系", "D、相辅相成"], "answer": "ACD"}, {"chapter": "第四章", "type": "multi", "num": 12, "text": "一个国家的文化软实力,从根本上说,取决于其核心价值观的(      )。", "options": ["A、生命力", "B、凝聚力", "C、向心力", "D、感召力"], "answer": "ABD"}, {"chapter": "第四章", "type": "multi", "num": 13, "text": "(      )是中国共产党人的初心和使命,也是我们党领导现代化建设的出发点和落脚点。", "options": ["A、为人民谋幸福", "B、为人民谋和谐", "C、为中华民族谋团结", "D、为中华民族谋复兴"], "answer": "AD"}, {"chapter": "第四章", "type": "multi", "num": 14, "text": "社会主义核心价值观把涉及国家、社会、公民的价值要求融为一体,是对我们要(      )等重大问题的深刻解答。", "options": ["A、建设什么样的社会", "B、建设什么样的国家", "C、培育什么样的公民", "D、建设什么样的政府"], "answer": "ABC"}, {"chapter": "第四章", "type": "multi", "num": 15, "text": "大学生要坚持由易到难、由近及远,从现在做起,从自己做起……为实现(      )中国梦凝聚强大的青春能量。", "options": ["A、社会进步", "B、国家富强", "C、民族振兴", "D、人民幸福"], "answer": "BCD"}, {"chapter": "第四章", "type": "multi", "num": 16, "text": "坚定的核心价值观自信,是中国特色社会主义(      )的价值内核。", "options": ["A、道路自信", "B、理论自信", "C、制度自信", "D、文化自信"], "answer": "ABCD"}, {"chapter": "第四章", "type": "multi", "num": 17, "text": "马克思主义提出生产力高度发展和生产资料公有制的基础上,建立真正实现人人平等的公平正义的社会,是迄今为止人类(      )的价值追求。", "options": ["A、最先进", "B、最广泛", "C、最真实", "D、最突出"], "answer": "AB"}, {"chapter": "第四章", "type": "multi", "num": 18, "text": "社会主义核心价值体系主要包括马克思主义指导思想、(      )。", "options": ["A、以爱国主义为核心的民族精神", "B、以改革创新为核心的时代精神", "C、社会主义荣辱观", "D、中国特色社会主义共同理想"], "answer": "ABCD"}, {"chapter": "第四章", "type": "multi", "num": 19, "text": "社会主义核心价值观是社会主义核心价值体系的精神内核,它体现了社会主义核心价值体系的(      )。", "options": ["A、基本特征", "B、本质属性", "C、根本性质", "D、基本要求"], "answer": "AC"}, {"chapter": "第四章", "type": "judge", "num": 1, "text": "中华文化数千年绵延不绝、历久弥新,彰显出强大的生命力与创造力。中国特色社会主义文化根植于从中华文化的沃土中汲取营养,自强不息、厚德载物的中华优秀传统文化,支撑着中华民族生生不息、薪火相传。", "options": [], "answer": "对"}, {"chapter": "第四章", "type": "judge", "num": 2, "text": "建设社会主义文化强国,不需坚持“百花齐放、百家争鸣”的“双百”方针。", "options": [], "answer": "错"}, {"chapter": "第四章", "type": "judge", "num": 3, "text": "文化的根基在人民,文化的源泉在人民,文化的创造靠人民,文化的目的为人民。人民是创作的源头活水,只有扎根人民,创作才能获得取之不尽、用之不竭的源泉。", "options": [], "answer": "对"}, {"chapter": "第四章", "type": "judge", "num": 4, "text": "中国共产党践行全心全意为人民服务的根本宗旨,坚持人民当家作主,坚持以人民为中心的发展思想,把人民对美好生活的向往作为奋斗目标。", "options": [], "answer": "对"}, {"chapter": "第四章", "type": "judge", "num": 5, "text": "贴近实际、贴近生活、贴近群众,是文化发展与创新的丰富土壤和不竭源泉,是建设社会主义文化强国的方法之一,并不是必要的基础条件。", "options": [], "answer": "错"}, {"chapter": "第四章", "type": "judge", "num": 6, "text": "价值观是人类在认识、改造自然和社会的过程中产生与发挥作用的。", "options": [], "answer": "对"}, {"chapter": "第四章", "type": "judge", "num": 7, "text": "爱国、敬业、诚信、友善,是公民基本道德规范,人人都要遵守。", "options": [], "answer": "对"}, {"chapter": "第四章", "type": "judge", "num": 8, "text": "文化软实力的竞争,主要是不同文化所代表的核心价值观的竞争,本质上还是经济实力的竞争。", "options": [], "answer": "错"}, {"chapter": "第四章", "type": "judge", "num": 9, "text": "社会主义核心价值观的现实基础就是当今时代的中华民族所进行的人类历史上最为宏伟而独特的中国特色社会主义建设实践。", "options": [], "answer": "对"}, {"chapter": "第四章", "type": "judge", "num": 10, "text": "作为人类社会最为先进社会制度的本质规定在价值层面的集中反映,社会主义核心价值观代表着当今时代人类社会的价值制高点。", "options": [], "answer": "对"}, {"chapter": "第四章", "type": "judge", "num": 11, "text": "人民性也是以马克思主义为理论基础、以社会主义运动为实践根据的社会主义核心价值观的根本特性。", "options": [], "answer": "对"}, {"chapter": "第四章", "type": "judge", "num": 12, "text": "社会主义核心价值观的先进性,体现在它是社会主义制度所坚持和追求的核心价值理念。", "options": [], "answer": "对"}, {"chapter": "第五章", "type": "single", "num": 1, "text": "道德是以(      )为评价方式,主要依靠社会舆论、传统习俗和内心信念来发挥作用的行为规范的总和。", "options": ["A、真假", "B、善恶", "C、是非", "D、美丑"], "answer": "B"}, {"chapter": "第五章", "type": "single", "num": 2, "text": "道德产生的主观条件是(      )。", "options": ["A、个人利益与集体利益矛盾", "B、人的自我意识", "C、社会分工的不同", "D、社会关系"], "answer": "B"}, {"chapter": "第五章", "type": "single", "num": 3, "text": "道德赖以产生的客观条件是(      )。", "options": ["A、社会关系", "B、人的自我意识", "C、生产实践", "D、人类的自我进化"], "answer": "A"}, {"chapter": "第五章", "type": "single", "num": 4, "text": "(      )创造了人和人类社会,是人类道德起源的第一个历史前提。", "options": ["A、劳动", "B、自然", "C、宗教", "D、合作"], "answer": "A"}, {"chapter": "第五章", "type": "single", "num": 5, "text": "道德的产生、发展和变化,归根到底根源于(      )。", "options": ["A、社会经济关系", "B、在法律上的反映", "C、全体人民的意愿", "D、统治阶级的意志"], "answer": "A"}, {"chapter": "第五章", "type": "single", "num": 6, "text": "(      )是指道德通过评价等方式,指导和纠正人们的行为和实践活动,协调社会关系和人际关系的功效与能力。", "options": ["A、道德的认识功能", "B、道德的规范功能", "C、道德的调节功能", "D、道德的导向功能"], "answer": "C"}, {"chapter": "第五章", "type": "single", "num": 7, "text": "在道德的历史发展中出现了多种历史类型,其中出现最早的是(      )。", "options": ["A、原始社会的道德", "B、奴隶社会的道德", "C、封建社会的道德", "D、资本主义的道德"], "answer": "A"}, {"chapter": "第五章", "type": "single", "num": 8, "text": "《诗经》提出“夙夜在公”的道德要求,《尚书》也有“以公灭私,民其允怀”的思想,两者都体现了中华传统美德中的(      )的基本精神。", "options": ["A、重视整体利益,强调责任奉献", "B、推崇“仁爱”原则,注重以和为贵", "C、提倡人伦价值,重视道德义务", "D、追求精神境界,向往理想人格"], "answer": "A"}, {"chapter": "第五章", "type": "single", "num": 9, "text": "孔子强调“己欲立而立人,己欲达而达人”,墨子提出“兼相爱,交相利”,体现的是中华传统美德中(      )的基本精神。", "options": ["A、重视整体利益、强调责任奉献", "B、推崇“仁爱”原则,注重以和为贵", "C、提倡人伦价值,重视道德义务", "D、追求精神境界,向往理想人格"], "answer": "B"}, {"chapter": "第五章", "type": "single", "num": 10, "text": "中国革命道德萌芽于(      )前后,发端于中国共产党成立以后蓬勃发展的伟大工人运动和农民运动,经过土地革命战争、抗日战争、解放战争以及社会主义革命、建设、改革的长期发展,逐渐形成并不断发扬光大。", "options": ["A、义和团运动", "B、太平天国运动", "C、五四运动", "D、一二九运动"], "answer": "C"}, {"chapter": "第五章", "type": "single", "num": 11, "text": "社会主义道德区别和优越于其他社会形态道德的显著标志是(      )。", "options": ["A、集体主义原则", "B、正确的义利观", "C、恪守诚信", "D、以为人民服务为核心"], "answer": "D"}, {"chapter": "第五章", "type": "single", "num": 12, "text": "社会主义道德的核心是(      )。", "options": ["A、集体主义", "B、为人民服务", "C、共产主义", "D、爱国主义"], "answer": "B"}, {"chapter": "第五章", "type": "single", "num": 13, "text": "(      )是社会主义道德的原则。", "options": ["A、爱国主义", "B、集体主义", "C、为人民服务", "D、遵纪守法"], "answer": "B"}, {"chapter": "第五章", "type": "single", "num": 14, "text": "下列不属于公共生活的特征的是(      )。", "options": ["A、活动范围的广泛性", "B、活动内容的开放性", "C、交往对象的复杂性", "D、活动方式的一致性"], "answer": "D"}, {"chapter": "第五章", "type": "single", "num": 15, "text": "(      )是指人们在社会交往和公共生活中应该遵守的行为准则。", "options": ["A、职业道德", "B、社会公德", "C、家庭美德", "D、个人品德"], "answer": "B"}, {"chapter": "第五章", "type": "single", "num": 16, "text": "下列不属于社会公德的主要内容的是(      )。", "options": ["A、文明礼貌", "B、助人为乐", "C、爱护公物", "D、勤俭持家"], "answer": "D"}, {"chapter": "第五章", "type": "single", "num": 17, "text": "应该遵守公德的场合不包括(      )。", "options": ["A、图书馆", "B、卧室", "C、公交车", "D、电影院"], "answer": "B"}, {"chapter": "第五章", "type": "single", "num": 18, "text": "下列的内容中不属于网络生活中的道德要求的是(      )。", "options": ["A、正确使用网络工具", "B、健康进行网络交往", "C、实名制登记上网", "D、加强网络道德自律"], "answer": "C"}, {"chapter": "第五章", "type": "single", "num": 19, "text": "我国公民道德建设的重点是(      )。", "options": ["A、爱岗敬业", "B、诚实守信", "C、办事公道", "D、奉献社会"], "answer": "B"}, {"chapter": "第五章", "type": "single", "num": 20, "text": "“干一行爱一行,爱一行钻一行”体现了职业道德中(      )的要求。", "options": ["A、爱岗敬业", "B、诚实守信", "C、办事公道", "D、奉献社会"], "answer": "A"}, {"chapter": "第五章", "type": "single", "num": 21, "text": "(      )是社会主义职业道德中最高层次的要求,体现了社会主义职业道德的最高目标指向。", "options": ["A、爱岗敬业", "B、诚实守信", "C、办事公道", "D、奉献社会"], "answer": "D"}, {"chapter": "第五章", "type": "single", "num": 22, "text": "下列道德要求中属于职业道德的是(      )。", "options": ["A、遵纪守法", "B、文明礼貌", "C、男女平等", "D、爱岗敬业"], "answer": "D"}, {"chapter": "第五章", "type": "single", "num": 23, "text": "青年马克思在谈到选择职业的理想和价值时曾经写道:“如果我们选择了最能为人类福利而劳动的职业,那么,重担就不能把我们压倒,因为这是为大家而献身;那时我们所感到的就不是可怜的、有限的、自私的乐趣,我们的幸福将属于千百万人,我们的事业将默默地、但是永恒发挥作用地存在下去,面对我们的骨灰,高尚的人们将洒下热泪。”这体现了正确的择业观中(      )的要求。", "options": ["A、树立崇高的职业理想", "B、服从社会发展的需要", "C、做好充分的择业准备", "D、培养创业的勇气和能力"], "answer": "A"}, {"chapter": "第五章", "type": "single", "num": 24, "text": "下列不属于正确的创业观的内容是(      )。", "options": ["A、积极创业的思想准备", "B、敢于创业的勇气", "C、创业的能力", "D、“学历本位”的观念"], "answer": "D"}, {"chapter": "第五章", "type": "single", "num": 25, "text": "下列规范中不属于家庭美德主要内容的是(      )。", "options": ["A、尊老爱幼", "B、乐于助人", "C、男女平等", "D、邻里团结"], "answer": "B"}, {"chapter": "第五章", "type": "single", "num": 26, "text": "恋爱中的道德规范不包括(      )。", "options": ["A、自觉承担责任", "B、尊重人格平等", "C、文明相亲相爱", "D、不与他人交往"], "answer": "D"}, {"chapter": "第五章", "type": "single", "num": 27, "text": "(      )是家庭关系的核心。", "options": ["A、亲子关系", "B、婆媳关系", "C、夫妻关系", "D、父子关系"], "answer": "C"}, {"chapter": "第五章", "type": "single", "num": 28, "text": "个人品德是个体对某种道德要求认同和践履的结果,集中体现了道德认知、道德情感、道德意志、道德信念和(      )的内在统一。", "options": ["A、道德实践", "B、道德行为", "C、道德表现", "D、道德内容"], "answer": "B"}, {"chapter": "第五章", "type": "single", "num": 29, "text": "(      )是个体人格完善的重要标志。", "options": ["A、社会公德", "B、职业道德", "C、家庭美德", "D、个人品德"], "answer": "D"}, {"chapter": "第五章", "type": "single", "num": 30, "text": "道德修养是一个循序渐进的过程,古人云:“不积跬步,无以至千里;不积小流,无以成江海。”下列名言中与这段话在含义上近似的是(      )。", "options": ["A、仁远乎哉?我欲仁,斯仁至矣", "B、勿以善小而不为,勿以恶小而为之", "C、君子求诸已,小人求诸人", "D、有能一日用其力于仁矣乎?未见力不足者"], "answer": "B"}, {"chapter": "第五章", "type": "single", "num": 31, "text": "对待中国传统道德的正确态度是（      ）。", "options": ["A、全盘肯定", "B、全盘否定", "C、辩证扬弃", "D、任其自由"], "answer": "C"}, {"chapter": "第五章", "type": "single", "num": 32, "text": "我们在处理个人与集体、个人与他人的关系时,应当遵循的原则是（      ）。", "options": ["A、主观为自己,客观为他人", "B、只有集体利益,没有个人利益", "C、先集体后个人,先他人后自己", "D、以自我为中心,一切从个人利益出发"], "answer": "C"}, {"chapter": "第五章", "type": "single", "num": 33, "text": "道德提倡（      ）。", "options": ["A、必须怎样", "B、可以怎样", "C、不准怎样", "D、应当怎样"], "answer": "D"}, {"chapter": "第五章", "type": "single", "num": 34, "text": "从个人方面看,正确处理国家、集体和个人三者利益关系关键在于（      ）。", "options": ["A、兼顾三者利益,做好统筹兼顾", "B、发扬爱国主义", "C、反对人利益", "D、同等看待"], "answer": "A"}, {"chapter": "第五章", "type": "single", "num": 35, "text": "美国一位心理学家说:“I+We=FullyI”(我+我们=完整的我),从道德观看,这句话理解正确的是（      ）。", "options": ["A、集体离不开个人", "B、人的自我价值高于社会价值", "C、个人的才能只有在集体中才能得到完善发展", "D、自我奋斗也能升华人生价值"], "answer": "C"}, {"chapter": "第五章", "type": "single", "num": 36, "text": "全面提高公民道德素质,要坚持依法治国和以德治国相结合,加强社会公德、职业道德、家庭美德、个人品德教育,弘扬中华传统美德,弘扬时代新风。下列选项中,既是道德规范又是法律原则的是（      ）。", "options": ["A、爱岗敬业", "B、诚实守信", "C、助人为乐", "D、勤俭持家"], "answer": "B"}, {"chapter": "第五章", "type": "single", "num": 37, "text": "家庭美德涵盖的三种关系是（      ）。", "options": ["A、夫妻、长幼、邻里", "B、父母、兄弟、子女", "C、夫妻、父母、婆媳", "D、夫妻、子女、兄妹"], "answer": "A"}, {"chapter": "第五章", "type": "single", "num": 38, "text": "除“文明礼貌、助人为乐、爱护公物、保护环境”外,社会公德还有一个主要内容是（      ）。", "options": ["A、遵纪守法", "B、诚实守信", "C、公平正义", "D、和谐相处"], "answer": "A"}, {"chapter": "第五章", "type": "single", "num": 39, "text": "男女双方的恋爱行为,客观上是对社会负有相应的道德责任的行为。下列选项中,违背男女恋爱中基本道德要求的是（      ）。", "options": ["A、尊重对方的情感和人格", "B、以寻找爱情、培养爱情为目的", "C、有高尚的情趣和健康的交往方式", "D、一方强迫或诱骗另一方接受自己的爱"], "answer": "D"}, {"chapter": "第五章", "type": "single", "num": 40, "text": "古希腊哲学家柏拉图早就认识到:“为着品德而去眷恋一个情人,总是一件很美的事。”近代法国启蒙思想家卢梭也曾强调:“我们之所以爱一个人,是由于我们认为那个人具有我们所尊重的品质。”他们的意思是说,在爱情中起主导作用的应该是（      ）。", "options": ["A、个人的相貌和气度", "B、人的纵欲目的和生理要求", "C、个人所拥有的金钱和权势", "D、人的精神世界和道德面貌"], "answer": "D"}, {"chapter": "第五章", "type": "single", "num": 41, "text": "下列选项中,属于家庭美德的基本要求的是（      ）。", "options": ["A、勇敢进取", "B、办事公道", "C、尊老爱幼", "D、服务群众"], "answer": "C"}, {"chapter": "第五章", "type": "single", "num": 42, "text": "马克思说过:“真正的爱情是表现在恋人对他的偶像采取含蓄、谦恭甚至羞涩的态度,而绝不是表现在随意流露热情和过早的亲昵。”他的意思是说,在恋爱过程中双方应（      ）。", "options": ["A、平等履行道德义务", "B、把个人纵欲作为爱情的目的", "C、有高尚的情趣和健康的交往方式", "D、追求脱离现实生活的“纯精神”关系"], "answer": "C"}, {"chapter": "第五章", "type": "single", "num": 43, "text": "从业人员对待职业服务对象的态度不能有亲疏、贵贱之分,不管是领导还是群众、是熟人还是生人、是强者还是弱者,都应遵守规章制度,一视同仁、周到服务。这是职业道德中（      ）的要求。", "options": ["A、爱岗敬业", "B、服务群众", "C、办事公道", "D、尊老爱幼"], "answer": "C"}, {"chapter": "第五章", "type": "single", "num": 44, "text": "在公共场所,人人都有可能遇到一些突发性灾祸,如车祸、火灾、溺水、疾病等。这就需要人们见义勇为、临危不惧,积极为他人排忧解难,甚至不惜牺牲自己的生命。这是社会生活中（      ）的要求。", "options": ["A、社会公德", "B、职业道德", "C、家庭美德", "D、环境道德"], "answer": "A"}, {"chapter": "第五章", "type": "single", "num": 45, "text": "“君子有成人之美”“为善最乐”“博施济众”表现的是社会公德内容中的（      ）。", "options": ["A、文明礼貌", "B、助人为乐", "C、爱护公物", "D、保护环境"], "answer": "B"}, {"chapter": "第五章", "type": "single", "num": 46, "text": "个人的言行合乎社会的要求和礼节的规定,尊老爱幼,孝亲敬长,说话和气,以礼待人,服饰朴素大方,举止端庄文雅。这是良好个人品德中（      ）。", "options": ["A、敬业好学的表现", "B、正直无私的表现", "C、文明礼貌的表现", "D、助人为乐的要求"], "answer": "C"}, {"chapter": "第五章", "type": "single", "num": 47, "text": "自古以来,人们在探讨道德起源并提出了种种见解和理论,其中,马克思主义道德起源观是(      )。", "options": ["A、天意神启论", "B、先天人神论", "C、情感欲望论", "D、生产方式论"], "answer": "D"}, {"chapter": "第五章", "type": "single", "num": 48, "text": "在对待传统道德的态度问题上,下列说法正确的是(      )。", "options": ["A、道德建设的最终目标是要形成以中国传统文化为主体的道德体系", "B、中国传统道德从整体上在今天已经失去了价值和意义", "C、必须从整体上对中国传统道德予以否定", "D、要从文化自觉和文化自信出发,加强对中华传统美德的挖掘和阐发。"], "answer": "D"}, {"chapter": "第五章", "type": "single", "num": 49, "text": "关于集体主义,下列说法正确的是(      )。", "options": ["A、集体主义强调国家利益、社会整体利益和个人利益的辩证统一", "B、集体主义强调国家利益、社会整体利益与个人利益同等重要", "C、集体主义重视和保障个人利益", "D、集体主义就是团体主义或本位主义"], "answer": "A"}, {"chapter": "第五章", "type": "single", "num": 50, "text": "集体主义道德要求是有层次的,其中对公民最基本的道德要求是(      )。", "options": ["A、无私奉献、一心为公", "B、先公后私、先人后己", "C、顾全大局、遵纪守法、热爱祖国、诚实劳动", "D、助人为乐、文明礼貌、爱岗敬业、奉献社会"], "answer": "C"}, {"chapter": "第五章", "type": "single", "num": 51, "text": "公共生活是相对于私人生活而言的,具有鲜明的(      ),对社会的影响更为直接和广泛。", "options": ["A、封闭性和隐秘性", "B、开放性和透明性", "C、公共性和社会性", "D、群体性和丰富性"], "answer": "B"}, {"chapter": "第五章", "type": "single", "num": 52, "text": "关于择业与创业观,下列说法错误的是(      )。", "options": ["A、职业活动是人们谋生的手段,从理想的角度谈不上崇高与否", "B、择业和创业既要考虑个人的兴趣和意愿,也要充分考虑社会的需要", "C、大学生树立正确的择业观和创业观,要培养敢于创业的勇气和能力", "D、任何一名劳动者,只要兢兢业业、精益求精,就一定能够造就闪光的人生"], "answer": "A"}, {"chapter": "第五章", "type": "single", "num": 53, "text": "家庭是社会的基本细胞,是人生的第一所学校。不论时代发生多大变化,生活格局发生多大变化,都要重视家庭建设,注重家庭、家教、家风。家庭教育涉及很多方面,其中最重要的是(      )。", "options": ["A、心理健康", "B、品德教育", "C、智力开发", "D、情商培育"], "answer": "B"}, {"chapter": "第五章", "type": "multi", "num": 1, "text": "道德主要依靠(      )来发挥作用。", "options": ["A、社会舆论", "B、传统习俗", "C、内心信念", "D、自我意识"], "answer": "ABC"}, {"chapter": "第五章", "type": "multi", "num": 2, "text": "下列关于道德的社会作用的表述正确的有(      )。", "options": ["A、道德为经济基础的形成、巩固和发展服务,是一种重要的精神力量", "B、在阶级社会中,道德是调节阶级矛盾和对立阶级之间开展阶级斗争的重要工具", "C、道德是提高人的精神境界、促进人的自我完善、推动人的全面发展的内在动力", "D、道德通过调整人们之间的关系维护社会秩序和稳定"], "answer": "ABCD"}, {"chapter": "第五章", "type": "multi", "num": 3, "text": "人类道德进步的主要表现是(      )。", "options": ["A、道德在社会生活中所起的作用越来越重要", "B、道德对于促进社会和谐与人的全面自由发展的作用越来越突出", "C、道德调控的范围不断扩大,调控的手段或方式不断丰富,更加科学合理", "D、道德的发展和进步成为衡量社会文明程度的重要尺度"], "answer": "ABCD"}, {"chapter": "第五章", "type": "multi", "num": 4, "text": "中华传统美德的基本精神包括(      )。", "options": ["A、重视整体利益、强调责任奉献", "B、强调道德修养,注重道德践履", "C、提倡人伦价值,重视道德义务", "D、追求精神境界,向往理想人格"], "answer": "ABCD"}, {"chapter": "第五章", "type": "multi", "num": 5, "text": "中国革命道德的主要内容包括(      )。", "options": ["A、全心全意为人民服务", "B、为实现社会主义和共产主义理想而奋斗", "C、始终把革命利益放在首位", "D、修身自律,保持节操"], "answer": "ABCD"}, {"chapter": "第五章", "type": "multi", "num": 6, "text": "以下关于中国革命道德当代价值的表述正确的有(      )。", "options": ["A、有利于培养良好的社会道德风尚", "B、有利于引导人们树立正确的道德观", "C、有利于培育和践行社会主义核心价值观", "D、有利于加强和巩固社会主义和共产主义的理想信念"], "answer": "ABCD"}, {"chapter": "第五章", "type": "multi", "num": 7, "text": "私人生活的特点是具有(      )。", "options": ["A、开放性", "B、透明性", "C、封闭性", "D、隐秘性"], "answer": "CD"}, {"chapter": "第五章", "type": "multi", "num": 8, "text": "公共生活的特点是具有(      )。", "options": ["A、开放性", "B、透明性", "C、封闭性", "D、合法性"], "answer": "AB"}, {"chapter": "第五章", "type": "multi", "num": 9, "text": "当今世界公共生活的特征主要表现在(      )。", "options": ["A、活动范围的广泛性", "B、活动内容的公开性", "C、交往对象的复杂性", "D、活动方式的多样性"], "answer": "ABCD"}, {"chapter": "第五章", "type": "multi", "num": 10, "text": "下列属于社会公德的主要内容的是(      )。", "options": ["A、文明礼貌", "B、助人为乐", "C、爱护公物", "D、勤俭持家"], "answer": "ABC"}, {"chapter": "第五章", "type": "multi", "num": 11, "text": "职业道德的主要内容包括(      )。", "options": ["A、爱岗敬业", "B、奉献社会", "C、爱护公物", "D、诚实守信"], "answer": "ABD"}, {"chapter": "第五章", "type": "multi", "num": 12, "text": "下列属于家庭美德主要内容的是(      )。", "options": ["A、尊老爱幼", "B、男女平等", "C、诚实守信", "D、办事公道"], "answer": "AB"}, {"chapter": "第五章", "type": "multi", "num": 13, "text": "孔子曰:“三人行,必有我师焉,择其善者而从,其不善者而改之。”这句话对个人自我修养的启示有（      ）。", "options": ["A、要善于实践", "B、要善于学习别人的优点和长处", "C、与人同行时不要做任何坏事", "D、发现缺点和错误要及时改正"], "answer": "BD"}, {"chapter": "第五章", "type": "multi", "num": 14, "text": "下列选项中,对于道德的理解,正确的有（      ）。", "options": ["A、道德通过社会舆论、传统习俗和人们的内心信念来维系", "B、道德属于上层建筑的范畴,是一种特殊的社会意识形态", "C、道德是阶级社会特有的社会意识形态,所以原始社会没有道德", "D、道德是对人们的行为进行善恶评价的心理意识、原则规范和行为活动的总和"], "answer": "ABD"}, {"chapter": "第五章", "type": "multi", "num": 15, "text": "社会主义道德建设与社会主义市场经济的关系是（      ）。", "options": ["A、社会主义道德建设要与社会主义市场经济相适应", "B、社会主义道德建设是独立的一个系统,与社会主义市场经济没有必然的联系", "C、社会主义道德建设为社会主义市场经济体制的建立和完善提供道德价值导向", "D、社会主义道德建设会束缚社会主义市场经济的发展"], "answer": "AC"}, {"chapter": "第五章", "type": "multi", "num": 16, "text": "在对待传统道德的问题上,下列错误的是（      ）。", "options": ["A、坚持文化复古主义,中国道德水平的滑坡就是因为儒家文化的失落", "B、吸取借鉴优良的道德文明成果", "C、实行历史虚无主义,即中国要全盘西化", "D、坚持以我为主,为我所用的基本原则"], "answer": "AC"}, {"chapter": "第五章", "type": "multi", "num": 17, "text": "下面关于“集体主义”的说法正确的是（      ）。", "options": ["A、集体利益高于个人利益", "B、重视个人的正当利益", "C、顾全大局,必要时牺牲自己的利益", "D、集体利益和个人利益是辨证统一的关系"], "answer": "ABCD"}, {"chapter": "第五章", "type": "multi", "num": 18, "text": "与历史上一切剥削阶级道德相比,社会主义道德的基本特征有（      ）。", "options": ["A、能够在实践中不断地完善和发展", "B、建立在历史唯物主义的科学基础之上", "C、符合历史发展方向和人民的根本利益", "D、通过社会舆论和国家强制力量来维持"], "answer": "ABC"}, {"chapter": "第五章", "type": "multi", "num": 19, "text": "道德修养的主要内容包括（      ）。", "options": ["A、提高道德认识", "B、陶冶道德情感", "C、锻炼道德意志", "D、养成良好行为习惯"], "answer": "ABCD"}, {"chapter": "第五章", "type": "multi", "num": 20, "text": "培养诚信对大学生的成长有积极作用。其作用是（      ）。", "options": ["A、内心认同诚信就行", "B、诚信是大学生树立理想信念的基础", "C、诚信是大学生全面发展的前提", "D、诚信是大学生进入社会的“通行证”"], "answer": "BCD"}, {"chapter": "第五章", "type": "multi", "num": 21, "text": "在道德的功能系统中,主要的功能包括(      )", "options": ["A、认识功能", "B、导向功能", "C、规范功能", "D、调节功能"], "answer": "ACD"}, {"chapter": "第五章", "type": "multi", "num": 22, "text": "道德属于上层建筑的范畴,是一种特殊的社会意识形态。社会主义道德建设要(      )。", "options": ["A、与西方主流文明相一致", "B、与社会主义法律规范相协调", "C、与社会主义市场经济相适应", "D、与中华民族传统美德相承接"], "answer": "BCD"}, {"chapter": "第五章", "type": "multi", "num": 23, "text": "大学生应当树立的正确创业观包括(      )。", "options": ["A、要有积极创业的思想准备", "B、要有敢于创业的勇气", "C、要提高创业的能力", "D、要有雄厚的学历背景"], "answer": "ABC"}, {"chapter": "第五章", "type": "multi", "num": 24, "text": "男女双方培养爱情的过程或在爱情基础上进行的相互交往活动,就是人们日常所说的恋爱。恋爱是(      )。", "options": ["A、爱情至上原则", "B、尊重人格平等", "C、自觉承担责任", "D、文明相亲相爱"], "answer": "BCD"}, {"chapter": "第五章", "type": "multi", "num": 25, "text": "大学生在网络生活中加强社会公德自律的基本要求是(      )", "options": ["A、健康进行网络交往", "B、正确使用网络工具", "C、养成网络自律精神", "D、自觉避免沉迷网络"], "answer": "ABCD"}, {"chapter": "第五章", "type": "multi", "num": 26, "text": "志愿服务的精神是(      )", "options": ["A、奉献", "B、友爱", "C、互助", "D、进步"], "answer": "ABCD"}, {"chapter": "第五章", "type": "judge", "num": 1, "text": "道德的本质是由经济基础决定的。", "options": [], "answer": "对"}, {"chapter": "第五章", "type": "judge", "num": 2, "text": "道德修养要与人们改造客观世界和主观世界的实践活动相联系。", "options": [], "answer": "对"}, {"chapter": "第五章", "type": "judge", "num": 3, "text": "道德对经济关系的反映不是消极被动的,而是能动的。", "options": [], "answer": "对"}, {"chapter": "第五章", "type": "judge", "num": 4, "text": "继承和弘扬中华民族优良道德传统是加强社会主义道德建设的内在要求。", "options": [], "answer": "对"}, {"chapter": "第五章", "type": "judge", "num": 5, "text": "集体主义重视和保证个人的一切利益。", "options": [], "answer": "错"}, {"chapter": "第五章", "type": "judge", "num": 6, "text": "公民基本道德规范通俗易懂,适用于不同的社会群体。", "options": [], "answer": "对"}, {"chapter": "第五章", "type": "judge", "num": 7, "text": "诚信是大学生进入社会的通行证。", "options": [], "answer": "对"}, {"chapter": "第五章", "type": "judge", "num": 8, "text": "只有毫不利己、专门利人才是为人民服务。", "options": [], "answer": "错"}, {"chapter": "第五章", "type": "judge", "num": 9, "text": "共产主义道德与社会主义道德在本质上不是同一类型的道德。", "options": [], "answer": "错"}, {"chapter": "第五章", "type": "judge", "num": 10, "text": "“为人民服务”是分层次的,既有先进性,又有广泛性。", "options": [], "answer": "对"}, {"chapter": "第五章", "type": "judge", "num": 11, "text": "道德是法律的补充。", "options": [], "answer": "错"}, {"chapter": "第五章", "type": "judge", "num": 12, "text": "有序的公共生活是国家现代化的一个重要标志。", "options": [], "answer": "对"}, {"chapter": "第五章", "type": "judge", "num": 13, "text": "恋爱也要受到道德的约束。", "options": [], "answer": "对"}, {"chapter": "第六章", "type": "single", "num": 1, "text": "( )是全面依法治国的前提。", "options": ["A、科学立法", "B、严格执法", "C、公正司法", "D、全民守法"], "answer": "A"}, {"chapter": "第六章", "type": "single", "num": 2, "text": "( )是全面依法治国的关键。", "options": ["A、科学立法", "B、严格执法", "C、公正司法", "D、全民守法"], "answer": "B"}, {"chapter": "第六章", "type": "single", "num": 3, "text": "( )是全面依法治国的重点。", "options": ["A、科学立法", "B、严格执法", "C、公正司法", "D、全民守法"], "answer": "C"}, {"chapter": "第六章", "type": "single", "num": 4, "text": "( )是全面依法治国的基础。", "options": ["A、科学立法", "B、严格执法", "C、公正司法", "D、全民守法"], "answer": "D"}, {"chapter": "第六章", "type": "single", "num": 5, "text": "根据宪法规定,( )行使国家立法权,负责修改宪法、制定法律。", "options": ["A、全国人大及其常委会", "B、全国人大", "C、国务院", "D、人民政治协商会议"], "answer": "A"}, {"chapter": "第六章", "type": "single", "num": 6, "text": "国务院有权根据宪法和法律制定( )。", "options": ["A、行政法规", "B、部门规章", "C、地方性法规", "D、地方政府规章"], "answer": "A"}, {"chapter": "第六章", "type": "single", "num": 7, "text": "( )是社会主义法律的基本属性,是社会主义法治的基本要求。", "options": ["A、公正", "B、平等", "C、正义", "D、守法"], "answer": "B"}, {"chapter": "第六章", "type": "single", "num": 8, "text": "我国目前形成了以( )为核心的法律体系。", "options": ["A、民法", "B、刑法", "C、经济法", "D、宪法"], "answer": "D"}, {"chapter": "第六章", "type": "single", "num": 9, "text": "从本质上说,法律所体现的是( )。", "options": ["A、社会成员的普遍意志", "B、统治阶级的共同意志", "C、统治阶级执政集团的意志", "D、立法机关的意志"], "answer": "B"}, {"chapter": "第六章", "type": "single", "num": 10, "text": "在下列各种规范中,由国家制定或认可并由国家强制力保障实施的规范是( )。", "options": ["A、法律规范", "B、政策规范", "C、道德规范", "D、宗教规范"], "answer": "A"}, {"chapter": "第六章", "type": "single", "num": 11, "text": "近年来,一系列“让座纠纷”引起舆论热议。因为不让座,就挨打、遭骂,甚至上演“今天谁也别想走”这样的拦车闹剧。让不让座,本身属于道德层面、道德问题。但是不让座却遭遇拦车、辱骂以及打人等行为,却使让座纠纷上升到了侵权和违法层面。其中,动手打人侵犯的公民权利是( )。", "options": ["A、生命健康权", "B、人身自由权", "C、人格尊严权", "D、社会保障权"], "answer": "A"}, {"chapter": "第六章", "type": "single", "num": 12, "text": "下列行为符合我国法律规定关于正确行使公民权利的是( )。", "options": ["A、父母让初二学生小明外出打工,挣钱供弟妹读书", "B、李某将自己积攒的8万元人民币捐赠给科研机构", "C、王某在公共汽车上将捉住的小偷打成重伤", "D、小刚用石头将销售假冒伪劣商品商户的窗户砸坏"], "answer": "B"}, {"chapter": "第六章", "type": "single", "num": 13, "text": "我国公民的权利和义务具有一致性,这决定了( )。", "options": ["A、公民的权利就是义务,义务就是权利", "B、权利和义务可以互相代替", "C、公民只须树立权利观念", "D、公民在享有权利时必须履行义务"], "answer": "D"}, {"chapter": "第六章", "type": "single", "num": 14, "text": "小强过去常以上学时间紧为由闯红灯,学习法律知识后,他开始自觉遵守交通规则,不再闯红灯了。对小强转变起作用的法律知识是( )。", "options": ["A、我国公民的权利是法律赋予的", "B、公民要依法行使权利自觉履行义务", "C、我国法律规定公民有人身自由", "D、我国公民有行使自己权利的自由"], "answer": "B"}, {"chapter": "第六章", "type": "single", "num": 15, "text": "劳动者休息的权利属于公民的( )权利。", "options": ["A、政治权利", "B、人身权利", "C、社会经济权利", "D、文化教育权利"], "answer": "C"}, {"chapter": "第六章", "type": "single", "num": 16, "text": "国务院各部门可以根据宪法、法律和行政法规,在本部门的权限范围内,制定( )。", "options": ["A、部门规章", "B、地方性法规", "C、行政法规", "D、地方政府规章"], "answer": "A"}, {"chapter": "第六章", "type": "single", "num": 17, "text": "省、自治区、直辖市的人民代表大会及其常委会根据本行政区域的具体情况和实际需要,在不同宪法、法律和行政法规相抵触的前提下,可以制定( )。", "options": ["A、部门规章", "B、地方性法规", "C、行政法规", "D、地方政府规章"], "answer": "B"}, {"chapter": "第六章", "type": "single", "num": 18, "text": "在广义上,法律执行是指( ),在国家和公共事务管理中依照法定职权和程序,贯彻和实施法律的活动。", "options": ["A、国家公务员", "B、国家机关及其公职人员", "C、社会组织", "D、公民"], "answer": "B"}, {"chapter": "第六章", "type": "single", "num": 19, "text": "法律适用是指( )依照法定职权和程序适用法律处理案件的专门活动。", "options": ["A、国家立法机关及其公职人员", "B、国家行政机关及其公职人员", "C、国家司法机关及其公职人员", "D、国家机关及其公职人员"], "answer": "C"}, {"chapter": "第六章", "type": "single", "num": 20, "text": "依法治国的主体是( )。", "options": ["A、行政机关", "B、立法机关", "C、司法机关", "D、人民群众"], "answer": "D"}, {"chapter": "第六章", "type": "single", "num": 21, "text": "国家创制法律规范的方式主要有两种:一是制定,二是( )。", "options": ["A、补充", "B、修改", "C、废止", "D、认可"], "answer": "D"}, {"chapter": "第六章", "type": "single", "num": 22, "text": "( )是法律运行的起始性和关键性环节。", "options": ["A、法律制定", "B、法律遵守", "C、法律执行", "D、法律适用"], "answer": "A"}, {"chapter": "第六章", "type": "single", "num": 23, "text": "下列有关法律知识的观点错误的是( )。", "options": ["A、一个对法律知识一无所知的人,不可能形成法律思维方式", "B、法律知识通常包括法律、法规方面的知识和法律原理方面的知识", "C、学习和掌握基本的法律知识,是培养法律思维方式的前提", "D、只要了解法律、法规在某个问题上的具体规定,就能领会法律精神"], "answer": "D"}, {"chapter": "第六章", "type": "single", "num": 24, "text": "下列有关法律的观点错误的是( )。", "options": ["A、法律是一种复杂的社会历史现象", "B、国家强制力是保证法律实施的唯一力量", "C、法律产生于特定的物质生活条件基础之上", "D、在阶级社会中,法律是统治阶级意志的体现"], "answer": "B"}, {"chapter": "第六章", "type": "single", "num": 25, "text": "“中华人民共和国实行依法治国,建设社会主义法治国家。”是( )年通过的宪法修正案规定的。", "options": ["A、1988", "B、1993", "C、1999", "D、2004"], "answer": "C"}, {"chapter": "第六章", "type": "single", "num": 26, "text": "法构成要素的主要部分是 ( ) 。", "options": ["A、规范", "B、原则", "C、概念", "D、技术"], "answer": "A"}, {"chapter": "第六章", "type": "single", "num": 27, "text": "我国现行宪法是由第五届全国人民代表大会第五次会议于( )年通过的。", "options": ["A、1954", "B、1975", "C、1978", "D、1982"], "answer": "D"}, {"chapter": "第六章", "type": "single", "num": 28, "text": "关于法律和国家关系的表述中,正确的是( ) 。", "options": ["A、国家需要法律", "B、法律先于国家而产生", "C、法律不一定从属于国家", "D、法律的产生与国家的产生没有必然联系"], "answer": "A"}, {"chapter": "第六章", "type": "single", "num": 29, "text": "在我国的执法机关包括有( )。", "options": ["A、审判机关", "B、检察机关", "C、各级人民政府", "D、各级人民代表大会"], "answer": "C"}, {"chapter": "第六章", "type": "single", "num": 30, "text": "封建制法律的基本特征表述不准确的是( ) 。", "options": ["A、确立农民对封建地主的人身依附关系", "B、实行封建等级制度", "C、维护专制皇权", "D、是刑罚宽严相济"], "answer": "D"}, {"chapter": "第六章", "type": "single", "num": 31, "text": "以下表述不准确的是:我国社会主义法律( ) 。", "options": ["A、是党的主张和人民意志的共同体现", "B、是维护人民利益和公民权利的有力武器", "C、是国家机关、社会组织和全体公民的活动规则和行为准绳", "D、是约束人的行为规范"], "answer": "D"}, {"chapter": "第六章", "type": "single", "num": 32, "text": "迄今我国现行宪法历经( )次修订。", "options": ["A、2", "B、3", "C、4", "D、5"], "answer": "D"}, {"chapter": "第六章", "type": "single", "num": 33, "text": "实施依法治国方略,要求各级领导干部善于运用法治思维思考问题,处理每项工作都要依法依规进行。下列哪一做法违反了上述要求( ) 。", "options": ["A、某市环保部门及时发布大型化工项目的环评信息,回应社会舆论质疑", "B、某市法院为平息来访被害人家属及群众情绪签订保证书,承诺加重处罚被告人", "C、某市人大常委会就是否在地方性法规中规定\"禁止地铁内进食\"举行立法听证", "D、某省推动建立涉法涉诉信访依法终结制度"], "answer": "B"}, {"chapter": "第六章", "type": "single", "num": 34, "text": "依法行政是依法治国的一个关键环节,是法治国家对政府行政活动的基本要求。依法行政要求行政机关必须诚实守信。下列哪一行为违反了诚实守信原则( ) 。", "options": ["A、某县发生煤矿重大安全事故,政府部门通报了相关情况,防止了现场矛盾激化", "B、某市政府在招商引资过程中承诺给予优惠,因国家政策变化推迟兑现", "C、某县政府因县内其他民生投资导致资金紧张,未按合同及时支付相关企业的市政工程建设款项", "D、某区政府经过法定程序对已经公布的城建规划予以变更"], "answer": "C"}, {"chapter": "第六章", "type": "single", "num": 35, "text": "社会主义法治把公平正义作为一切法治实践活动的价值追求。下列哪一说法正确体现了公平正义理念的基本要求( ) 。", "options": ["A、在法律实施中为维护法律的权威性和严肃性,应依据法理而不是考虑情理", "B、在法治实践活动中,仅仅保证程序公正", "C、迟到的正义是非正义,法治活动应同时兼顾公正与效率", "D、法律是全社会平等适用的普遍性规范,为维护法制统一,对特殊地域和特殊群体应一视同仁,不作任何区别化对待"], "answer": "C"}, {"chapter": "第六章", "type": "single", "num": 36, "text": "( )是社会主义法治的最根本的保证。", "options": ["A、党的领导", "B、执法为民", "C、依法治国", "D、人民当家作主"], "answer": "A"}, {"chapter": "第六章", "type": "single", "num": 37, "text": "马克思指出:“立法者应该把自己看作一个自然科学家,他不是在制造法律,不是在发明法律,而仅仅是在表述法律,他把精神关系的内在规律表现在有意识的现行法律之中。” 这段话表明( )。", "options": ["A、立法者要像自然科学家一样思维和行动", "B、立法要尊重和反映客观规律", "C、立法者应该把现行法律看作是绝对精神体现", "D、法律是客观的,立法者在立法时不应发挥自己的主观能动性"], "answer": "B"}, {"chapter": "第六章", "type": "single", "num": 38, "text": "政治权利包括( )。", "options": ["A、选举权", "B、人格尊严权", "C、社会经济权利", "D、科学研究权"], "answer": "A"}, {"chapter": "第六章", "type": "single", "num": 39, "text": "下列选项中,哪一项不属于公民的文化教育权利( ) 。", "options": ["A、科学研究的自由", "B、宗教信仰", "C、文艺创作的自由", "D、受教育权"], "answer": "B"}, {"chapter": "第六章", "type": "single", "num": 40, "text": "我国《宪法》规定的通信自由和通信秘密属于公民的( )权利。", "options": ["A、政治权利", "B、人身权利", "C、财产权利", "D、社会经济权利"], "answer": "B"}, {"chapter": "第六章", "type": "single", "num": 41, "text": "( )构成了习近平法治思想的主要内容。", "options": ["A、十一个坚持", "B、八个明确", "C、十四个坚持", "D、四个全面"], "answer": "A"}, {"chapter": "第六章", "type": "multi", "num": 1, "text": "下列选项中,属于公民的社会经济权利的有( )。", "options": ["A、继承权", "B、劳动权", "C、社会保障权", "D、休息权"], "answer": "BCD"}, {"chapter": "第六章", "type": "multi", "num": 2, "text": "下列属于立法活动的有( )。", "options": ["A、全国人大代表根据法定程序提出法律案", "B、全国人民代表大会通过一项法律草案", "C、北京市人民代表大会制定北京市地方法规", "D、人民法院依法对案件作出判决"], "answer": "ABC"}, {"chapter": "第六章", "type": "multi", "num": 3, "text": "我国社会主义法律的运行过程有( )。", "options": ["A、法律制定", "B、法律遵守", "C、法律执行", "D、法律适用"], "answer": "ABCD"}, {"chapter": "第六章", "type": "multi", "num": 4, "text": "在我国,守法的主体包括( )。", "options": ["A、各政党", "B、国家机关", "C、社会组织", "D、公民"], "answer": "ABCD"}, {"chapter": "第六章", "type": "multi", "num": 5, "text": "在我国,司法机关是指国家( )。", "options": ["A、审判机关", "B、技术监督机关", "C、检察机关", "D、税务机关"], "answer": "AC"}, {"chapter": "第六章", "type": "multi", "num": 6, "text": "法律是随着( )的出现而产生的。", "options": ["A、私有制", "B、阶级", "C、国家", "D、家庭"], "answer": "ABC"}, {"chapter": "第六章", "type": "multi", "num": 7, "text": "全面依法治国的基本要求包括( )。", "options": ["A、科学立法", "B、严格执法", "C、公正司法", "D、全民守法"], "answer": "ABCD"}, {"chapter": "第六章", "type": "multi", "num": 8, "text": "从个人角度来说,自觉维护法律权威的表现有( )。", "options": ["A、树立法律信仰", "B、引导他人尊重法律权威", "C、从事法律职业", "D、敢于同违法犯罪行为作斗争"], "answer": "ABD"}, {"chapter": "第六章", "type": "multi", "num": 9, "text": "义务与权利相适应,是指政治上、法律上、道义上应当承担的责任。法律义务具有的特点是( )。", "options": ["A、法律义务是历史的", "B、法律义务源于现实需要", "C、法律义务必须依法设定", "D、法律义务可能发生变化"], "answer": "ABCD"}, {"chapter": "第六章", "type": "multi", "num": 10, "text": "政治权利是公民参与国家政治活动的权利和自由的统称。具体包括( )。", "options": ["A、选举权利", "B、表达权利", "C、民主管理权利", "D、监督权利"], "answer": "ABCD"}, {"chapter": "第六章", "type": "multi", "num": 11, "text": "按照宪法的规定,下列情况既是公民权利又是公民义务的是( )。", "options": ["A、遵守宪法和法律", "B、劳动", "C、获得物质帮助", "D、接受义务教育"], "answer": "BD"}, {"chapter": "第六章", "type": "multi", "num": 12, "text": "中华人民共和国国务院是我国( )。", "options": ["A、最高国家立法机关", "B、最高国家权力机关", "C、最高国家权力机关的执行机关", "D、最高国家行政机关"], "answer": "CD"}, {"chapter": "第六章", "type": "multi", "num": 13, "text": "建设中国特色社会主义法治体系,必须坚持立法先行,发挥立法的引领和推动作用,抓住提高立法质量这个关键。要( ) 。", "options": ["A、恪守以民为本、立法为民理念", "B、贯彻社会主义核心价值观", "C、尽快学习和借鉴西方发达国家的立法经验", "D、使每一项立法都符合宪法精神、反映人民意志、得到人民拥护"], "answer": "ABD"}, {"chapter": "第六章", "type": "multi", "num": 14, "text": "在我国,依法治国是( ) 。", "options": ["A、党领导人民治理国家的基本方略", "B、治理国家的唯一方略", "C、发展社会主义市场经济的需要", "D、民主文明进步的重要标志"], "answer": "ACD"}, {"chapter": "第六章", "type": "multi", "num": 15, "text": "资本主义法律的根本任务是 ( ) 。", "options": ["A、维护资产阶级的政治秩序", "B、维护资产阶级的经济秩序", "C、维护资产阶级的生活秩序", "D、维护资产阶级的社会秩序"], "answer": "ABD"}, {"chapter": "第六章", "type": "multi", "num": 16, "text": "关于党的领导与社会主义法治的关系的正确表述是( ) 。", "options": ["A、党的领导和社会主义法治在根本上是一致的", "B、党的领导是社会主义法治的根本保证", "C、只有坚持党的领导,才能确保民主法治建设沿着正确的方向前进", "D、只有坚持党的领导,才能将法律所确定的人民群众的根本利益落到实处"], "answer": "ABCD"}, {"chapter": "第六章", "type": "multi", "num": 17, "text": "法的适用具有的特点包括( ) 。", "options": ["A、主体是国家行政机关", "B、主体是司法机关", "C、按照法定程序活动", "D、过程或结果以国家强制力为后盾"], "answer": "BCD"}, {"chapter": "第六章", "type": "multi", "num": 18, "text": "下列权利属于人格尊严权的有( )。", "options": ["A、监护权", "B、姓名权", "C、肖像权", "D、荣誉权"], "answer": "BCD"}, {"chapter": "第六章", "type": "multi", "num": 19, "text": "下面对法律的作用陈述正确的是( ) 。", "options": ["A、解决现实生活中的一切问题", "B、法律具有制裁违法犯罪行为的功能,并通过制裁违法犯罪来保护公民的合法权益,保障社会生活的有序与和谐", "C、法律具有协调人与人之间的关系、解决人与人之间的纠纷或矛盾的作用", "D、法律有保护公民合法权益的作用,所以在日常生活中我们的行为不受法律约束"], "answer": "BC"}, {"chapter": "第六章", "type": "multi", "num": 20, "text": "下列选项中那些表现了宪法的最高效力( )。", "options": ["A、宪法是一国政治力量对比关系的全面、集中表现", "B、宪法是普通法律制定的基础和依据", "C、宪法是一国之内所有组织和个人的最高行为准则", "D、在制定和修改的程序上,宪法较之比普通法律更为严格"], "answer": "BC"}, {"chapter": "第六章", "type": "multi", "num": 21, "text": "奴隶制法律通常采用最极端的经济剥削和政治压迫的方式,其主要特征有( ) 。", "options": ["A、具有明显的原始习惯残留痕迹", "B、否认奴隶的法律人格", "C、存在严格的等级划分", "D、刑罚方式极其残酷"], "answer": "ABCD"}, {"chapter": "第六章", "type": "multi", "num": 22, "text": "我国宪法的基本原则( ) 。", "options": ["A、党的领导原则", "B、人民当家作主原则", "C、尊重和保障人权原则", "D、社会主义法治原则", "E、民主集中制原则"], "answer": "ABCDE"}, {"chapter": "第六章", "type": "multi", "num": 23, "text": "习近平法治思想是经过长期发展而形成的内涵丰富、论述深刻、逻辑严密、系统完备的法治理论体系,它( )。", "options": ["A、回答了新时代为什么实行全面依法治国、怎样实行全面依法治国等一系列重大问题", "B、是顺应实现中华民族伟大复兴时代要求应运而生的重大理论创新成果", "C、是马克思主义法治理论中国化最新成果", "D、是习近平新时代中国特色社会主义思想的重要组成部分"], "answer": "ABCD"}, {"chapter": "第六章", "type": "multi", "num": 24, "text": "习近平法治思想的主要内容包括:( )。", "options": ["A、坚持以人民为中心", "B、坚持抓住领导干部这个“关键少数”", "C、坚持依宪治国,依宪执政", "D、坚持中国特色社会主义法治道路"], "answer": "ABCD"}, {"chapter": "第六章", "type": "multi", "num": 25, "text": "我国宪法规定,公民在行使自由和权利时应符合以下哪些要求( ) 。", "options": ["A、不得侵害国家利益", "B、不得侵害社会利益", "C、不得侵害集体利益", "D、不得侵害其他公民合法的自由和权利"], "answer": "ABCD"}, {"chapter": "第六章", "type": "multi", "num": 26, "text": "公民未能履行义务,应当承担相应的法律责任。具体的法律责任主要包括( )。", "options": ["A、民事责任", "B、行政责任", "C、刑事责任", "D、道德责任"], "answer": "ABC"}, {"chapter": "第六章", "type": "multi", "num": 27, "text": "法律的历史类型有( )。", "options": ["A、奴隶制法律", "B、封建制法律", "C、资本主义法律", "D、社会主义法律"], "answer": "ABCD"}, {"chapter": "第六章", "type": "multi", "num": 28, "text": "下列有关法律含义的表述正确的有( )。", "options": ["A、法律是由国家制定或认可的行为规范的总称", "B、法律由国家强制力保障实施", "C、法律是统治阶级意志的体现", "D、法律由社会物质生活条件决定"], "answer": "ABCD"}, {"chapter": "第六章", "type": "multi", "num": 29, "text": "就全国人民代表大会的立法程序而言,大体包括以下环节( )。", "options": ["A、法律案的提出", "B、法律案的审议", "C、法律案的表决", "D、法律的公布"], "answer": "ABCD"}, {"chapter": "第六章", "type": "multi", "num": 30, "text": "我国公民维护国家安全的基本义务有( )。", "options": ["A、依照法律服兵役和参加民兵组织的义务", "B、保守国家秘密的义务", "C、及时报告危害国家安全行为的义务", "D、不得非法持有、使用专用间谍器材的义务"], "answer": "ABCD"}, {"chapter": "第六章", "type": "multi", "num": 31, "text": "下列有关法律与自由的观点正确的有( )。", "options": ["A、任何人在行使自由权利的时候,都必须尊重他人合法的自由和权利", "B、自由等于为所欲为", "C、法律是约束人们的行为的规范,意味着对人们的自由的限制与取消", "D、一切进步的法律约束人们的行为的目的,是为了保护和扩大人们的自由"], "answer": "AD"}, {"chapter": "第六章", "type": "multi", "num": 32, "text": "广义的守法,包括遵守( ) 。", "options": [], "answer": "ABCD"}, {"chapter": "第六章", "type": "judge", "num": 1, "text": "法治是现代文明的制度基石。( )", "options": [], "answer": "对"}, {"chapter": "第六章", "type": "judge", "num": 2, "text": "在现代，“法”主要表现为“刑律”。( )", "options": [], "answer": "错"}, {"chapter": "第六章", "type": "judge", "num": 3, "text": "法律是由国家制定或认可并依靠国家强制力保证实施的。( )", "options": [], "answer": "对"}, {"chapter": "第六章", "type": "judge", "num": 4, "text": "法律是统治阶级意志的体现，而统治阶级的意志则不一定表现为法律。( )", "options": [], "answer": "对"}, {"chapter": "第六章", "type": "judge", "num": 5, "text": "原始社会没有法。( )", "options": [], "answer": "对"}, {"chapter": "第六章", "type": "judge", "num": 6, "text": "法律不是从来就有的，也不是永恒存在的。（     ）", "options": [], "answer": "对"}, {"chapter": "第六章", "type": "judge", "num": 7, "text": "我国社会主义法律具有科学性和先进性。（     ）", "options": [], "answer": "对"}, {"chapter": "第六章", "type": "judge", "num": 8, "text": "法律权利与法律义务的关系，就像一枚硬币的两面，不可分割，相互依存。没有权利，义务的设定就失去了目的和根据；没有义务，权利的实现也就成为空话。", "options": [], "answer": "对"}, {"chapter": "第六章", "type": "judge", "num": 9, "text": "法治和德治，是治国理政不可或缺的两种方式，如车之两轮或鸟之两翼，忽视其中任何一个，都将难以实现国家的长治久安。", "options": [], "answer": "对"}, {"chapter": "第六章", "type": "judge", "num": 10, "text": "“法治”与“法制”，从内涵上讲，没有区别。", "options": [], "answer": "错"}, {"chapter": "第六章", "type": "judge", "num": 11, "text": "公民在行使自由和权利的时候，不得损害国家的、社会的、集体的利益和其他公民的自由和权利。", "options": [], "answer": "错"}, {"chapter": "第六章", "type": "judge", "num": 12, "text": "从基本内容来看，法律义务就是指不作为义务。", "options": [], "answer": "错"}, {"chapter": "第六章", "type": "judge", "num": 13, "text": "法律权利和法律义务是对立统一的。", "options": [], "answer": "对"}, {"chapter": "第六章", "type": "judge", "num": 14, "text": "法律权利和法律义务在总量上是等值的。", "options": [], "answer": "对"}, {"chapter": "第六章", "type": "judge", "num": 15, "text": "任何组织和个人不得招用未满18周岁的未成年人。", "options": [], "answer": "错"}, {"chapter": "第六章", "type": "judge", "num": 16, "text": "宪法的生命在于实施，宪法的权威也在于实施。", "options": [], "answer": "对"}, {"chapter": "第六章", "type": "judge", "num": 17, "text": "不是什么法都能治国，不是什么法都能治好国。", "options": [], "answer": "对"}, {"chapter": "第六章", "type": "judge", "num": 18, "text": "“党大还是法大”是个伪命题，“权大还是法大”则是一个真命题。", "options": [], "answer": "对"}];</script>
+<script>
+// ===== State =====
+const CHAPTERS_RAW = ['绪论', '第一章', '第二章', '第三章', '第四章', '第五章', '第六章'];
+const STATE_KEY = 'quiz_app_state_v1';
+
+let state = {
+  currentChapter: 'all',
+  mode: 'all',          // all | random | wrong
+  typeFilter: 'all',    // all | single | multi | judge
+  chapterFilter: 'all',
+  answers: {},          // { questionId: userAnswer }
+  results: {},          // { questionId: 'correct' | 'wrong' }
+  showAnswer: {},       // { questionId: true/false }
+};
+
+// ===== Data =====
+let allQuestions = [];
+let wrongQuestions = [];
+
+function getQuestionId(q, index) {
+  return `${q.chapter}_${q.type}_${q.num}`;
+}
+
+function initData() {
+  allQuestions = QUIZ_DATA.map((q, i) => ({
+    ...q,
+    _id: getQuestionId(q, i),
+    _index: i,
+  }));
+  loadState();
+  render();
+}
+
+// ===== State Persistence =====
+function loadState() {
+  try {
+    const saved = localStorage.getItem(STATE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      state = { ...state, ...parsed };
+    }
+  } catch(e) {}
+}
+
+function saveState() {
+  try {
+    localStorage.setItem(STATE_KEY, JSON.stringify(state));
+  } catch(e) {}
+}
+
+function resetProgress() {
+  if (!confirm('确定要重置所有进度吗？')) return;
+  state.answers = {};
+  state.results = {};
+  state.showAnswer = {};
+  saveState();
+  render();
+}
+
+// ===== Filtering =====
+function getFilteredQuestions() {
+  let qs = allQuestions;
+
+  // Chapter filter
+  if (state.currentChapter !== 'all') {
+    qs = qs.filter(q => q.chapter === state.currentChapter);
+  }
+
+  // Type filter
+  if (state.typeFilter !== 'all') {
+    qs = qs.filter(q => q.type === state.typeFilter);
+  }
+
+  // Mode
+  if (state.mode === 'wrong') {
+    const wrongIds = new Set(Object.entries(state.results).filter(([k,v]) => v === 'wrong').map(([k]) => k));
+    qs = qs.filter(q => wrongIds.has(q._id));
+  }
+
+  return qs;
+}
+
+function getDisplayQuestions() {
+  let qs = getFilteredQuestions();
+  if (state.mode === 'random') {
+    qs = [...qs].sort(() => Math.random() - 0.5);
+  }
+  return qs;
+}
+
+// ===== Rendering =====
+function render() {
+  renderStats();
+  renderSidebar();
+
+  const container = document.getElementById('questionsContainer');
+  const displayQs = getDisplayQuestions();
+
+  if (displayQs.length === 0) {
+    if (state.mode === 'wrong' && Object.keys(state.results).length === 0) {
+      container.innerHTML = '<div class="empty-state"><div class="icon">🎉</div><p>还没有做过题，先去做几道吧！</p></div>';
+    } else if (state.mode === 'wrong') {
+      container.innerHTML = '<div class="empty-state"><div class="icon">🎉</div><p>错题集为空，你真棒！</p></div>';
+    } else {
+      container.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>没有符合条件的题目</p></div>';
+    }
+    return;
+  }
+
+  // Section title
+  let title = state.currentChapter === 'all' ? '全部章节' : state.currentChapter;
+  if (state.typeFilter !== 'all') {
+    const typeNames = { single: '单选题', multi: '多选题', judge: '判断题' };
+    title += ' · ' + typeNames[state.typeFilter];
+  }
+
+  let html = `<div class="section-title">
+    <span>${title}</span>
+    <span class="totals">共 ${displayQs.length} 题</span>
+  </div>`;
+
+  // Filter buttons for quick type switching
+  html += `<div class="filter-btns">
+    <button class="filter-btn ${state.typeFilter === 'all' ? 'active' : ''}" onclick="setTypeFilter('all')">全部</button>
+    <button class="filter-btn ${state.typeFilter === 'single' ? 'active' : ''}" onclick="setTypeFilter('single')">单选题</button>
+    <button class="filter-btn ${state.typeFilter === 'multi' ? 'active' : ''}" onclick="setTypeFilter('multi')">多选题</button>
+    <button class="filter-btn ${state.typeFilter === 'judge' ? 'active' : ''}" onclick="setTypeFilter('judge')">判断题</button>
+  </div>`;
+
+  displayQs.forEach((q, idx) => {
+    html += renderQuestion(q, idx, displayQs.length);
+  });
+
+  container.innerHTML = html;
+}
+
+function renderQuestion(q, idx, total) {
+  const typeNames = { single: '单选题', multi: '多选题', judge: '判断题' };
+  const isAnswered = state.answers[q._id] !== undefined;
+  const result = state.results[q._id];
+  const showAns = state.showAnswer[q._id] || false;
+
+  let cls = 'q-card';
+  if (result === 'correct') cls += ' correct';
+  if (result === 'wrong') cls += ' wrong';
+
+  let html = `<div class="${cls}" data-id="${q._id}">
+    <div class="q-header">
+      <span class="q-num">${idx + 1}/${total}</span>
+      <span class="q-type-badge ${q.type}">${typeNames[q.type]}</span>
+      <span style="color:var(--text-light);font-size:12px;">${q.chapter}</span>
+      ${result === 'correct' ? '<span style="color:var(--success);font-size:13px;font-weight:600;">✓</span>' : ''}
+      ${result === 'wrong' ? '<span style="color:var(--danger);font-size:13px;font-weight:600;">✗</span>' : ''}
+    </div>
+    <div class="q-text">${q.num}. ${q.text}</div>`;
+
+  if (q.type === 'judge') {
+    html += renderJudgeOptions(q, isAnswered, result, showAns);
+  } else {
+    html += renderChoiceOptions(q, isAnswered, result, showAns);
+  }
+
+  // Answer / Result area
+  if (showAns) {
+    let resultText = '';
+    let resultCls = 'result-info';
+    if (result === 'correct') { resultText = '✅ 回答正确！'; resultCls = 'result-correct'; }
+    else if (result === 'wrong') { resultText = '❌ 回答错误'; resultCls = 'result-wrong'; }
+    else { resultText = '📌 答案'; resultCls = 'result-info'; }
+
+    let answerDisplay = q.answer;
+    if (q.type === 'judge') {
+      answerDisplay = q.answer === '对' ? '✓ 正确' : '✗ 错误';
+    } else if (q.type === 'multi') {
+      // Sort the answer letters
+      answerDisplay = q.answer.split('').sort().join('');
+    }
+
+    html += `<div class="q-answer show ${resultCls}">
+      ${resultText}
+      ${!result || result === 'wrong' ? `<br><span style="font-weight:600;">正确答案：${answerDisplay}</span>` : ''}
+      ${q.type === 'multi' && result === 'wrong' ? `<br><span style="font-size:12px;opacity:.7;">你的答案：${state.answers[q._id] || '无'}</span>` : ''}
+    </div>`;
+  }
+
+  // Actions
+  html += `<div class="q-actions">`;
+  if (!showAns && !isAnswered) {
+    html += `<button onclick="showAnswerOnly('${q._id}')">👁 看答案</button>`;
+  }
+  if (isAnswered && !showAns) {
+    html += `<button onclick="checkAnswer('${q._id}')">✅ 确认作答</button>`;
+  }
+  if (showAns) {
+    html += `<button onclick="hideAnswer('${q._id}')">🙈 隐藏答案</button>`;
+  }
+  html += `</div>`;
+
+  html += `</div>`;
+  return html;
+}
+
+function renderChoiceOptions(q, isAnswered, result, showAns) {
+  const userAns = state.answers[q._id] || '';
+  let html = '<ul class="q-options">';
+  q.options.forEach(opt => {
+    const optLetter = opt.charAt(0);
+    const isSelected = userAns.includes(optLetter);
+    const isCorrect = q.answer.includes(optLetter);
+
+    let liCls = '';
+    if (showAns || result) {
+      liCls += ' disabled';
+      if (isCorrect) liCls += ' correct-answer';
+      if (isSelected && !isCorrect) liCls += ' wrong-answer';
+    } else if (isSelected) {
+      liCls += ' selected';
+    }
+
+    const onClick = (showAns || result) ? '' :
+      q.type === 'single'
+        ? `onclick="selectSingle('${q._id}','${optLetter}')"`
+        : `onclick="selectMulti('${q._id}','${optLetter}')"`;
+
+    html += `<li class="${liCls}" ${onClick}>${opt}</li>`;
+  });
+  html += '</ul>';
+  return html;
+}
+
+function renderJudgeOptions(q, isAnswered, result, showAns) {
+  const userAns = state.answers[q._id] || '';
+  const correctIsTrue = q.answer === '对';
+  let html = '<div class="q-judge-btns">';
+
+  ['对', '错'].forEach(val => {
+    const isSelected = userAns === val;
+    let btnCls = '';
+    if (showAns || result) {
+      btnCls += ' disabled';
+      if ((val === '对' && correctIsTrue) || (val === '错' && !correctIsTrue)) btnCls += ' correct-answer';
+      if (isSelected && ((val === '对' && !correctIsTrue) || (val === '错' && correctIsTrue))) btnCls += ' wrong-answer';
+    } else if (isSelected) {
+      btnCls += val === '对' ? ' selected-true' : ' selected-false';
+    }
+
+    const onClick = (showAns || result) ? '' : `onclick="selectJudge('${q._id}','${val}')"`;
+    html += `<button class="${btnCls}" ${onClick}>${val === '对' ? '✓' : '✗'} ${val}</button>`;
+  });
+
+  html += '</div>';
+  return html;
+}
+
+// ===== Interactions =====
+function selectSingle(qId, letter) {
+  state.answers[qId] = letter;
+  state.showAnswer[qId] = false;
+  delete state.results[qId];
+  saveState();
+  render();
+}
+
+function selectMulti(qId, letter) {
+  const current = state.answers[qId] || '';
+  let newVal;
+  if (current.includes(letter)) {
+    newVal = current.replace(letter, '');
+  } else {
+    newVal = (current + letter).split('').sort().join('');
+  }
+  state.answers[qId] = newVal || '';
+  state.showAnswer[qId] = false;
+  delete state.results[qId];
+  saveState();
+  render();
+}
+
+function selectJudge(qId, val) {
+  state.answers[qId] = val;
+  state.showAnswer[qId] = false;
+  delete state.results[qId];
+  saveState();
+  render();
+}
+
+function checkAnswer(qId) {
+  const q = allQuestions.find(q => q._id === qId);
+  if (!q) return;
+  const userAns = state.answers[qId] || '';
+
+  let isCorrect = false;
+  if (q.type === 'judge') {
+    const expected = q.answer === '对' ? '对' : '错';
+    isCorrect = userAns === expected;
+  } else if (q.type === 'single') {
+    isCorrect = userAns === q.answer;
+  } else {
+    // Multi: compare sorted letters
+    const userSorted = userAns.split('').sort().join('');
+    const ansSorted = q.answer.split('').sort().join('');
+    isCorrect = userSorted === ansSorted;
+  }
+
+  state.results[qId] = isCorrect ? 'correct' : 'wrong';
+  state.showAnswer[qId] = true;
+  saveState();
+  render();
+}
+
+function showAnswerOnly(qId) {
+  state.showAnswer[qId] = true;
+  saveState();
+  render();
+}
+
+function hideAnswer(qId) {
+  state.showAnswer[qId] = false;
+  saveState();
+  render();
+}
+
+// ===== Filters =====
+function setTypeFilter(type) {
+  state.typeFilter = type;
+  saveState();
+  render();
+}
+
+function changeMode() {
+  state.mode = document.getElementById('modeSelect').value;
+  saveState();
+  render();
+}
+
+function applyFilters() {
+  state.typeFilter = document.getElementById('typeFilter').value;
+  saveState();
+  render();
+}
+
+function selectChapter(ch) {
+  state.currentChapter = ch;
+  document.getElementById('modeSelect').value = 'all';
+  state.mode = 'all';
+  saveState();
+  render();
+}
+
+// ===== Sidebar =====
+function renderSidebar() {
+  // Count per chapter
+  const chCounts = {};
+  const chDone = {};
+  allQuestions.forEach(q => {
+    chCounts[q.chapter] = (chCounts[q.chapter] || 0) + 1;
+  });
+  Object.keys(state.results).forEach(id => {
+    const ch = id.split('_')[0];
+    chDone[ch] = (chDone[ch] || 0) + 1;
+  });
+
+  function navHtml(targetId) {
+    const container = document.getElementById(targetId);
+    let html = `<button class="ch-nav ${state.currentChapter === 'all' ? 'active' : ''}" onclick="selectChapter('all')">
+      📚 全部 <span class="badge">${allQuestions.length}</span>
+    </button>`;
+
+    CHAPTERS_RAW.forEach(ch => {
+      const cnt = chCounts[ch] || 0;
+      const done = chDone[ch] || 0;
+      const isActive = state.currentChapter === ch;
+      html += `<button class="ch-nav ${isActive ? 'active' : ''}" onclick="selectChapter('${ch}')">
+        ${ch} <span class="badge">${done}/${cnt}</span>
+      </button>`;
+    });
+
+    container.innerHTML = html;
+  }
+
+  navHtml('chapterNav');
+  navHtml('mobileChapterNav');
+}
+
+function toggleMobileSidebar() {
+  document.getElementById('mobileSidebar').classList.toggle('open');
+}
+
+// ===== Stats =====
+function renderStats() {
+  const total = allQuestions.length;
+  const done = Object.keys(state.results).length;
+  const correct = Object.values(state.results).filter(v => v === 'correct').length;
+  const wrong = Object.values(state.results).filter(v => v === 'wrong').length;
+  const singleCnt = allQuestions.filter(q => q.type === 'single').length;
+  const multiCnt = allQuestions.filter(q => q.type === 'multi').length;
+  const judgeCnt = allQuestions.filter(q => q.type === 'judge').length;
+
+  document.getElementById('totalCount').textContent = total;
+  document.getElementById('doneCount').textContent = done;
+  document.getElementById('correctCount').textContent = correct;
+  document.getElementById('wrongCount').textContent = wrong;
+  document.getElementById('singleCount').textContent = singleCnt;
+  document.getElementById('multiCount').textContent = multiCnt;
+  document.getElementById('judgeCount').textContent = judgeCnt;
+}
+
+// ===== Keyboard shortcuts =====
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'r' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    resetProgress();
+  }
+});
+
+// ===== Init =====
+initData();
+
+</script>
+</body>
+</html>

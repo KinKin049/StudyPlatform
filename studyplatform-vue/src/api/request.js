@@ -10,8 +10,9 @@ export function resolveResourceUrl(path) {
 }
 
 export async function request(path, options = {}) {
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData
   const headers = {
-    ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+    ...(options.body && !isFormData ? { 'Content-Type': 'application/json' } : {}),
     ...(options.headers || {}),
   }
 

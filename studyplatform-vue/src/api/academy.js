@@ -43,8 +43,13 @@ export const fetchQuestionBankProblem = (id) =>
 export const fetchQuestionBankCourseCatalog = () =>
   request('/api/academy/question-bank/course-catalog')
 
-export const fetchQuestionBankCourse = (code) =>
-  request(`/api/academy/question-bank/courses/${encodeURIComponent(code)}`)
+export const fetchQuestionBankCourse = (code, { page = 0, size = 30, keyword = '' } = {}) => {
+  const params = new URLSearchParams()
+  params.set('page', page)
+  params.set('size', size)
+  if (keyword) params.set('keyword', keyword)
+  return request(`/api/academy/question-bank/courses/${encodeURIComponent(code)}?${params.toString()}`)
+}
 
 export const importLuoguQuestionBank = ({ pages = 1, limit = 20 } = {}) =>
   request(`/api/academy/question-bank/import/luogu?pages=${pages}&limit=${limit}`, {
