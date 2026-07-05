@@ -13,6 +13,7 @@ import com.cupk.academy.dto.ProfileTrackResponse;
 import com.cupk.academy.dto.ProfileUserResponse;
 import com.cupk.academy.dto.ProfileUserUpdateRequest;
 import com.cupk.academy.repository.ProfileRepository;
+import com.cupk.games.repository.GameRecordRepository;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -43,9 +44,11 @@ public class ProfileService {
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("MM-dd HH:mm");
 
     private final ProfileRepository profileRepository;
+    private final GameRecordRepository gameRecordRepository;
 
-    public ProfileService(ProfileRepository profileRepository) {
+    public ProfileService(ProfileRepository profileRepository, GameRecordRepository gameRecordRepository) {
         this.profileRepository = profileRepository;
+        this.gameRecordRepository = gameRecordRepository;
     }
 
     public ProfileOverviewResponse getOverview() {
@@ -59,6 +62,10 @@ public class ProfileService {
         int streak = currentStreak();
 
         List<ProfileRepository.TrackRow> trackRows = profileRepository.findTrackRows(DEFAULT_USER_ID);
+        GameRecordRepository.LadderJumpAggregateRow ladderJumpAggregate =
+                gameRecordRepository.findLadderJumpAggregate(DEFAULT_USER_ID);
+        GameRecordRepository.TypeWarriorAggregateRow typeWarriorAggregate =
+                gameRecordRepository.findTypeWarriorAggregate(DEFAULT_USER_ID);
 
         return new ProfileOverviewResponse(
                 List.of(
@@ -75,7 +82,8 @@ public class ProfileService {
                 buildHeatmap(),
                 buildLearningTimes(),
                 buildCodingDifficulties(),
-                buildGameMetrics(),
+                buildGameMetrics(ladderJumpAggregate, typeWarriorAggregate),
+                ladderJumpAggregate.totalCoins() + typeWarriorAggregate.totalCoins(),
                 buildMistakeMetrics(),
                 buildRankingMetrics(),
                 buildAchievementMetrics(),
@@ -226,12 +234,84 @@ public class ProfileService {
         );
     }
 
-    private List<ProfilePreviewMetricResponse> buildGameMetrics() {
+    private List<ProfilePreviewMetricResponse> buildGameMetrics(
+            GameRecordRepository.LadderJumpAggregateRow ladderJump,
+            GameRecordRepository.TypeWarriorAggregateRow typeWarrior
+    ) {
+        GameRecordRepository.CombinedDurationAggregateRow combinedDuration =
+                gameRecordRepository.findCombinedDurationAggregate(DEFAULT_USER_ID);
+
         return List.of(
-                new ProfilePreviewMetricResponse("游戏时长", "2h 18m", "样式预览 · 待接入真实计时", "cyan"),
-                new ProfilePreviewMetricResponse("跳跃游戏最高纪录", "128 层", "第一个游戏 · 最高记录", "blue"),
-                new ProfilePreviewMetricResponse("节奏游戏最终得分", "92,480", "第二个游戏 · 最终得分", "violet"),
-                new ProfilePreviewMetricResponse("节奏游戏最高连击", "186 Combo", "第二个游戏 · 最高连击", "amber")
+                new ProfilePreviewMetricResponse(
+                        "游戏总时长",
+                        formatDurationSeconds(combinedDuration.totalDurationSeconds()),
+                        tripleMetricMeta(
+                                formatDurationSeconds(combinedDuration.totalDurationSeconds()),
+                                formatDurationSeconds(combinedDuration.bestDurationSeconds()),
+                                formatDurationSeconds(combinedDuration.averageDurationSeconds())
+                        ),
+                        "cyan"
+                ),
+                new ProfilePreviewMetricResponse(
+                        "万题天梯跳金币",
+                        formatNumber(ladderJump.totalCoins()),
+                        tripleMetricMeta(
+                                formatNumber(ladderJump.totalCoins()),
+                                formatNumber(ladderJump.bestCoins()),
+                                formatDecimal(ladderJump.averageCoins())
+                        ),
+                        "blue"
+                ),
+                new ProfilePreviewMetricResponse(
+                        "万题天梯跳答对题数",
+                        formatNumber(ladderJump.totalCorrect()),
+                        tripleMetricMeta(
+                                formatNumber(ladderJump.totalCorrect()),
+                                formatNumber(ladderJump.bestCorrect()),
+                                formatDecimal(ladderJump.averageCorrect())
+                        ),
+                        "cyan"
+                ),
+                new ProfilePreviewMetricResponse(
+                        "Type Warrior 得分",
+                        formatNumber(typeWarrior.totalScore()),
+                        tripleMetricMeta(
+                                formatNumber(typeWarrior.totalScore()),
+                                formatNumber(typeWarrior.bestScore()),
+                                formatDecimal(typeWarrior.averageScore())
+                        ),
+                        "violet"
+                ),
+                new ProfilePreviewMetricResponse(
+                        "Type Warrior 金币",
+                        formatNumber(typeWarrior.totalCoins()),
+                        tripleMetricMeta(
+                                formatNumber(typeWarrior.totalCoins()),
+                                formatNumber(typeWarrior.bestCoins()),
+                                formatDecimal(typeWarrior.averageCoins())
+                        ),
+                        "blue"
+                ),
+                new ProfilePreviewMetricResponse(
+                        "Type Warrior 击杀数",
+                        formatNumber(typeWarrior.totalKills()),
+                        tripleMetricMeta(
+                                formatNumber(typeWarrior.totalKills()),
+                                formatNumber(typeWarrior.bestKills()),
+                                formatDecimal(typeWarrior.averageKills())
+                        ),
+                        "amber"
+                ),
+                new ProfilePreviewMetricResponse(
+                        "Type Warrior 到达波次",
+                        formatNumber(typeWarrior.totalReachedWave()),
+                        tripleMetricMeta(
+                                formatNumber(typeWarrior.totalReachedWave()),
+                                formatNumber(typeWarrior.bestReachedWave()),
+                                formatDecimal(typeWarrior.averageReachedWave())
+                        ),
+                        "rose"
+                )
         );
     }
 
@@ -487,6 +567,18 @@ public class ProfileService {
             return minutes + "m";
         }
         return hours + "h " + minutes + "m";
+    }
+
+    private String formatDurationSeconds(double seconds) {
+        return formatDuration(Math.round(seconds));
+    }
+
+    private String formatDecimal(double value) {
+        return String.format(Locale.CHINA, "%.1f", Math.max(0D, value));
+    }
+
+    private String tripleMetricMeta(String total, String best, String average) {
+        return "总和 " + total + " · 最佳 " + best + " · 平均 " + average;
     }
 
     private String clean(String value, String fallback) {

@@ -1,7 +1,6 @@
 <script setup>
 /**
- * 统一承载暂停、失败和胜利后的统计面板。
- * 暂停时也复用结算统计，避免两套数据展示分叉。
+ * Renders the pause, failure, and victory statistic overlay for Type Warrior.
  */
 defineEmits(['restart', 'resume'])
 
@@ -48,6 +47,10 @@ defineProps({
         <div class="type-warrior-result-item">
           <strong>{{ resultStats.score }}</strong>
           <span>得分</span>
+        </div>
+        <div class="type-warrior-result-item">
+          <strong>{{ resultStats.coins }}</strong>
+          <span>金币</span>
         </div>
         <div class="type-warrior-result-item">
           <strong>{{ resultStats.completedWaves }}</strong>

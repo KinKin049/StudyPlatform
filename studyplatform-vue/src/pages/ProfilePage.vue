@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import {
   fetchProfileOverview,
@@ -144,6 +144,17 @@ const codingDifficulties = computed(() =>
 const gameMetrics = computed(() =>
   dashboard.value.gameMetrics?.length ? dashboard.value.gameMetrics : fallbackOverview.gameMetrics,
 )
+const profileCoinValue = computed(() => {
+  const explicitCoins = dashboard.value.coinTotal ?? dashboard.value.coins ?? dashboard.value.goldCoins
+  if (explicitCoins !== undefined && explicitCoins !== null) return String(explicitCoins)
+
+  const coinMetric = gameMetrics.value.find((item) => {
+    const title = String(item.title || '').toLowerCase()
+    return title.includes('金币') || title.includes('coin')
+  }) || gameMetrics.value[1]
+
+  return coinMetric?.value || '0'
+})
 const mistakeMetrics = computed(() =>
   dashboard.value.mistakeMetrics?.length ? dashboard.value.mistakeMetrics : fallbackOverview.mistakeMetrics,
 )
@@ -156,12 +167,17 @@ const achievementMetrics = computed(() =>
 const textbookOrders = computed(() =>
   dashboard.value.textbookOrders?.length ? dashboard.value.textbookOrders : fallbackOverview.textbookOrders,
 )
+const gamePreviewSection = computed(() => ({
+  key: 'games',
+  eyebrow: 'Games',
+  title: '\u6e38\u620f\u6570\u636e',
+  items: gameMetrics.value,
+}))
 const previewSections = computed(() => [
-  { key: 'games', eyebrow: 'Games', title: '游戏数据', items: gameMetrics.value },
-  { key: 'mistakes', eyebrow: 'Mistakes', title: '错题本', items: mistakeMetrics.value },
-  { key: 'ranking', eyebrow: 'Ranking', title: '排名', items: rankingMetrics.value },
-  { key: 'achievements', eyebrow: 'Achievements', title: '成就', items: achievementMetrics.value },
-  { key: 'orders', eyebrow: 'Orders', title: '教材购物订单', items: textbookOrders.value },
+  { key: 'mistakes', eyebrow: 'Mistakes', title: '\u9519\u9898\u672c', items: mistakeMetrics.value },
+  { key: 'ranking', eyebrow: 'Ranking', title: '\u6392\u540d', items: rankingMetrics.value },
+  { key: 'achievements', eyebrow: 'Achievements', title: '\u6210\u5c31', items: achievementMetrics.value },
+  { key: 'orders', eyebrow: 'Orders', title: '\u6559\u6750\u8d2d\u7269\u8ba2\u5355', items: textbookOrders.value },
 ])
 const overallProgress = computed(() => {
   const progress = Number(dashboard.value.overallProgress ?? 0)
@@ -518,6 +534,10 @@ onBeforeUnmount(() => {
   <main class="profile-main" @pointermove="handleProfileTilt" @pointerleave="resetProfileTilt">
     <section class="profile-hero">
       <div class="profile-card">
+        <div class="profile-coin-pill" aria-label="金币数量">
+          <span>金币</span>
+          <strong>{{ profileCoinValue }}</strong>
+        </div>
         <button
           class="profile-avatar"
           type="button"
@@ -566,36 +586,54 @@ onBeforeUnmount(() => {
     </section>
 
     <section class="profile-insight-grid">
-      <article class="profile-panel profile-time-panel">
-        <div class="profile-panel-head">
-          <div>
-            <p>Learning Time</p>
-            <h2>学习时长</h2>
+      <div class="profile-insight-stack">
+        <article class="profile-panel profile-time-panel">
+          <div class="profile-panel-head">
+            <div>
+              <p>Learning Time</p>
+              <h2>&#x5b66;&#x4e60;&#x65f6;&#x957f;</h2>
+            </div>
+            <span>&#x6570;&#x636e;&#x5e93;</span>
           </div>
-          <span>数据库</span>
-        </div>
-        <div class="profile-time-list">
-          <div v-for="item in learningTimes" :key="item.label" :class="`is-${item.tone}`">
-            <span>{{ item.label }}</span>
-            <strong>{{ item.value }}</strong>
-            <small>{{ item.hint }}</small>
+          <div class="profile-time-list">
+            <div v-for="item in learningTimes" :key="item.label" :class="`is-${item.tone}`">
+              <span>{{ item.label }}</span>
+              <strong>{{ item.value }}</strong>
+              <small>{{ item.hint }}</small>
+            </div>
           </div>
-        </div>
-      </article>
+        </article>
+
+        <article class="profile-panel profile-preview-panel profile-games-panel">
+          <div class="profile-panel-head">
+            <div>
+              <p>{{ gamePreviewSection.eyebrow }}</p>
+              <h2>{{ gamePreviewSection.title }}</h2>
+            </div>
+          </div>
+          <div class="profile-preview-list profile-preview-list-horizontal">
+            <div v-for="item in gamePreviewSection.items" :key="item.title" :class="`is-${item.tone}`">
+              <span>{{ item.title }}</span>
+              <strong>{{ item.value }}</strong>
+              <small>{{ item.meta }}</small>
+            </div>
+          </div>
+        </article>
+      </div>
 
       <article class="profile-panel profile-coding-panel">
         <div class="profile-panel-head">
           <div>
             <p>Code Progress</p>
-            <h2>编程题难度</h2>
+            <h2>&#x7f16;&#x7a0b;&#x9898;&#x96be;&#x5ea6;</h2>
           </div>
-          <span>OJ 数据</span>
+          <span>OJ &#x6570;&#x636e;</span>
         </div>
         <div class="profile-coding-content">
           <div class="profile-coding-ring" :style="codingRingStyle">
             <div class="profile-coding-ring-mask">
               <strong>{{ codingSolvedTotal }}</strong>
-              <span>已完成 / {{ codingQuestionTotal }}</span>
+              <span>&#x5df2;&#x5b8c;&#x6210; / {{ codingQuestionTotal }}</span>
               <small>{{ codingCompletion }}%</small>
             </div>
           </div>
@@ -615,11 +653,36 @@ onBeforeUnmount(() => {
         <div class="profile-panel-head">
           <div>
             <p>Badges</p>
-            <h2>成就徽章</h2>
+            <h2>&#x6210;&#x5c31;&#x5fbd;&#x7ae0;</h2>
           </div>
         </div>
         <div class="profile-badges">
           <span v-for="badge in badges" :key="badge">{{ badge }}</span>
+        </div>
+      </article>
+
+      <article class="profile-panel profile-heatmap-panel">
+        <div class="profile-panel-head">
+          <div>
+            <p>Activity</p>
+            <h2>&#x5b66;&#x4e60;&#x70ed;&#x529b;&#x56fe;</h2>
+          </div>
+          <span>&#x8fd1; 17 &#x5468;</span>
+        </div>
+        <div class="profile-heatmap" aria-label="&#x8fd1; 17 &#x5468;&#x5b66;&#x4e60;&#x6d3b;&#x8dc3;&#x5ea6;">
+          <span
+            v-for="day in activityDays"
+            :key="day.id"
+            :class="`is-level-${day.level}`"
+          ></span>
+        </div>
+        <div class="profile-heatmap-legend">
+          <span>&#x5c11;</span>
+          <i class="is-level-1"></i>
+          <i class="is-level-2"></i>
+          <i class="is-level-3"></i>
+          <i class="is-level-4"></i>
+          <span>&#x591a;</span>
         </div>
       </article>
     </section>
@@ -673,31 +736,6 @@ onBeforeUnmount(() => {
       </div>
 
       <div class="profile-column">
-        <article class="profile-panel profile-heatmap-panel">
-          <div class="profile-panel-head">
-            <div>
-              <p>Activity</p>
-              <h2>学习热力图</h2>
-            </div>
-            <span>近 17 周</span>
-          </div>
-          <div class="profile-heatmap" aria-label="近 17 周学习活跃度">
-            <span
-              v-for="day in activityDays"
-              :key="day.id"
-              :class="`is-level-${day.level}`"
-            ></span>
-          </div>
-          <div class="profile-heatmap-legend">
-            <span>少</span>
-            <i class="is-level-1"></i>
-            <i class="is-level-2"></i>
-            <i class="is-level-3"></i>
-            <i class="is-level-4"></i>
-            <span>多</span>
-          </div>
-        </article>
-
         <article class="profile-panel profile-track-panel">
           <div class="profile-panel-head">
             <div>
@@ -860,3 +898,4 @@ onBeforeUnmount(() => {
     </div>
   </main>
 </template>
+

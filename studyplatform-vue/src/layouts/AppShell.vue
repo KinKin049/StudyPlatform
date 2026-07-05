@@ -71,7 +71,16 @@ const navItems = [
   {
     label: '游戏',
     path: '/games',
-    children: [],
+    children: [
+      {
+        label: 'type warrior',
+        path: '/games/type-warrior',
+      },
+      {
+        label: '\u4e07\u9898\u5929\u68af\u8df3',
+        path: '/games/ladder-jump',
+      },
+    ],
   },
 ]
 

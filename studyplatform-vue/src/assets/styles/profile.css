@@ -81,7 +81,58 @@
 .profile-card {
   display: grid;
   gap: 18px;
+  overflow: hidden;
   padding: 28px;
+}
+
+.profile-coin-pill {
+  position: absolute;
+  top: 22px;
+  right: 22px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 118px;
+  max-width: calc(100% - 44px);
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid rgba(245, 158, 11, 0.26);
+  border-radius: 999px;
+  color: #8a5200;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(255, 236, 168, 0.78)),
+    rgba(255, 247, 214, 0.8);
+  box-shadow: 0 12px 28px rgba(207, 133, 18, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(12px);
+}
+
+.profile-coin-pill::before {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 30%, #fff7bf 0 22%, transparent 24%),
+    linear-gradient(135deg, #fbbf24, #f59e0b);
+  box-shadow: inset 0 -2px 0 rgba(138, 82, 0, 0.18);
+  content: '';
+  flex: 0 0 auto;
+}
+
+.profile-card .profile-coin-pill span {
+  color: rgba(138, 82, 0, 0.72);
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.profile-card .profile-coin-pill strong {
+  overflow: hidden;
+  color: #7a4600;
+  font-size: 16px;
+  font-weight: 950;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .profile-avatar {
@@ -576,14 +627,32 @@
 .profile-insight-grid {
   display: grid;
   grid-template-columns: minmax(340px, 1fr) minmax(250px, 0.62fr) minmax(250px, 0.62fr);
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 22px;
   align-items: stretch;
   margin-top: 22px;
 }
 
+.profile-insight-stack {
+  display: grid;
+  grid-row: 1 / span 2;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 22px;
+  align-content: stretch;
+}
+
+.profile-insight-stack .profile-games-panel {
+  align-self: stretch;
+}
+
+.profile-insight-grid .profile-heatmap-panel {
+  grid-column: 2 / 4;
+  align-self: stretch;
+}
+
 .profile-preview-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
   margin-top: 22px;
 }
@@ -629,6 +698,10 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.profile-preview-list-horizontal {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .profile-time-list div,
 .profile-preview-list div {
   position: relative;
@@ -658,6 +731,10 @@
 
 .profile-preview-list strong {
   font-size: 24px;
+}
+
+.profile-games-panel .profile-preview-list strong {
+  font-size: 22px;
 }
 
 .profile-time-list small,
@@ -779,9 +856,46 @@
   min-width: 0;
 }
 
+.profile-insight-grid .profile-coding-panel,
+.profile-insight-grid .profile-badge-panel {
+  padding: 20px;
+}
+
+.profile-insight-grid .profile-coding-content {
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.profile-insight-grid .profile-coding-ring {
+  width: 176px;
+  height: 86px;
+}
+
+.profile-insight-grid .profile-coding-ring::before {
+  width: 176px;
+  height: 176px;
+}
+
+.profile-insight-grid .profile-coding-ring::after {
+  right: 22px;
+  bottom: -64px;
+  left: 22px;
+  height: 134px;
+}
+
+.profile-insight-grid .profile-coding-ring-mask {
+  right: 30px;
+  bottom: 2px;
+  left: 30px;
+}
+
+.profile-insight-grid .profile-coding-ring-mask strong {
+  font-size: 28px;
+}
+
 .profile-insight-grid .profile-badges {
   align-content: start;
-  margin-top: 18px;
+  margin-top: 14px;
 }
 
 .profile-insight-grid .profile-badges span {
@@ -1003,7 +1117,21 @@
     grid-template-columns: 1fr;
   }
 
+  .profile-insight-grid {
+    grid-template-rows: none;
+  }
+
+  .profile-insight-stack,
+  .profile-insight-grid .profile-heatmap-panel {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
   .profile-preview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .profile-preview-list-horizontal {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1021,7 +1149,8 @@
   .profile-track-item,
   .profile-time-list,
   .profile-coding-content,
-  .profile-preview-grid {
+  .profile-preview-grid,
+  .profile-preview-list-horizontal {
     grid-template-columns: 1fr;
   }
 
