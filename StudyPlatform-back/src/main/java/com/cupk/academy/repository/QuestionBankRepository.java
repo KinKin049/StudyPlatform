@@ -431,6 +431,68 @@ public class QuestionBankRepository {
         return new QuestionBankMistakePageResponse(items, Math.max(0, page), size, safeTotal, totalPages);
     }
 
+    public List<CourseQuestionBankQuestionResponse> findActiveSingleChoiceMistakeQuestions(long userId, String setCode) {
+        List<Object> params = new ArrayList<>();
+        params.add(userId);
+        StringBuilder sql = new StringBuilder("""
+                SELECT q.id, q.question_type, q.stem, CAST(q.options_json AS CHAR) AS options_json,
+                       q.answer, q.explanation, q.difficulty_label, q.source_url,
+                       0 AS favorite
+                FROM course_question_bank_mistakes m
+                JOIN course_question_bank_questions q ON q.id = m.question_id
+                JOIN course_question_bank_sets s ON s.id = q.set_id
+                WHERE m.user_id = ?
+                  AND m.mastered = 0
+                  AND q.question_type = 'single'
+                """);
+        if (setCode != null && !setCode.isBlank()) {
+            sql.append(" AND s.set_code = ? ");
+            params.add(setCode.trim());
+        }
+        sql.append(" ORDER BY COALESCE(m.last_wrong_at, m.updated_at) DESC, s.sort_order ASC, q.sort_order ASC, q.id ASC ");
+        return jdbcTemplate.query(sql.toString(), this::mapCourseQuestionBankQuestion, params.toArray());
+    }
+
+    public List<CourseQuestionBankQuestionResponse> findAllSingleChoiceQuestions(String setCode) {
+        List<Object> params = new ArrayList<>();
+        StringBuilder sql = new StringBuilder("""
+                SELECT q.id, q.question_type, q.stem, CAST(q.options_json AS CHAR) AS options_json,
+                       q.answer, q.explanation, q.difficulty_label, q.source_url,
+                       0 AS favorite
+                FROM course_question_bank_questions q
+                JOIN course_question_bank_sets s ON s.id = q.set_id
+                WHERE q.question_type = 'single'
+                """);
+        if (setCode != null && !setCode.isBlank()) {
+            sql.append(" AND s.set_code = ? ");
+            params.add(setCode.trim());
+        }
+        sql.append(" ORDER BY s.sort_order ASC, q.sort_order ASC, q.id ASC ");
+        return jdbcTemplate.query(sql.toString(), this::mapCourseQuestionBankQuestion, params.toArray());
+    }
+
+    public List<SingleChoiceQuestionBankRow> findSingleChoiceQuestionBanks() {
+        String sql = """
+                SELECT s.set_code, s.title, c.category_name, COUNT(*) AS question_count
+                FROM course_question_bank_questions q
+                JOIN course_question_bank_sets s ON s.id = q.set_id
+                JOIN course_question_bank_categories c ON c.id = s.category_id
+                WHERE q.question_type = 'single'
+                GROUP BY s.id, s.set_code, s.title, c.category_name, s.sort_order
+                HAVING COUNT(*) > 0
+                ORDER BY c.sort_order ASC, s.sort_order ASC, s.id ASC
+                """;
+        return jdbcTemplate.query(
+                sql,
+                (rs, rowNum) -> new SingleChoiceQuestionBankRow(
+                        rs.getString("set_code"),
+                        rs.getString("title"),
+                        rs.getString("category_name"),
+                        rs.getInt("question_count")
+                )
+        );
+    }
+
     public QuestionBankFavoriteSummaryResponse findFavoriteSummary(long userId) {
         Long total = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM course_question_bank_favorites WHERE user_id = ?",
@@ -897,6 +959,14 @@ public class QuestionBankRepository {
             String stem,
             String answer,
             String familiarity
+    ) {
+    }
+
+    public record SingleChoiceQuestionBankRow(
+            String setCode,
+            String title,
+            String categoryName,
+            int questionCount
     ) {
     }
 

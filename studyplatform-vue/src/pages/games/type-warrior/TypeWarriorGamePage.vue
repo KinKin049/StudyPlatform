@@ -1,5 +1,7 @@
 <script setup>
+import { ref, watch } from 'vue'
 import '../../../assets/games/type-warrior.css'
+import { saveTypeWarriorRecord } from '../../../api/games'
 import { TYPE_WARRIOR_BALANCE, TYPE_WARRIOR_SKILL_POOL } from './config/typeWarriorConfig'
 import TypeWarriorArena from './components/TypeWarriorArena.vue'
 import TypeWarriorHud from './components/TypeWarriorHud.vue'
@@ -11,6 +13,7 @@ import { useTypeWarriorGame } from './composables/useTypeWarriorGame'
 const emit = defineEmits(['back'])
 
 const enableSkillDebugPanel = TYPE_WARRIOR_BALANCE.ui.showSkillDebugPanel
+const typeWarriorRecordSaved = ref(false)
 
 const {
   arenaRef,
@@ -70,6 +73,40 @@ const {
   keyBurstStyle,
   resetSkills,
 } = useTypeWarriorGame()
+
+function handleStartGame() {
+  typeWarriorRecordSaved.value = false
+  startGame()
+}
+
+function handleRestartGame() {
+  typeWarriorRecordSaved.value = false
+  restartGame()
+}
+
+watch(
+  () => [isGameOver.value, isVictory.value, hasGameStarted.value],
+  ([gameOver, victory, started]) => {
+    if (!started || (!gameOver && !victory) || typeWarriorRecordSaved.value) {
+      return
+    }
+
+    typeWarriorRecordSaved.value = true
+    saveTypeWarriorRecord({
+      reachedWave: resultStats.value.reachedWave,
+      completedWaveCount: resultStats.value.completedWaves,
+      score: resultStats.value.score,
+      maxCombo: resultStats.value.maxCombo,
+      solvedWordCount: resultStats.value.solvedWords,
+      totalKillCount: resultStats.value.totalKills,
+      typedLetterCount: resultStats.value.typedLetters,
+      durationSeconds: Number(resultStats.value.durationSeconds.toFixed(2)),
+      effectiveTypingSeconds: Number(resultStats.value.effectiveTypingSeconds.toFixed(2)),
+    }).catch(() => {
+      typeWarriorRecordSaved.value = false
+    })
+  },
+)
 </script>
 
 <template>
@@ -138,7 +175,7 @@ const {
           <p>type warrior</p>
           <h2>开始游戏</h2>
           <span>输入敌人上方的英文单词即可自动锁定开火。按 `Esc` 暂停，按 `1` 触发主动技能。</span>
-          <button type="button" class="type-warrior-start-button" :disabled="isWordPoolLoading" @click="startGame">
+          <button type="button" class="type-warrior-start-button" :disabled="isWordPoolLoading" @click="handleStartGame">
             {{ isWordPoolLoading ? '词库加载中...' : '开始游戏' }}
           </button>
         </div>
@@ -162,7 +199,7 @@ const {
       :wave="wave"
       :weapon-level="weaponLevel"
       @resume="togglePause"
-      @restart="restartGame"
+      @restart="handleRestartGame"
     />
   </section>
 </template>

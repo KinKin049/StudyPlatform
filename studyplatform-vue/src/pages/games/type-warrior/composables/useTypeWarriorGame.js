@@ -151,12 +151,16 @@ export function useTypeWarriorGame() {
   const lettersPerSecond = computed(() => (effectiveTypingSeconds.value > 0 ? typedLetterCount.value / effectiveTypingSeconds.value : 0))
   const killsPerSecond = computed(() => (survivalSeconds.value > 0 ? totalKillCount.value / survivalSeconds.value : 0))
   const resultStats = computed(() => ({
+    reachedWave: wave.value,
     maxCombo: maxCombo.value,
     score: Math.round(score.value),
+    coins: Math.round(Math.round(score.value) / 100),
     completedWaves: completedWaveCount.value,
     solvedWords: solvedWordCount.value,
+    typedLetters: typedLetterCount.value,
     totalKills: totalKillCount.value,
     durationSeconds: survivalSeconds.value,
+    effectiveTypingSeconds: effectiveTypingSeconds.value,
     killsPerSecond: killsPerSecond.value,
     wordsPerSecond: wordsPerSecond.value,
     lettersPerSecond: lettersPerSecond.value,

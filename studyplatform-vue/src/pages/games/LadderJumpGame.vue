@@ -1,5 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { recordQuestionBankAnswer } from '../../api/academy'
+import { fetchLadderJumpQuestionBanks, saveLadderJumpRecord } from '../../api/games'
 import { request } from '../../api/request'
 
 const emit = defineEmits(['back'])
@@ -22,13 +24,21 @@ const travelCoinCountPerQuestion = 7
 const travelCoinBetweenStartOffset = questionGap - 220
 const travelCoinBetweenWidth = 520
 const travelCoinLanes = [groundY - 92, 520 - 64, 405 - 64]
+const platformLayouts = [
+  { xOffset: 400, y: 520 },
+  { xOffset: 640, y: 405 },
+  { xOffset: 880, y: 290 },
+  { xOffset: 1120, y: 175 },
+]
+const excludedQuestionBankCategoryCodes = new Set(['english'])
+const excludedQuestionBankSetCodes = new Set(['ncre'])
 const defaultQuestions = [
   {
     id: 1,
     question: 'Java 中用于声明类继承关系的关键字是？',
     options: ['extends', 'implements', 'instanceof'],
     answerIndex: 0,
-    explanation: 'extends 表示一个类继承另一个类。',
+    explanation: 'extends 用于声明一个类继承另一个类。',
   },
   {
     id: 2,
@@ -47,12 +57,24 @@ const defaultQuestions = [
 ]
 
 const questions = ref(defaultQuestions)
+const questionBanks = ref([])
+const selectedQuestionBankCode = ref('')
+const questionBankLoading = ref(false)
+const questionDropdownOpen = ref(false)
+const questionBankPanelRef = ref(null)
+const usingFallbackQuestions = ref(false)
+const ladderJumpRecordSaved = ref(false)
 const questionIndex = ref(0)
 const score = ref(0)
 const health = ref(3)
 const combo = ref(0)
-const feedback = ref('使用 A/D 或 WASD 移动，空格跳跃，落到正确选项平台继续前进')
+const correctAnswerCount = ref(0)
+const wrongAnswerCount = ref(0)
+const elapsedMs = ref(0)
+const feedback = ref('使用 A/D 或 WASD 移动，空格跳跃，落到选项平台后向右穿过确认线完成答题')
+const isPaused = ref(false)
 const isGameOver = ref(false)
+const gameOverTitle = ref('挑战结束')
 const damageFlash = ref(false)
 const playerFrame = ref(0)
 const player = ref({
@@ -69,7 +91,6 @@ const answeredQuestionIds = ref([])
 const collectedTravelCoinIds = ref([])
 const routes = ref([])
 const selectedPlatform = ref(null)
-const lockedQuestionIds = ref([])
 const leftBounds = ref({})
 const cars = ref([
   { id: 'car-taxi', file: 'taxi.png', x: 260, bottom: 4, direction: 1, speed: 2.4 },
@@ -79,10 +100,47 @@ const cars = ref([
 ])
 const pressedKeys = new Set()
 let animationId = 0
-let lastTimestamp = 0
 let frameTimer = 0
+let lastTimestamp = 0
+let questionPoolRefreshing = false
+let activePlayStartedAt = 0
+let accumulatedPlayMs = 0
 
 const currentQuestion = computed(() => questions.value[questionIndex.value % questions.value.length])
+const selectedQuestionBank = computed(() =>
+  questionBanks.value.find((item) => item.code === selectedQuestionBankCode.value) || null,
+)
+const currentQuestionPoolCount = computed(() => questions.value.length)
+const questionBankButtonTitle = computed(() => selectedQuestionBank.value?.title || '全部单选题库')
+const questionBankButtonSubtitle = computed(() =>
+  selectedQuestionBank.value ? selectedQuestionBank.value.categoryName : '随机混合题池',
+)
+const questionBankSummary = computed(() => {
+  if (selectedQuestionBank.value) {
+    return `${selectedQuestionBank.value.title} · 当前可随机题数 ${currentQuestionPoolCount.value}`
+  }
+  return `全部单选题库 · 当前可随机题数 ${currentQuestionPoolCount.value}`
+})
+const answeredCount = computed(() => correctAnswerCount.value + wrongAnswerCount.value)
+const gameTimeText = computed(() => formatDuration(elapsedMs.value))
+const averageTimePerQuestionText = computed(() =>
+  answeredCount.value > 0 ? formatAverageDuration(elapsedMs.value / answeredCount.value) : '--',
+)
+const averageTimePerCorrectText = computed(() =>
+  correctAnswerCount.value > 0 ? formatAverageDuration(elapsedMs.value / correctAnswerCount.value) : '--',
+)
+const overlayStats = computed(() => [
+  { label: '本次获得金币', value: String(score.value) },
+  { label: '游戏时间', value: gameTimeText.value },
+  { label: '答对题目数量', value: String(correctAnswerCount.value) },
+  { label: '答错题目数量', value: String(wrongAnswerCount.value) },
+  { label: '平均每题耗时', value: averageTimePerQuestionText.value },
+  { label: '平均答对题耗时', value: averageTimePerCorrectText.value },
+])
+const overlayTitle = computed(() => (isPaused.value ? '游戏暂停' : gameOverTitle.value))
+const overlaySubtitle = computed(() =>
+  isPaused.value ? '当前进度已冻结，继续后将从当前位置恢复。' : '本局统计已结算。'
+)
 const playerSprite = computed(() => {
   if (Math.abs(player.value.vx) > 0.1) {
     return `${assetBase}/player/walk_${playerFrame.value % 8}.png`
@@ -107,29 +165,83 @@ const questionCards = computed(() =>
     }
   }),
 )
+
+function optionLetter(index) {
+  return String.fromCharCode(65 + index)
+}
+
+function formatDuration(durationMs) {
+  const totalSeconds = Math.max(0, Math.floor(durationMs / 1000))
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+}
+
+function formatAverageDuration(durationMs) {
+  return `${(durationMs / 1000).toFixed(1)} 秒`
+}
+
+function syncElapsed(now = performance.now()) {
+  if (!isPaused.value && !isGameOver.value && activePlayStartedAt > 0) {
+    elapsedMs.value = accumulatedPlayMs + Math.max(0, now - activePlayStartedAt)
+    return
+  }
+  elapsedMs.value = accumulatedPlayMs
+}
+
+function startPlayTimer(now = performance.now()) {
+  activePlayStartedAt = now
+}
+
+function stopPlayTimer(now = performance.now()) {
+  if (activePlayStartedAt > 0) {
+    accumulatedPlayMs += Math.max(0, now - activePlayStartedAt)
+    activePlayStartedAt = 0
+  }
+  syncElapsed(now)
+}
+
+function buildQuestionRequestPath() {
+  const params = new URLSearchParams()
+  if (selectedQuestionBankCode.value) {
+    params.set('setCode', selectedQuestionBankCode.value)
+  }
+  const query = params.toString()
+  return query ? `/api/games/ladder-jump/questions?${query}` : '/api/games/ladder-jump/questions'
+}
+
+function resolvePlatformLayout(index) {
+  if (platformLayouts[index]) {
+    return platformLayouts[index]
+  }
+  return {
+    xOffset: 1120 + Math.max(0, index - 3) * 240,
+    y: Math.max(120, 175 - Math.max(0, index - 3) * 90),
+  }
+}
+
 function buildQuestionPlatforms(questionOrder) {
-  const platformLayout = [
-    { xOffset: 400, y: 520 },
-    { xOffset: 640, y: 405 },
-    { xOffset: 880, y: 290 },
-  ]
   const question = questions.value[questionOrder % questions.value.length]
   const questionKey = `${question.id}-${questionOrder}`
   const baseX = questionStartX + questionOrder * questionGap
 
-  return question.options.map((option, index) => ({
-    id: `${questionKey}-${index}`,
-    questionId: questionKey,
-    questionOrder,
-    index,
-    option,
-    x: baseX + platformLayout[index].xOffset,
-    y: platformLayout[index].y,
-    width: answerPlatformWidth,
-    height: 54,
-    isCorrect: index === question.answerIndex,
-  }))
+  return question.options.map((option, index) => {
+    const layout = resolvePlatformLayout(index)
+    return {
+      id: `${questionKey}-${index}`,
+      questionId: questionKey,
+      questionOrder,
+      index,
+      option,
+      x: baseX + layout.xOffset,
+      y: layout.y,
+      width: answerPlatformWidth,
+      height: 54,
+      isCorrect: index === question.answerIndex,
+    }
+  })
 }
+
 const optionPlatforms = computed(() => visibleQuestionIndexes.value.flatMap((index) => buildQuestionPlatforms(index)))
 const activePlatforms = computed(() => {
   const basePlatforms = [
@@ -145,8 +257,8 @@ const activePlatforms = computed(() => {
 
   return [...basePlatforms, ...bridgePlatforms]
 })
-const coins = computed(() => {
-  return routes.value
+const coins = computed(() =>
+  routes.value
     .filter((route) => route.type === 'correct')
     .flatMap((route) =>
       Array.from({ length: 5 }, (_, index) => ({
@@ -157,8 +269,8 @@ const coins = computed(() => {
         y: route.y - 68 - Math.sin(index / 4) * 18,
         collected: route.collectedCoins.includes(index),
       })),
-    )
-})
+    ),
+)
 const visibleTravelCoinIndexes = computed(() =>
   [questionIndex.value - 1, questionIndex.value, questionIndex.value + 1, questionIndex.value + 2].filter((index) => index >= 0),
 )
@@ -178,7 +290,7 @@ const travelCoins = computed(() =>
         collected: collectedTravelCoinIds.value.includes(id),
       }
     }),
-  )
+  ),
 )
 const worldWidth = computed(() => stageWidth + (questionIndex.value + 3) * questionGap + 1800)
 const worldStyle = computed(() => ({
@@ -200,15 +312,82 @@ const playerStyle = computed(() => ({
   top: `${player.value.y}px`,
   transform: `scaleX(${-player.value.direction})`,
 }))
+
+async function loadQuestionBanks() {
+  questionBankLoading.value = true
+  try {
+    const banks = await fetchLadderJumpQuestionBanks()
+    questionBanks.value = Array.isArray(banks)
+      ? banks
+          .filter(
+            (set) =>
+              !excludedQuestionBankCategoryCodes.has(set?.categoryCode) &&
+              !excludedQuestionBankSetCodes.has(set?.setCode || set?.code),
+          )
+          .map((set) => ({
+            code: set.setCode || set.code,
+            title: set.title,
+            categoryName: set.categoryName || '',
+            questionCount: Number(set.questionCount || 0),
+          }))
+      : []
+  } catch {
+    questionBanks.value = []
+  } finally {
+    questionBankLoading.value = false
+  }
+}
+
 async function loadQuestions() {
   try {
-    const data = await request('/api/games/ladder-jump/questions')
+    const data = await request(buildQuestionRequestPath())
     if (Array.isArray(data) && data.length > 0) {
       questions.value = data
+      usingFallbackQuestions.value = false
+      return
     }
+    questions.value = defaultQuestions
+    usingFallbackQuestions.value = true
+    feedback.value = selectedQuestionBankCode.value
+      ? '\u5f53\u524d\u6240\u9009\u9898\u5e93\u6682\u65e0\u53ef\u7528\u4e8e\u5e73\u53f0\u8df3\u8dc3\u7684\u5355\u9009\u9898\uff0c\u5df2\u5207\u6362\u5230\u672c\u5730\u6f14\u793a\u9898\uff0c\u9519\u9898\u4e0d\u4f1a\u5199\u5165\u9519\u9898\u672c\u3002'
+      : '\u5f53\u524d\u540e\u7aef\u6682\u65e0\u53ef\u7528\u5355\u9009\u9898\uff0c\u5df2\u5207\u6362\u5230\u672c\u5730\u6f14\u793a\u9898\uff0c\u9519\u9898\u4e0d\u4f1a\u5199\u5165\u9519\u9898\u672c\u3002'
   } catch {
-    feedback.value = '后端题库暂不可用，已启用本地默认题库。使用键盘继续游戏'
+    questions.value = defaultQuestions
+    usingFallbackQuestions.value = true
+    feedback.value = '\u9898\u5e93\u63a5\u53e3\u6682\u65f6\u4e0d\u53ef\u7528\uff0c\u5df2\u5207\u6362\u5230\u672c\u5730\u6f14\u793a\u9898\uff0c\u9519\u9898\u4e0d\u4f1a\u5199\u5165\u9519\u9898\u672c\u3002'
   }
+}
+
+async function refreshQuestionPoolForNextLoop() {
+  if (questionPoolRefreshing || questions.value.length === 0) return
+  questionPoolRefreshing = true
+  try {
+    await loadQuestions()
+  } finally {
+    questionPoolRefreshing = false
+  }
+}
+
+function toggleQuestionDropdown() {
+  if (questionBankLoading.value) return
+  questionDropdownOpen.value = !questionDropdownOpen.value
+}
+
+async function selectQuestionBank(code) {
+  questionDropdownOpen.value = false
+  if (selectedQuestionBankCode.value === code) return
+  selectedQuestionBankCode.value = code
+  await loadQuestions()
+  restartGame(false)
+  feedback.value = selectedQuestionBank.value
+    ? `已切换到题库「${selectedQuestionBank.value.title}」，当前题目将随机抽取。`
+    : '已切换到全部单选题库，当前题目将随机抽取。'
+}
+
+function handleDocumentPointerDown(event) {
+  if (!questionDropdownOpen.value) return
+  if (questionBankPanelRef.value?.contains(event.target)) return
+  questionDropdownOpen.value = false
 }
 
 function seededRandom(seed) {
@@ -216,7 +395,50 @@ function seededRandom(seed) {
   return value - Math.floor(value)
 }
 
+function pauseGame() {
+  if (isPaused.value || isGameOver.value) return
+  isPaused.value = true
+  pressedKeys.clear()
+  stopPlayTimer()
+}
+
+function resumeGame() {
+  if (!isPaused.value || isGameOver.value) return
+  isPaused.value = false
+  startPlayTimer()
+}
+
+function togglePause() {
+  if (isGameOver.value) return
+  if (isPaused.value) {
+    resumeGame()
+    return
+  }
+  pauseGame()
+}
+
+function finishGame(title = '\u6311\u6218\u7ed3\u675f') {
+  if (isGameOver.value) return
+  gameOverTitle.value = title
+  isPaused.value = false
+  isGameOver.value = true
+  pressedKeys.clear()
+  stopPlayTimer()
+  persistLadderJumpRecord()
+}
+
+
 function handleKeyDown(event) {
+  if (event.code === 'Escape') {
+    event.preventDefault()
+    togglePause()
+    return
+  }
+
+  if (isPaused.value || isGameOver.value) {
+    return
+  }
+
   if (['Space', 'ArrowUp', 'ArrowLeft', 'ArrowRight'].includes(event.code)) {
     event.preventDefault()
   }
@@ -269,8 +491,9 @@ function dropFromPlatform() {
 function updateGame(timestamp) {
   const delta = Math.min((timestamp - lastTimestamp) / 16.67, 1.8) || 1
   lastTimestamp = timestamp
+  syncElapsed(timestamp)
 
-  if (!isGameOver.value) {
+  if (!isPaused.value && !isGameOver.value) {
     updateCars(delta)
     updatePlayer(delta)
     updateCamera()
@@ -382,7 +605,7 @@ function syncSelectedPlatform(platform) {
   if (answeredQuestionIds.value.includes(platform.questionId)) return
 
   selectedPlatform.value = platform
-  feedback.value = `Standing on option ${String.fromCharCode(65 + platform.index)}: ${platform.option}. Move right across the confirm line to answer.`
+  feedback.value = `已进入选项 ${optionLetter(platform.index)}：${platform.option}。继续向右穿过确认线即可作答。`
 }
 
 function rescuePlayerFromVoid() {
@@ -403,7 +626,6 @@ function maybeConfirmSelection() {
   if (answeredQuestionIds.value.includes(platform.questionId)) return
   if (player.value.x + playerSize.width < platform.x + confirmOffset) return
 
-  lockedQuestionIds.value = [...lockedQuestionIds.value, platform.questionId]
   leftBounds.value = {
     ...leftBounds.value,
     [platform.questionId]: {
@@ -419,17 +641,20 @@ function judgePlatform(platform) {
 
   answeredQuestionIds.value = [...answeredQuestionIds.value, platform.questionId]
   if (platform.isCorrect) {
+    correctAnswerCount.value += 1
     routes.value = [
       ...routes.value,
       { questionId: platform.questionId, type: 'correct', x: platform.x, y: platform.y, collectedCoins: [] },
     ]
     combo.value += 1
     score.value += 10 + combo.value * 2
-    feedback.value = `Correct: ${currentQuestion.value.explanation} You can still move inside this question area. Keep moving right for the next question.`
+    feedback.value = `回答正确。${currentQuestion.value.explanation} 继续向右前进，下一题会从屏幕外进入。`
     playAudio('data.mp3')
     return
   }
 
+  wrongAnswerCount.value += 1
+  recordWrongQuestionAnswer(platform)
   routes.value = [
     ...routes.value,
     { questionId: platform.questionId, type: 'wrong', x: platform.x, y: platform.y, collectedCoins: [] },
@@ -438,12 +663,25 @@ function judgePlatform(platform) {
   health.value -= 1
   applyWrongAnswerKnockback(platform)
   triggerDamageFeedback()
-  feedback.value = `Wrong: ${currentQuestion.value.explanation} Health -1. Keep moving right for the next question.`
+  feedback.value = `回答错误。${currentQuestion.value.explanation} 生命 -1，错题已加入错题本。`
   playAudio('damage.mp3')
   if (health.value <= 0) {
-    isGameOver.value = true
+    finishGame('挑战失败')
   }
 }
+
+function recordWrongQuestionAnswer(platform) {
+  if (usingFallbackQuestions.value) return
+
+  const question = questions.value[platform.questionOrder % questions.value.length]
+  if (!question?.id || platform.index === undefined || platform.index === null) return
+
+  recordQuestionBankAnswer({
+    questionId: question.id,
+    selectedAnswer: optionLetter(platform.index),
+  }).catch(() => {})
+}
+
 
 function applyWrongAnswerKnockback(platform) {
   const bounds = leftBounds.value[platform.questionId]
@@ -495,12 +733,16 @@ function advanceQuestionAfterLeavingCurrentArea() {
   const answered = answeredQuestionIds.value.includes(currentQuestionKey.value)
   const leftCurrentQuestionArea = player.value.x > currentQuestionBaseX.value + questionGap - 360
   if (answered && leftCurrentQuestionArea) {
-    questionIndex.value += 1
+    const nextQuestionIndex = questionIndex.value + 1
+    questionIndex.value = nextQuestionIndex
     selectedPlatform.value = null
+    if (questions.value.length > 0 && nextQuestionIndex % questions.value.length === 0) {
+      refreshQuestionPoolForNextLoop()
+    }
     window.requestAnimationFrame(() => {
       syncSelectedPlatform(findStandingOptionPlatform())
     })
-    feedback.value = 'New question is active. Move onto an option platform and cross its confirm line.'
+    feedback.value = '新题已激活。跳到目标平台并穿过确认线作答。'
   }
 }
 
@@ -509,19 +751,25 @@ function updateCamera() {
   cameraX.value += (target - cameraX.value) * 0.12
 }
 
-function restartGame() {
+function restartGame(shouldReloadPool = true) {
+  isPaused.value = false
+  isGameOver.value = false
+  ladderJumpRecordSaved.value = false
+  gameOverTitle.value = '\u6311\u6218\u7ed3\u675f'
   score.value = 0
   health.value = 3
   combo.value = 0
+  correctAnswerCount.value = 0
+  wrongAnswerCount.value = 0
   questionIndex.value = 0
   answeredQuestionIds.value = []
   collectedTravelCoinIds.value = []
   routes.value = []
   selectedPlatform.value = null
-  lockedQuestionIds.value = []
   leftBounds.value = {}
-  isGameOver.value = false
-  feedback.value = '使用 A/D 或 WASD 移动，空格跳跃，落到正确选项平台继续前进'
+  feedback.value = '\u4f7f\u7528 A/D \u6216 WASD \u79fb\u52a8\uff0c\u7a7a\u683c\u8df3\u8dc3\uff0c\u843d\u5230\u9009\u9879\u5e73\u53f0\u540e\u5411\u53f3\u7a7f\u8fc7\u786e\u8ba4\u7ebf\u5b8c\u6210\u7b54\u9898'
+  accumulatedPlayMs = 0
+  elapsedMs.value = 0
   player.value = {
     x: 120,
     y: groundY - playerSize.height,
@@ -534,7 +782,27 @@ function restartGame() {
   cameraX.value = 0
   damageFlash.value = false
   pressedKeys.clear()
+  startPlayTimer()
+  if (shouldReloadPool) {
+    refreshQuestionPoolForNextLoop()
+  }
 }
+
+function persistLadderJumpRecord() {
+  if (ladderJumpRecordSaved.value) return
+
+  ladderJumpRecordSaved.value = true
+  saveLadderJumpRecord({
+    questionBankCode: selectedQuestionBankCode.value || null,
+    totalCoins: score.value,
+    correctCount: correctAnswerCount.value,
+    wrongCount: wrongAnswerCount.value,
+    durationSeconds: Number((elapsedMs.value / 1000).toFixed(2)),
+  }).catch(() => {
+    ladderJumpRecordSaved.value = false
+  })
+}
+
 
 function triggerDamageFeedback() {
   damageFlash.value = false
@@ -552,10 +820,13 @@ function playAudio(fileName) {
   audio.play().catch(() => {})
 }
 
-onMounted(() => {
-  loadQuestions()
+onMounted(async () => {
+  await loadQuestionBanks()
+  await loadQuestions()
+  startPlayTimer()
   window.addEventListener('keydown', handleKeyDown)
   window.addEventListener('keyup', handleKeyUp)
+  document.addEventListener('pointerdown', handleDocumentPointerDown)
   frameTimer = window.setInterval(() => {
     playerFrame.value += 1
   }, 120)
@@ -565,6 +836,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeyDown)
   window.removeEventListener('keyup', handleKeyUp)
+  document.removeEventListener('pointerdown', handleDocumentPointerDown)
   window.clearInterval(frameTimer)
   window.cancelAnimationFrame(animationId)
 })
@@ -589,7 +861,7 @@ onBeforeUnmount(() => {
         >
           <span>第 {{ card.index + 1 }} 题</span>
           <h2>{{ card.question.question }}</h2>
-          <p>{{ card.isCurrent ? feedback : '继续前进，下一题即将到达' }}</p>
+          <p>{{ card.isCurrent ? feedback : '继续向右前进，下一题会随着你的移动进入画面。' }}</p>
         </section>
 
         <div
@@ -604,10 +876,9 @@ onBeforeUnmount(() => {
           :style="{ left: `${platform.x}px`, top: `${platform.y}px`, width: `${platform.width}px`, height: `${platform.height}px` }"
         >
           <template v-if="platform.questionId">
-            <span>{{ String.fromCharCode(65 + platform.index) }}</span>
+            <span>{{ optionLetter(platform.index) }}</span>
             <strong>{{ platform.option }}</strong>
           </template>
-          <template v-else></template>
         </div>
 
         <div
@@ -617,7 +888,7 @@ onBeforeUnmount(() => {
           class="ladder-coin"
           :style="{ left: `${coin.x}px`, top: `${coin.y}px` }"
         >
-          ¥
+          ￥
         </div>
 
         <div
@@ -627,7 +898,7 @@ onBeforeUnmount(() => {
           class="ladder-coin is-travel-coin"
           :style="{ left: `${coin.x}px`, top: `${coin.y}px` }"
         >
-          ¥
+          ￥
         </div>
 
         <div
@@ -655,22 +926,77 @@ onBeforeUnmount(() => {
       </div>
 
       <button type="button" class="ladder-back-button ladder-floating-back" @click="emit('back')">Back</button>
+
+      <section ref="questionBankPanelRef" class="ladder-bank-panel" aria-label="题库选择">
+        <span class="ladder-bank-panel__label">题库</span>
+        <button
+          type="button"
+          class="ladder-bank-panel__trigger"
+          :disabled="questionBankLoading"
+          @click="toggleQuestionDropdown"
+        >
+          <span class="ladder-bank-panel__trigger-title">{{ questionBankButtonTitle }}</span>
+          <span class="ladder-bank-panel__trigger-meta">{{ questionBankButtonSubtitle }}</span>
+        </button>
+
+        <div v-if="questionDropdownOpen" class="ladder-bank-panel__menu">
+          <button
+            type="button"
+            class="ladder-bank-panel__option"
+            :class="{ 'is-active': !selectedQuestionBankCode }"
+            @click="selectQuestionBank('')"
+          >
+            <span>全部单选题库</span>
+            <small>随机混合题池</small>
+          </button>
+          <button
+            v-for="bank in questionBanks"
+            :key="bank.code"
+            type="button"
+            class="ladder-bank-panel__option"
+            :class="{ 'is-active': bank.code === selectedQuestionBankCode }"
+            @click="selectQuestionBank(bank.code)"
+          >
+            <span>{{ bank.title }}</span>
+            <small>{{ bank.categoryName }} · {{ bank.questionCount }} 题</small>
+          </button>
+        </div>
+
+        <p class="ladder-bank-panel__summary">{{ questionBankSummary }}</p>
+      </section>
+
       <div class="ladder-stats ladder-floating-stats">
-        <span>Coins {{ score }}</span>
+        <span>金币 {{ score }}</span>
         <span>Combo {{ combo }}</span>
+        <span>Time {{ gameTimeText }}</span>
         <span class="ladder-hearts">{{ heartText }}</span>
+        <button type="button" class="ladder-pause-button" @click="pauseGame">暂停</button>
       </div>
 
       <aside class="ladder-control-hint">
-        <span>A/D 或 ←/→ 移动</span>
-        <span>W / 空格 / ↑ 三级跳</span>
-        <span>S / ↓ 下落</span>
+        <span>A/D 或方向键左右移动</span>
+        <span>W / 空格 / 上方向键三级跳</span>
+        <span>S / 下方向键下落</span>
+        <span>Esc 暂停</span>
       </aside>
 
-      <div v-if="isGameOver" class="ladder-game-over">
-        <p>挑战结束</p>
-        <h2>最终金币 {{ score }}</h2>
-        <button type="button" @click="restartGame">重新开始</button>
+      <div v-if="isPaused || isGameOver" class="ladder-game-over">
+        <p>{{ overlayTitle }}</p>
+        <h2>{{ score }} 金币</h2>
+        <span class="ladder-overlay-subtitle">{{ overlaySubtitle }}</span>
+
+        <section class="ladder-overlay-stats" aria-label="本局统计">
+          <article v-for="item in overlayStats" :key="item.label">
+            <span>{{ item.label }}</span>
+            <strong>{{ item.value }}</strong>
+          </article>
+        </section>
+
+        <div class="ladder-overlay-actions">
+          <button v-if="isPaused" type="button" @click="resumeGame">继续游戏</button>
+          <button type="button" @click="restartGame">重新开始</button>
+          <button v-if="isPaused" type="button" class="is-danger" @click="finishGame('本局结束')">立即结束</button>
+        </div>
       </div>
     </main>
   </section>

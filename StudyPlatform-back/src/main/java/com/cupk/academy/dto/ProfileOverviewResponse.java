@@ -13,6 +13,7 @@ public record ProfileOverviewResponse(
         List<ProfileLearningTimeResponse> learningTimes,
         List<ProfileCodingDifficultyResponse> codingDifficulties,
         List<ProfilePreviewMetricResponse> gameMetrics,
+        long coinTotal,
         List<ProfilePreviewMetricResponse> mistakeMetrics,
         List<ProfilePreviewMetricResponse> rankingMetrics,
         List<ProfilePreviewMetricResponse> achievementMetrics,

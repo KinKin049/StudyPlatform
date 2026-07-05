@@ -356,7 +356,7 @@ onMounted(loadProblems)
           <input
             v-model="searchKeyword"
             type="search"
-            placeholder="搜索题名、编号、算法分类或标签"
+            placeholder="搜索题名、算法分类或标签"
             aria-label="搜索题目"
           />
           <button
