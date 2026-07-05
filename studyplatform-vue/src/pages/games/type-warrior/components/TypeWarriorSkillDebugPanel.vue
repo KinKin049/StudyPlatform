@@ -6,6 +6,10 @@
 defineEmits(['grant-skill', 'reset-skills'])
 
 defineProps({
+  getSkillMaxLevel: {
+    type: Function,
+    required: true,
+  },
   skills: {
     type: Array,
     required: true,
@@ -37,9 +41,14 @@ function getSkillLevel(equippedSkills, skillId) {
         :key="skill.id"
         type="button"
         class="type-warrior-skill-debug-item"
+        :disabled="getSkillLevel(equippedSkills, skill.id) >= getSkillMaxLevel(skill.id)"
         @click="$emit('grant-skill', skill.id)"
       >
-        <em>等级 {{ getSkillLevel(equippedSkills, skill.id) }}</em>
+        <em>{{
+          getSkillLevel(equippedSkills, skill.id) >= getSkillMaxLevel(skill.id)
+            ? '已满级'
+            : `等级 ${getSkillLevel(equippedSkills, skill.id)}`
+        }}</em>
         <strong>{{ skill.name }}</strong>
         <span>{{ skill.type }}</span>
       </button>

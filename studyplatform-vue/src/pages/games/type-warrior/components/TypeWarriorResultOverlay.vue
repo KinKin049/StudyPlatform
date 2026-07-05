@@ -58,8 +58,16 @@ defineProps({
           <span>拼对单词</span>
         </div>
         <div class="type-warrior-result-item">
+          <strong>{{ resultStats.totalKills }}</strong>
+          <span>总击杀数</span>
+        </div>
+        <div class="type-warrior-result-item">
           <strong>{{ resultStats.durationSeconds.toFixed(1) }} 秒</strong>
           <span>用时</span>
+        </div>
+        <div class="type-warrior-result-item">
+          <strong>{{ resultStats.killsPerSecond.toFixed(2) }}</strong>
+          <span>每秒击杀数</span>
         </div>
         <div class="type-warrior-result-item">
           <strong>{{ resultStats.wordsPerSecond.toFixed(2) }}</strong>
@@ -73,7 +81,7 @@ defineProps({
 
       <div class="type-warrior-overlay-actions">
         <button v-if="isPaused" type="button" @click="$emit('resume')">继续游戏</button>
-        <button type="button" @click="$emit('restart')">{{ isPaused ? '重新开始' : '重新开始' }}</button>
+        <button type="button" @click="$emit('restart')">重新开始</button>
       </div>
     </div>
   </div>

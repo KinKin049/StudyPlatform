@@ -21,11 +21,15 @@ const {
   combo,
   comboFeedbackCount,
   comboFeedbackTimer,
+  currentProjectileDamage,
   currentTarget,
+  damageTexts,
   enemies,
   enemyFragments,
   explosionEffects,
   energy,
+  freezeTimer,
+  freezeStatusLabel,
   health,
   hasGameStarted,
   isChoosingSkill,
@@ -36,6 +40,7 @@ const {
   isWordPoolLoading,
   keyBursts,
   purgeCooldownLabel,
+  purgeWordState,
   resultStats,
   skillChoices,
   playerRingStyle,
@@ -51,12 +56,15 @@ const {
   wpmLike,
   applySkillChoice,
   bulletStyle,
+  damageTextStyle,
   enemyHealthStyle,
   enemyStyle,
   enemyWordTransitionStyle,
   explosionStyle,
   fragmentStyle,
   getEnemyWordParts,
+  getPurgeWordParts,
+  getSkillMaxLevel,
   isEnemyBulletTarget,
   grantSkillById,
   keyBurstStyle,
@@ -72,10 +80,13 @@ const {
         :combo="combo"
         :combo-feedback-count="comboFeedbackCount"
         :combo-feedback-timer="comboFeedbackTimer"
+        :current-projectile-damage="currentProjectileDamage"
+        :freeze-status-label="freezeStatusLabel"
         :is-paused="isPaused"
         :purge-cooldown-label="purgeCooldownLabel"
         :stage-hint="hudStageHint"
         :stage-label="hudStageLabel"
+        :get-skill-max-level="getSkillMaxLevel"
         :weapon-level="weaponLevel"
         :wpm-like="wpmLike"
         @back="emit('back')"
@@ -87,22 +98,27 @@ const {
         :banner="banner"
         :bullets="bullets"
         :current-target="currentTarget"
+        :damage-texts="damageTexts"
         :enemies="enemies"
         :enemy-fragments="enemyFragments"
         :explosion-effects="explosionEffects"
         :energy="energy"
+        :freeze-timer="freezeTimer"
         :health="health"
         :key-bursts="keyBursts"
+        :purge-word-state="purgeWordState"
         :player-ring-style="playerRingStyle"
         :player-shell-class="playerShellClass"
         :survival-seconds="survivalSeconds"
         :bullet-style="bulletStyle"
+        :damage-text-style="damageTextStyle"
         :enemy-health-style="enemyHealthStyle"
         :enemy-style="enemyStyle"
         :enemy-word-transition-style="enemyWordTransitionStyle"
         :explosion-style="explosionStyle"
         :fragment-style="fragmentStyle"
         :get-enemy-word-parts="getEnemyWordParts"
+        :get-purge-word-parts="getPurgeWordParts"
         :is-enemy-bullet-target="isEnemyBulletTarget"
         :key-burst-style="keyBurstStyle"
         :show-field-rings="true"
@@ -110,6 +126,7 @@ const {
 
       <TypeWarriorSkillDebugPanel
         v-if="enableSkillDebugPanel"
+        :get-skill-max-level="getSkillMaxLevel"
         :skills="TYPE_WARRIOR_SKILL_POOL"
         :equipped-skills="cards"
         @grant-skill="grantSkillById"
@@ -129,6 +146,7 @@ const {
     </section>
 
     <div v-if="isCriticalHealth" class="type-warrior-danger-vignette" aria-hidden="true"></div>
+    <div v-if="freezeTimer > 0" class="type-warrior-freeze-vignette" aria-hidden="true"></div>
 
     <TypeWarriorSkillSelectionOverlay
       :visible="isChoosingSkill"

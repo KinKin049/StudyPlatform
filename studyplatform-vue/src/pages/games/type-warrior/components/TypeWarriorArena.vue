@@ -20,6 +20,10 @@ defineProps({
     type: Object,
     default: null,
   },
+  damageTexts: {
+    type: Array,
+    required: true,
+  },
   enemies: {
     type: Array,
     required: true,
@@ -36,12 +40,20 @@ defineProps({
     type: Number,
     required: true,
   },
+  freezeTimer: {
+    type: Number,
+    required: true,
+  },
   health: {
     type: Number,
     required: true,
   },
   keyBursts: {
     type: Array,
+    required: true,
+  },
+  purgeWordState: {
+    type: Object,
     required: true,
   },
   playerRingStyle: {
@@ -57,6 +69,10 @@ defineProps({
     required: true,
   },
   bulletStyle: {
+    type: Function,
+    required: true,
+  },
+  damageTextStyle: {
     type: Function,
     required: true,
   },
@@ -84,6 +100,10 @@ defineProps({
     type: Function,
     required: true,
   },
+  getPurgeWordParts: {
+    type: Function,
+    required: true,
+  },
   isEnemyBulletTarget: {
     type: Function,
     required: true,
@@ -104,7 +124,21 @@ defineProps({
     <div class="type-warrior-field-ring type-warrior-field-ring-outer"></div>
     <div class="type-warrior-field-ring type-warrior-field-ring-inner"></div>
 
+    <div v-if="purgeWordState.active" class="type-warrior-purge-prompt">
+      <p>清屏指令</p>
+      <strong>
+        <span v-if="getPurgeWordParts().matched" class="type-warrior-purge-match">
+          {{ getPurgeWordParts().matched }}
+        </span>
+        <span>{{ getPurgeWordParts().rest }}</span>
+      </strong>
+      <span>{{ purgeWordState.text }}</span>
+    </div>
+
     <div class="type-warrior-player-shell" :class="playerShellClass">
+      <div v-if="freezeTimer > 0" class="type-warrior-freeze-countdown">
+        {{ freezeTimer.toFixed(1) }}s
+      </div>
       <div class="type-warrior-player-core" :style="playerRingStyle">
         <div class="type-warrior-player-values">
           <strong>{{ Math.round(health) }}</strong>
@@ -163,7 +197,7 @@ defineProps({
       v-for="bullet in bullets"
       :key="bullet.id"
       class="type-warrior-bullet"
-      :class="{ 'is-trail': bullet.trail > 0 }"
+      :class="{ 'is-trail': bullet.trail > 0, 'is-echo': bullet.bulletKind === 'echo', 'is-split': bullet.bulletKind === 'split' }"
       :style="bulletStyle(bullet)"
     ></div>
 
@@ -173,6 +207,16 @@ defineProps({
       class="type-warrior-explosion"
       :style="explosionStyle(effect)"
     ></div>
+
+    <div
+      v-for="text in damageTexts"
+      :key="text.id"
+      class="type-warrior-damage-text"
+      :class="[`is-${text.source}`]"
+      :style="damageTextStyle(text)"
+    >
+      {{ text.value }}
+    </div>
 
     <div
       v-for="fragment in enemyFragments"

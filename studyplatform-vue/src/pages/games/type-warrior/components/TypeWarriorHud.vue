@@ -22,6 +22,14 @@ defineProps({
     type: Number,
     required: true,
   },
+  currentProjectileDamage: {
+    type: Number,
+    required: true,
+  },
+  freezeStatusLabel: {
+    type: String,
+    required: true,
+  },
   isPaused: {
     type: Boolean,
     required: true,
@@ -36,6 +44,10 @@ defineProps({
   },
   stageLabel: {
     type: String,
+    required: true,
+  },
+  getSkillMaxLevel: {
+    type: Function,
     required: true,
   },
   weaponLevel: {
@@ -59,13 +71,17 @@ defineProps({
   </div>
 
   <div class="type-warrior-stage-meta type-warrior-floating-meta">
-    <button type="button" class="type-warrior-pause-button" @click="$emit('toggle-pause')">
-      {{ isPaused ? '继续' : '暂停' }}
-    </button>
+    <div class="type-warrior-top-actions">
+      <button type="button" class="type-warrior-pause-button" @click="$emit('toggle-pause')">
+        {{ isPaused ? '继续' : '暂停' }}
+      </button>
+      <span class="type-warrior-damage-chip">伤害 {{ currentProjectileDamage }}</span>
+    </div>
     <strong>武器 等级{{ weaponLevel.toFixed(0) }}</strong>
     <span>连击 {{ combo }}</span>
     <span>节奏 {{ wpmLike }}</span>
     <span>清屏 {{ purgeCooldownLabel }}</span>
+    <span>冰冻 {{ freezeStatusLabel }}</span>
     <i v-if="comboFeedbackTimer > 0" class="type-warrior-combo-pop">x{{ comboFeedbackCount }}</i>
   </div>
 
@@ -78,7 +94,7 @@ defineProps({
     </div>
     <div class="type-warrior-tip-card is-boss-card">
       <h2>操作提示</h2>
-      <p>按 `Esc` 可以暂停或继续。获得“清屏指令”后按 `1` 激活，冷却 60 秒且每关最多使用一次。</p>
+      <p>按 `Esc` 可以暂停或继续。获得“清屏指令”后按 `1` 激活，消耗 100 点能量。获得“冰冻”后按 `2` 立即释放，消耗 70 点能量。</p>
     </div>
   </aside>
 
@@ -87,7 +103,7 @@ defineProps({
       <span>{{ card.type }}</span>
       <strong>{{ card.name }}</strong>
       <p>{{ card.description }}</p>
-      <em>等级 {{ card.level }}</em>
+      <em>{{ card.level >= getSkillMaxLevel(card.id) ? '已满级' : `等级 ${card.level}` }}</em>
     </article>
   </footer>
 </template>

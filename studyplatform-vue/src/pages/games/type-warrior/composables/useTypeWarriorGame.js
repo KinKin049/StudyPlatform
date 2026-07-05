@@ -1,6 +1,5 @@
 ﻿import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import {
-  TYPE_WARRIOR_ACTIVE_SKILL_WORD_BANK,
   TYPE_WARRIOR_BALANCE,
   TYPE_WARRIOR_CONFIG,
   TYPE_WARRIOR_ENEMY_KINDS,
@@ -54,6 +53,7 @@ export function useTypeWarriorGame() {
   const bullets = ref([])
   const enemyFragments = ref([])
   const explosionEffects = ref([])
+  const damageTexts = ref([])
   const cards = ref([])
   const isGameOver = ref(false)
   const isVictory = ref(false)
@@ -85,16 +85,16 @@ export function useTypeWarriorGame() {
   const score = ref(0)
   const solvedWordCount = ref(0)
   const typedLetterCount = ref(0)
+  const totalKillCount = ref(0)
   const completedWaveCount = ref(0)
   const effectiveTypingSeconds = ref(0)
-  const purgeCooldownRemaining = ref(0)
-  const purgeUsesThisWave = ref(0)
   const purgeWordState = ref({
     active: false,
     word: '',
     text: '',
     buffer: '',
   })
+  const freezeTimer = ref(0)
   const arenaRef = ref(null)
   const pendingWaveNumber = ref(null)
   const pendingWaveEndHeal = ref(0)
@@ -120,6 +120,7 @@ export function useTypeWarriorGame() {
   let keyBurstIdSeed = 0
   let fragmentIdSeed = 0
   let explosionEffectIdSeed = 0
+  let damageTextIdSeed = 0
   let wordPoolLoadPromise = null
   let hasPreloadedWordPool = false
   let recentWordQueue = []
@@ -130,23 +131,47 @@ export function useTypeWarriorGame() {
   const currentTarget = computed(() => enemies.value.find((enemy) => enemy.id === targetEnemyId.value) || null)
   const isCriticalHealth = computed(() => health.value < PLAYER_BALANCE.criticalHealthThreshold)
   const wpmLike = computed(() => Math.round(typingBurst.value * 8.2))
+  const currentProjectileDamage = computed(() => {
+    const passiveBonus = getSkillValue('focus', 'comboDamageBonusPerCombo')
+    const overclockDamageBonus = getSkillValue('overclock', 'damageBonus')
+    const burstBonus = getSkillValue('burst', 'projectileDamageBonus')
+    const beamBonus = getSkillValue('beam', 'flatDamageBonus')
+
+    return Math.round(
+      COMBAT_BALANCE.baseDamage +
+        weaponLevel.value * COMBAT_BALANCE.weaponDamagePerLevel +
+        combo.value * (COMBAT_BALANCE.comboDamageScale + passiveBonus) +
+        typingBurst.value * COMBAT_BALANCE.typingBurstScale +
+        overclockDamageBonus +
+        burstBonus +
+        beamBonus
+    )
+  })
   const wordsPerSecond = computed(() => (effectiveTypingSeconds.value > 0 ? solvedWordCount.value / effectiveTypingSeconds.value : 0))
   const lettersPerSecond = computed(() => (effectiveTypingSeconds.value > 0 ? typedLetterCount.value / effectiveTypingSeconds.value : 0))
+  const killsPerSecond = computed(() => (survivalSeconds.value > 0 ? totalKillCount.value / survivalSeconds.value : 0))
   const resultStats = computed(() => ({
     maxCombo: maxCombo.value,
     score: Math.round(score.value),
     completedWaves: completedWaveCount.value,
     solvedWords: solvedWordCount.value,
+    totalKills: totalKillCount.value,
     durationSeconds: survivalSeconds.value,
+    killsPerSecond: killsPerSecond.value,
     wordsPerSecond: wordsPerSecond.value,
     lettersPerSecond: lettersPerSecond.value,
   }))
   const purgeCooldownLabel = computed(() => {
     if (!hasSkill('purge')) return '未解锁'
     if (purgeWordState.value.active) return '输入中'
-    if (purgeCooldownRemaining.value > 0) return `${Math.ceil(purgeCooldownRemaining.value)}秒`
-    if (purgeUsesThisWave.value >= SKILL_BALANCE.purge.maxUsesPerWave) return '本关已用'
-    return '可用'
+    if (energy.value < SKILL_BALANCE.purge.energyCost) return `能量不足(${SKILL_BALANCE.purge.energyCost})`
+    return `消耗${SKILL_BALANCE.purge.energyCost}`
+  })
+  const freezeStatusLabel = computed(() => {
+    if (!hasSkill('freeze')) return '未解锁'
+    if (freezeTimer.value > 0) return `持续 ${freezeTimer.value.toFixed(1)}s`
+    if (energy.value < SKILL_BALANCE.freeze.energyCost) return `能量不足(${SKILL_BALANCE.freeze.energyCost})`
+    return `消耗${SKILL_BALANCE.freeze.energyCost}`
   })
   const playerShellClass = computed(() => ({
     'is-hit': playerHitFeedback.value > 0,
@@ -231,6 +256,22 @@ export function useTypeWarriorGame() {
     return cards.value.find((card) => card.id === skillId)?.level ?? 0
   }
 
+  function getSkillMaxLevel(skillId) {
+    const config = SKILL_BALANCE[skillId]
+    if (!config) return 1
+
+    const arrayLevels = Object.values(config)
+      .filter((value) => Array.isArray(value))
+      .map((value) => Math.max(0, value.length - 1))
+
+    if (arrayLevels.length === 0) return 1
+    return Math.max(...arrayLevels)
+  }
+
+  function isSkillAtMaxLevel(skillId, level = getSkillLevel(skillId)) {
+    return level >= getSkillMaxLevel(skillId)
+  }
+
   function getSkillValue(skillId, fieldName) {
     const level = getSkillLevel(skillId)
     const values = SKILL_BALANCE[skillId]?.[fieldName] ?? []
@@ -299,6 +340,27 @@ export function useTypeWarriorGame() {
         radius,
         life: blastEffectDuration,
         maxLife: blastEffectDuration,
+      },
+    ]
+  }
+
+  function createDamageText(x, y, damage, source = 'bullet') {
+    const roundedDamage = Math.max(1, Math.round(damage))
+    const angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.7
+    const distance = 20 + Math.random() * 14
+
+    damageTexts.value = [
+      ...damageTexts.value,
+      {
+        id: `damage-${damageTextIdSeed++}`,
+        x,
+        y,
+        dx: Math.cos(angle) * distance,
+        dy: Math.sin(angle) * distance - 8,
+        value: roundedDamage,
+        source,
+        life: 0.56,
+        maxLife: 0.56,
       },
     ]
   }
@@ -622,16 +684,12 @@ export function useTypeWarriorGame() {
   function activatePurgeSkill() {
     if (!hasSkill('purge') || isChoosingSkill.value || isGameOver.value || isVictory.value) return
     if (purgeWordState.value.active) return
-    if (purgeCooldownRemaining.value > 0) {
-      banner.value = `清屏指令冷却中：${Math.ceil(purgeCooldownRemaining.value)}秒`
-      return
-    }
-    if (purgeUsesThisWave.value >= SKILL_BALANCE.purge.maxUsesPerWave) {
-      banner.value = '本关清屏指令已经使用过。'
+    if (energy.value < SKILL_BALANCE.purge.energyCost) {
+      banner.value = `清屏指令需要 ${SKILL_BALANCE.purge.energyCost} 点能量。`
       return
     }
 
-    const nextWord = randomFrom(TYPE_WARRIOR_ACTIVE_SKILL_WORD_BANK)
+    const nextWord = pickWordForWave(Math.max(1, wave.value))
     typedBuffer.value = ''
     selectedMatchLength.value = 0
     targetEnemyId.value = null
@@ -651,15 +709,32 @@ export function useTypeWarriorGame() {
       enemy.health = 0
       enemy.incomingDamage = 0
       enemy.hitFeedback = 0.22
+      enemy.deathSource = 'purge'
+      enemy.deathSourceDamage = 0
     }
 
     resetPurgeWordState()
     typedBuffer.value = ''
     selectedMatchLength.value = 0
     targetEnemyId.value = null
-    purgeUsesThisWave.value += 1
-    purgeCooldownRemaining.value = SKILL_BALANCE.purge.cooldownSeconds
+    energy.value = clamp(energy.value - SKILL_BALANCE.purge.energyCost, 0, maxEnergy.value)
     banner.value = '清屏指令已执行。'
+  }
+
+  function activateFreezeSkill() {
+    if (!hasSkill('freeze') || isChoosingSkill.value || isGameOver.value || isVictory.value) return
+    if (freezeTimer.value > 0) {
+      banner.value = '冰冻仍在持续中。'
+      return
+    }
+    if (energy.value < SKILL_BALANCE.freeze.energyCost) {
+      banner.value = `冰冻需要 ${SKILL_BALANCE.freeze.energyCost} 点能量。`
+      return
+    }
+
+    energy.value = clamp(energy.value - SKILL_BALANCE.freeze.energyCost, 0, maxEnergy.value)
+    freezeTimer.value = getSkillValue('freeze', 'duration')
+    banner.value = '冰冻已释放，敌人移动与刷怪节奏已减速。'
   }
 
   function getLineSegmentDistance(x1, y1, x2, y2, px, py) {
@@ -675,15 +750,15 @@ export function useTypeWarriorGame() {
   }
 
   function applyDamageToEnemy(enemy, damage, { refreshWord = true, source = 'bullet', sourceDamage = damage } = {}) {
-    const repairHitHeal = getSkillValue('repair', 'onHitHeal')
+    if (damage > 0) {
+      createDamageText(enemy.x, enemy.y, damage, source)
+    }
+
     enemy.health -= damage
     enemy.incomingDamage = Math.max(0, enemy.incomingDamage - damage)
     enemy.hitFeedback = 0.22
     enemy.lastDamageSource = source
     enemy.lastSourceDamage = sourceDamage
-    if (damage > 0 && repairHitHeal > 0) {
-      health.value = clamp(health.value + repairHitHeal, 0, maxHealth.value)
-    }
     if (enemy.health <= 0) {
       enemy.deathSource = source
       enemy.deathSourceDamage = sourceDamage
@@ -752,6 +827,7 @@ export function useTypeWarriorGame() {
   function buildSkillChoice(skill, mode) {
     const currentLevel = getSkillLevel(skill.id)
     const nextLevel = mode === 'new' ? 1 : currentLevel + 1
+    const maxLevel = getSkillMaxLevel(skill.id)
 
     return {
       choiceId: `${skill.id}-${mode}-${nextLevel}`,
@@ -760,8 +836,9 @@ export function useTypeWarriorGame() {
       type: skill.type,
       description: skill.description,
       level: nextLevel,
+      maxLevel,
       mode,
-      badge: mode === 'new' ? '新技能' : `等级 ${nextLevel}`,
+      badge: mode === 'new' ? '新技能' : nextLevel >= maxLevel ? `等级 ${nextLevel} / 满级` : `等级 ${nextLevel}`,
     }
   }
 
@@ -770,6 +847,7 @@ export function useTypeWarriorGame() {
     const choices = []
     const newSkills = TYPE_WARRIOR_SKILL_POOL.filter((skill) => !currentIds.has(skill.id))
     const upgradeSkills = cards.value
+      .filter((card) => !isSkillAtMaxLevel(card.id, card.level))
       .map((card) => TYPE_WARRIOR_SKILL_POOL.find((skill) => skill.id === card.id))
       .filter(Boolean)
 
@@ -786,7 +864,11 @@ export function useTypeWarriorGame() {
     }
 
     if (choices.length < 3) {
-      const fallbackSkills = TYPE_WARRIOR_SKILL_POOL.filter((skill) => !choices.some((choice) => choice.id === skill.id))
+      const fallbackSkills = TYPE_WARRIOR_SKILL_POOL.filter((skill) => {
+        if (choices.some((choice) => choice.id === skill.id)) return false
+        const currentLevel = getSkillLevel(skill.id)
+        return currentLevel === 0 || !isSkillAtMaxLevel(skill.id, currentLevel)
+      })
       for (const skill of pickRandomItems(fallbackSkills, 3 - choices.length)) {
         const mode = currentIds.has(skill.id) ? 'upgrade' : 'new'
         choices.push(buildSkillChoice(skill, mode))
@@ -797,8 +879,23 @@ export function useTypeWarriorGame() {
   }
 
   function openSkillSelection(nextWave) {
+    const nextChoices = buildSkillChoices()
+    if (nextChoices.length === 0) {
+      pendingWaveNumber.value = null
+      isChoosingSkill.value = false
+      wave.value = nextWave
+      weaponLevel.value = clamp(weaponLevel.value + COMBAT_BALANCE.skillChoiceWeaponLevelGain, 1, COMBAT_BALANCE.maxWeaponLevel)
+      banner.value = `第 ${nextWave} 关开始。`
+      startWave(nextWave)
+      if (pendingWaveEndHeal.value > 0) {
+        health.value = clamp(health.value + pendingWaveEndHeal.value, 0, maxHealth.value)
+      }
+      pendingWaveEndHeal.value = 0
+      return
+    }
+
     pendingWaveNumber.value = nextWave
-    skillChoices.value = buildSkillChoices()
+    skillChoices.value = nextChoices
     isChoosingSkill.value = true
     typedBuffer.value = ''
     selectedMatchLength.value = 0
@@ -824,6 +921,10 @@ export function useTypeWarriorGame() {
     const existingIndex = cards.value.findIndex((card) => card.id === choice.id)
 
     if (existingIndex >= 0) {
+      if (isSkillAtMaxLevel(choice.id, cards.value[existingIndex].level)) {
+        banner.value = `${choice.name} 已满级。`
+        return
+      }
       const nextCards = [...cards.value]
       nextCards[existingIndex] = {
         ...nextCards[existingIndex],
@@ -833,7 +934,7 @@ export function useTypeWarriorGame() {
     } else {
       const skill = TYPE_WARRIOR_SKILL_POOL.find((item) => item.id === choice.id)
       if (skill) {
-        cards.value = [...cards.value, { ...skill, level: 1 }]
+        cards.value = [...cards.value, { ...skill, level: 1, maxLevel: getSkillMaxLevel(skill.id) }]
       }
     }
 
@@ -868,6 +969,10 @@ export function useTypeWarriorGame() {
 
     const existingIndex = cards.value.findIndex((card) => card.id === skillId)
     if (existingIndex >= 0) {
+      if (isSkillAtMaxLevel(skillId, cards.value[existingIndex].level)) {
+        banner.value = `${skill.name} 已满级。`
+        return
+      }
       const nextCards = [...cards.value]
       nextCards[existingIndex] = {
         ...nextCards[existingIndex],
@@ -875,7 +980,7 @@ export function useTypeWarriorGame() {
       }
       cards.value = nextCards
     } else {
-      cards.value = [...cards.value, { ...skill, level: 1 }]
+      cards.value = [...cards.value, { ...skill, level: 1, maxLevel: getSkillMaxLevel(skill.id) }]
     }
 
     syncDerivedStats({ restoreHealth: true, restoreEnergy: true })
@@ -897,7 +1002,6 @@ export function useTypeWarriorGame() {
     const waveProfile = getTypeWarriorWaveProfile(currentWave)
 
     currentWaveProfile.value = waveProfile
-    purgeUsesThisWave.value = 0
     waveSpawned.value = 0
     waveTargetCount.value = waveProfile.normal.totalCount
     bossSpawned.value = 0
@@ -922,11 +1026,13 @@ export function useTypeWarriorGame() {
     combo.value = 0
     typedBuffer.value = ''
     selectedMatchLength.value = 0
+    freezeTimer.value = 0
     enemies.value = []
     markEnemyKeywordTrieDirty()
     bullets.value = []
     enemyFragments.value = []
     explosionEffects.value = []
+    damageTexts.value = []
     cards.value = []
     isGameOver.value = false
     isVictory.value = false
@@ -956,10 +1062,9 @@ export function useTypeWarriorGame() {
     score.value = 0
     solvedWordCount.value = 0
     typedLetterCount.value = 0
+    totalKillCount.value = 0
     completedWaveCount.value = 0
     effectiveTypingSeconds.value = 0
-    purgeCooldownRemaining.value = 0
-    purgeUsesThisWave.value = 0
     pendingWaveNumber.value = null
     pendingWaveEndHeal.value = 0
     currentWaveProfile.value = getTypeWarriorWaveProfile(1)
@@ -1105,10 +1210,214 @@ export function useTypeWarriorGame() {
     }
   }
 
+  function getPurgeWordParts() {
+    const matchLength = purgeWordState.value.buffer.length
+    return {
+      matched: purgeWordState.value.word.slice(0, matchLength),
+      rest: purgeWordState.value.word.slice(matchLength),
+    }
+  }
+
+  function pickRandomAliveEnemy(excludeIds = []) {
+    const excludeIdSet = new Set(excludeIds)
+    const candidates = enemies.value.filter((enemy) => enemy.health > 0 && !excludeIdSet.has(enemy.id))
+    return randomFrom(candidates)
+  }
+
+  function getBulletDamageSource(bullet) {
+    if (bullet.bulletKind === 'echo') return 'echo'
+    if (bullet.bulletKind === 'split') return 'split'
+    return 'bullet'
+  }
+
+  function spawnEchoSeekers(defeatedEnemy) {
+    const echoCount = getSkillValue('echo', 'killSeekers')
+    if (echoCount <= 0) return
+    if (defeatedEnemy.deathSource !== 'bullet') return
+
+    const damageMultiplier = getSkillValue('echo', 'damageMultiplier')
+    const speedMultiplier = getSkillValue('echo', 'speedMultiplier')
+    const baseDamage = Math.max(0, Number(defeatedEnemy.deathSourceDamage) || Number(defeatedEnemy.lastSourceDamage) || 0)
+    if (baseDamage <= 0) return
+
+    for (let index = 0; index < echoCount; index += 1) {
+      const target = pickRandomAliveEnemy([defeatedEnemy.id])
+      if (!target) break
+
+      bullets.value.push({
+        id: `bullet-${bulletIdSeed++}`,
+        bulletKind: 'echo',
+        targetId: target.id,
+        x: defeatedEnemy.x,
+        y: defeatedEnemy.y,
+        lastX: defeatedEnemy.x,
+        lastY: defeatedEnemy.y,
+        damage: baseDamage * damageMultiplier,
+        speed: COMBAT_BALANCE.baseProjectileSpeed * speedMultiplier + index * 18,
+        trail: 0,
+        directionX: 0,
+        directionY: -1,
+        solidTrailEnabled: false,
+        solidTrailMultiplier: 0,
+        pierceEnabled: false,
+        pierceTrailMultiplier: 0,
+        piercedEnemyIds: [],
+        solidHitEnemyIds: [],
+        flightMode: 'tracking',
+        lifetime: 0,
+      })
+    }
+  }
+
+  function spawnSplitBullets(sourceBullet, hitEnemy) {
+    const splitCount = getSkillValue('split', 'childCount')
+    if (splitCount <= 0 || !sourceBullet.canSplit) return
+
+    const speedMultiplier = getSkillValue('split', 'speedMultiplier')
+    const splitLifetime = getSkillValue('split', 'lifetime')
+    const angleStepDegrees = getSkillValue('split', 'angleStepDegrees')
+    const baseDirectionX = sourceBullet.directionX || 1
+    const baseDirectionY = sourceBullet.directionY || 0
+    const baseAngle = Math.atan2(baseDirectionY, baseDirectionX)
+    const angleStep = (angleStepDegrees * Math.PI) / 180
+
+    for (let index = 0; index < splitCount; index += 1) {
+      const angleOffset = (index - (splitCount - 1) / 2) * angleStep
+      const nextAngle = baseAngle + angleOffset
+
+      bullets.value.push({
+        id: `bullet-${bulletIdSeed++}`,
+        bulletKind: 'split',
+        canSplit: false,
+        targetId: null,
+        x: hitEnemy.x,
+        y: hitEnemy.y,
+        lastX: hitEnemy.x,
+        lastY: hitEnemy.y,
+        damage: sourceBullet.damage * 0.7,
+        speed: sourceBullet.speed * speedMultiplier + index * 12,
+        trail: 0,
+        directionX: Math.cos(nextAngle),
+        directionY: Math.sin(nextAngle),
+        solidTrailEnabled: sourceBullet.solidTrailEnabled,
+        solidTrailMultiplier: sourceBullet.solidTrailMultiplier ?? 0,
+        pierceEnabled: sourceBullet.pierceEnabled,
+        pierceTrailMultiplier: sourceBullet.pierceTrailMultiplier ?? 0,
+        piercedEnemyIds: [hitEnemy.id],
+        solidHitEnemyIds: [hitEnemy.id],
+        flightMode: 'straight',
+        lifetime: splitLifetime,
+      })
+    }
+  }
+
   function triggerComboFeedback() {
     comboFeedbackCount.value = combo.value
     comboFeedbackTimer.value = 0.72
     comboShakeTimer.value = 0.36
+  }
+
+  function getStandardProjectileTraits() {
+    const splitEnabled = getSkillValue('split', 'childCount') > 0
+    const solidBulletEnabled = hasSkill('solid')
+    const piercingBulletEnabled = hasSkill('pierce')
+
+    return {
+      splitEnabled,
+      solidTrailEnabled: solidBulletEnabled,
+      solidTrailMultiplier: solidBulletEnabled ? getSkillValue('solid', 'trailDamageMultiplier') : 0,
+      pierceEnabled: piercingBulletEnabled,
+      pierceTrailMultiplier: piercingBulletEnabled ? getSkillValue('pierce', 'trailDamageMultiplier') : 0,
+      piercingBulletLifetime: piercingBulletEnabled ? getSkillValue('pierce', 'lifetime') : 0,
+      overclockSpeedBonus: getSkillValue('overclock', 'projectileSpeedBonus'),
+    }
+  }
+
+  function appendTrackingBullet(target, {
+    damage,
+    trail = 0,
+    bulletKind = 'standard',
+    canSplit = false,
+    solidTrailEnabled = false,
+    solidTrailMultiplier = 0,
+    pierceEnabled = false,
+    pierceTrailMultiplier = 0,
+    piercingBulletLifetime = 0,
+    overclockSpeedBonus = 0,
+  }) {
+    const initialDistance = getDistance(centerPoint, centerPoint, target.x, target.y) || 1
+    const initialDirectionX = (target.x - centerPoint) / initialDistance
+    const initialDirectionY = (target.y - centerPoint) / initialDistance
+
+    bullets.value.push({
+      id: `bullet-${bulletIdSeed++}`,
+      bulletKind,
+      canSplit,
+      targetId: target.id,
+      x: centerPoint,
+      y: centerPoint,
+      lastX: centerPoint,
+      lastY: centerPoint,
+      damage,
+      speed: COMBAT_BALANCE.baseProjectileSpeed + trail * COMBAT_BALANCE.projectileSpeedStep + overclockSpeedBonus,
+      trail,
+      directionX: initialDirectionX,
+      directionY: initialDirectionY,
+      solidTrailEnabled,
+      solidTrailMultiplier,
+      pierceEnabled,
+      pierceTrailMultiplier,
+      piercedEnemyIds: [],
+      solidHitEnemyIds: [],
+      flightMode: 'tracking',
+      lifetime: piercingBulletLifetime,
+    })
+
+    target.incomingDamage += damage
+  }
+
+  function getCounterGuardTargets(projectileCount) {
+    const aliveTargets = enemies.value
+      .filter((enemy) => enemy.health > 0 && getEnemyEffectiveHealth(enemy) > 0)
+      .sort((left, right) => getEnemyDistance(left) - getEnemyDistance(right))
+
+    if (aliveTargets.length === 0) return []
+
+    return Array.from({ length: projectileCount }, (_, index) => aliveTargets[index % aliveTargets.length])
+  }
+
+  function triggerGuardCounterFire() {
+    const projectileCount = getSkillValue('guard', 'projectileCount')
+    if (projectileCount <= 0) return false
+
+    const targets = getCounterGuardTargets(projectileCount)
+    if (targets.length === 0) return false
+
+    const traits = getStandardProjectileTraits()
+    const projectileDamage =
+      (COMBAT_BALANCE.baseDamage +
+        weaponLevel.value * COMBAT_BALANCE.weaponDamagePerLevel +
+        getSkillValue('overclock', 'damageBonus') +
+        getSkillValue('burst', 'projectileDamageBonus') +
+        getSkillValue('beam', 'flatDamageBonus')) *
+      (getSkillValue('guard', 'damageMultiplier') || 1)
+
+    for (let index = 0; index < targets.length; index += 1) {
+      appendTrackingBullet(targets[index], {
+        damage: projectileDamage,
+        trail: index,
+        bulletKind: 'standard',
+        canSplit: traits.splitEnabled,
+        solidTrailEnabled: traits.solidTrailEnabled,
+        solidTrailMultiplier: traits.solidTrailMultiplier,
+        pierceEnabled: traits.pierceEnabled,
+        pierceTrailMultiplier: traits.pierceTrailMultiplier,
+        piercingBulletLifetime: traits.piercingBulletLifetime,
+        overclockSpeedBonus: traits.overclockSpeedBonus,
+      })
+    }
+
+    return true
   }
 
   function fireTypedShot(enemy) {
@@ -1119,9 +1428,9 @@ export function useTypeWarriorGame() {
     lastTypedAt.value = now
 
     const passiveBonus = getSkillValue('focus', 'comboDamageBonusPerCombo')
-    const projectileCount = weaponLevel.value + getSkillValue('echo', 'extraProjectiles')
+    const projectileCount = weaponLevel.value
     const overclockDamageBonus = getSkillValue('overclock', 'damageBonus')
-    const overclockSpeedBonus = getSkillValue('overclock', 'projectileSpeedBonus')
+    const traits = getStandardProjectileTraits()
     const baseDamage =
       COMBAT_BALANCE.baseDamage +
       weaponLevel.value * COMBAT_BALANCE.weaponDamagePerLevel +
@@ -1131,37 +1440,22 @@ export function useTypeWarriorGame() {
     const burstBonus = getSkillValue('burst', 'projectileDamageBonus')
     const rapidBonus = getSkillValue('rapid', 'energyOnComplete')
     const beamBonus = getSkillValue('beam', 'flatDamageBonus')
-    const solidBulletEnabled = hasSkill('solid')
-    const piercingBulletEnabled = hasSkill('pierce')
-    const solidTrailDamageMultiplier = solidBulletEnabled ? getSkillValue('solid', 'trailDamageMultiplier') : 0
-    const pierceTrailDamageMultiplier = piercingBulletEnabled ? getSkillValue('pierce', 'trailDamageMultiplier') : 0
-    const piercingBulletLifetime = piercingBulletEnabled ? getSkillValue('pierce', 'lifetime') : 0
 
     // Reserve incoming damage so the next completed word does not waste shots on an already doomed enemy.
     for (let index = 0; index < projectileCount; index += 1) {
       const projectileDamage = baseDamage + burstBonus + beamBonus
-      bullets.value.push({
-        id: `bullet-${bulletIdSeed++}`,
-        targetId: enemy.id,
-        x: centerPoint,
-        y: centerPoint,
-        lastX: centerPoint,
-        lastY: centerPoint,
+      appendTrackingBullet(enemy, {
         damage: projectileDamage,
-        speed: COMBAT_BALANCE.baseProjectileSpeed + index * COMBAT_BALANCE.projectileSpeedStep + overclockSpeedBonus,
         trail: index,
-        directionX: 0,
-        directionY: 0,
-        solidTrailEnabled: solidBulletEnabled,
-        solidTrailMultiplier: solidTrailDamageMultiplier,
-        pierceEnabled: piercingBulletEnabled,
-        pierceTrailMultiplier: pierceTrailDamageMultiplier,
-        piercedEnemyIds: [],
-        solidHitEnemyIds: [],
-        flightMode: 'tracking',
-        lifetime: piercingBulletLifetime,
+        bulletKind: 'standard',
+        canSplit: traits.splitEnabled,
+        solidTrailEnabled: traits.solidTrailEnabled,
+        solidTrailMultiplier: traits.solidTrailMultiplier,
+        pierceEnabled: traits.pierceEnabled,
+        pierceTrailMultiplier: traits.pierceTrailMultiplier,
+        piercingBulletLifetime: traits.piercingBulletLifetime,
+        overclockSpeedBonus: traits.overclockSpeedBonus,
       })
-      enemy.incomingDamage += projectileDamage
     }
 
     combo.value += 1
@@ -1227,6 +1521,12 @@ export function useTypeWarriorGame() {
     if (event.key === '1') {
       event.preventDefault()
       activatePurgeSkill()
+      return
+    }
+
+    if (event.key === '2') {
+      event.preventDefault()
+      activateFreezeSkill()
       return
     }
 
@@ -1338,7 +1638,16 @@ export function useTypeWarriorGame() {
     const remainingBullets = []
 
     for (const bullet of bullets.value) {
-      const targetEnemy = enemies.value.find((item) => item.id === bullet.targetId && item.health > 0)
+      let targetEnemy = enemies.value.find((item) => item.id === bullet.targetId && item.health > 0)
+      if (!targetEnemy && bullet.bulletKind === 'echo') {
+        const redirectedTarget = pickRandomAliveEnemy()
+        if (!redirectedTarget) {
+          continue
+        }
+        targetEnemy = redirectedTarget
+        bullet.targetId = redirectedTarget.id
+      }
+
       const currentLastX = bullet.lastX ?? bullet.x
       const currentLastY = bullet.lastY ?? bullet.y
       const travel = bullet.speed * deltaSeconds
@@ -1348,7 +1657,7 @@ export function useTypeWarriorGame() {
         lastY: bullet.y,
       }
 
-      if (bullet.flightMode === 'piercing') {
+      if (bullet.flightMode === 'piercing' || bullet.flightMode === 'straight') {
         const nextX = bullet.x + bullet.directionX * travel
         const nextY = bullet.y + bullet.directionY * travel
 
@@ -1356,20 +1665,27 @@ export function useTypeWarriorGame() {
           ...nextBullet,
           x: nextX,
           y: nextY,
-          lifetime: bullet.lifetime - deltaSeconds,
         }
       } else {
-        if (!targetEnemy) continue
-
-        const distance = getDistance(bullet.x, bullet.y, targetEnemy.x, targetEnemy.y)
-        const directionX = (targetEnemy.x - bullet.x) / distance
-        const directionY = (targetEnemy.y - bullet.y) / distance
-        nextBullet = {
-          ...nextBullet,
-          x: bullet.x + directionX * travel,
-          y: bullet.y + directionY * travel,
-          directionX,
-          directionY,
+        if (!targetEnemy) {
+          nextBullet = {
+            ...nextBullet,
+            flightMode: 'straight',
+            targetId: null,
+            x: bullet.x + bullet.directionX * travel,
+            y: bullet.y + bullet.directionY * travel,
+          }
+        } else {
+          const distance = getDistance(bullet.x, bullet.y, targetEnemy.x, targetEnemy.y)
+          const directionX = (targetEnemy.x - bullet.x) / distance
+          const directionY = (targetEnemy.y - bullet.y) / distance
+          nextBullet = {
+            ...nextBullet,
+            x: bullet.x + directionX * travel,
+            y: bullet.y + directionY * travel,
+            directionX,
+            directionY,
+          }
         }
       }
 
@@ -1388,7 +1704,7 @@ export function useTypeWarriorGame() {
         if (nextBullet.flightMode === 'tracking') {
           if (nextBullet.solidTrailEnabled && enemy.id !== nextBullet.targetId && !solidTrailEnemyIds.has(enemy.id)) {
             applyDamageToEnemy(enemy, nextBullet.damage * nextBullet.solidTrailMultiplier, {
-              source: 'bullet',
+              source: getBulletDamageSource(nextBullet),
               sourceDamage: nextBullet.damage,
             })
             solidTrailEnemyIds.add(enemy.id)
@@ -1396,9 +1712,15 @@ export function useTypeWarriorGame() {
 
           if (enemy.id === nextBullet.targetId) {
             applyDamageToEnemy(enemy, nextBullet.damage, {
-              source: 'bullet',
+              source: getBulletDamageSource(nextBullet),
               sourceDamage: nextBullet.damage,
             })
+            if (nextBullet.bulletKind === 'echo') {
+              createExplosionEffect(enemy.x, enemy.y, getSkillValue('echo', 'impactEffectRadius'))
+            }
+            if (nextBullet.bulletKind !== 'echo') {
+              spawnSplitBullets(nextBullet, enemy)
+            }
 
             if (nextBullet.pierceEnabled) {
               piercedEnemyIds.add(enemy.id)
@@ -1415,9 +1737,38 @@ export function useTypeWarriorGame() {
             }
             break
           }
+        } else if (nextBullet.flightMode === 'straight') {
+          const distanceToPath = getLineSegmentDistance(currentLastX, currentLastY, nextBullet.x, nextBullet.y, enemy.x, enemy.y)
+          const isDirectHit = distanceToPath <= enemy.radius + 4
+
+          if (!isDirectHit) {
+            if (nextBullet.solidTrailEnabled && !solidTrailEnemyIds.has(enemy.id)) {
+              applyDamageToEnemy(enemy, nextBullet.damage * nextBullet.solidTrailMultiplier, {
+                source: getBulletDamageSource(nextBullet),
+                sourceDamage: nextBullet.damage,
+              })
+              solidTrailEnemyIds.add(enemy.id)
+            }
+            continue
+          }
+
+          if (piercedEnemyIds.has(enemy.id)) {
+            continue
+          }
+
+          applyDamageToEnemy(enemy, nextBullet.damage, {
+            source: getBulletDamageSource(nextBullet),
+            sourceDamage: nextBullet.damage,
+          })
+          piercedEnemyIds.add(enemy.id)
+
+          if (!nextBullet.pierceEnabled) {
+            nextBullet = null
+            break
+          }
         } else if (!piercedEnemyIds.has(enemy.id)) {
           applyDamageToEnemy(enemy, nextBullet.damage * nextBullet.pierceTrailMultiplier, {
-            source: 'bullet',
+            source: getBulletDamageSource(nextBullet),
             sourceDamage: nextBullet.damage,
           })
           piercedEnemyIds.add(enemy.id)
@@ -1431,13 +1782,13 @@ export function useTypeWarriorGame() {
         piercedEnemyIds: [...piercedEnemyIds],
       }
 
-      if (nextBullet.flightMode === 'piercing') {
-        if (nextBullet.lifetime <= 0) continue
+      if (nextBullet.flightMode === 'piercing' || nextBullet.flightMode === 'straight') {
+        const bulletExitMargin = bullet.bulletKind === 'echo' ? 18 : bullet.bulletKind === 'split' ? 8 : 10
         const inBounds =
-          nextBullet.x >= viewportSpawnBounds.value.left - 40 &&
-          nextBullet.x <= viewportSpawnBounds.value.right + 40 &&
-          nextBullet.y >= viewportSpawnBounds.value.top - 40 &&
-          nextBullet.y <= viewportSpawnBounds.value.bottom + 40
+          nextBullet.x >= viewportVisibleBounds.value.left - bulletExitMargin &&
+          nextBullet.x <= viewportVisibleBounds.value.right + bulletExitMargin &&
+          nextBullet.y >= viewportVisibleBounds.value.top - bulletExitMargin &&
+          nextBullet.y <= viewportVisibleBounds.value.bottom + bulletExitMargin
         if (!inBounds) continue
       }
 
@@ -1448,6 +1799,10 @@ export function useTypeWarriorGame() {
   }
 
   function scoreWaveProgress(enemy) {
+    if (enemy.deathSource === 'purge') {
+      return
+    }
+
     const reserveKillBonus = getSkillValue('reserve', 'killEnergyBonus')
     const reserveBossKillBonus = getSkillValue('reserve', 'bossKillEnergyBonus')
 
@@ -1474,6 +1829,8 @@ export function useTypeWarriorGame() {
     let defeatedBossCount = 0
 
     for (const enemy of defeated) {
+      totalKillCount.value += 1
+
       if (!enemy.comboRegistered) {
         combo.value += 1
         syncMaxCombo()
@@ -1485,6 +1842,7 @@ export function useTypeWarriorGame() {
 
       createEnemyFragments(enemy)
       triggerBlastExplosion(enemy)
+      spawnEchoSeekers(enemy)
       weaponLevel.value = clamp(weaponLevel.value + (enemy.boss ? 1 : 0) + burstWeaponGrowth, 1, COMBAT_BALANCE.maxWeaponLevel)
       scoreWaveProgress(enemy)
       score.value += enemy.boss ? COMBAT_BALANCE.bossKillScore : COMBAT_BALANCE.nonBossKillScore
@@ -1513,6 +1871,8 @@ export function useTypeWarriorGame() {
   function moveEnemies(deltaSeconds) {
     const nextEnemies = []
     const collidedEnemies = []
+    const freezeMovementScale = freezeTimer.value > 0 ? getSkillValue('freeze', 'speedMultiplier') : 1
+    const movementDeltaSeconds = deltaSeconds * freezeMovementScale
 
     for (const enemy of enemies.value) {
       if (enemy.boss) {
@@ -1525,12 +1885,12 @@ export function useTypeWarriorGame() {
           const directionY = (centerPoint - enemy.y) / distance
           nextEnemy = {
             ...enemy,
-            x: enemy.x + directionX * enemy.speed * speedFactor * deltaSeconds,
-            y: enemy.y + directionY * enemy.speed * speedFactor * deltaSeconds,
+            x: enemy.x + directionX * enemy.speed * speedFactor * movementDeltaSeconds,
+            y: enemy.y + directionY * enemy.speed * speedFactor * movementDeltaSeconds,
             orbitAngle: Math.atan2(enemy.y - centerPoint, enemy.x - centerPoint),
           }
         } else {
-          const nextAngle = enemy.orbitAngle + BOSS_BALANCE.orbitAngularSpeed * deltaSeconds
+          const nextAngle = enemy.orbitAngle + BOSS_BALANCE.orbitAngularSpeed * movementDeltaSeconds
           nextEnemy = {
             ...enemy,
             orbitAngle: nextAngle,
@@ -1549,8 +1909,8 @@ export function useTypeWarriorGame() {
       const speedFactor = 1 + Math.max(0, 1 - energy.value / maxEnergy.value) * 0.18
 
       if (enemy.movementMode === 'emitted' && enemy.emissionVector) {
-        const nextLaunchSpeed = Math.max(0, enemy.launchSpeed - BOSS_BALANCE.minionLaunchDeceleration * deltaSeconds)
-        const launchTravel = ((enemy.launchSpeed + nextLaunchSpeed) / 2) * deltaSeconds
+        const nextLaunchSpeed = Math.max(0, enemy.launchSpeed - BOSS_BALANCE.minionLaunchDeceleration * movementDeltaSeconds)
+        const launchTravel = ((enemy.launchSpeed + nextLaunchSpeed) / 2) * movementDeltaSeconds
         const nextEnemy = {
           ...enemy,
           x: enemy.x + Math.cos(enemy.emissionVector) * launchTravel,
@@ -1567,11 +1927,11 @@ export function useTypeWarriorGame() {
       }
 
       if (enemy.movementMode === 'chasing') {
-        const nextChaseSpeed = Math.min(enemy.speed, enemy.chaseSpeed + BOSS_BALANCE.minionChaseAcceleration * deltaSeconds)
+        const nextChaseSpeed = Math.min(enemy.speed, enemy.chaseSpeed + BOSS_BALANCE.minionChaseAcceleration * movementDeltaSeconds)
         const nextEnemy = {
           ...enemy,
-          x: enemy.x + directionX * nextChaseSpeed * speedFactor * deltaSeconds,
-          y: enemy.y + directionY * nextChaseSpeed * speedFactor * deltaSeconds,
+          x: enemy.x + directionX * nextChaseSpeed * speedFactor * movementDeltaSeconds,
+          y: enemy.y + directionY * nextChaseSpeed * speedFactor * movementDeltaSeconds,
           chaseSpeed: nextChaseSpeed,
         }
         const nextDistance = getDistance(nextEnemy.x, nextEnemy.y, centerPoint, centerPoint)
@@ -1587,8 +1947,8 @@ export function useTypeWarriorGame() {
 
       const nextEnemy = {
         ...enemy,
-        x: enemy.x + directionX * enemy.speed * speedFactor * deltaSeconds,
-        y: enemy.y + directionY * enemy.speed * speedFactor * deltaSeconds,
+        x: enemy.x + directionX * enemy.speed * speedFactor * movementDeltaSeconds,
+        y: enemy.y + directionY * enemy.speed * speedFactor * movementDeltaSeconds,
       }
       const nextDistance = getDistance(nextEnemy.x, nextEnemy.y, centerPoint, centerPoint)
 
@@ -1625,7 +1985,10 @@ export function useTypeWarriorGame() {
     combo.value = 0
     damageCooldown.value = 0.22
     playerHitFeedback.value = 0.34
-    banner.value = `${collidedEnemies[0].text} 已碰到角色，生命值下降。`
+    const guardTriggered = triggerGuardCounterFire()
+    banner.value = guardTriggered
+      ? `${collidedEnemies[0].text} 已碰到角色，主动防御已自动反击。`
+      : `${collidedEnemies[0].text} 已碰到角色，生命值下降。`
     syncTargetByBuffer()
   }
 
@@ -1681,6 +2044,17 @@ export function useTypeWarriorGame() {
       .filter((effect) => effect.life > 0)
   }
 
+  function updateDamageTexts(deltaSeconds) {
+    damageTexts.value = damageTexts.value
+      .map((text) => ({
+        ...text,
+        x: text.x + text.dx * deltaSeconds,
+        y: text.y + text.dy * deltaSeconds,
+        life: text.life - deltaSeconds,
+      }))
+      .filter((text) => text.life > 0)
+  }
+
   function updateComboFeedback(deltaSeconds) {
     comboFeedbackTimer.value = Math.max(0, comboFeedbackTimer.value - deltaSeconds)
     comboShakeTimer.value = Math.max(0, comboShakeTimer.value - deltaSeconds)
@@ -1697,7 +2071,14 @@ export function useTypeWarriorGame() {
   }
 
   function spawnWaveEnemy() {
-    if (waveSpawned.value >= waveTargetCount.value) return
+    const isBossSupportSpawn = bossState.value === 'active' && waveSpawned.value >= waveTargetCount.value
+    if (!isBossSupportSpawn && waveSpawned.value >= waveTargetCount.value) return
+
+    if (isBossSupportSpawn) {
+      const aliveNormalEnemies = enemies.value.filter((enemy) => !enemy.boss && enemy.health > 0).length
+      const supportSpawnCap = Math.max(3, Math.min(BOSS_BALANCE.maxMinions, Math.ceil(waveTargetCount.value * 0.5)))
+      if (aliveNormalEnemies >= supportSpawnCap) return
+    }
 
     const normalProfile = currentWaveProfile.value.normal
     const spawnProbability = clamp(sampleRange(normalProfile.spawnProbabilityRange), 0, 1)
@@ -1707,7 +2088,9 @@ export function useTypeWarriorGame() {
     const healthMultiplier = sampleRange(normalProfile.healthMultiplierRange)
     enemies.value = [...enemies.value, buildEnemy(wave.value, false, { healthMultiplier })]
     markEnemyKeywordTrieDirty()
-    waveSpawned.value += 1
+    if (!isBossSupportSpawn) {
+      waveSpawned.value += 1
+    }
   }
 
   function spawnBossEnemy() {
@@ -1787,15 +2170,17 @@ export function useTypeWarriorGame() {
       if (currentTarget.value || purgeWordState.value.active) {
         effectiveTypingSeconds.value += deltaSeconds
       }
+      const freezeSpawnScale = freezeTimer.value > 0 ? getSkillValue('freeze', 'speedMultiplier') : 1
       damageCooldown.value = Math.max(0, damageCooldown.value - deltaSeconds)
       playerHitFeedback.value = Math.max(0, playerHitFeedback.value - deltaSeconds)
-      spawnCooldown.value = Math.max(0, spawnCooldown.value - deltaSeconds)
-      bossSpawnCooldown.value = Math.max(0, bossSpawnCooldown.value - deltaSeconds)
-      bossMinionCooldown.value = Math.max(0, bossMinionCooldown.value - deltaSeconds)
-      purgeCooldownRemaining.value = Math.max(0, purgeCooldownRemaining.value - deltaSeconds)
+      freezeTimer.value = Math.max(0, freezeTimer.value - deltaSeconds)
+      spawnCooldown.value = Math.max(0, spawnCooldown.value - deltaSeconds * freezeSpawnScale)
+      bossSpawnCooldown.value = Math.max(0, bossSpawnCooldown.value - deltaSeconds * freezeSpawnScale)
+      bossMinionCooldown.value = Math.max(0, bossMinionCooldown.value - deltaSeconds * freezeSpawnScale)
       updateEnemyFeedbacks(deltaSeconds)
       updateEnemyFragments(deltaSeconds)
       updateExplosionEffects(deltaSeconds)
+      updateDamageTexts(deltaSeconds)
       updateComboFeedback(deltaSeconds)
       updateKeyBursts(deltaSeconds)
 
@@ -1852,10 +2237,17 @@ export function useTypeWarriorGame() {
   }
 
   function bulletStyle(bullet) {
-    return {
+    const style = {
       left: `${(bullet.x / arenaSize) * 100}%`,
       top: `${(bullet.y / arenaSize) * 100}%`,
     }
+
+    if (bullet.bulletKind === 'echo') {
+      const angle = Math.atan2(bullet.directionY ?? -1, bullet.directionX ?? 0) * (180 / Math.PI) + 90
+      style.transform = `translate(-50%, -50%) rotate(${angle}deg)`
+    }
+
+    return style
   }
 
   function enemyHealthStyle(enemy) {
@@ -1923,6 +2315,19 @@ export function useTypeWarriorGame() {
     }
   }
 
+  function damageTextStyle(text) {
+    const lifeRatio = Math.max(0, text.life / text.maxLife)
+    const liftRatio = 1 - lifeRatio
+    const scale = text.source === 'explosion' ? 1.12 : text.source === 'echo' ? 1.04 : 1
+
+    return {
+      left: `${(text.x / arenaSize) * 100}%`,
+      top: `${(text.y / arenaSize) * 100}%`,
+      opacity: `${Math.min(1, lifeRatio * 1.25)}`,
+      transform: `translate(-50%, -50%) translateY(${-18 * liftRatio}px) scale(${0.84 + liftRatio * 0.28 * scale})`,
+    }
+  }
+
   onMounted(() => {
     restartGame()
     loadWordPool()
@@ -1948,10 +2353,14 @@ export function useTypeWarriorGame() {
     comboFeedbackCount,
     comboFeedbackTimer,
     currentTarget,
+    currentProjectileDamage,
+    damageTexts,
     enemies,
     enemyFragments,
     explosionEffects,
     energy,
+    freezeTimer,
+    freezeStatusLabel,
     hasGameStarted,
     health,
     isChoosingSkill,
@@ -1982,14 +2391,18 @@ export function useTypeWarriorGame() {
     weaponLevel,
     wpmLike,
     bulletStyle,
+    damageTextStyle,
     enemyHealthStyle,
     enemyStyle,
     enemyWordTransitionStyle,
     explosionStyle,
     fragmentStyle,
     getEnemyWordParts,
+    getPurgeWordParts,
+    getSkillMaxLevel,
     isEnemyBulletTarget,
     keyBurstStyle,
+    purgeWordState,
   }
 }
 
