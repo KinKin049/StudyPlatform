@@ -108,6 +108,10 @@ defineProps({
     type: Function,
     required: true,
   },
+  isEnemyMatchedTarget: {
+    type: Function,
+    required: true,
+  },
   keyBurstStyle: {
     type: Function,
     required: true,
@@ -166,7 +170,7 @@ defineProps({
       :class="[
         `is-${enemy.shape}`,
         {
-          'is-target': currentTarget && currentTarget.id === enemy.id,
+          'is-target': isEnemyMatchedTarget(enemy),
           'is-bullet-target': isEnemyBulletTarget(enemy) && (!currentTarget || currentTarget.id !== enemy.id),
           'is-boss': enemy.boss,
           'is-emitting': enemy.emitFeedback > 0,

@@ -17,6 +17,7 @@ const AcademyQuestionBankCourses = () => import('../pages/academy/AcademyQuestio
 const AcademyQuestionBankFavorites = () => import('../pages/academy/AcademyQuestionBankFavorites.vue')
 const AcademyQuestionBankMistakes = () => import('../pages/academy/AcademyQuestionBankMistakes.vue')
 const AcademyTextbooks = () => import('../pages/academy/AcademyTextbooks.vue')
+const AdminPage = () => import('../pages/AdminPage.vue')
 const AuthLoginPage = () => import('../pages/AuthLoginPage.vue')
 const AuthOnboardingPage = () => import('../pages/AuthOnboardingPage.vue')
 const AuthRegisterPage = () => import('../pages/AuthRegisterPage.vue')
@@ -60,6 +61,11 @@ const routes = [
     path: '/onboarding',
     name: 'onboarding',
     component: AuthOnboardingPage,
+  },
+  {
+    path: '/admin',
+    name: 'admin',
+    component: AdminPage,
   },
   {
     path: '/academy',

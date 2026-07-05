@@ -1,12 +1,12 @@
-package com.cupk.academy.dto;
+package com.cupk.admin.dto;
 
-public record AcademyCourseResponse(
+public record AdminCourseResponse(
+        String resourceType,
         String id,
         String name,
         String teacher,
         String category,
         String school,
-        String cover,
         String coverUrl,
         String coverFilePath,
         String startTime,
@@ -15,7 +15,6 @@ public record AcademyCourseResponse(
         String description,
         String semesterPlan,
         String overview,
-        String video,
         String videoFilePath,
         String link,
         boolean certified

@@ -20,6 +20,18 @@ export const saveAuthOnboarding = (payload) =>
     body: JSON.stringify(payload),
   })
 
+export const sendPasswordResetCode = (payload) =>
+  request('/api/auth/password-reset/code', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+
+export const confirmPasswordReset = (payload) =>
+  request('/api/auth/password-reset/confirm', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+
 export function getStoredAuthUser() {
   try {
     const raw = localStorage.getItem(AUTH_USER_KEY)

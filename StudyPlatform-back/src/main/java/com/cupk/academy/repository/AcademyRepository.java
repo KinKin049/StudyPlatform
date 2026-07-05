@@ -28,7 +28,7 @@ public class AcademyRepository {
                        COALESCE(p.course_overview, course_comment) AS course_comment,
                        COALESCE(p.course_detail, '') AS course_description,
                        p.semester_plan, p.course_overview, p.video_file_path,
-                       source_url
+                       source_url, c.certified
                 FROM online_open_courses c
                 LEFT JOIN teacher_published_courses p ON p.course_id = c.external_course_id
                 ORDER BY c.id ASC
@@ -104,7 +104,8 @@ public class AcademyRepository {
                 getOptionalString(rs, "course_overview"),
                 fileUrl(getOptionalString(rs, "video_file_path")),
                 getOptionalString(rs, "video_file_path"),
-                rs.getString("source_url")
+                rs.getString("source_url"),
+                getOptionalBoolean(rs, "certified")
         );
     }
 
@@ -115,7 +116,7 @@ public class AcademyRepository {
                        COALESCE(p.course_overview, c.course_comment) AS course_comment,
                        COALESCE(p.course_detail, '') AS course_description,
                        p.semester_plan, p.course_overview, p.video_file_path,
-                       c.source_url
+                       c.source_url, c.certified
                 FROM online_open_courses c
                 LEFT JOIN teacher_published_courses p ON p.course_id = c.external_course_id
                 WHERE c.external_course_id = ?
@@ -135,7 +136,7 @@ public class AcademyRepository {
                        COALESCE(p.course_overview, c.course_comment) AS course_comment,
                        COALESCE(p.course_detail, '') AS course_description,
                        p.semester_plan, p.course_overview, p.video_file_path,
-                       c.source_url
+                       c.source_url, c.certified
                 FROM teacher_published_courses p
                 JOIN online_open_courses c ON c.external_course_id = p.course_id
                 WHERE p.publisher_user_id = ?
@@ -354,7 +355,7 @@ public class AcademyRepository {
         String sql = """
                 SELECT external_course_id, course_name, teacher_name, category, school_name,
                        cover_url, cover_file_path, start_time, participant_count,
-                       course_comment, course_description, source_url
+                       course_comment, course_description, source_url, certified
                 FROM %s
                 ORDER BY id ASC
                 """.formatted(tableName);
@@ -375,7 +376,8 @@ public class AcademyRepository {
                 null,
                 "",
                 null,
-                rs.getString("source_url")
+                rs.getString("source_url"),
+                getOptionalBoolean(rs, "certified")
         ));
     }
 
@@ -388,7 +390,7 @@ public class AcademyRepository {
         String sql = """
                 SELECT external_course_id, course_name, teacher_name, category, school_name,
                        cover_url, cover_file_path, start_time, participant_count,
-                       course_comment, %s, source_url
+                       course_comment, %s, source_url, certified
                 FROM %s
                 WHERE external_course_id = ?
                 LIMIT 1
@@ -412,7 +414,8 @@ public class AcademyRepository {
                     null,
                     "",
                     null,
-                    rs.getString("source_url")
+                    rs.getString("source_url"),
+                    getOptionalBoolean(rs, "certified")
             ), id));
         } catch (EmptyResultDataAccessException ex) {
             return Optional.empty();
@@ -424,6 +427,14 @@ public class AcademyRepository {
             return rs.getString(columnLabel);
         } catch (Exception ex) {
             return null;
+        }
+    }
+
+    private boolean getOptionalBoolean(java.sql.ResultSet rs, String columnLabel) {
+        try {
+            return rs.getBoolean(columnLabel);
+        } catch (Exception ex) {
+            return false;
         }
     }
 

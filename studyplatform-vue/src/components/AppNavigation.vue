@@ -20,6 +20,7 @@ const navigationUser = ref({
 })
 
 const isLoggedIn = computed(() => Boolean(authUser.value?.id))
+const isAdmin = computed(() => authUser.value?.email === 'admin@admin.com' && authUser.value?.roleType === 'admin')
 const userDisplayName = computed(() => authUser.value?.username || navigationUser.value.name || 'Kinkin')
 const avatarSrc = computed(() => resolveResourceUrl(navigationUser.value.avatarUrl))
 const avatarInitial = computed(() => (userDisplayName.value || 'K').trim().slice(0, 1).toUpperCase())
@@ -131,6 +132,9 @@ onBeforeUnmount(() => {
           </div>
           <button class="user-menu-link" type="button" role="menuitem" @click="navigateTo('/profile', $event)">
             个人主页
+          </button>
+          <button v-if="isAdmin" class="user-menu-link" type="button" role="menuitem" @click="navigateTo('/admin', $event)">
+            管理后台
           </button>
           <button class="user-menu-link" type="button" role="menuitem" @click="switchUser">
             切换用户

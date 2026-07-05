@@ -3,16 +3,20 @@ import { ref, watch } from 'vue'
 import '../../../assets/games/type-warrior.css'
 import { saveTypeWarriorRecord } from '../../../api/games'
 import { TYPE_WARRIOR_BALANCE, TYPE_WARRIOR_SKILL_POOL } from './config/typeWarriorConfig'
+import { getTypeWarriorFinalWave } from './config/typeWarriorWaveConfig'
 import TypeWarriorArena from './components/TypeWarriorArena.vue'
 import TypeWarriorHud from './components/TypeWarriorHud.vue'
 import TypeWarriorResultOverlay from './components/TypeWarriorResultOverlay.vue'
 import TypeWarriorSkillDebugPanel from './components/TypeWarriorSkillDebugPanel.vue'
 import TypeWarriorSkillSelectionOverlay from './components/TypeWarriorSkillSelectionOverlay.vue'
+import TypeWarriorWaveDebugPanel from './components/TypeWarriorWaveDebugPanel.vue'
 import { useTypeWarriorGame } from './composables/useTypeWarriorGame'
 
 const emit = defineEmits(['back'])
 
 const enableSkillDebugPanel = TYPE_WARRIOR_BALANCE.ui.showSkillDebugPanel
+const enableWaveDebugPanel = TYPE_WARRIOR_BALANCE.ui.showWaveDebugPanel
+const debugWaveCount = getTypeWarriorFinalWave()
 const typeWarriorRecordSaved = ref(false)
 
 const {
@@ -61,6 +65,7 @@ const {
   applySkillChoice,
   bulletStyle,
   damageTextStyle,
+  debugSelectWave,
   enemyHealthStyle,
   enemyStyle,
   enemyWordTransitionStyle,
@@ -70,6 +75,7 @@ const {
   getPurgeWordParts,
   getSkillMaxLevel,
   isEnemyBulletTarget,
+  isEnemyMatchedTarget,
   grantSkillById,
   keyBurstStyle,
   resetSkills,
@@ -83,6 +89,11 @@ function handleStartGame() {
 function handleRestartGame() {
   typeWarriorRecordSaved.value = false
   restartGame()
+}
+
+function handleDebugSelectWave(waveNumber) {
+  typeWarriorRecordSaved.value = false
+  debugSelectWave(waveNumber)
 }
 
 function syncTypeWarriorRecord() {
@@ -166,6 +177,7 @@ watch(
         :get-enemy-word-parts="getEnemyWordParts"
         :get-purge-word-parts="getPurgeWordParts"
         :is-enemy-bullet-target="isEnemyBulletTarget"
+        :is-enemy-matched-target="isEnemyMatchedTarget"
         :key-burst-style="keyBurstStyle"
         :show-field-rings="true"
       />
@@ -177,6 +189,13 @@ watch(
         :equipped-skills="cards"
         @grant-skill="grantSkillById"
         @reset-skills="resetSkills"
+      />
+
+      <TypeWarriorWaveDebugPanel
+        v-if="enableWaveDebugPanel"
+        :current-wave="wave"
+        :total-waves="debugWaveCount"
+        @select-wave="handleDebugSelectWave"
       />
 
       <div v-if="!hasGameStarted" class="type-warrior-start-overlay">

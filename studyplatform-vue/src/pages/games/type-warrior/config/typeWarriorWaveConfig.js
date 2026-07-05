@@ -4,7 +4,7 @@
  * 如果新增的关卡没有手动写入 `TYPE_WARRIOR_WAVE_PROFILES`，系统会自动用末尾模板外推。
  */
 export const TYPE_WARRIOR_WAVE_SETTINGS = {
-  totalWaves: 10,
+  totalWaves: 20,
 }
 
 /**
@@ -64,7 +64,7 @@ export const TYPE_WARRIOR_WAVE_PROFILES = {
   3: {
     normal: {
       totalCount: 6,
-      spawnRatePerSecond: 1.16,
+      spawnRatePerSecond: 0.5,
       spawnProbabilityRange: [0.95, 1],
       healthMultiplierRange: [0.96, 1.08],
     },
@@ -94,7 +94,7 @@ export const TYPE_WARRIOR_WAVE_PROFILES = {
   6: {
     normal: {
       totalCount: 9,
-      spawnRatePerSecond: 1.32,
+      spawnRatePerSecond: 0.5,
       spawnProbabilityRange: [0.94, 1],
       healthMultiplierRange: [1.06, 1.18],
     },
@@ -132,15 +132,113 @@ export const TYPE_WARRIOR_WAVE_PROFILES = {
   10: {
     normal: {
       totalCount: 12,
-      spawnRatePerSecond: 1.52,
+      spawnRatePerSecond: 0.7,
       spawnProbabilityRange: [0.92, 1],
       healthMultiplierRange: [1.18, 1.36],
     },
     boss: {
-      totalCount: 1,
+      totalCount: 2,
       spawnRatePerSecond: 0.22,
       spawnProbabilityRange: [1, 1],
       healthMultiplierRange: [5, 5],
+    },
+  },
+  11: {
+    normal: {
+      totalCount: 15,
+      spawnRatePerSecond: 1.7,
+      spawnProbabilityRange: [1, 1],
+      healthMultiplierRange: [1.3, 1.5],
+    },
+  },
+  12: {
+    normal: {
+      totalCount: 20,
+      spawnRatePerSecond: 1.8,
+      spawnProbabilityRange: [0.94, 1],
+      healthMultiplierRange: [1.4, 1.6],
+    },
+  },
+  13: {
+    normal: {
+      totalCount: 20,
+      spawnRatePerSecond: 1,
+      spawnProbabilityRange: [0.95, 1],
+      healthMultiplierRange: [1.5, 1.6],
+    },
+    boss: {
+      totalCount: 2,
+      spawnRatePerSecond: 0.2,
+      spawnProbabilityRange: [1, 1],
+      healthMultiplierRange: [5.5, 7],
+    },
+  },
+  14: {
+    normal: {
+      totalCount: 20,
+      spawnRatePerSecond: 2,
+      spawnProbabilityRange: [0.94, 1],
+      healthMultiplierRange: [1.5, 1.7],
+    },
+  },
+  15: {
+    normal: {
+      totalCount: 23,
+      spawnRatePerSecond: 2,
+      spawnProbabilityRange: [0.93, 1],
+      healthMultiplierRange: [1.55, 1.75],
+    },
+  },
+  16: {
+    normal: {
+      totalCount: 25,
+      spawnRatePerSecond: 1.5,
+      spawnProbabilityRange: [0.94, 1],
+      healthMultiplierRange: [1.55, 1.75],
+    },
+    boss: {
+      totalCount: 2,
+      spawnRatePerSecond: 0.2,
+      spawnProbabilityRange: [1, 1],
+      healthMultiplierRange: [7, 7],
+    },
+  },
+  17: {
+    normal: {
+      totalCount: 25,
+      spawnRatePerSecond: 2,
+      spawnProbabilityRange: [0.93, 1],
+      healthMultiplierRange: [1.55, 1.75],
+    },
+  },
+  18: {
+    normal: {
+      totalCount: 25,
+      spawnRatePerSecond: 2,
+      spawnProbabilityRange: [0.93, 1],
+      healthMultiplierRange: [1.55, 1.75],
+    },
+  },
+  19: {
+    normal: {
+      totalCount: 30,
+      spawnRatePerSecond: 3,
+      spawnProbabilityRange: [0.93, 1],
+      healthMultiplierRange: [1.55, 1.75],
+    },
+  },
+  20: {
+    normal: {
+      totalCount: 25,
+      spawnRatePerSecond: 2,
+      spawnProbabilityRange: [0.92, 1],
+      healthMultiplierRange: [1.55, 1.75],
+    },
+    boss: {
+      totalCount: 3,
+      spawnRatePerSecond: 0.22,
+      spawnProbabilityRange: [1, 1],
+      healthMultiplierRange: [6, 6],
     },
   },
 }

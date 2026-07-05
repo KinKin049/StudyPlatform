@@ -73,6 +73,7 @@ public class ProfileService {
                 gameRecordRepository.findLadderJumpAggregate(userId);
         GameRecordRepository.TypeWarriorAggregateRow typeWarriorAggregate =
                 gameRecordRepository.findTypeWarriorAggregate(userId);
+        long adminCoinAdjustment = profileRepository.findAdminCoinAdjustment(userId);
 
         return new ProfileOverviewResponse(
                 List.of(
@@ -90,7 +91,7 @@ public class ProfileService {
                 buildLearningTimes(userId),
                 buildCodingDifficulties(userId),
                 buildGameMetrics(userId, ladderJumpAggregate, typeWarriorAggregate),
-                ladderJumpAggregate.totalCoins() + typeWarriorAggregate.totalCoins(),
+                ladderJumpAggregate.totalCoins() + typeWarriorAggregate.totalCoins() + adminCoinAdjustment,
                 buildMistakeMetrics(userId),
                 buildRankingMetrics(),
                 buildAchievementMetrics(),

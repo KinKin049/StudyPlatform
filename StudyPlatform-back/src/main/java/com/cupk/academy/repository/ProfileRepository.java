@@ -154,6 +154,14 @@ public class ProfileRepository {
         return value == null ? 0 : value;
     }
 
+    public long findAdminCoinAdjustment(long userId) {
+        ensureUserProfile(userId);
+        return queryLong(
+                "SELECT COALESCE(admin_coin_adjustment, 0) FROM profile_user_profiles WHERE user_id = ?",
+                userId
+        );
+    }
+
     public List<CodingDifficultyRow> findCodingDifficultyRows(long userId) {
         String sql = """
                 SELECT levels.difficulty,

@@ -56,3 +56,38 @@ export function findBestTrieSuffixMatch(root, buffer, evaluateCandidate) {
 
   return bestMatch
 }
+
+export function findBestTrieSuffixPrefixMatches(root, buffer, evaluateCandidate) {
+  let bestMatches = []
+  let bestMatchLength = 0
+
+  for (let startIndex = 0; startIndex < buffer.length; startIndex += 1) {
+    let node = root
+
+    for (let index = startIndex; index < buffer.length; index += 1) {
+      node = node.children[buffer[index]]
+      if (!node) break
+    }
+
+    if (!node) continue
+
+    const matchLength = buffer.length - startIndex
+    const candidates = []
+    for (const enemyId of node.enemyIds) {
+      const candidate = evaluateCandidate(enemyId, matchLength)
+      if (candidate) {
+        candidates.push(candidate)
+      }
+    }
+
+    if (candidates.length > 0 && matchLength >= bestMatchLength) {
+      bestMatchLength = matchLength
+      bestMatches = candidates
+    }
+  }
+
+  return {
+    matchLength: bestMatchLength,
+    matches: bestMatches,
+  }
+}

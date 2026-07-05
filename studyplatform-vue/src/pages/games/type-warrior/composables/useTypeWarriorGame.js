@@ -8,8 +8,8 @@ import {
 } from '../config/typeWarriorConfig'
 import { fetchTypeWarriorWordPool } from '../../../../api/academy'
 import { getTypeWarriorFinalWave, getTypeWarriorWaveProfile } from '../config/typeWarriorWaveConfig'
-import { clamp, getDistance, getSuffixMatchLength, normalizeWord, pickRandomItems, randomFrom } from '../utils/typeWarriorMath'
-import { buildEnemyKeywordTrie, findBestTrieSuffixMatch } from '../utils/typeWarriorTrie'
+import { clamp, getDistance, normalizeWord, pickRandomItems, randomFrom } from '../utils/typeWarriorMath'
+import { buildEnemyKeywordTrie, findBestTrieSuffixPrefixMatches } from '../utils/typeWarriorTrie'
 
 const {
   arenaSize,
@@ -74,6 +74,7 @@ export function useTypeWarriorGame() {
   const typingBurst = ref(0)
   const survivalSeconds = ref(0)
   const targetEnemyId = ref(null)
+  const matchedEnemyIds = ref(new Set())
   const playerHitFeedback = ref(0)
   const keyBursts = ref([])
   const comboFeedbackCount = ref(0)
@@ -703,6 +704,7 @@ export function useTypeWarriorGame() {
       text: nextWord.text,
       buffer: '',
     }
+    matchedEnemyIds.value = new Set()
     banner.value = `清屏指令已激活：${nextWord.word.toLowerCase()} / ${nextWord.text}`
   }
 
@@ -721,6 +723,7 @@ export function useTypeWarriorGame() {
     typedBuffer.value = ''
     selectedMatchLength.value = 0
     targetEnemyId.value = null
+    matchedEnemyIds.value = new Set()
     energy.value = clamp(energy.value - SKILL_BALANCE.purge.energyCost, 0, maxEnergy.value)
     banner.value = '清屏指令已执行。'
   }
@@ -753,7 +756,7 @@ export function useTypeWarriorGame() {
     return getDistance(closestX, closestY, px, py)
   }
 
-  function applyDamageToEnemy(enemy, damage, { refreshWord = true, source = 'bullet', sourceDamage = damage } = {}) {
+  function applyDamageToEnemy(enemy, damage, { refreshWord = false, source = 'bullet', sourceDamage = damage } = {}) {
     if (damage > 0) {
       createDamageText(enemy.x, enemy.y, damage, source)
     }
@@ -800,7 +803,7 @@ export function useTypeWarriorGame() {
       if (explosionDamage <= 0) continue
 
       applyDamageToEnemy(enemy, explosionDamage, {
-        refreshWord: true,
+        refreshWord: false,
         source: 'explosion',
         sourceDamage: baseDamage,
       })
@@ -904,6 +907,7 @@ export function useTypeWarriorGame() {
     typedBuffer.value = ''
     selectedMatchLength.value = 0
     targetEnemyId.value = null
+    matchedEnemyIds.value = new Set()
     resetPurgeWordState()
     banner.value = `第 ${nextWave} 关即将开始，请先选择一项技能。`
   }
@@ -922,6 +926,7 @@ export function useTypeWarriorGame() {
     typedBuffer.value = ''
     selectedMatchLength.value = 0
     targetEnemyId.value = null
+    matchedEnemyIds.value = new Set()
     resetPurgeWordState()
     banner.value = '本局已主动结束，数据已进入结算。'
   }
@@ -1014,6 +1019,61 @@ export function useTypeWarriorGame() {
     banner.value = '当前技能已清空，便于继续调试。'
   }
 
+  /**
+   * Debug-only wave jump. It keeps the current debug skills, but rebuilds the
+   * combat scene so old enemies, bullets, input buffers, and overlays cannot
+   * leak into the selected wave.
+   */
+  async function debugSelectWave(waveNumber) {
+    const finalWave = getTypeWarriorFinalWave()
+    const selectedWave = clamp(Math.floor(Number(waveNumber) || 1), 1, finalWave)
+
+    await loadWordPool()
+    resetWordSelectionState()
+    hasGameStarted.value = true
+    wave.value = selectedWave
+    combo.value = 0
+    typedBuffer.value = ''
+    selectedMatchLength.value = 0
+    freezeTimer.value = 0
+    enemies.value = []
+    bullets.value = []
+    enemyFragments.value = []
+    explosionEffects.value = []
+    damageTexts.value = []
+    isGameOver.value = false
+    isVictory.value = false
+    isChoosingSkill.value = false
+    skillChoices.value = []
+    damageCooldown.value = 0
+    lastTypedAt.value = performance.now()
+    typingBurst.value = 0
+    survivalSeconds.value = 0
+    targetEnemyId.value = null
+    matchedEnemyIds.value = new Set()
+    playerHitFeedback.value = 0
+    keyBursts.value = []
+    comboFeedbackCount.value = 0
+    comboFeedbackTimer.value = 0
+    comboShakeTimer.value = 0
+    explosionShakeTimer.value = 0
+    isPaused.value = false
+    maxCombo.value = 0
+    score.value = 0
+    solvedWordCount.value = 0
+    typedLetterCount.value = 0
+    totalKillCount.value = 0
+    completedWaveCount.value = Math.max(0, selectedWave - 1)
+    effectiveTypingSeconds.value = 0
+    pendingWaveNumber.value = null
+    pendingWaveEndHeal.value = 0
+    resetPurgeWordState()
+    syncDerivedStats({ restoreHealth: true, restoreEnergy: true })
+    markEnemyKeywordTrieDirty()
+    startWave(selectedWave)
+    banner.value = `调试模式：已切换到第 ${selectedWave} 关。`
+  }
+
   function startWave(currentWave) {
     const waveProfile = getTypeWarriorWaveProfile(currentWave)
 
@@ -1023,7 +1083,7 @@ export function useTypeWarriorGame() {
     bossSpawned.value = 0
     bossTargetCount.value = waveProfile.boss.totalCount
     spawnCooldown.value = getSpawnInterval(waveProfile.normal.spawnRatePerSecond)
-    bossSpawnCooldown.value = getSpawnInterval(waveProfile.boss.spawnRatePerSecond)
+    bossSpawnCooldown.value = hasConfiguredBosses(waveProfile) ? 0 : Number.POSITIVE_INFINITY
     bossMinionCooldown.value = hasConfiguredBosses(waveProfile) ? BOSS_BALANCE.minionInitialDelay : 0
     bossState.value = hasConfiguredBosses(waveProfile) ? 'pending' : 'idle'
     banner.value = hasConfiguredBosses(waveProfile)
@@ -1067,6 +1127,7 @@ export function useTypeWarriorGame() {
     typingBurst.value = 0
     survivalSeconds.value = 0
     targetEnemyId.value = null
+    matchedEnemyIds.value = new Set()
     playerHitFeedback.value = 0
     keyBursts.value = []
     comboFeedbackCount.value = 0
@@ -1092,7 +1153,20 @@ export function useTypeWarriorGame() {
   }
 
   function getBossEnemy() {
-    return enemies.value.find((enemy) => enemy.boss) ?? null
+    const aliveBosses = enemies.value.filter((enemy) => enemy.boss && enemy.health > 0)
+    return randomFrom(aliveBosses) ?? null
+  }
+
+  function getAliveBossCount() {
+    return enemies.value.filter((enemy) => enemy.boss && enemy.health > 0).length
+  }
+
+  function syncBossState() {
+    if (getAliveBossCount() > 0) {
+      bossState.value = 'active'
+      return
+    }
+    bossState.value = bossSpawned.value < bossTargetCount.value ? 'pending' : 'idle'
   }
 
   function getEnemyDistance(enemy) {
@@ -1148,21 +1222,18 @@ export function useTypeWarriorGame() {
     enemyKeywordTrieDirty = false
   }
 
-  /**
-   * Trie-based suffix matching keeps the current selection rules:
-   * 1. longest matched suffix
-   * 2. nearest visible target
-   * 3. shorter word as the final tiebreaker
-   */
-  function findBestMatchEntry(buffer, visibleOnly = true, excludeId = null) {
-    if (!buffer) return null
+  function findPrefixMatchEntries(buffer, visibleOnly = true) {
+    if (!buffer) {
+      return {
+        matches: [],
+        matchLength: 0,
+      }
+    }
 
     ensureEnemyKeywordTrie()
     const enemyById = new Map(enemies.value.map((enemy) => [enemy.id, enemy]))
 
-    return findBestTrieSuffixMatch(enemyKeywordTrie, buffer, (enemyId, matchLength) => {
-      if (enemyId === excludeId) return null
-
+    const result = findBestTrieSuffixPrefixMatches(enemyKeywordTrie, buffer, (enemyId, matchLength) => {
       const enemy = enemyById.get(enemyId)
       if (!enemy) return null
       if (visibleOnly && !isEnemyVisible(enemy)) return null
@@ -1174,6 +1245,11 @@ export function useTypeWarriorGame() {
         distance: getEnemyDistance(enemy),
       }
     })
+
+    return {
+      matchLength: result.matchLength,
+      matches: result.matches.sort((left, right) => getEnemyDistance(left.enemy) - getEnemyDistance(right.enemy)),
+    }
   }
 
   function syncTargetByBuffer(preferredId = targetEnemyId.value) {
@@ -1181,25 +1257,27 @@ export function useTypeWarriorGame() {
     if (!buffer) {
       targetEnemyId.value = null
       selectedMatchLength.value = 0
+      matchedEnemyIds.value = new Set()
       return null
     }
 
-    if (preferredId) {
+    const prefixResult = findPrefixMatchEntries(buffer, true)
+    matchedEnemyIds.value = new Set(prefixResult.matches.map((entry) => entry.enemy.id))
+    selectedMatchLength.value = prefixResult.matchLength
+
+    if (preferredId && matchedEnemyIds.value.has(preferredId)) {
+      targetEnemyId.value = preferredId
       const preferredEnemy = enemies.value.find((enemy) => enemy.id === preferredId)
-      const preferredLength = preferredEnemy ? getSuffixMatchLength(buffer, preferredEnemy.keyword) : 0
-      if (preferredEnemy && isEnemyVisible(preferredEnemy) && preferredLength > 0) {
-        targetEnemyId.value = preferredEnemy.id
-        selectedMatchLength.value = preferredLength
-        return {
-          enemy: preferredEnemy,
-          matchLength: preferredLength,
-        }
-      }
+      return preferredEnemy
+        ? {
+            enemy: preferredEnemy,
+            matchLength: prefixResult.matchLength,
+          }
+        : null
     }
 
-    const nextEntry = findBestMatchEntry(buffer, true, preferredId)
+    const nextEntry = prefixResult.matches[0] ?? null
     targetEnemyId.value = nextEntry?.enemy.id ?? null
-    selectedMatchLength.value = nextEntry?.matchLength ?? 0
     return nextEntry
   }
 
@@ -1214,7 +1292,7 @@ export function useTypeWarriorGame() {
   }
 
   function getCurrentTargetMatchLength(enemy) {
-    if (targetEnemyId.value !== enemy.id) return 0
+    if (!matchedEnemyIds.value.has(enemy.id)) return 0
     return selectedMatchLength.value
   }
 
@@ -1277,6 +1355,7 @@ export function useTypeWarriorGame() {
         solidTrailMultiplier: 0,
         pierceEnabled: false,
         pierceTrailMultiplier: 0,
+        refreshesWordOnHit: false,
         piercedEnemyIds: [],
         solidHitEnemyIds: [],
         flightMode: 'tracking',
@@ -1319,6 +1398,7 @@ export function useTypeWarriorGame() {
         solidTrailMultiplier: sourceBullet.solidTrailMultiplier ?? 0,
         pierceEnabled: sourceBullet.pierceEnabled,
         pierceTrailMultiplier: sourceBullet.pierceTrailMultiplier ?? 0,
+        refreshesWordOnHit: false,
         piercedEnemyIds: [hitEnemy.id],
         solidHitEnemyIds: [hitEnemy.id],
         flightMode: 'straight',
@@ -1360,6 +1440,7 @@ export function useTypeWarriorGame() {
     pierceTrailMultiplier = 0,
     piercingBulletLifetime = 0,
     overclockSpeedBonus = 0,
+    refreshesWordOnHit = false,
   }) {
     const initialDistance = getDistance(centerPoint, centerPoint, target.x, target.y) || 1
     const initialDirectionX = (target.x - centerPoint) / initialDistance
@@ -1383,6 +1464,7 @@ export function useTypeWarriorGame() {
       solidTrailMultiplier,
       pierceEnabled,
       pierceTrailMultiplier,
+      refreshesWordOnHit,
       piercedEnemyIds: [],
       solidHitEnemyIds: [],
       flightMode: 'tracking',
@@ -1430,6 +1512,7 @@ export function useTypeWarriorGame() {
         pierceTrailMultiplier: traits.pierceTrailMultiplier,
         piercingBulletLifetime: traits.piercingBulletLifetime,
         overclockSpeedBonus: traits.overclockSpeedBonus,
+        refreshesWordOnHit: false,
       })
     }
 
@@ -1471,6 +1554,7 @@ export function useTypeWarriorGame() {
         pierceTrailMultiplier: traits.pierceTrailMultiplier,
         piercingBulletLifetime: traits.piercingBulletLifetime,
         overclockSpeedBonus: traits.overclockSpeedBonus,
+        refreshesWordOnHit: true,
       })
     }
 
@@ -1487,6 +1571,7 @@ export function useTypeWarriorGame() {
     typedBuffer.value = ''
     targetEnemyId.value = null
     selectedMatchLength.value = 0
+    matchedEnemyIds.value = new Set()
     banner.value = `已锁定 ${enemy.text}，本次输出 ${Math.round(baseDamage)}。`
   }
 
@@ -1591,62 +1676,44 @@ export function useTypeWarriorGame() {
     }
 
     const previousTargetId = targetEnemyId.value
-    const previousTarget = currentTarget.value
+    const hadActiveMatches = matchedEnemyIds.value.size > 0
     const previousBuffer = typedBuffer.value
-
-    if (previousTarget) {
-      typedLetterCount.value += 1
-      const expectedLetter = previousTarget.keyword[selectedMatchLength.value] ?? ''
-      if (expectedLetter === nextLetter) {
-        typedBuffer.value = `${typedBuffer.value}${nextLetter}`.slice(-rollingBufferLimit)
-        selectedMatchLength.value += 1
-        createKeyBurst(nextLetter)
-
-        if (selectedMatchLength.value >= previousTarget.keyword.length) {
-          fireTypedShot(previousTarget)
-        }
-        return
-      }
-
-      const switchedBuffer = `${typedBuffer.value}${nextLetter}`.slice(-rollingBufferLimit)
-      typedBuffer.value = switchedBuffer
-      const switchedEntry = findBestMatchEntry(switchedBuffer, true, previousTarget.id)
-      if (switchedEntry) {
-        targetEnemyId.value = switchedEntry.enemy.id
-        selectedMatchLength.value = switchedEntry.matchLength
-        createKeyBurst(nextLetter)
-
-        if (typedBuffer.value.endsWith(switchedEntry.enemy.keyword)) {
-          fireTypedShot(switchedEntry.enemy)
-        }
-        return
-      }
-
-      typedBuffer.value = previousBuffer
-      selectedMatchLength.value = getSuffixMatchLength(previousBuffer, previousTarget.keyword)
-      createFailedKeyBurst(nextLetter)
-      combo.value = 0
-      banner.value = '未找到匹配单词，请重新校准输入。'
-      triggerEnemyError(previousTargetId)
-      return
-    }
 
     const nextBuffer = `${typedBuffer.value}${nextLetter}`.slice(-rollingBufferLimit)
     typedBuffer.value = nextBuffer
-    const nextEntry = findBestMatchEntry(nextBuffer, true)
-    if (!nextEntry) {
+    const prefixResult = findPrefixMatchEntries(nextBuffer, true)
+    if (prefixResult.matches.length === 0) {
       targetEnemyId.value = null
       selectedMatchLength.value = 0
+      matchedEnemyIds.value = new Set()
+      if (hadActiveMatches) {
+        typedBuffer.value = previousBuffer
+        syncTargetByBuffer(previousTargetId)
+        createFailedKeyBurst(nextLetter)
+        combo.value = 0
+        banner.value = '未找到匹配单词，请重新校准输入。'
+        triggerEnemyError(previousTargetId)
+      }
       return
     }
 
     typedLetterCount.value += 1
+    matchedEnemyIds.value = new Set(prefixResult.matches.map((entry) => entry.enemy.id))
+    selectedMatchLength.value = prefixResult.matchLength
+    const preferredEntry =
+      previousTargetId && matchedEnemyIds.value.has(previousTargetId)
+        ? prefixResult.matches.find((entry) => entry.enemy.id === previousTargetId)
+        : null
+    const nextEntry = preferredEntry ?? prefixResult.matches[0]
     targetEnemyId.value = nextEntry.enemy.id
-    selectedMatchLength.value = nextEntry.matchLength
     createKeyBurst(nextLetter)
 
-    if (typedBuffer.value.endsWith(nextEntry.enemy.keyword)) {
-      fireTypedShot(nextEntry.enemy)
+    const completedEntries = prefixResult.matches.filter((entry) => nextBuffer.endsWith(entry.enemy.keyword))
+    if (completedEntries.length > 0) {
+      const completedEntry = completedEntries.sort((left, right) => getEnemyDistance(left.enemy) - getEnemyDistance(right.enemy))[0]
+      targetEnemyId.value = completedEntry.enemy.id
+      selectedMatchLength.value = completedEntry.enemy.keyword.length
+      fireTypedShot(completedEntry.enemy)
     }
   }
 
@@ -1720,6 +1787,7 @@ export function useTypeWarriorGame() {
         if (nextBullet.flightMode === 'tracking') {
           if (nextBullet.solidTrailEnabled && enemy.id !== nextBullet.targetId && !solidTrailEnemyIds.has(enemy.id)) {
             applyDamageToEnemy(enemy, nextBullet.damage * nextBullet.solidTrailMultiplier, {
+              refreshWord: nextBullet.refreshesWordOnHit === true,
               source: getBulletDamageSource(nextBullet),
               sourceDamage: nextBullet.damage,
             })
@@ -1728,6 +1796,7 @@ export function useTypeWarriorGame() {
 
           if (enemy.id === nextBullet.targetId) {
             applyDamageToEnemy(enemy, nextBullet.damage, {
+              refreshWord: nextBullet.refreshesWordOnHit === true,
               source: getBulletDamageSource(nextBullet),
               sourceDamage: nextBullet.damage,
             })
@@ -1760,6 +1829,7 @@ export function useTypeWarriorGame() {
           if (!isDirectHit) {
             if (nextBullet.solidTrailEnabled && !solidTrailEnemyIds.has(enemy.id)) {
               applyDamageToEnemy(enemy, nextBullet.damage * nextBullet.solidTrailMultiplier, {
+                refreshWord: nextBullet.refreshesWordOnHit === true,
                 source: getBulletDamageSource(nextBullet),
                 sourceDamage: nextBullet.damage,
               })
@@ -1773,6 +1843,7 @@ export function useTypeWarriorGame() {
           }
 
           applyDamageToEnemy(enemy, nextBullet.damage, {
+            refreshWord: nextBullet.refreshesWordOnHit === true,
             source: getBulletDamageSource(nextBullet),
             sourceDamage: nextBullet.damage,
           })
@@ -1784,6 +1855,7 @@ export function useTypeWarriorGame() {
           }
         } else if (!piercedEnemyIds.has(enemy.id)) {
           applyDamageToEnemy(enemy, nextBullet.damage * nextBullet.pierceTrailMultiplier, {
+            refreshWord: nextBullet.refreshesWordOnHit === true,
             source: getBulletDamageSource(nextBullet),
             sourceDamage: nextBullet.damage,
           })
@@ -1875,11 +1947,7 @@ export function useTypeWarriorGame() {
     enemies.value = enemies.value.filter((enemy) => enemy.health > 0)
     markEnemyKeywordTrieDirty()
     if (defeatedBossCount > 0) {
-      const hasMoreBosses = bossSpawned.value < bossTargetCount.value
-      bossState.value = hasMoreBosses ? 'pending' : 'idle'
-      if (hasMoreBosses) {
-        bossSpawnCooldown.value = getSpawnInterval(currentWaveProfile.value.boss.spawnRatePerSecond)
-      }
+      syncBossState()
     }
     syncTargetByBuffer()
   }
@@ -2087,14 +2155,8 @@ export function useTypeWarriorGame() {
   }
 
   function spawnWaveEnemy() {
-    const isBossSupportSpawn = bossState.value === 'active' && waveSpawned.value >= waveTargetCount.value
-    if (!isBossSupportSpawn && waveSpawned.value >= waveTargetCount.value) return
-
-    if (isBossSupportSpawn) {
-      const aliveNormalEnemies = enemies.value.filter((enemy) => !enemy.boss && enemy.health > 0).length
-      const supportSpawnCap = Math.max(3, Math.min(BOSS_BALANCE.maxMinions, Math.ceil(waveTargetCount.value * 0.5)))
-      if (aliveNormalEnemies >= supportSpawnCap) return
-    }
+    const isBossPhaseActive = getAliveBossCount() > 0 || bossSpawned.value < bossTargetCount.value
+    if (!isBossPhaseActive && waveSpawned.value >= waveTargetCount.value) return
 
     const normalProfile = currentWaveProfile.value.normal
     const spawnProbability = clamp(sampleRange(normalProfile.spawnProbabilityRange), 0, 1)
@@ -2104,23 +2166,20 @@ export function useTypeWarriorGame() {
     const healthMultiplier = sampleRange(normalProfile.healthMultiplierRange)
     enemies.value = [...enemies.value, buildEnemy(wave.value, false, { healthMultiplier })]
     markEnemyKeywordTrieDirty()
-    if (!isBossSupportSpawn) {
-      waveSpawned.value += 1
-    }
+    waveSpawned.value += 1
   }
 
   function spawnBossEnemy() {
-    if (bossState.value !== 'pending') return
+    if (bossTargetCount.value <= 0) return false
     if (bossSpawned.value >= bossTargetCount.value) {
       bossState.value = 'idle'
-      return
+      return false
     }
-    if (waveSpawned.value < waveTargetCount.value || enemies.value.length > 0) return
 
     const bossProfile = currentWaveProfile.value.boss
     const spawnProbability = clamp(sampleRange(bossProfile.spawnProbabilityRange), 0, 1)
 
-    if (Math.random() > spawnProbability) return
+    if (Math.random() > spawnProbability) return false
 
     const healthMultiplier = sampleRange(bossProfile.healthMultiplierRange)
     enemies.value = [...enemies.value, buildEnemy(wave.value, true, { healthMultiplier })]
@@ -2128,7 +2187,11 @@ export function useTypeWarriorGame() {
     bossSpawned.value += 1
     bossState.value = 'active'
     bossMinionCooldown.value = BOSS_BALANCE.minionInitialDelay
-    banner.value = `第 ${wave.value} 关首领已入场，优先锁定首领单词。`
+    banner.value =
+      bossTargetCount.value > 1
+        ? `第 ${wave.value} 关首领 ${bossSpawned.value}/${bossTargetCount.value} 已入场。`
+        : `第 ${wave.value} 关首领已入场，优先锁定首领单词。`
+    return true
   }
 
   function spawnBossMinion() {
@@ -2206,8 +2269,12 @@ export function useTypeWarriorGame() {
       }
 
       if (bossSpawnCooldown.value <= 0) {
-        spawnBossEnemy()
-        bossSpawnCooldown.value = getSpawnInterval(currentWaveProfile.value.boss.spawnRatePerSecond)
+        const didSpawnBoss = spawnBossEnemy()
+        if (bossSpawned.value >= bossTargetCount.value) {
+          bossSpawnCooldown.value = Number.POSITIVE_INFINITY
+        } else {
+          bossSpawnCooldown.value = didSpawnBoss ? BOSS_BALANCE.spawnIntervalSeconds : 0.5
+        }
       }
 
       if (bossState.value === 'active' && bossMinionCooldown.value <= 0) {
@@ -2295,6 +2362,10 @@ export function useTypeWarriorGame() {
 
   function isEnemyBulletTarget(enemy) {
     return bullets.value.some((bullet) => bullet.flightMode === 'tracking' && bullet.targetId === enemy.id)
+  }
+
+  function isEnemyMatchedTarget(enemy) {
+    return matchedEnemyIds.value.has(enemy.id)
   }
 
   function keyBurstStyle(burst) {
@@ -2391,6 +2462,7 @@ export function useTypeWarriorGame() {
     skillChoices,
     banner,
     applySkillChoice,
+    debugSelectWave,
     grantSkillById,
     hudStageHint,
     hudStageLabel,
@@ -2418,6 +2490,7 @@ export function useTypeWarriorGame() {
     getPurgeWordParts,
     getSkillMaxLevel,
     isEnemyBulletTarget,
+    isEnemyMatchedTarget,
     keyBurstStyle,
     purgeWordState,
   }
