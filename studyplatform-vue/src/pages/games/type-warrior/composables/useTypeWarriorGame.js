@@ -914,6 +914,18 @@ export function useTypeWarriorGame() {
     banner.value = isPaused.value ? '游戏已暂停。' : '游戏继续。'
   }
 
+  function endGame() {
+    if (!hasGameStarted.value || isGameOver.value || isVictory.value) return
+    isPaused.value = false
+    isChoosingSkill.value = false
+    isGameOver.value = true
+    typedBuffer.value = ''
+    selectedMatchLength.value = 0
+    targetEnemyId.value = null
+    resetPurgeWordState()
+    banner.value = '本局已主动结束，数据已进入结算。'
+  }
+
   async function startGame() {
     await loadWordPool()
     hasGameStarted.value = true
@@ -2384,6 +2396,7 @@ export function useTypeWarriorGame() {
     hudStageLabel,
     playerRingStyle,
     playerShellClass,
+    endGame,
     restartGame,
     resetSkills,
     startGame,

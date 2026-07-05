@@ -11,8 +11,10 @@ export function resolveResourceUrl(path) {
 
 export async function request(path, options = {}) {
   const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData
+  const authUserId = readStoredAuthUserId()
   const headers = {
     ...(options.body && !isFormData ? { 'Content-Type': 'application/json' } : {}),
+    ...(authUserId ? { 'X-Auth-User-Id': authUserId } : {}),
     ...(options.headers || {}),
   }
 
@@ -30,6 +32,19 @@ export async function request(path, options = {}) {
   }
 
   return response.json()
+}
+
+function readStoredAuthUserId() {
+  if (typeof localStorage === 'undefined') {
+    return ''
+  }
+  try {
+    const raw = localStorage.getItem('study-platform-auth-user')
+    const user = raw ? JSON.parse(raw) : null
+    return user?.id ? String(user.id) : ''
+  } catch {
+    return ''
+  }
 }
 
 async function resolveErrorMessage(response) {

@@ -53,6 +53,9 @@ const featureItems = [
 
 const courseIntro = computed(() => {
   if (!course.value) return ''
+  if (course.value.overview || course.value.description) {
+    return course.value.overview || course.value.description
+  }
   if (course.value.description || course.value.comment) {
     return course.value.description || course.value.comment
   }
@@ -69,7 +72,15 @@ const coverUrl = computed(() => {
   return resolveResourceUrl(course.value.cover || course.value.coverUrl)
 })
 
+const videoUrl = computed(() => {
+  if (!course.value?.video) return ''
+  return resolveResourceUrl(course.value.video)
+})
+
 const courseWeeks = computed(() => {
+  if (course.value?.semesterPlan) {
+    return course.value.semesterPlan
+  }
   if (course.value?.id === '46004_1476538444') {
     return '进行至第1周，共16周'
   }
@@ -320,15 +331,25 @@ watch(() => [props.resource, props.courseId], loadCourse)
           <section class="course-outline-card">
             <h2><span></span>课程概述</h2>
             <h3>一、为什么要学习这门课？</h3>
-            <p>
+            <p v-if="course.description">
+              {{ course.description }}
+            </p>
+            <p v-else>
               C 语言是理解计算机系统、算法实现和底层开发的重要基础。本课程通过连续案例训练，帮助学习者把语法知识落实到可运行、可调试、可扩展的程序中。
             </p>
           </section>
 
           <section class="course-player-page" aria-label="课程视频播放区域">
             <div class="course-player-placeholder">
-              <img :src="coverUrl" :alt="course.name" @error="useCoverFallback" />
-              <div class="course-player-overlay">
+              <video
+                v-if="videoUrl"
+                :src="videoUrl"
+                :poster="coverUrl"
+                controls
+                preload="metadata"
+              ></video>
+              <img v-else :src="coverUrl" :alt="course.name" @error="useCoverFallback" />
+              <div v-if="!videoUrl" class="course-player-overlay">
                 <span class="course-play-icon" aria-hidden="true"></span>
                 <strong>课程视频播放页</strong>
                 <p>视频资源接口预留，当前使用课程封面作为播放页占位。</p>

@@ -12,15 +12,13 @@ import org.springframework.web.server.ResponseStatusException;
  */
 @Service
 public class GameRecordService {
-    private static final long DEFAULT_USER_ID = 1L;
-
     private final GameRecordRepository gameRecordRepository;
 
     public GameRecordService(GameRecordRepository gameRecordRepository) {
         this.gameRecordRepository = gameRecordRepository;
     }
 
-    public void saveLadderJumpRecord(LadderJumpRecordSaveRequest request) {
+    public void saveLadderJumpRecord(long userId, LadderJumpRecordSaveRequest request) {
         if (request == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少平台跳跃记录参数");
         }
@@ -28,10 +26,10 @@ public class GameRecordService {
         validateNonNegative(request.correctCount(), "答对题数");
         validateNonNegative(request.wrongCount(), "答错题数");
         validateNonNegative(request.durationSeconds(), "游戏时长");
-        gameRecordRepository.insertLadderJumpRecord(DEFAULT_USER_ID, request);
+        gameRecordRepository.insertLadderJumpRecord(userId, request);
     }
 
-    public void saveTypeWarriorRecord(TypeWarriorRecordSaveRequest request) {
+    public void saveTypeWarriorRecord(long userId, TypeWarriorRecordSaveRequest request) {
         if (request == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少 Type Warrior 记录参数");
         }
@@ -44,7 +42,7 @@ public class GameRecordService {
         validateNonNegative(request.typedLetterCount(), "键入字母数");
         validateNonNegative(request.durationSeconds(), "游戏时长");
         validateNonNegative(request.effectiveTypingSeconds(), "有效输入时长");
-        gameRecordRepository.insertTypeWarriorRecord(DEFAULT_USER_ID, request);
+        gameRecordRepository.insertTypeWarriorRecord(userId, request);
     }
 
     private void validateNonNegative(Integer value, String fieldName) {

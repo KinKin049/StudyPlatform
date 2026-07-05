@@ -1,6 +1,11 @@
 ﻿<script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import {
+  deletePublishedOnlineOpenCourse,
+  fetchMyPublishedOnlineOpenCourses,
+  publishOnlineOpenCourse,
+} from '../api/academy'
+import {
   fetchProfileOverview,
   fetchProfileUser,
   updateProfileUser,
@@ -12,6 +17,8 @@ const fallbackUser = {
   name: 'Kinkin',
   handle: '@study-platform',
   role: 'StudyPlatform 学习者',
+  roleType: 'student',
+  teacherName: '',
   bio: '在题库、课程、实验与背单词之间来回穿梭，把零散练习沉淀成稳定的学习曲线。',
   location: 'China',
   school: 'StudyPlatform',
@@ -99,6 +106,23 @@ const avatarCropDragging = ref(false)
 const avatarCropDragStart = ref({ x: 0, y: 0, offsetX: 0, offsetY: 0 })
 const feedbackMessage = ref('')
 const feedbackVisible = ref(false)
+const teacherCourses = ref([])
+const teacherCoursesLoading = ref(false)
+const teacherCoursesError = ref('')
+const deletingCourseId = ref('')
+const classAssignments = ref({})
+const publishingCourse = ref(false)
+const publishCourseDialogOpen = ref(false)
+const publishCourseError = ref('')
+const publishCourseCoverFile = ref(null)
+const publishCourseVideoFile = ref(null)
+const publishCourseForm = ref({
+  courseName: '',
+  startTime: '',
+  semesterPlan: '',
+  courseDetail: '',
+  courseOverview: '',
+})
 let feedbackTimer = null
 let activeTiltElements = new Set()
 const profileForm = ref({
@@ -120,6 +144,8 @@ const profileTiltSelector = [
 ].join(',')
 
 const user = computed(() => profileUser.value || fallbackUser)
+const isTeacherProfile = computed(() => user.value.roleType === 'teacher')
+const teacherCourseCount = computed(() => teacherCourses.value.length)
 const dashboard = computed(() => overview.value || fallbackOverview)
 const stats = computed(() => dashboard.value.stats?.length ? dashboard.value.stats : fallbackOverview.stats)
 const difficultyStats = computed(() =>
@@ -299,6 +325,107 @@ const loadProfileOverview = async () => {
   }
 }
 
+const loadTeacherCourses = async () => {
+  teacherCoursesLoading.value = true
+  teacherCoursesError.value = ''
+  try {
+    teacherCourses.value = await fetchMyPublishedOnlineOpenCourses()
+  } catch (error) {
+    teacherCourses.value = []
+    teacherCoursesError.value = error.message || '课程管理数据加载失败'
+  } finally {
+    teacherCoursesLoading.value = false
+  }
+}
+
+const assignCourseClass = (course) => {
+  const value = classAssignments.value[course.id]?.trim()
+  if (!value) {
+    showFeedback('请先填写班级名称')
+    return
+  }
+  showFeedback(`已为《${course.name}》分配班级：${value}`)
+}
+
+const openAssignmentEntry = (course) => {
+  showFeedback(`《${course.name}》布置作业入口待实现`)
+}
+
+const openPublishCourseDialog = () => {
+  publishCourseDialogOpen.value = true
+  publishCourseError.value = ''
+}
+
+const closePublishCourseDialog = () => {
+  if (publishingCourse.value) return
+  publishCourseDialogOpen.value = false
+  publishCourseError.value = ''
+}
+
+const handlePublishCourseCoverSelected = (event) => {
+  publishCourseCoverFile.value = event.target.files?.[0] || null
+}
+
+const handlePublishCourseVideoSelected = (event) => {
+  publishCourseVideoFile.value = event.target.files?.[0] || null
+}
+
+const resetPublishCourseForm = () => {
+  publishCourseForm.value = {
+    courseName: '',
+    startTime: '',
+    semesterPlan: '',
+    courseDetail: '',
+    courseOverview: '',
+  }
+  publishCourseCoverFile.value = null
+  publishCourseVideoFile.value = null
+}
+
+const submitPublishCourseFromProfile = async () => {
+  publishCourseError.value = ''
+  if (!publishCourseCoverFile.value || !publishCourseVideoFile.value) {
+    publishCourseError.value = '请上传课程封面和视频'
+    return
+  }
+  const formData = new FormData()
+  Object.entries(publishCourseForm.value).forEach(([key, value]) => {
+    formData.append(key, String(value || '').trim())
+  })
+  formData.append('cover', publishCourseCoverFile.value)
+  formData.append('video', publishCourseVideoFile.value)
+
+  publishingCourse.value = true
+  try {
+    await publishOnlineOpenCourse(formData)
+    resetPublishCourseForm()
+    await loadTeacherCourses()
+    publishCourseDialogOpen.value = false
+    showFeedback('课程发布成功')
+  } catch (error) {
+    publishCourseError.value = error.message || '课程发布失败'
+  } finally {
+    publishingCourse.value = false
+  }
+}
+
+const removeTeacherCourse = async (course) => {
+  const confirmed = window.confirm(`确认删除课程《${course.name}》吗？`)
+  if (!confirmed) return
+  deletingCourseId.value = course.id
+  teacherCoursesError.value = ''
+  try {
+    await deletePublishedOnlineOpenCourse(course.id)
+    teacherCourses.value = teacherCourses.value.filter((item) => item.id !== course.id)
+    showFeedback('课程已删除')
+  } catch (error) {
+    teacherCoursesError.value = error.message || '删除课程失败'
+    showFeedback(teacherCoursesError.value)
+  } finally {
+    deletingCourseId.value = ''
+  }
+}
+
 const applyProfileUser = (nextUser) => {
   profileUser.value = nextUser
   profileForm.value = {
@@ -306,6 +433,12 @@ const applyProfileUser = (nextUser) => {
     bio: nextUser?.bio || fallbackUser.bio,
   }
   window.dispatchEvent(new CustomEvent('study-platform:profile-updated', { detail: nextUser }))
+  if (nextUser?.roleType === 'teacher') {
+    overview.value = null
+    loadTeacherCourses()
+  } else {
+    loadProfileOverview()
+  }
 }
 
 const loadProfileUser = async () => {
@@ -515,7 +648,6 @@ const confirmAvatarCrop = async () => {
 }
 
 onMounted(() => {
-  loadProfileOverview()
   loadProfileUser()
 })
 
@@ -534,7 +666,7 @@ onBeforeUnmount(() => {
   <main class="profile-main" @pointermove="handleProfileTilt" @pointerleave="resetProfileTilt">
     <section class="profile-hero">
       <div class="profile-card">
-        <div class="profile-coin-pill" aria-label="金币数量">
+        <div v-if="!isTeacherProfile" class="profile-coin-pill" aria-label="金币数量">
           <span>金币</span>
           <strong>{{ profileCoinValue }}</strong>
         </div>
@@ -565,13 +697,72 @@ onBeforeUnmount(() => {
         <button class="profile-edit-button" type="button" @click="startProfileEdit">编辑资料</button>
         <p v-if="userError && !editingProfile" class="profile-user-message">{{ userError }}</p>
         <div class="profile-meta">
-          <span>{{ user.school }}</span>
+          <span v-if="isTeacherProfile">教师姓名：{{ user.teacherName || user.name }}</span>
+          <span>{{ isTeacherProfile ? `所属学校：${user.school}` : user.school }}</span>
           <span>{{ user.location }}</span>
           <span>目标：稳稳变强</span>
         </div>
       </div>
 
-      <div class="profile-summary">
+      <section v-if="isTeacherProfile" class="profile-panel profile-teacher-course-panel">
+        <div class="profile-panel-head">
+          <div>
+            <p>Course Management</p>
+            <h2>课程管理</h2>
+          </div>
+          <div class="profile-teacher-head-actions">
+            <span>{{ teacherCourseCount }} 门课程</span>
+            <button type="button" @click="openPublishCourseDialog">添加课程</button>
+          </div>
+        </div>
+
+        <div v-if="teacherCoursesLoading" class="profile-teacher-state">正在加载课程...</div>
+        <div v-else-if="teacherCoursesError" class="profile-teacher-state is-error">
+          <span>{{ teacherCoursesError }}</span>
+          <button type="button" @click="loadTeacherCourses">重试</button>
+        </div>
+        <div v-else-if="teacherCourses.length === 0" class="profile-teacher-state">
+          <span>暂无自己发布的课程</span>
+          <button type="button" @click="openPublishCourseDialog">添加课程</button>
+        </div>
+        <div v-else class="profile-teacher-course-list">
+          <article v-for="course in teacherCourses" :key="course.id" class="profile-teacher-course-card">
+            <img :src="resolveResourceUrl(course.cover || course.coverUrl)" :alt="course.name" />
+            <div class="profile-teacher-course-body">
+              <div class="profile-teacher-course-title">
+                <span>{{ course.category || '教师发布' }}</span>
+                <h3>{{ course.name }}</h3>
+                <p>{{ course.school }} · {{ course.startTime || '开课时间待定' }}</p>
+              </div>
+              <div class="profile-teacher-course-class">
+                <label>
+                  分配班级
+                  <input
+                    v-model="classAssignments[course.id]"
+                    type="text"
+                    placeholder="例如：计科 2301 班"
+                  />
+                </label>
+                <button type="button" @click="assignCourseClass(course)">确认分配</button>
+              </div>
+              <div class="profile-teacher-course-actions">
+                <RouterLink :to="`/academy/open-courses/${encodeURIComponent(course.id)}`">查看课程</RouterLink>
+                <button type="button" @click="openAssignmentEntry(course)">布置作业</button>
+                <button
+                  type="button"
+                  class="is-danger"
+                  :disabled="deletingCourseId === course.id"
+                  @click="removeTeacherCourse(course)"
+                >
+                  {{ deletingCourseId === course.id ? '删除中' : '删除课程' }}
+                </button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <div v-else class="profile-summary">
         <p>{{ profileLoading ? 'Syncing Data' : 'Learning Dashboard' }}</p>
         <h2>今天也有一点进步，被系统悄悄记下来了。</h2>
         <span v-if="profileError" class="profile-data-note">暂时使用兜底数据：{{ profileError }}</span>
@@ -585,7 +776,7 @@ onBeforeUnmount(() => {
       </div>
     </section>
 
-    <section class="profile-insight-grid">
+    <section v-if="!isTeacherProfile" class="profile-insight-grid">
       <div class="profile-insight-stack">
         <article class="profile-panel profile-time-panel">
           <div class="profile-panel-head">
@@ -687,7 +878,7 @@ onBeforeUnmount(() => {
       </article>
     </section>
 
-    <section class="profile-preview-grid" aria-label="个人主页扩展数据预览">
+    <section v-if="!isTeacherProfile" class="profile-preview-grid" aria-label="个人主页扩展数据预览">
       <article v-for="section in previewSections" :key="section.key" class="profile-panel profile-preview-panel">
         <div class="profile-panel-head">
           <div>
@@ -705,7 +896,7 @@ onBeforeUnmount(() => {
       </article>
     </section>
 
-    <section class="profile-grid">
+    <section v-if="!isTeacherProfile" class="profile-grid">
       <div class="profile-column">
         <article class="profile-panel profile-progress-panel">
           <div class="profile-panel-head">
@@ -776,6 +967,94 @@ onBeforeUnmount(() => {
         </article>
       </div>
     </section>
+
+    <div
+      v-if="publishCourseDialogOpen"
+      class="online-course-publish-backdrop"
+      role="presentation"
+      @click.self="closePublishCourseDialog"
+    >
+      <section
+        class="online-course-publish-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="profile-publish-course-title"
+      >
+        <div class="online-course-publish-head">
+          <div>
+            <p>Teacher Course</p>
+            <h2 id="profile-publish-course-title">添加课程</h2>
+          </div>
+          <button
+            type="button"
+            :disabled="publishingCourse"
+            aria-label="关闭添加课程窗口"
+            @click="closePublishCourseDialog"
+          >
+            ×
+          </button>
+        </div>
+
+        <form class="online-course-publish-form" @submit.prevent="submitPublishCourseFromProfile">
+          <label>
+            课程名称
+            <input v-model="publishCourseForm.courseName" type="text" maxlength="120" required />
+          </label>
+          <label>
+            开课时间
+            <input
+              v-model="publishCourseForm.startTime"
+              type="text"
+              maxlength="64"
+              placeholder="例如：2026-09-01"
+              required
+            />
+          </label>
+          <label>
+            学期安排
+            <input
+              v-model="publishCourseForm.semesterPlan"
+              type="text"
+              maxlength="512"
+              placeholder="例如：16 周，每周 2 学时"
+              required
+            />
+          </label>
+          <label>
+            课程概述
+            <textarea v-model="publishCourseForm.courseOverview" rows="3" maxlength="1200" required></textarea>
+          </label>
+          <label>
+            课程详情
+            <textarea v-model="publishCourseForm.courseDetail" rows="5" maxlength="4000" required></textarea>
+          </label>
+          <div class="online-course-upload-grid">
+            <label>
+              上传课程封面
+              <input type="file" accept="image/png,image/jpeg,image/webp" required @change="handlePublishCourseCoverSelected" />
+              <span>{{ publishCourseCoverFile?.name || '未选择文件' }}</span>
+            </label>
+            <label>
+              上传课程视频
+              <input
+                type="file"
+                accept="video/mp4,video/webm,video/ogg,video/quicktime"
+                required
+                @change="handlePublishCourseVideoSelected"
+              />
+              <span>{{ publishCourseVideoFile?.name || '未选择文件' }}</span>
+            </label>
+          </div>
+          <p v-if="publishCourseError" class="online-course-publish-message is-error">{{ publishCourseError }}</p>
+          <div class="online-course-publish-actions">
+            <button type="submit" :disabled="publishingCourse">
+              {{ publishingCourse ? '发布中...' : '确认发布' }}
+            </button>
+            <button type="button" :disabled="publishingCourse" @click="closePublishCourseDialog">取消</button>
+          </div>
+        </form>
+      </section>
+    </div>
 
     <div
       v-if="avatarCropVisible"

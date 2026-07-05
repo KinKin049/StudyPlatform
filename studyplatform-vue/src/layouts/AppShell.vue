@@ -86,6 +86,7 @@ const navItems = [
 
 const shellClass = computed(() => ({
   'home-page': route.path === '/',
+  'auth-shell': route.path === '/login' || route.path === '/register' || route.path === '/forgot-password' || route.path === '/onboarding',
   'profile-shell': route.path.startsWith('/profile'),
   'academy-shell': route.path.startsWith('/academy'),
   'academy-course-detail-shell': route.path.startsWith('/academy/open-courses/'),
@@ -100,7 +101,13 @@ const shellClass = computed(() => ({
   'immersive-game-shell': route.path.startsWith('/games/'),
 }))
 
-const showNavigation = computed(() => !route.path.startsWith('/games/'))
+const showNavigation = computed(() =>
+  !route.path.startsWith('/games/') &&
+    route.path !== '/login' &&
+    route.path !== '/register' &&
+    route.path !== '/forgot-password' &&
+    route.path !== '/onboarding',
+)
 </script>
 
 <template>

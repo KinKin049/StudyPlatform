@@ -2,7 +2,7 @@
 /**
  * Renders the pause, failure, and victory statistic overlay for Type Warrior.
  */
-defineEmits(['restart', 'resume'])
+defineEmits(['end-game', 'restart', 'resume'])
 
 defineProps({
   isPaused: {
@@ -84,6 +84,7 @@ defineProps({
 
       <div class="type-warrior-overlay-actions">
         <button v-if="isPaused" type="button" @click="$emit('resume')">继续游戏</button>
+        <button v-if="isPaused" type="button" class="is-danger" @click="$emit('end-game')">结束游戏</button>
         <button type="button" @click="$emit('restart')">重新开始</button>
       </div>
     </div>

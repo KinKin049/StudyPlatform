@@ -35,6 +35,7 @@ const {
   freezeStatusLabel,
   health,
   hasGameStarted,
+  endGame,
   isChoosingSkill,
   isCriticalHealth,
   isGameOver,
@@ -84,6 +85,27 @@ function handleRestartGame() {
   restartGame()
 }
 
+function syncTypeWarriorRecord() {
+  if (typeWarriorRecordSaved.value) {
+    return
+  }
+
+  typeWarriorRecordSaved.value = true
+  saveTypeWarriorRecord({
+    reachedWave: resultStats.value.reachedWave,
+    completedWaveCount: resultStats.value.completedWaves,
+    score: resultStats.value.score,
+    maxCombo: resultStats.value.maxCombo,
+    solvedWordCount: resultStats.value.solvedWords,
+    totalKillCount: resultStats.value.totalKills,
+    typedLetterCount: resultStats.value.typedLetters,
+    durationSeconds: Number(resultStats.value.durationSeconds.toFixed(2)),
+    effectiveTypingSeconds: Number(resultStats.value.effectiveTypingSeconds.toFixed(2)),
+  }).catch(() => {
+    typeWarriorRecordSaved.value = false
+  })
+}
+
 watch(
   () => [isGameOver.value, isVictory.value, hasGameStarted.value],
   ([gameOver, victory, started]) => {
@@ -91,20 +113,7 @@ watch(
       return
     }
 
-    typeWarriorRecordSaved.value = true
-    saveTypeWarriorRecord({
-      reachedWave: resultStats.value.reachedWave,
-      completedWaveCount: resultStats.value.completedWaves,
-      score: resultStats.value.score,
-      maxCombo: resultStats.value.maxCombo,
-      solvedWordCount: resultStats.value.solvedWords,
-      totalKillCount: resultStats.value.totalKills,
-      typedLetterCount: resultStats.value.typedLetters,
-      durationSeconds: Number(resultStats.value.durationSeconds.toFixed(2)),
-      effectiveTypingSeconds: Number(resultStats.value.effectiveTypingSeconds.toFixed(2)),
-    }).catch(() => {
-      typeWarriorRecordSaved.value = false
-    })
+    syncTypeWarriorRecord()
   },
 )
 </script>
@@ -198,6 +207,7 @@ watch(
       :result-stats="resultStats"
       :wave="wave"
       :weapon-level="weaponLevel"
+      @end-game="endGame"
       @resume="togglePause"
       @restart="handleRestartGame"
     />

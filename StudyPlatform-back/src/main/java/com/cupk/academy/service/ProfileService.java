@@ -12,7 +12,9 @@ import com.cupk.academy.dto.ProfileStatResponse;
 import com.cupk.academy.dto.ProfileTrackResponse;
 import com.cupk.academy.dto.ProfileUserResponse;
 import com.cupk.academy.dto.ProfileUserUpdateRequest;
+import com.cupk.academy.dto.QuestionBankMistakeSummaryResponse;
 import com.cupk.academy.repository.ProfileRepository;
+import com.cupk.academy.repository.QuestionBankRepository;
 import com.cupk.games.repository.GameRecordRepository;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -37,7 +39,6 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class ProfileService {
     private static final Logger LOGGER = LoggerFactory.getLogger(ProfileService.class);
-    private static final long DEFAULT_USER_ID = 1L;
     private static final int HEATMAP_DAYS = 119;
     private static final long MAX_AVATAR_SIZE = 2L * 1024L * 1024L;
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
@@ -45,27 +46,33 @@ public class ProfileService {
 
     private final ProfileRepository profileRepository;
     private final GameRecordRepository gameRecordRepository;
+    private final QuestionBankRepository questionBankRepository;
 
-    public ProfileService(ProfileRepository profileRepository, GameRecordRepository gameRecordRepository) {
+    public ProfileService(
+            ProfileRepository profileRepository,
+            GameRecordRepository gameRecordRepository,
+            QuestionBankRepository questionBankRepository
+    ) {
         this.profileRepository = profileRepository;
         this.gameRecordRepository = gameRecordRepository;
+        this.questionBankRepository = questionBankRepository;
     }
 
-    public ProfileOverviewResponse getOverview() {
-        long totalEvents = profileRepository.countEvents(DEFAULT_USER_ID);
-        long correctAnswers = profileRepository.countCorrectAnswers(DEFAULT_USER_ID);
-        long knownVocabulary = profileRepository.countKnownVocabulary(DEFAULT_USER_ID);
-        long vocabularyEvents = profileRepository.countVocabularyEvents(DEFAULT_USER_ID);
-        long practicedQuestions = profileRepository.countDistinctPracticedQuestions(DEFAULT_USER_ID);
+    public ProfileOverviewResponse getOverview(long userId) {
+        long totalEvents = profileRepository.countEvents(userId);
+        long correctAnswers = profileRepository.countCorrectAnswers(userId);
+        long knownVocabulary = profileRepository.countKnownVocabulary(userId);
+        long vocabularyEvents = profileRepository.countVocabularyEvents(userId);
+        long practicedQuestions = profileRepository.countDistinctPracticedQuestions(userId);
         long totalQuestions = profileRepository.countTotalQuestions();
         int overallProgress = percentage(practicedQuestions, totalQuestions);
-        int streak = currentStreak();
+        int streak = currentStreak(userId);
 
-        List<ProfileRepository.TrackRow> trackRows = profileRepository.findTrackRows(DEFAULT_USER_ID);
+        List<ProfileRepository.TrackRow> trackRows = profileRepository.findTrackRows(userId);
         GameRecordRepository.LadderJumpAggregateRow ladderJumpAggregate =
-                gameRecordRepository.findLadderJumpAggregate(DEFAULT_USER_ID);
+                gameRecordRepository.findLadderJumpAggregate(userId);
         GameRecordRepository.TypeWarriorAggregateRow typeWarriorAggregate =
-                gameRecordRepository.findTypeWarriorAggregate(DEFAULT_USER_ID);
+                gameRecordRepository.findTypeWarriorAggregate(userId);
 
         return new ProfileOverviewResponse(
                 List.of(
@@ -75,58 +82,58 @@ public class ProfileService {
                         new ProfileStatResponse("题库进度", overallProgress + "%", "整体完成度")
                 ),
                 overallProgress,
-                buildDistribution(),
+                buildDistribution(userId),
                 buildTracks(trackRows),
-                buildRecentActivities(),
+                buildRecentActivities(userId),
                 buildBadges(streak, totalEvents, correctAnswers, knownVocabulary, vocabularyEvents, trackRows),
-                buildHeatmap(),
-                buildLearningTimes(),
-                buildCodingDifficulties(),
-                buildGameMetrics(ladderJumpAggregate, typeWarriorAggregate),
+                buildHeatmap(userId),
+                buildLearningTimes(userId),
+                buildCodingDifficulties(userId),
+                buildGameMetrics(userId, ladderJumpAggregate, typeWarriorAggregate),
                 ladderJumpAggregate.totalCoins() + typeWarriorAggregate.totalCoins(),
-                buildMistakeMetrics(),
+                buildMistakeMetrics(userId),
                 buildRankingMetrics(),
                 buildAchievementMetrics(),
                 buildTextbookOrders()
         );
     }
 
-    public void recordLearningEvent(ProfileLearningEventRequest request) {
-        profileRepository.insertLearningEvent(DEFAULT_USER_ID, normalizeRequest(request));
+    public void recordLearningEvent(long userId, ProfileLearningEventRequest request) {
+        profileRepository.insertLearningEvent(userId, normalizeRequest(request));
     }
 
-    public ProfileUserResponse getUserProfile() {
-        return profileRepository.findUserProfile(DEFAULT_USER_ID);
+    public ProfileUserResponse getUserProfile(long userId) {
+        return profileRepository.findUserProfile(userId);
     }
 
-    public ProfileUserResponse updateUserProfile(ProfileUserUpdateRequest request) {
-        ProfileUserResponse currentProfile = getUserProfile();
+    public ProfileUserResponse updateUserProfile(long userId, ProfileUserUpdateRequest request) {
+        ProfileUserResponse currentProfile = getUserProfile(userId);
         String name = clean(request == null ? null : request.name(), currentProfile.name(), 64);
         String bio = request == null || request.bio() == null
                 ? currentProfile.bio()
                 : clean(request.bio(), "", 512);
         if (name == null || name.isBlank()) {
-            LOGGER.warn("Profile update rejected: blank display name, userId={}", DEFAULT_USER_ID);
+            LOGGER.warn("Profile update rejected: blank display name, userId={}", userId);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "昵称不能为空");
         }
-        profileRepository.updateUserProfile(DEFAULT_USER_ID, name, bio);
+        profileRepository.updateUserProfile(userId, name, bio);
         LOGGER.info("Profile user updated successfully: userId={}, displayName={}, bioLength={}",
-                DEFAULT_USER_ID, name, bio == null ? 0 : bio.length());
-        return getUserProfile();
+                userId, name, bio == null ? 0 : bio.length());
+        return getUserProfile(userId);
     }
 
-    public ProfileUserResponse updateAvatar(MultipartFile file) {
+    public ProfileUserResponse updateAvatar(long userId, MultipartFile file) {
         if (file == null || file.isEmpty()) {
-            LOGGER.warn("Profile avatar update rejected: empty file, userId={}", DEFAULT_USER_ID);
+            LOGGER.warn("Profile avatar update rejected: empty file, userId={}", userId);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请选择头像图片");
         }
         if (file.getSize() > MAX_AVATAR_SIZE) {
             LOGGER.warn("Profile avatar update rejected: file too large, userId={}, fileSize={}",
-                    DEFAULT_USER_ID, file.getSize());
+                    userId, file.getSize());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "头像图片不能超过 2MB");
         }
         String extension = resolveAvatarExtension(file);
-        String fileName = "avatar-" + DEFAULT_USER_ID + "-" + UUID.randomUUID() + "." + extension;
+        String fileName = "avatar-" + userId + "-" + UUID.randomUUID() + "." + extension;
         Path avatarDirectory = resolveStoragePath().resolve("profile").resolve("avatars").normalize();
         Path targetPath = avatarDirectory.resolve(fileName).normalize();
         if (!targetPath.startsWith(avatarDirectory)) {
@@ -136,17 +143,17 @@ public class ProfileService {
             Files.createDirectories(avatarDirectory);
             file.transferTo(targetPath);
         } catch (IOException ex) {
-            LOGGER.error("Profile avatar save failed: userId={}, targetPath={}", DEFAULT_USER_ID, targetPath, ex);
+            LOGGER.error("Profile avatar save failed: userId={}, targetPath={}", userId, targetPath, ex);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "头像保存失败", ex);
         }
-        profileRepository.updateAvatarPath(DEFAULT_USER_ID, "profile/avatars/" + fileName);
+        profileRepository.updateAvatarPath(userId, "profile/avatars/" + fileName);
         LOGGER.info("Profile avatar updated successfully: userId={}, fileName={}, fileSize={}",
-                DEFAULT_USER_ID, fileName, file.getSize());
-        return getUserProfile();
+                userId, fileName, file.getSize());
+        return getUserProfile(userId);
     }
 
-    private List<ProfileDifficultyResponse> buildDistribution() {
-        return profileRepository.findDistributionRows(DEFAULT_USER_ID).stream()
+    private List<ProfileDifficultyResponse> buildDistribution(long userId) {
+        return profileRepository.findDistributionRows(userId).stream()
                 .filter(row -> row.total() > 0 || row.solved() > 0)
                 .map(row -> new ProfileDifficultyResponse(row.label(), row.solved(), row.total(), row.color()))
                 .toList();
@@ -163,8 +170,8 @@ public class ProfileService {
                 .toList();
     }
 
-    private List<ProfileRecentActivityResponse> buildRecentActivities() {
-        List<ProfileRecentActivityResponse> activities = profileRepository.findRecentEvents(DEFAULT_USER_ID, 6).stream()
+    private List<ProfileRecentActivityResponse> buildRecentActivities(long userId) {
+        List<ProfileRecentActivityResponse> activities = profileRepository.findRecentEvents(userId, 6).stream()
                 .map(this::toRecentActivity)
                 .toList();
         if (!activities.isEmpty()) {
@@ -176,10 +183,10 @@ public class ProfileService {
         ));
     }
 
-    private List<ProfileActivityDayResponse> buildHeatmap() {
+    private List<ProfileActivityDayResponse> buildHeatmap(long userId) {
         LocalDate today = LocalDate.now();
         LocalDate startDate = today.minusDays(HEATMAP_DAYS - 1L);
-        Map<LocalDate, Integer> counts = profileRepository.countEventsByDate(DEFAULT_USER_ID, startDate, today);
+        Map<LocalDate, Integer> counts = profileRepository.countEventsByDate(userId, startDate, today);
         List<ProfileActivityDayResponse> days = new ArrayList<>();
         for (int index = 0; index < HEATMAP_DAYS; index += 1) {
             LocalDate date = startDate.plusDays(index);
@@ -189,9 +196,9 @@ public class ProfileService {
         return days;
     }
 
-    private List<ProfileLearningTimeResponse> buildLearningTimes() {
-        long videoSeconds = profileRepository.sumLearningTimeSeconds(DEFAULT_USER_ID, "video");
-        long visualizationSeconds = profileRepository.sumLearningTimeSeconds(DEFAULT_USER_ID, "visualization");
+    private List<ProfileLearningTimeResponse> buildLearningTimes(long userId) {
+        long videoSeconds = profileRepository.sumLearningTimeSeconds(userId, "video");
+        long visualizationSeconds = profileRepository.sumLearningTimeSeconds(userId, "visualization");
         return List.of(
                 new ProfileLearningTimeResponse(
                         "视频学习时长",
@@ -208,8 +215,8 @@ public class ProfileService {
         );
     }
 
-    private List<ProfileCodingDifficultyResponse> buildCodingDifficulties() {
-        Map<String, ProfileRepository.CodingDifficultyRow> rows = profileRepository.findCodingDifficultyRows(DEFAULT_USER_ID)
+    private List<ProfileCodingDifficultyResponse> buildCodingDifficulties(long userId) {
+        Map<String, ProfileRepository.CodingDifficultyRow> rows = profileRepository.findCodingDifficultyRows(userId)
                 .stream()
                 .collect(java.util.stream.Collectors.toMap(ProfileRepository.CodingDifficultyRow::difficulty, row -> row));
         return List.of(
@@ -235,11 +242,12 @@ public class ProfileService {
     }
 
     private List<ProfilePreviewMetricResponse> buildGameMetrics(
+            long userId,
             GameRecordRepository.LadderJumpAggregateRow ladderJump,
             GameRecordRepository.TypeWarriorAggregateRow typeWarrior
     ) {
         GameRecordRepository.CombinedDurationAggregateRow combinedDuration =
-                gameRecordRepository.findCombinedDurationAggregate(DEFAULT_USER_ID);
+                gameRecordRepository.findCombinedDurationAggregate(userId);
 
         return List.of(
                 new ProfilePreviewMetricResponse(
@@ -315,6 +323,25 @@ public class ProfileService {
         );
     }
 
+    private List<ProfilePreviewMetricResponse> buildMistakeMetrics(long userId) {
+        QuestionBankMistakeSummaryResponse summary = questionBankRepository.findMistakeSummary(userId);
+        long setCount = summary.sets() == null ? 0 : summary.sets().size();
+        return List.of(
+                new ProfilePreviewMetricResponse(
+                        "错题本",
+                        formatNumber(summary.total()) + " 题",
+                        "待复习 " + formatNumber(summary.active()) + " 题 · 已掌握 " + formatNumber(summary.mastered()) + " 题",
+                        "rose"
+                ),
+                new ProfilePreviewMetricResponse(
+                        "薄弱题库",
+                        formatNumber(setCount) + " 个",
+                        setCount > 0 ? "来自当前账号的错题记录" : "当前账号暂无错题记录",
+                        "amber"
+                )
+        );
+    }
+
     private List<ProfilePreviewMetricResponse> buildMistakeMetrics() {
         return List.of(
                 new ProfilePreviewMetricResponse("错题本", "42 题", "待复习 12 题 · 样式预览", "rose"),
@@ -371,10 +398,10 @@ public class ProfileService {
         return badges.stream().distinct().limit(5).toList();
     }
 
-    private int currentStreak() {
+    private int currentStreak(long userId) {
         LocalDate today = LocalDate.now();
         Set<LocalDate> activeDates = new HashSet<>(
-                profileRepository.findActiveDates(DEFAULT_USER_ID, today.minusDays(365))
+                profileRepository.findActiveDates(userId, today.minusDays(365))
         );
         LocalDate cursor = today;
         if (!activeDates.contains(cursor) && activeDates.contains(cursor.minusDays(1))) {

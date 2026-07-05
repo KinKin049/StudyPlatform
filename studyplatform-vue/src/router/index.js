@@ -15,6 +15,10 @@ const AcademyQuestionBankCourses = () => import('../pages/academy/AcademyQuestio
 const AcademyQuestionBankFavorites = () => import('../pages/academy/AcademyQuestionBankFavorites.vue')
 const AcademyQuestionBankMistakes = () => import('../pages/academy/AcademyQuestionBankMistakes.vue')
 const AcademyTextbooks = () => import('../pages/academy/AcademyTextbooks.vue')
+const AuthLoginPage = () => import('../pages/AuthLoginPage.vue')
+const AuthOnboardingPage = () => import('../pages/AuthOnboardingPage.vue')
+const AuthRegisterPage = () => import('../pages/AuthRegisterPage.vue')
+const AuthForgotPasswordPage = () => import('../pages/AuthForgotPasswordPage.vue')
 const HomePage = () => import('../pages/HomePage.vue')
 const LabPlatform = () => import('../pages/LabPlatform.vue')
 const OjPlatform = () => import('../pages/OjPlatform.vue')
@@ -34,6 +38,26 @@ const routes = [
     path: '/',
     name: 'home',
     component: HomePage,
+  },
+  {
+    path: '/login',
+    name: 'login',
+    component: AuthLoginPage,
+  },
+  {
+    path: '/register',
+    name: 'register',
+    component: AuthRegisterPage,
+  },
+  {
+    path: '/forgot-password',
+    name: 'forgot-password',
+    component: AuthForgotPasswordPage,
+  },
+  {
+    path: '/onboarding',
+    name: 'onboarding',
+    component: AuthOnboardingPage,
   },
   {
     path: '/academy',

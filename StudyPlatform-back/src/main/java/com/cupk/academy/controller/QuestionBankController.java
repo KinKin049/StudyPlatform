@@ -24,11 +24,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/academy/question-bank")
 public class QuestionBankController {
+    private static final long DEFAULT_USER_ID = 1L;
+
     private final QuestionBankService questionBankService;
 
     public QuestionBankController(QuestionBankService questionBankService) {
@@ -62,8 +65,10 @@ public class QuestionBankController {
     }
 
     @GetMapping("/mistakes/summary")
-    public QuestionBankMistakeSummaryResponse getMistakeSummary() {
-        return questionBankService.getMistakeSummary();
+    public QuestionBankMistakeSummaryResponse getMistakeSummary(
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long userId
+    ) {
+        return questionBankService.getMistakeSummary(resolveUserId(userId));
     }
 
     @GetMapping("/mistakes")
@@ -72,21 +77,25 @@ public class QuestionBankController {
             @RequestParam(defaultValue = "active") String status,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "20") int size,
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long userId
     ) {
-        return questionBankService.listMistakes(setCode, status, keyword, page, size);
+        return questionBankService.listMistakes(resolveUserId(userId), setCode, status, keyword, page, size);
     }
 
     @PostMapping("/mistakes/answers")
     public QuestionBankMistakeAnswerResponse recordMistakeAnswer(
-            @RequestBody QuestionBankMistakeAnswerRequest request
+            @RequestBody QuestionBankMistakeAnswerRequest request,
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long userId
     ) {
-        return questionBankService.recordMistakeAnswer(request);
+        return questionBankService.recordMistakeAnswer(resolveUserId(userId), request);
     }
 
     @GetMapping("/favorites/summary")
-    public QuestionBankFavoriteSummaryResponse getFavoriteSummary() {
-        return questionBankService.getFavoriteSummary();
+    public QuestionBankFavoriteSummaryResponse getFavoriteSummary(
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long userId
+    ) {
+        return questionBankService.getFavoriteSummary(resolveUserId(userId));
     }
 
     @GetMapping("/favorites")
@@ -94,21 +103,26 @@ public class QuestionBankController {
             @RequestParam(required = false) String setCode,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "20") int size,
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long userId
     ) {
-        return questionBankService.listFavorites(setCode, keyword, page, size);
+        return questionBankService.listFavorites(resolveUserId(userId), setCode, keyword, page, size);
     }
 
     @PostMapping("/favorites")
     public QuestionBankFavoriteToggleResponse addFavorite(
-            @RequestBody QuestionBankFavoriteRequest request
+            @RequestBody QuestionBankFavoriteRequest request,
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long userId
     ) {
-        return questionBankService.addFavorite(request);
+        return questionBankService.addFavorite(resolveUserId(userId), request);
     }
 
     @DeleteMapping("/favorites/{questionId}")
-    public QuestionBankFavoriteToggleResponse removeFavorite(@PathVariable long questionId) {
-        return questionBankService.removeFavorite(questionId);
+    public QuestionBankFavoriteToggleResponse removeFavorite(
+            @PathVariable long questionId,
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long userId
+    ) {
+        return questionBankService.removeFavorite(resolveUserId(userId), questionId);
     }
 
     @GetMapping("/courses/{code}")
@@ -116,14 +130,17 @@ public class QuestionBankController {
             @PathVariable String code,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "30") int size,
-            @RequestParam(required = false) String keyword
+            @RequestParam(required = false) String keyword,
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long userId
     ) {
-        return questionBankService.getCourseQuestionBank(code, page, size, keyword);
+        return questionBankService.getCourseQuestionBank(code, page, size, keyword, resolveUserId(userId));
     }
 
     @GetMapping("/type-warrior/words")
-    public TypeWarriorWordPoolResponse getTypeWarriorWordPool() {
-        return questionBankService.getTypeWarriorWordPool();
+    public TypeWarriorWordPoolResponse getTypeWarriorWordPool(
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long userId
+    ) {
+        return questionBankService.getTypeWarriorWordPool(resolveUserId(userId));
     }
 
     @PostMapping("/import/luogu")
@@ -132,5 +149,9 @@ public class QuestionBankController {
             @RequestParam(defaultValue = "20") int limit
     ) {
         return questionBankService.importLuoguProblems(pages, limit);
+    }
+
+    private long resolveUserId(Long userId) {
+        return userId == null || userId <= 0 ? DEFAULT_USER_ID : userId;
     }
 }

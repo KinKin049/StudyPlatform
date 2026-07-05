@@ -5,6 +5,8 @@ public record ProfileUserResponse(
         String name,
         String handle,
         String role,
+        String roleType,
+        String teacherName,
         String bio,
         String location,
         String school,

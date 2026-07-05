@@ -22,9 +22,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/academy")
@@ -85,9 +88,47 @@ public class AcademyController {
         return academyService.listOnlineOpenCourses();
     }
 
+    @GetMapping("/online-open-courses/teacher/mine")
+    public List<AcademyCourseResponse> listMyPublishedOnlineOpenCourses(
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long userId
+    ) {
+        return academyService.listMyPublishedOnlineOpenCourses(userId);
+    }
+
     @GetMapping("/online-open-courses/{id}")
     public AcademyCourseResponse getOnlineOpenCourse(@PathVariable String id) {
         return academyService.getOnlineOpenCourse(id);
+    }
+
+    @PostMapping(value = "/online-open-courses", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public AcademyCourseResponse publishOnlineOpenCourse(
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long userId,
+            @RequestParam String courseName,
+            @RequestParam String startTime,
+            @RequestParam String semesterPlan,
+            @RequestParam String courseDetail,
+            @RequestParam String courseOverview,
+            @RequestParam("cover") MultipartFile cover,
+            @RequestParam("video") MultipartFile video
+    ) {
+        return academyService.publishOnlineOpenCourse(
+                userId,
+                courseName,
+                startTime,
+                semesterPlan,
+                courseDetail,
+                courseOverview,
+                cover,
+                video
+        );
+    }
+
+    @DeleteMapping("/online-open-courses/{id}")
+    public AcademyCourseEnrollmentResponse deletePublishedOnlineOpenCourse(
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long userId,
+            @PathVariable String id
+    ) {
+        return academyService.deletePublishedOnlineOpenCourse(userId, id);
     }
 
     @PostMapping("/online-open-courses/{id}/enroll")

@@ -1162,6 +1162,10 @@
   cursor: pointer;
 }
 
+.type-warrior-overlay-panel button.is-danger {
+  background: linear-gradient(180deg, #3d3b3a, #1f1d1c);
+}
+
 .type-warrior-overlay-actions {
   display: flex;
   flex-wrap: wrap;
