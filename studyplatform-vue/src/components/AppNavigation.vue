@@ -58,7 +58,11 @@ onBeforeUnmount(() => {
     </RouterLink>
 
     <nav class="site-nav" aria-label="主导航">
-      <div v-for="item in props.navItems" :key="item.path" class="nav-item">
+      <div
+        v-for="item in props.navItems"
+        :key="item.path"
+        :class="['nav-item', { 'nav-item-academy': item.path.startsWith('/academy') }]"
+      >
         <button class="nav-button" type="button" @click="navigateTo(item.path, $event)">
           <span>{{ item.label }}</span>
           <span class="nav-arrow" aria-hidden="true">▾</span>

@@ -7,10 +7,36 @@ export const fetchAcademyCourses = (resource) => request(`/api/academy/${resourc
 export const fetchAcademyCourse = (resource, id) =>
   request(`/api/academy/${resource}/${encodeURIComponent(id)}`)
 
+export const fetchMyAcademyCourses = (userId = 1) =>
+  request(`/api/academy/my-courses?userId=${encodeURIComponent(userId)}`)
+
+export const fetchAcademyAssignments = (userId = 1) =>
+  request(`/api/academy/assignments?userId=${encodeURIComponent(userId)}`)
+
+export const fetchAcademyAssignment = (assignmentId, userId = 1) =>
+  request(`/api/academy/assignments/${encodeURIComponent(assignmentId)}?userId=${encodeURIComponent(userId)}`)
+
+export const saveAcademyAssignmentDraft = (assignmentId, answers, userId = 1) =>
+  request(`/api/academy/assignments/${encodeURIComponent(assignmentId)}/draft`, {
+    method: 'POST',
+    body: JSON.stringify({ userId, answers }),
+  })
+
+export const submitAcademyAssignment = (assignmentId, answers, userId = 1) =>
+  request(`/api/academy/assignments/${encodeURIComponent(assignmentId)}/submit`, {
+    method: 'POST',
+    body: JSON.stringify({ userId, answers }),
+  })
+
 export const enrollAcademyCourse = (resource, id, payload = {}) =>
   request(`/api/academy/${resource}/${encodeURIComponent(id)}/enroll`, {
     method: 'POST',
     body: JSON.stringify(payload),
+  })
+
+export const unenrollAcademyCourse = (resource, id, userId = 1) =>
+  request(`/api/academy/${resource}/${encodeURIComponent(id)}/enroll?userId=${encodeURIComponent(userId)}`, {
+    method: 'DELETE',
   })
 
 export const fetchAcademyCourseReviews = (resource, id) =>

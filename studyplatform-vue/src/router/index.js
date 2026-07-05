@@ -1,9 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 const AcademyPage = () => import('../pages/AcademyPage.vue')
+const AcademyAggregatePage = () => import('../pages/academy/AcademyAggregatePage.vue')
+const AcademyAssignmentDetail = () => import('../pages/academy/AcademyAssignmentDetail.vue')
 const AcademyGeneralCourses = () => import('../pages/academy/AcademyGeneralCourses.vue')
 const AcademyHome = () => import('../pages/academy/AcademyHome.vue')
 const AcademyMicroMajors = () => import('../pages/academy/AcademyMicroMajors.vue')
+const AcademyMyClass = () => import('../pages/academy/AcademyMyClass.vue')
 const AcademyOpenCourses = () => import('../pages/academy/AcademyOpenCourses.vue')
 const AcademyCourseDetail = () => import('../pages/academy/AcademyCourseDetail.vue')
 const AcademyQuestionBank = () => import('../pages/academy/AcademyQuestionBank.vue')
@@ -45,6 +48,37 @@ const routes = [
         path: 'home',
         name: 'academy-home',
         component: AcademyHome,
+      },
+      {
+        path: 'my-class',
+        name: 'academy-my-class',
+        component: AcademyMyClass,
+      },
+      {
+        path: 'my-courses',
+        name: 'academy-my-courses',
+        component: AcademyAggregatePage,
+        props: { variant: 'courses' },
+      },
+      {
+        path: 'assignments',
+        name: 'academy-assignments',
+        component: AcademyAggregatePage,
+        props: { variant: 'assignments' },
+      },
+      {
+        path: 'assignments/:assignmentId',
+        name: 'academy-assignment-detail',
+        component: AcademyAssignmentDetail,
+        props: (route) => ({
+          assignmentId: route.params.assignmentId,
+        }),
+      },
+      {
+        path: 'exams',
+        name: 'academy-exams',
+        component: AcademyAggregatePage,
+        props: { variant: 'exams' },
       },
       {
         path: 'open-courses',

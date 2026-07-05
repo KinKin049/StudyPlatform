@@ -5,6 +5,7 @@ import com.cupk.academy.dto.AcademyCourseEnrollmentResponse;
 import com.cupk.academy.dto.AcademyCourseReviewRequest;
 import com.cupk.academy.dto.AcademyCourseReviewResponse;
 import com.cupk.academy.dto.AcademyCourseResponse;
+import com.cupk.academy.dto.AcademyEnrolledCourseResponse;
 import com.cupk.academy.dto.AcademyHomeItemResponse;
 import com.cupk.academy.dto.AcademyHomeSectionResponse;
 import com.cupk.academy.dto.AcademyTextbookResponse;
@@ -18,6 +19,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class AcademyService {
+    private static final long DEFAULT_USER_ID = 1L;
+
     private final AcademyRepository academyRepository;
 
     public AcademyService(AcademyRepository academyRepository) {
@@ -108,8 +111,20 @@ public class AcademyService {
 
     public AcademyCourseEnrollmentResponse enrollCourse(String resourceType, String courseId, Long userId) {
         ensureCourseExists(resourceType, courseId);
-        academyRepository.enrollCourse(resourceType, courseId, userId);
+        academyRepository.enrollCourse(resourceType, courseId, normalizeUserId(userId));
         return new AcademyCourseEnrollmentResponse(true, "已参加课程");
+    }
+
+    public AcademyCourseEnrollmentResponse unenrollCourse(String resourceType, String courseId, Long userId) {
+        ensureCourseExists(resourceType, courseId);
+        academyRepository.unenrollCourse(resourceType, courseId, normalizeUserId(userId));
+        return new AcademyCourseEnrollmentResponse(false, "已退出课程");
+    }
+
+    public List<AcademyEnrolledCourseResponse> listMyCourses(Long userId) {
+        return academyRepository.findEnrolledCourses(normalizeUserId(userId)).stream()
+                .map(this::withEnrolledCourseCover)
+                .toList();
     }
 
     public List<AcademyCourseReviewResponse> listCourseReviews(String resourceType, String courseId) {
@@ -162,6 +177,30 @@ public class AcademyService {
                 course.description(),
                 course.link()
         );
+    }
+
+    private AcademyEnrolledCourseResponse withEnrolledCourseCover(AcademyEnrolledCourseResponse course) {
+        return new AcademyEnrolledCourseResponse(
+                course.resourceType(),
+                course.id(),
+                course.name(),
+                course.teacher(),
+                course.category(),
+                course.school(),
+                fileUrl(course.coverFilePath()),
+                course.coverUrl(),
+                course.coverFilePath(),
+                course.startTime(),
+                course.participants(),
+                course.comment(),
+                course.description(),
+                course.link(),
+                course.enrolledAt()
+        );
+    }
+
+    private Long normalizeUserId(Long userId) {
+        return userId == null || userId <= 0 ? DEFAULT_USER_ID : userId;
     }
 
     private String fileUrl(String coverFilePath) {

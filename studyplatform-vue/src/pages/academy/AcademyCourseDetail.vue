@@ -1,11 +1,12 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import {
   createAcademyCourseReview,
   enrollAcademyCourse,
   fetchAcademyCourse,
   fetchAcademyCourseReviews,
+  fetchMyAcademyCourses,
 } from '../../api/academy'
 import { resolveResourceUrl } from '../../api/request'
 
@@ -32,7 +33,10 @@ const course = ref(null)
 const loading = ref(true)
 const error = ref('')
 const enrolling = ref(false)
+const enrollmentState = ref('idle')
 const enrollmentMessage = ref('')
+const enrollmentToastVisible = ref(false)
+let enrollmentToastTimer = null
 const reviews = ref([])
 const reviewsLoading = ref(false)
 const reviewError = ref('')
@@ -101,15 +105,33 @@ const categoryRoute = computed(() => ({
 const loadCourse = async () => {
   loading.value = true
   error.value = ''
+  enrollmentMessage.value = ''
+  enrollmentState.value = 'idle'
+  enrollmentToastVisible.value = false
+  window.clearTimeout(enrollmentToastTimer)
 
   try {
     course.value = await fetchAcademyCourse(props.resource, props.courseId)
+    await loadEnrollmentStatus()
     await loadReviews()
   } catch (err) {
     course.value = null
     error.value = err instanceof Error ? err.message : '课程详情加载失败'
   } finally {
     loading.value = false
+  }
+}
+
+const loadEnrollmentStatus = async () => {
+  try {
+    const enrolledCourses = await fetchMyAcademyCourses(1)
+    const currentCourseId = String(props.courseId)
+    const alreadyEnrolled = enrolledCourses.some(
+      (item) => item.resourceType === props.resource && String(item.id) === currentCourseId,
+    )
+    enrollmentState.value = alreadyEnrolled ? 'joined' : 'idle'
+  } catch {
+    enrollmentState.value = 'idle'
   }
 }
 
@@ -132,8 +154,13 @@ const handleEnroll = async () => {
   enrollmentMessage.value = ''
 
   try {
-    const result = await enrollAcademyCourse(props.resource, props.courseId, { userId: null })
-    enrollmentMessage.value = result.message || '已参加课程'
+    await enrollAcademyCourse(props.resource, props.courseId, { userId: 1 })
+    enrollmentState.value = 'success'
+    enrollmentToastVisible.value = true
+    window.clearTimeout(enrollmentToastTimer)
+    enrollmentToastTimer = window.setTimeout(() => {
+      enrollmentToastVisible.value = false
+    }, 1800)
   } catch (err) {
     enrollmentMessage.value = err instanceof Error ? err.message : '参加课程失败'
   } finally {
@@ -179,11 +206,20 @@ const useCoverFallback = (event) => {
 }
 
 onMounted(loadCourse)
-watch(() => props.courseId, loadCourse)
+onBeforeUnmount(() => {
+  window.clearTimeout(enrollmentToastTimer)
+})
+watch(() => [props.resource, props.courseId], loadCourse)
 </script>
 
 <template>
   <main class="course-detail-main course-playback-main">
+    <Transition name="course-enrollment-toast">
+      <div v-if="enrollmentToastVisible" class="course-enrollment-toast" role="status">
+        已成功添加到我的课程
+      </div>
+    </Transition>
+
     <div v-if="loading" class="academy-state">正在加载课程详情...</div>
 
     <div v-else-if="error" class="academy-state academy-state-error">
@@ -241,8 +277,14 @@ watch(() => props.courseId, loadCourse)
           </dl>
 
           <div class="course-action-row">
-            <button class="course-join-button" type="button" :disabled="enrolling" @click="handleEnroll">
-              {{ enrolling ? '正在参加...' : '立即参加' }}
+            <button
+              class="course-join-button"
+              :class="{ 'is-enrolling': enrolling, 'is-joined': !enrolling && enrollmentState !== 'idle' }"
+              type="button"
+              :disabled="enrolling || enrollmentState !== 'idle'"
+              @click="handleEnroll"
+            >
+              {{ enrolling ? '正在参加...' : enrollmentState === 'success' ? '参加成功' : enrollmentState === 'joined' ? '已参加' : '立即参加' }}
             </button>
             <span v-if="enrollmentMessage" class="course-enrollment-message">{{ enrollmentMessage }}</span>
           </div>

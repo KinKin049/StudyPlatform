@@ -3,6 +3,7 @@ package com.cupk.academy.repository;
 import com.cupk.academy.dto.AcademyCategoryResponse;
 import com.cupk.academy.dto.AcademyCourseReviewResponse;
 import com.cupk.academy.dto.AcademyCourseResponse;
+import com.cupk.academy.dto.AcademyEnrolledCourseResponse;
 import com.cupk.academy.dto.AcademyTextbookResponse;
 import java.util.List;
 import java.util.Optional;
@@ -98,6 +99,67 @@ public class AcademyRepository {
                 ON DUPLICATE KEY UPDATE created_at = CURRENT_TIMESTAMP
                 """;
         jdbcTemplate.update(sql, resourceType, courseId, userId);
+    }
+
+    public int unenrollCourse(String resourceType, String courseId, Long userId) {
+        String sql = """
+                DELETE FROM academy_course_enrollments
+                WHERE resource_type = ? AND course_id = ? AND user_id = ?
+                """;
+        return jdbcTemplate.update(sql, resourceType, courseId, userId);
+    }
+
+    public List<AcademyEnrolledCourseResponse> findEnrolledCourses(Long userId) {
+        String sql = """
+                SELECT enrolled.resource_type, enrolled.external_course_id, enrolled.course_name,
+                       enrolled.teacher_name, enrolled.category, enrolled.school_name,
+                       enrolled.cover_url, enrolled.cover_file_path, enrolled.start_time,
+                       enrolled.participant_count, enrolled.course_comment,
+                       enrolled.course_description, enrolled.source_url, enrolled.enrolled_at
+                FROM (
+                    SELECT e.resource_type, c.external_course_id, c.course_name, c.teacher_name,
+                           c.category, c.school_name, c.cover_url, c.cover_file_path,
+                           c.start_time, c.participant_count, c.course_comment,
+                           '' AS course_description, c.source_url, e.created_at AS enrolled_at
+                    FROM academy_course_enrollments e
+                    JOIN online_open_courses c ON c.external_course_id = e.course_id
+                    WHERE e.resource_type = 'online-open-courses' AND e.user_id = ?
+                    UNION ALL
+                    SELECT e.resource_type, c.external_course_id, c.course_name, c.teacher_name,
+                           c.category, c.school_name, c.cover_url, c.cover_file_path,
+                           c.start_time, c.participant_count, c.course_comment,
+                           c.course_description, c.source_url, e.created_at AS enrolled_at
+                    FROM academy_course_enrollments e
+                    JOIN general_courses c ON c.external_course_id = e.course_id
+                    WHERE e.resource_type = 'general-courses' AND e.user_id = ?
+                    UNION ALL
+                    SELECT e.resource_type, c.external_course_id, c.course_name, c.teacher_name,
+                           c.category, c.school_name, c.cover_url, c.cover_file_path,
+                           c.start_time, c.participant_count, c.course_comment,
+                           c.course_description, c.source_url, e.created_at AS enrolled_at
+                    FROM academy_course_enrollments e
+                    JOIN micro_major_courses c ON c.external_course_id = e.course_id
+                    WHERE e.resource_type = 'micro-major-courses' AND e.user_id = ?
+                ) enrolled
+                ORDER BY enrolled.enrolled_at DESC
+                """;
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new AcademyEnrolledCourseResponse(
+                rs.getString("resource_type"),
+                rs.getString("external_course_id"),
+                rs.getString("course_name"),
+                rs.getString("teacher_name"),
+                rs.getString("category"),
+                rs.getString("school_name"),
+                null,
+                rs.getString("cover_url"),
+                rs.getString("cover_file_path"),
+                rs.getString("start_time"),
+                rs.getObject("participant_count", Integer.class),
+                rs.getString("course_comment"),
+                rs.getString("course_description"),
+                rs.getString("source_url"),
+                rs.getTimestamp("enrolled_at").toLocalDateTime()
+        ), userId, userId, userId);
     }
 
     public List<AcademyCourseReviewResponse> findCourseReviews(String resourceType, String courseId) {

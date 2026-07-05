@@ -1,35 +1,83 @@
 package com.cupk.academy.controller;
 
 import com.cupk.academy.dto.AcademyCategoryResponse;
+import com.cupk.academy.dto.AcademyAssignmentAnswerRequest;
+import com.cupk.academy.dto.AcademyAssignmentDetailResponse;
+import com.cupk.academy.dto.AcademyAssignmentSubmitResponse;
+import com.cupk.academy.dto.AcademyAssignmentSummaryResponse;
 import com.cupk.academy.dto.AcademyCourseEnrollmentRequest;
 import com.cupk.academy.dto.AcademyCourseEnrollmentResponse;
 import com.cupk.academy.dto.AcademyCourseReviewRequest;
 import com.cupk.academy.dto.AcademyCourseReviewResponse;
 import com.cupk.academy.dto.AcademyCourseResponse;
+import com.cupk.academy.dto.AcademyEnrolledCourseResponse;
 import com.cupk.academy.dto.AcademyHomeSectionResponse;
 import com.cupk.academy.dto.AcademyTextbookResponse;
+import com.cupk.academy.service.AcademyAssignmentService;
 import com.cupk.academy.service.AcademyService;
 import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/academy")
 public class AcademyController {
     private final AcademyService academyService;
+    private final AcademyAssignmentService assignmentService;
 
-    public AcademyController(AcademyService academyService) {
+    public AcademyController(AcademyService academyService, AcademyAssignmentService assignmentService) {
         this.academyService = academyService;
+        this.assignmentService = assignmentService;
     }
 
     @GetMapping("/home")
     public List<AcademyHomeSectionResponse> getAcademyHome() {
         return academyService.getAcademyHome();
+    }
+
+    @GetMapping("/my-courses")
+    public List<AcademyEnrolledCourseResponse> listMyCourses(
+            @RequestParam(required = false) Long userId
+    ) {
+        return academyService.listMyCourses(userId);
+    }
+
+    @GetMapping("/assignments")
+    public List<AcademyAssignmentSummaryResponse> listAssignments(
+            @RequestParam(required = false) Long userId
+    ) {
+        return assignmentService.listAssignments(userId);
+    }
+
+    @GetMapping("/assignments/{assignmentCode}")
+    public AcademyAssignmentDetailResponse getAssignment(
+            @PathVariable String assignmentCode,
+            @RequestParam(required = false) Long userId
+    ) {
+        return assignmentService.getAssignment(assignmentCode, userId);
+    }
+
+    @PostMapping("/assignments/{assignmentCode}/draft")
+    public AcademyAssignmentSubmitResponse saveAssignmentDraft(
+            @PathVariable String assignmentCode,
+            @RequestBody(required = false) AcademyAssignmentAnswerRequest request
+    ) {
+        return assignmentService.saveDraft(assignmentCode, request);
+    }
+
+    @PostMapping("/assignments/{assignmentCode}/submit")
+    public AcademyAssignmentSubmitResponse submitAssignment(
+            @PathVariable String assignmentCode,
+            @RequestBody(required = false) AcademyAssignmentAnswerRequest request
+    ) {
+        return assignmentService.submitAssignment(assignmentCode, request);
     }
 
     @GetMapping("/online-open-courses")
@@ -48,6 +96,14 @@ public class AcademyController {
             @RequestBody(required = false) AcademyCourseEnrollmentRequest request
     ) {
         return academyService.enrollCourse("online-open-courses", id, request == null ? null : request.userId());
+    }
+
+    @DeleteMapping("/online-open-courses/{id}/enroll")
+    public AcademyCourseEnrollmentResponse unenrollOnlineOpenCourse(
+            @PathVariable String id,
+            @RequestParam(required = false) Long userId
+    ) {
+        return academyService.unenrollCourse("online-open-courses", id, userId);
     }
 
     @GetMapping("/online-open-courses/{id}/reviews")
@@ -78,6 +134,22 @@ public class AcademyController {
         return academyService.getGeneralCourse(id);
     }
 
+    @PostMapping("/general-courses/{id}/enroll")
+    public AcademyCourseEnrollmentResponse enrollGeneralCourse(
+            @PathVariable String id,
+            @RequestBody(required = false) AcademyCourseEnrollmentRequest request
+    ) {
+        return academyService.enrollCourse("general-courses", id, request == null ? null : request.userId());
+    }
+
+    @DeleteMapping("/general-courses/{id}/enroll")
+    public AcademyCourseEnrollmentResponse unenrollGeneralCourse(
+            @PathVariable String id,
+            @RequestParam(required = false) Long userId
+    ) {
+        return academyService.unenrollCourse("general-courses", id, userId);
+    }
+
     @GetMapping("/general-courses/categories")
     public List<AcademyCategoryResponse> listGeneralCourseCategories() {
         return academyService.listGeneralCourseCategories();
@@ -91,6 +163,22 @@ public class AcademyController {
     @GetMapping("/micro-major-courses/{id}")
     public AcademyCourseResponse getMicroMajorCourse(@PathVariable String id) {
         return academyService.getMicroMajorCourse(id);
+    }
+
+    @PostMapping("/micro-major-courses/{id}/enroll")
+    public AcademyCourseEnrollmentResponse enrollMicroMajorCourse(
+            @PathVariable String id,
+            @RequestBody(required = false) AcademyCourseEnrollmentRequest request
+    ) {
+        return academyService.enrollCourse("micro-major-courses", id, request == null ? null : request.userId());
+    }
+
+    @DeleteMapping("/micro-major-courses/{id}/enroll")
+    public AcademyCourseEnrollmentResponse unenrollMicroMajorCourse(
+            @PathVariable String id,
+            @RequestParam(required = false) Long userId
+    ) {
+        return academyService.unenrollCourse("micro-major-courses", id, userId);
     }
 
     @GetMapping("/micro-major-courses/categories")
