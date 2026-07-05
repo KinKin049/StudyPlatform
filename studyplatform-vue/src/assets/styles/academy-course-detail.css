@@ -225,14 +225,53 @@
 }
 
 .course-join-button:disabled {
-  cursor: wait;
+  cursor: not-allowed;
   opacity: 0.78;
+}
+
+.course-join-button.is-enrolling:disabled {
+  cursor: wait;
 }
 
 .course-enrollment-message {
   color: #168864;
   font-size: 14px;
   font-weight: 850;
+}
+
+.course-enrollment-toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 1200;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 260px;
+  min-height: 72px;
+  padding: 18px 30px;
+  border-radius: 14px;
+  color: #ffffff;
+  background: rgba(0, 0, 0, 0.8);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.22);
+  font-size: 18px;
+  font-weight: 850;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.course-enrollment-toast-enter-active,
+.course-enrollment-toast-leave-active {
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease;
+}
+
+.course-enrollment-toast-enter-from,
+.course-enrollment-toast-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.92);
 }
 
 .course-source-link,

@@ -1,8 +1,10 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { RouterView, useRouter } from 'vue-router'
+import { ArrowDown } from '@element-plus/icons-vue'
+import { RouterView, useRoute, useRouter } from 'vue-router'
 import { fetchAcademyCategories } from '../api/academy'
 
+const route = useRoute()
 const router = useRouter()
 const categoryMap = ref({
   'online-open-courses': [],
@@ -67,6 +69,11 @@ const navItemsWithCategories = computed(() =>
   })),
 )
 
+const collapsedSubnavPaths = ['/academy/my-courses', '/academy/assignments', '/academy/exams']
+const isSubnavCollapsed = computed(() =>
+  collapsedSubnavPaths.some((path) => route.path === path || route.path.startsWith(`${path}/`)),
+)
+
 const navigateTo = (target, event) => {
   event?.currentTarget?.blur()
   router.push(target)
@@ -91,7 +98,16 @@ onMounted(loadNavCategories)
 </script>
 
 <template>
-  <div class="academy-page">
+  <div :class="['academy-page', { 'academy-page-subnav-collapsed': isSubnavCollapsed }]">
+    <button
+      v-if="isSubnavCollapsed"
+      class="academy-subnav-trigger"
+      type="button"
+      aria-label="展开在线学堂二级导航"
+    >
+      <el-icon><ArrowDown /></el-icon>
+    </button>
+
     <nav class="academy-subnav" aria-label="在线学堂导航">
       <div v-for="item in navItemsWithCategories" :key="item.path" class="academy-nav-item">
         <button class="academy-nav-button" type="button" @click="navigateTo(item.path, $event)">

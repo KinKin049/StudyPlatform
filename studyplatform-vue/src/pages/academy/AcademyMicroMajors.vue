@@ -30,10 +30,14 @@ const useCoverFallback = (event, course) => {
 }
 
 watch(
-  [categories, () => route.query.category],
-  ([categoryList, category]) => {
+  [categories, () => route.query.category, () => route.query.keyword],
+  ([categoryList, category, queryKeyword]) => {
     if (typeof category === 'string' && categoryList.includes(category)) {
       selectedCategory.value = category
+    }
+
+    if (typeof queryKeyword === 'string') {
+      keyword.value = queryKeyword
     }
   },
   { immediate: true },

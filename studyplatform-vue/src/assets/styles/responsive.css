@@ -58,6 +58,7 @@
   }
 
   .academy-subnav {
+    top: 82px;
     justify-content: flex-start;
     overflow-x: auto;
     min-height: 64px;
@@ -111,6 +112,41 @@
 
   .academy-content {
     padding: 22px;
+  }
+
+  .academy-home-layout,
+  .academy-class-hero,
+  .academy-class-stats,
+  .academy-class-grid,
+  .academy-aggregate-userbar,
+  .academy-aggregate-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .academy-sidebar,
+  .academy-aggregate-sidebar {
+    position: static;
+  }
+
+  .academy-class-hero h1 {
+    font-size: 36px;
+  }
+
+  .academy-aggregate-body {
+    padding: 20px;
+  }
+
+  .academy-aggregate-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .academy-aggregate-heading h1 {
+    font-size: 34px;
+  }
+
+  .academy-aggregate-grid {
+    grid-template-columns: 1fr;
   }
 
   .course-grid {
