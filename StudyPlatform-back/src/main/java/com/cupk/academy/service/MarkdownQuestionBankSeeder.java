@@ -2,17 +2,14 @@ package com.cupk.academy.service;
 
 import com.cupk.academy.repository.QuestionBankRepository;
 import com.cupk.academy.repository.QuestionBankRepository.CourseQuestionBankQuestionSeed;
+import com.cupk.academy.service.QuestionBankSourceResolver.SourceFile;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -44,22 +41,22 @@ public class MarkdownQuestionBankSeeder implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        seed("database", "National-Computer-Rank-Examination-Level-2-MySQL", this::parseMysqlQuestions);
+        seed("database", "database-mysql.md", this::parseMysqlQuestions);
         seed("python", "python-study-note", this::parsePythonQuestions);
-        seed("ncre", "jisuanjierji", this::parseNcreCards);
+        seed("ncre", "ncre.md", this::parseNcreCards);
     }
 
-    private void seed(String setCode, String sourceMarker, MarkdownParser parser) {
-        Optional<Path> sourcePath = findSourceFile(sourceMarker);
-        if (sourcePath.isEmpty()) {
-            log.warn("Markdown question bank source file {} not found", sourceMarker);
+    private void seed(String setCode, String fileName, MarkdownParser parser) {
+        Optional<SourceFile> sourceFile = QuestionBankSourceResolver.find(fileName, log);
+        if (sourceFile.isEmpty()) {
+            log.warn("Markdown question bank source file {} not found", fileName);
             return;
         }
 
         try {
-            List<CourseQuestionBankQuestionSeed> questions = parser.parse(sourcePath.get());
+            List<CourseQuestionBankQuestionSeed> questions = parser.parse(sourceFile.get());
             if (questions.isEmpty()) {
-                log.warn("Markdown question bank source file {} has no usable questions", sourcePath.get());
+                log.warn("Markdown question bank source file {} has no usable questions", sourceFile.get().location());
                 return;
             }
 
@@ -73,47 +70,15 @@ public class MarkdownQuestionBankSeeder implements ApplicationRunner {
 
             questionBankRepository.deleteCourseQuestionBankQuestions(setCode);
             questionBankRepository.batchInsertCourseQuestionBankQuestions(setCode, questions);
-            log.info("Seeded {} markdown questions into {} from {}", questions.size(), setCode, sourcePath.get());
+            log.info("Seeded {} markdown questions into {} from {}", questions.size(), setCode, sourceFile.get().location());
         } catch (IOException ex) {
-            log.warn("Failed to seed markdown question bank {} from {}", setCode, sourcePath.get(), ex);
+            log.warn("Failed to seed markdown question bank {} from {}", setCode, sourceFile.get().location(), ex);
         }
     }
 
-    private Optional<Path> findSourceFile(String sourceMarker) {
-        List<Path> directories = new ArrayList<>();
-        String configuredDir = System.getenv("QUESTION_BANK_SOURCE_DIR");
-        if (configuredDir != null && !configuredDir.isBlank()) {
-            directories.add(Path.of(configuredDir));
-        }
-        directories.add(Path.of("CET46"));
-        directories.add(Path.of("..", "CET46"));
-        directories.add(Path.of("..", "..", "CET46"));
-
-        String normalizedMarker = sourceMarker.toLowerCase(Locale.ROOT);
-        for (Path directory : directories) {
-            Path normalizedDirectory = directory.toAbsolutePath().normalize();
-            if (!Files.isDirectory(normalizedDirectory)) {
-                continue;
-            }
-            try (Stream<Path> paths = Files.list(normalizedDirectory)) {
-                Optional<Path> match = paths
-                        .filter(Files::isRegularFile)
-                        .filter(path -> path.getFileName().toString().toLowerCase(Locale.ROOT).contains(normalizedMarker))
-                        .filter(path -> path.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".md"))
-                        .findFirst();
-                if (match.isPresent()) {
-                    return match;
-                }
-            } catch (IOException ex) {
-                log.warn("Failed to scan question bank source directory {}", normalizedDirectory, ex);
-            }
-        }
-        return Optional.empty();
-    }
-
-    private List<CourseQuestionBankQuestionSeed> parseMysqlQuestions(Path sourcePath) throws IOException {
-        String markdown = readMarkdown(sourcePath);
-        String sourceName = sourcePath.getFileName().toString();
+    private List<CourseQuestionBankQuestionSeed> parseMysqlQuestions(SourceFile sourceFile) throws IOException {
+        String markdown = readMarkdown(sourceFile);
+        String sourceName = sourceFile.fileName();
         List<CourseQuestionBankQuestionSeed> questions = new ArrayList<>();
         Matcher matcher = MYSQL_QUESTION.matcher(markdown);
         int sortOrder = 10;
@@ -141,9 +106,9 @@ public class MarkdownQuestionBankSeeder implements ApplicationRunner {
         return questions;
     }
 
-    private List<CourseQuestionBankQuestionSeed> parsePythonQuestions(Path sourcePath) throws IOException {
-        String markdown = readMarkdown(sourcePath);
-        String sourceName = sourcePath.getFileName().toString();
+    private List<CourseQuestionBankQuestionSeed> parsePythonQuestions(SourceFile sourceFile) throws IOException {
+        String markdown = readMarkdown(sourceFile);
+        String sourceName = sourceFile.fileName();
         List<CourseQuestionBankQuestionSeed> questions = new ArrayList<>();
         Matcher matcher = PYTHON_QUESTION.matcher(markdown);
         int sortOrder = 10;
@@ -167,9 +132,9 @@ public class MarkdownQuestionBankSeeder implements ApplicationRunner {
         return questions;
     }
 
-    private List<CourseQuestionBankQuestionSeed> parseNcreCards(Path sourcePath) throws IOException {
-        String markdown = readMarkdown(sourcePath);
-        String sourceName = sourcePath.getFileName().toString();
+    private List<CourseQuestionBankQuestionSeed> parseNcreCards(SourceFile sourceFile) throws IOException {
+        String markdown = readMarkdown(sourceFile);
+        String sourceName = sourceFile.fileName();
         List<CourseQuestionBankQuestionSeed> questions = new ArrayList<>();
         Matcher matcher = NCRE_CARD.matcher(markdown);
         int sortOrder = 10;
@@ -303,8 +268,8 @@ public class MarkdownQuestionBankSeeder implements ApplicationRunner {
         return String.join("；", texts);
     }
 
-    private String readMarkdown(Path sourcePath) throws IOException {
-        return stripControlChars(Files.readString(sourcePath, StandardCharsets.UTF_8))
+    private String readMarkdown(SourceFile sourceFile) throws IOException {
+        return stripControlChars(sourceFile.readString())
                 .replace("\r\n", "\n")
                 .replace('\r', '\n');
     }
@@ -427,7 +392,7 @@ public class MarkdownQuestionBankSeeder implements ApplicationRunner {
 
     @FunctionalInterface
     private interface MarkdownParser {
-        List<CourseQuestionBankQuestionSeed> parse(Path sourcePath) throws IOException;
+        List<CourseQuestionBankQuestionSeed> parse(SourceFile sourceFile) throws IOException;
     }
 
     private record OptionSeed(String key, String value, int start, int end) {

@@ -11,9 +11,14 @@ import com.cupk.academy.dto.AcademyCourseReviewRequest;
 import com.cupk.academy.dto.AcademyCourseReviewResponse;
 import com.cupk.academy.dto.AcademyCourseResponse;
 import com.cupk.academy.dto.AcademyEnrolledCourseResponse;
+import com.cupk.academy.dto.AcademyExamAnswerRequest;
+import com.cupk.academy.dto.AcademyExamDetailResponse;
+import com.cupk.academy.dto.AcademyExamSubmitResponse;
+import com.cupk.academy.dto.AcademyExamSummaryResponse;
 import com.cupk.academy.dto.AcademyHomeSectionResponse;
 import com.cupk.academy.dto.AcademyTextbookResponse;
 import com.cupk.academy.service.AcademyAssignmentService;
+import com.cupk.academy.service.AcademyExamService;
 import com.cupk.academy.service.AcademyService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -31,10 +36,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class AcademyController {
     private final AcademyService academyService;
     private final AcademyAssignmentService assignmentService;
+    private final AcademyExamService examService;
 
-    public AcademyController(AcademyService academyService, AcademyAssignmentService assignmentService) {
+    public AcademyController(
+            AcademyService academyService,
+            AcademyAssignmentService assignmentService,
+            AcademyExamService examService
+    ) {
         this.academyService = academyService;
         this.assignmentService = assignmentService;
+        this.examService = examService;
     }
 
     @GetMapping("/home")
@@ -78,6 +89,45 @@ public class AcademyController {
             @RequestBody(required = false) AcademyAssignmentAnswerRequest request
     ) {
         return assignmentService.submitAssignment(assignmentCode, request);
+    }
+
+    @GetMapping("/exams")
+    public List<AcademyExamSummaryResponse> listExams(
+            @RequestParam(required = false) Long userId
+    ) {
+        return examService.listExams(userId);
+    }
+
+    @GetMapping("/exams/{examCode}")
+    public AcademyExamDetailResponse getExam(
+            @PathVariable String examCode,
+            @RequestParam(required = false) Long userId
+    ) {
+        return examService.getExam(examCode, userId);
+    }
+
+    @PostMapping("/exams/{examCode}/start")
+    public AcademyExamDetailResponse startExam(
+            @PathVariable String examCode,
+            @RequestBody(required = false) AcademyExamAnswerRequest request
+    ) {
+        return examService.startExam(examCode, request == null ? null : request.userId());
+    }
+
+    @PostMapping("/exams/{examCode}/draft")
+    public AcademyExamSubmitResponse saveExamDraft(
+            @PathVariable String examCode,
+            @RequestBody(required = false) AcademyExamAnswerRequest request
+    ) {
+        return examService.saveDraft(examCode, request);
+    }
+
+    @PostMapping("/exams/{examCode}/submit")
+    public AcademyExamSubmitResponse submitExam(
+            @PathVariable String examCode,
+            @RequestBody(required = false) AcademyExamAnswerRequest request
+    ) {
+        return examService.submitExam(examCode, request);
     }
 
     @GetMapping("/online-open-courses")

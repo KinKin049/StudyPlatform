@@ -176,6 +176,23 @@ const progressPercent = computed(() =>
 
 const isSubmittedLocked = computed(() => assignment.value.status === '已结束' && assignment.value.attemptsLeft <= 0)
 
+const resultLabelMap = {
+  single: '单选题得分',
+  multiple: '多选题得分',
+  blank: '填空题得分',
+  short: '简答题批改',
+  code: '编程题判题',
+}
+
+const getResultQuestion = (result) =>
+  assignment.value.questions.find((question) => String(question.id) === String(result.questionId))
+
+const getResultLabel = (result) => {
+  const question = getResultQuestion(result)
+  if (!question) return '题目得分'
+  return resultLabelMap[question.type] || `${question.label || '题目'}得分`
+}
+
 const updateMultipleAnswer = (questionId, option, checked) => {
   const currentAnswer = Array.isArray(answers.value[questionId]) ? answers.value[questionId] : []
   answers.value = {
@@ -356,7 +373,7 @@ onBeforeUnmount(() => {
           <p>{{ submitResult.message }}，当前自动得分 {{ submitResult.autoScore }} 分，待批改 {{ submitResult.pendingScore }} 分。</p>
           <ul>
             <li v-for="result in submitResult.questionResults" :key="result.questionId">
-              <span>{{ result.status }}</span>
+              <span>{{ getResultLabel(result) }}</span>
               <strong>{{ result.score }}/{{ result.maxScore }} 分</strong>
               <em>{{ result.message }}</em>
             </li>

@@ -3,6 +3,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 const AcademyPage = () => import('../pages/AcademyPage.vue')
 const AcademyAggregatePage = () => import('../pages/academy/AcademyAggregatePage.vue')
 const AcademyAssignmentDetail = () => import('../pages/academy/AcademyAssignmentDetail.vue')
+const AcademyExamDetail = () => import('../pages/academy/AcademyExamDetail.vue')
+const AcademyExamIntro = () => import('../pages/academy/AcademyExamIntro.vue')
 const AcademyGeneralCourses = () => import('../pages/academy/AcademyGeneralCourses.vue')
 const AcademyHome = () => import('../pages/academy/AcademyHome.vue')
 const AcademyMicroMajors = () => import('../pages/academy/AcademyMicroMajors.vue')
@@ -70,6 +72,7 @@ const routes = [
         path: 'assignments/:assignmentId',
         name: 'academy-assignment-detail',
         component: AcademyAssignmentDetail,
+        meta: { hidePet: true },
         props: (route) => ({
           assignmentId: route.params.assignmentId,
         }),
@@ -79,6 +82,24 @@ const routes = [
         name: 'academy-exams',
         component: AcademyAggregatePage,
         props: { variant: 'exams' },
+      },
+      {
+        path: 'exams/:examId/take',
+        name: 'academy-exam-take',
+        component: AcademyExamDetail,
+        meta: { hidePet: true },
+        props: (route) => ({
+          examId: route.params.examId,
+        }),
+      },
+      {
+        path: 'exams/:examId',
+        name: 'academy-exam-detail',
+        component: AcademyExamIntro,
+        meta: { hidePet: true },
+        props: (route) => ({
+          examId: route.params.examId,
+        }),
       },
       {
         path: 'open-courses',

@@ -5,6 +5,10 @@
     padding: 16px 20px;
   }
 
+  .academy-shell {
+    padding-top: 170px;
+  }
+
   .site-brand {
     margin-left: 0;
     font-size: 28px;
@@ -58,7 +62,7 @@
   }
 
   .academy-subnav {
-    top: 82px;
+    top: 184px;
     justify-content: flex-start;
     overflow-x: auto;
     min-height: 64px;
@@ -66,6 +70,11 @@
     margin-top: 14px;
     padding: 8px 18px;
     border-radius: 14px;
+  }
+
+  .academy-subnav-trigger,
+  .academy-page-subnav-collapsed .academy-subnav {
+    top: 170px;
   }
 
   .academy-nav-button {
@@ -147,6 +156,27 @@
 
   .academy-aggregate-grid {
     grid-template-columns: 1fr;
+  }
+
+  .academy-exam-intro-card {
+    padding: 26px;
+  }
+
+  .academy-exam-intro-title h1 {
+    font-size: 34px;
+  }
+
+  .academy-exam-intro-info {
+    grid-template-columns: 1fr;
+  }
+
+  .academy-exam-intro-info div {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .academy-exam-intro-info span {
+    text-align: center;
   }
 
   .course-grid {

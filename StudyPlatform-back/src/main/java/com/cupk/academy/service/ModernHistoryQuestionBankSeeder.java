@@ -2,17 +2,13 @@ package com.cupk.academy.service;
 
 import com.cupk.academy.repository.QuestionBankRepository;
 import com.cupk.academy.repository.QuestionBankRepository.CourseQuestionBankQuestionSeed;
+import com.cupk.academy.service.QuestionBankSourceResolver.SourceFile;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -23,7 +19,7 @@ import org.springframework.stereotype.Component;
 public class ModernHistoryQuestionBankSeeder implements ApplicationRunner {
     private static final Logger log = LoggerFactory.getLogger(ModernHistoryQuestionBankSeeder.class);
     private static final String SET_CODE = "modern-history";
-    private static final String SOURCE_MARKER = "zhongguojindaishigangyao";
+    private static final String SOURCE_FILE = "modern-history.html";
     private static final TypeReference<List<ModernHistoryQuestion>> QUESTION_LIST = new TypeReference<>() {
     };
 
@@ -37,20 +33,20 @@ public class ModernHistoryQuestionBankSeeder implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        Optional<Path> sourcePath = findSourceFile();
-        if (sourcePath.isEmpty()) {
+        Optional<SourceFile> sourceFile = QuestionBankSourceResolver.find(SOURCE_FILE, log);
+        if (sourceFile.isEmpty()) {
             log.warn("Modern history question bank source file not found");
             return;
         }
 
         try {
             List<ModernHistoryQuestion> sourceQuestions = objectMapper.readValue(
-                    extractQuestionJson(sourcePath.get()),
+                    extractQuestionJson(sourceFile.get()),
                     QUESTION_LIST
             );
-            List<CourseQuestionBankQuestionSeed> questions = toSeeds(sourceQuestions, sourcePath.get());
+            List<CourseQuestionBankQuestionSeed> questions = toSeeds(sourceQuestions, sourceFile.get().fileName());
             if (questions.isEmpty()) {
-                log.warn("Modern history question bank source file {} has no usable questions", sourcePath.get());
+                log.warn("Modern history question bank source file {} has no usable questions", sourceFile.get().location());
                 return;
             }
 
@@ -62,45 +58,14 @@ public class ModernHistoryQuestionBankSeeder implements ApplicationRunner {
 
             questionBankRepository.deleteCourseQuestionBankQuestions(SET_CODE);
             questionBankRepository.batchInsertCourseQuestionBankQuestions(SET_CODE, questions);
-            log.info("Seeded {} modern history questions from {}", questions.size(), sourcePath.get());
+            log.info("Seeded {} modern history questions from {}", questions.size(), sourceFile.get().location());
         } catch (IOException ex) {
-            log.warn("Failed to seed modern history question bank from {}", sourcePath.get(), ex);
+            log.warn("Failed to seed modern history question bank from {}", sourceFile.get().location(), ex);
         }
     }
 
-    private Optional<Path> findSourceFile() {
-        List<Path> directories = new ArrayList<>();
-        String configuredDir = System.getenv("QUESTION_BANK_SOURCE_DIR");
-        if (configuredDir != null && !configuredDir.isBlank()) {
-            directories.add(Path.of(configuredDir));
-        }
-        directories.add(Path.of("CET46"));
-        directories.add(Path.of("..", "CET46"));
-        directories.add(Path.of("..", "..", "CET46"));
-
-        for (Path directory : directories) {
-            Path normalizedDirectory = directory.toAbsolutePath().normalize();
-            if (!Files.isDirectory(normalizedDirectory)) {
-                continue;
-            }
-            try (Stream<Path> paths = Files.list(normalizedDirectory)) {
-                Optional<Path> match = paths
-                        .filter(Files::isRegularFile)
-                        .filter(path -> path.getFileName().toString().toLowerCase().contains(SOURCE_MARKER))
-                        .filter(path -> path.getFileName().toString().toLowerCase().endsWith(".html"))
-                        .findFirst();
-                if (match.isPresent()) {
-                    return match;
-                }
-            } catch (IOException ex) {
-                log.warn("Failed to scan question bank source directory {}", normalizedDirectory, ex);
-            }
-        }
-        return Optional.empty();
-    }
-
-    private String extractQuestionJson(Path sourcePath) throws IOException {
-        String html = Files.readString(sourcePath, StandardCharsets.UTF_8);
+    private String extractQuestionJson(SourceFile sourceFile) throws IOException {
+        String html = sourceFile.readString();
         int declarationIndex = html.indexOf("const ALL");
         if (declarationIndex < 0) {
             throw new IOException("const ALL declaration not found");
@@ -119,8 +84,7 @@ public class ModernHistoryQuestionBankSeeder implements ApplicationRunner {
         return html.substring(arrayStart, arrayEnd);
     }
 
-    private List<CourseQuestionBankQuestionSeed> toSeeds(List<ModernHistoryQuestion> sourceQuestions, Path sourcePath) {
-        String sourceName = sourcePath.getFileName().toString();
+    private List<CourseQuestionBankQuestionSeed> toSeeds(List<ModernHistoryQuestion> sourceQuestions, String sourceName) {
         return sourceQuestions.stream()
                 .filter(question -> question.question() != null && !question.question().isBlank())
                 .filter(question -> question.answer() != null && !question.answer().isBlank())

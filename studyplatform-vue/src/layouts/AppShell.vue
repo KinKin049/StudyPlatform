@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
+import AiPetWidget from '../components/AiPetWidget.vue'
 import AppNavigation from '../components/AppNavigation.vue'
 
 const route = useRoute()
@@ -107,5 +108,6 @@ const showNavigation = computed(() => !route.path.startsWith('/games/'))
   <div :class="shellClass">
     <AppNavigation v-if="showNavigation" :nav-items="navItems" />
     <RouterView />
+    <AiPetWidget />
   </div>
 </template>

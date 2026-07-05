@@ -1,7 +1,12 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { fetchAcademyAssignments, fetchMyAcademyCourses, unenrollAcademyCourse } from '../../api/academy'
+import {
+  fetchAcademyAssignments,
+  fetchAcademyExams,
+  fetchMyAcademyCourses,
+  unenrollAcademyCourse,
+} from '../../api/academy'
 import { resolveResourceUrl } from '../../api/request'
 
 const props = defineProps({
@@ -27,42 +32,6 @@ const pageTitles = {
   assignments: '课程作业',
   exams: '我的考试',
 }
-
-const activityCards = [
-  {
-    type: 'exams',
-    title: '程序设计单元测试',
-    category: 'C语言程序设计（下）',
-    status: '正在进行',
-    teacher: '7 月 8 日前完成',
-    progress: '剩余 3 次机会',
-    meta: '45 分钟 · 自动判分',
-    link: '/academy/exams',
-    cover: 'linear-gradient(135deg, #7fd8ee, #74ebd5 50%, #acb6e5)',
-  },
-  {
-    type: 'exams',
-    title: '高等数学阶段测验',
-    category: '高等数学',
-    status: '即将开始',
-    teacher: '7 月 12 日 09:00',
-    progress: '未开始',
-    meta: '60 分钟 · 线上闭卷',
-    link: '/academy/exams',
-    cover: 'linear-gradient(135deg, #bfe9ff, #acb6e5 48%, #74ebd5)',
-  },
-  {
-    type: 'exams',
-    title: '通识课程结课考试',
-    category: '通识课程',
-    status: '已结束',
-    teacher: '成绩已生成',
-    progress: '92 分',
-    meta: '线上闭卷 · 系统判分',
-    link: '/academy/exams',
-    cover: 'linear-gradient(135deg, #ffc1cb, #bfe9ff 52%, #74ebd5)',
-  },
-]
 
 const pageSidebars = {
   courses: [
@@ -90,6 +59,9 @@ const myCoursesError = ref('')
 const assignments = ref([])
 const assignmentsLoading = ref(false)
 const assignmentsError = ref('')
+const exams = ref([])
+const examsLoading = ref(false)
+const examsError = ref('')
 const droppingCourseKey = ref('')
 const pendingDropCourse = ref(null)
 const dropFeedbackVisible = ref(false)
@@ -136,10 +108,75 @@ const myCourseCards = computed(() =>
   }),
 )
 
+const isDeadlinePassed = (deadline) => {
+  if (!deadline) return false
+  const deadlineTime = new Date(deadline).getTime()
+  return Number.isFinite(deadlineTime) && deadlineTime < Date.now()
+}
+
+const isBeforeStart = (startsAt) => {
+  if (!startsAt) return false
+  const startTime = new Date(startsAt).getTime()
+  return Number.isFinite(startTime) && startTime > Date.now()
+}
+
+const formatDateTime = (value) => {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return String(value).replace('T', ' ').slice(0, 16)
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  return `${month}-${day} ${hours}:${minutes}`
+}
+
+const getAssignmentStatusBadge = (assignment) => {
+  if (assignment.submissionStatus === 'graded') {
+    return { label: '已完成', tone: 'done', animated: false }
+  }
+  if (assignment.submissionStatus === 'pending_review') {
+    return { label: '待教师批阅', tone: 'review', animated: false }
+  }
+  if (assignment.status === '已结束' || isDeadlinePassed(assignment.deadline)) {
+    return { label: '已结束', tone: 'ended', animated: false }
+  }
+  return { label: '待完成', tone: 'todo', animated: true }
+}
+
+const getExamStatusBadge = (exam) => {
+  if (exam.submissionStatus === 'graded') {
+    return { label: '已完成', tone: 'done', animated: false }
+  }
+  if (exam.submissionStatus === 'pending_review') {
+    return { label: '待教师批阅', tone: 'review', animated: false }
+  }
+  if (exam.status === '已结束' || isDeadlinePassed(exam.deadline)) {
+    return { label: '已结束', tone: 'ended', animated: false }
+  }
+  if (exam.status === '即将开始' || isBeforeStart(exam.startsAt)) {
+    return { label: '即将开始', tone: 'review', animated: false }
+  }
+  return { label: '正在进行', tone: 'todo', animated: true }
+}
+
+const getExamProgress = (exam) => {
+  if (exam.submissionStatus === 'graded') return `已批改 · ${exam.score ?? 0} 分`
+  if (exam.submissionStatus === 'pending_review') return `待教师批阅 · 当前 ${exam.score ?? 0} 分`
+  if (exam.submissionStatus === 'draft') return '答题中 · 草稿已保存'
+  if (exam.submissionStatus === 'in_progress') return '考试已开始'
+  if (exam.status === '已结束' || isDeadlinePassed(exam.deadline)) return '考试已结束'
+  if (exam.status === '即将开始' || isBeforeStart(exam.startsAt)) return `开始时间 ${formatDateTime(exam.startsAt) || '待定'}`
+  return '可进入考试'
+}
+
+const getStatusLetters = (status) => Array.from(status || '')
+
 const assignmentCards = computed(() =>
   assignments.value.map((assignment, index) => {
     const deadline = assignment.deadline ? assignment.deadline.replace('T', ' ').slice(0, 16) : '截止时间待定'
     const attempts = assignment.attemptsLeft ?? 0
+    const statusBadge = getAssignmentStatusBadge(assignment)
     const progress = assignment.submissionStatus === 'pending_review'
       ? `待教师批改 · 当前 ${assignment.score ?? 0} 分`
       : assignment.submissionStatus === 'graded'
@@ -155,6 +192,9 @@ const assignmentCards = computed(() =>
       title: assignment.title,
       category: assignment.course || '课程作业',
       status: assignment.status || '正在进行',
+      displayStatus: statusBadge.label,
+      statusTone: statusBadge.tone,
+      statusAnimated: statusBadge.animated,
       teacher: `${assignment.teacher || '教师待定'} · ${deadline}`,
       progress,
       meta: `${assignment.questionCount || 0} 题 · 可提交 ${attempts} 次`,
@@ -168,13 +208,42 @@ const assignmentCards = computed(() =>
   }),
 )
 
+const examCards = computed(() =>
+  exams.value.map((exam, index) => {
+    const statusBadge = getExamStatusBadge(exam)
+    const deadline = formatDateTime(exam.deadline) || '结束时间待定'
+    const startsAt = formatDateTime(exam.startsAt) || '开始时间待定'
+
+    return {
+      key: `exam-${exam.id}`,
+      id: exam.id,
+      type: 'exams',
+      title: exam.title,
+      category: exam.course || '课程考试',
+      status: exam.status || '正在进行',
+      displayStatus: statusBadge.label,
+      statusTone: statusBadge.tone,
+      statusAnimated: statusBadge.animated,
+      teacher: `${exam.teacher || '教师待定'} · ${exam.status === '即将开始' ? startsAt : deadline}`,
+      progress: getExamProgress(exam),
+      meta: `${exam.questionCount || 0} 题 · ${exam.durationMinutes || 0} 分钟 · ${exam.totalScore || 100} 分`,
+      link: `/academy/exams/${encodeURIComponent(exam.id)}`,
+      cover: [
+        'linear-gradient(135deg, #7fd8ee, #74ebd5 50%, #acb6e5)',
+        'linear-gradient(135deg, #bfe9ff, #acb6e5 48%, #74ebd5)',
+        'linear-gradient(135deg, #ffc1cb, #bfe9ff 52%, #74ebd5)',
+      ][index % 3],
+    }
+  }),
+)
+
 const categoryTabs = computed(() => [
   { key: 'courses', label: '课程', count: myCourseCards.value.length, path: '/academy/my-courses' },
   { key: 'assignments', label: '作业', count: assignmentCards.value.length, path: '/academy/assignments' },
-  { key: 'exams', label: '考试', count: activityCards.filter((card) => card.type === 'exams').length, path: '/academy/exams' },
+  { key: 'exams', label: '考试', count: examCards.value.length, path: '/academy/exams' },
 ])
 
-const allCards = computed(() => [...myCourseCards.value, ...assignmentCards.value, ...activityCards])
+const allCards = computed(() => [...myCourseCards.value, ...assignmentCards.value, ...examCards.value])
 
 const visibleCards = computed(() =>
   allCards.value.filter((card) => {
@@ -230,6 +299,20 @@ const loadAssignments = async () => {
   }
 }
 
+const loadExams = async () => {
+  examsLoading.value = true
+  examsError.value = ''
+
+  try {
+    exams.value = await fetchAcademyExams(1)
+  } catch (error) {
+    examsError.value = error instanceof Error ? error.message : '我的考试加载失败'
+    exams.value = []
+  } finally {
+    examsLoading.value = false
+  }
+}
+
 const openDropCourseDialog = (card) => {
   if (!card.canDrop || droppingCourseKey.value) return
   pendingDropCourse.value = card
@@ -267,6 +350,7 @@ const confirmDropCourse = async () => {
 onMounted(() => {
   loadMyCourses()
   loadAssignments()
+  loadExams()
 })
 onBeforeUnmount(() => {
   window.clearTimeout(dropFeedbackTimer)
@@ -370,12 +454,23 @@ onBeforeUnmount(() => {
           <span>{{ assignmentsError }}</span>
           <button type="button" @click="loadAssignments">重试</button>
         </div>
+        <div v-else-if="props.variant === 'exams' && examsLoading" class="academy-aggregate-state">
+          正在加载我的考试...
+        </div>
+        <div v-else-if="props.variant === 'exams' && examsError" class="academy-aggregate-state academy-aggregate-state-error">
+          <span>{{ examsError }}</span>
+          <button type="button" @click="loadExams">重试</button>
+        </div>
         <div v-else-if="visibleCards.length === 0" class="academy-aggregate-state">
           {{ emptyStateText }}
         </div>
 
         <section v-else class="academy-aggregate-grid" aria-label="课程卡片展示区">
-          <article v-for="card in visibleCards" :key="card.key || `${card.type}-${card.title}`" class="online-course-card">
+          <article
+            v-for="card in visibleCards"
+            :key="card.key || `${card.type}-${card.title}`"
+            :class="['online-course-card', { 'academy-assignment-card': card.type === 'assignments' || card.type === 'exams' }]"
+          >
             <RouterLink :to="card.link">
               <div class="academy-aggregate-cover" :style="{ background: card.cover }">
                 <img v-if="card.coverImage" :src="card.coverImage" :alt="card.title" />
@@ -383,7 +478,25 @@ onBeforeUnmount(() => {
               <div class="online-course-card-body">
                 <div class="online-course-card-meta">
                   <span>{{ card.category }}</span>
-                  <strong>{{ card.status }}</strong>
+                  <strong
+                    :class="[
+                      'academy-assignment-status-badge',
+                      card.statusTone ? `is-${card.statusTone}` : '',
+                      { 'is-bouncy': card.statusAnimated },
+                    ]"
+                    :aria-label="card.displayStatus || card.status"
+                  >
+                    <template v-if="card.statusAnimated">
+                      <span
+                        v-for="(letter, index) in getStatusLetters(card.displayStatus)"
+                        :key="`${card.key}-status-${index}`"
+                        :style="{ '--jump-index': index }"
+                      >
+                        {{ letter }}
+                      </span>
+                    </template>
+                    <template v-else>{{ card.displayStatus || card.status }}</template>
+                  </strong>
                 </div>
                 <h3>{{ card.title }}</h3>
                 <dl>

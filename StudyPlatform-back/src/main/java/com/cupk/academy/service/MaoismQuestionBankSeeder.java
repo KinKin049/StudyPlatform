@@ -2,16 +2,13 @@ package com.cupk.academy.service;
 
 import com.cupk.academy.repository.QuestionBankRepository;
 import com.cupk.academy.repository.QuestionBankRepository.CourseQuestionBankQuestionSeed;
+import com.cupk.academy.service.QuestionBankSourceResolver.SourceFile;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -22,7 +19,7 @@ import org.springframework.stereotype.Component;
 public class MaoismQuestionBankSeeder implements ApplicationRunner {
     private static final Logger log = LoggerFactory.getLogger(MaoismQuestionBankSeeder.class);
     private static final String SET_CODE = "maoism";
-    private static final String SOURCE_MARKER = "maozhongte-exam";
+    private static final String SOURCE_FILE = "maoism.html";
     private static final String LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     private final QuestionBankRepository questionBankRepository;
@@ -35,17 +32,17 @@ public class MaoismQuestionBankSeeder implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        Optional<Path> sourcePath = findSourceFile();
-        if (sourcePath.isEmpty()) {
+        Optional<SourceFile> sourceFile = QuestionBankSourceResolver.find(SOURCE_FILE, log);
+        if (sourceFile.isEmpty()) {
             log.warn("Maoism question bank source file not found");
             return;
         }
 
         try {
-            MaoismQuestionBank source = objectMapper.readValue(extractQuestionJson(sourcePath.get()), MaoismQuestionBank.class);
-            List<CourseQuestionBankQuestionSeed> questions = toSeeds(source, sourcePath.get());
+            MaoismQuestionBank source = objectMapper.readValue(extractQuestionJson(sourceFile.get()), MaoismQuestionBank.class);
+            List<CourseQuestionBankQuestionSeed> questions = toSeeds(source, sourceFile.get().fileName());
             if (questions.isEmpty()) {
-                log.warn("Maoism question bank source file {} has no usable questions", sourcePath.get());
+                log.warn("Maoism question bank source file {} has no usable questions", sourceFile.get().location());
                 return;
             }
 
@@ -58,45 +55,14 @@ public class MaoismQuestionBankSeeder implements ApplicationRunner {
 
             questionBankRepository.deleteCourseQuestionBankQuestions(SET_CODE);
             questionBankRepository.batchInsertCourseQuestionBankQuestions(SET_CODE, questions);
-            log.info("Seeded {} maoism questions from {}", questions.size(), sourcePath.get());
+            log.info("Seeded {} maoism questions from {}", questions.size(), sourceFile.get().location());
         } catch (IOException ex) {
-            log.warn("Failed to seed maoism question bank from {}", sourcePath.get(), ex);
+            log.warn("Failed to seed maoism question bank from {}", sourceFile.get().location(), ex);
         }
     }
 
-    private Optional<Path> findSourceFile() {
-        List<Path> directories = new ArrayList<>();
-        String configuredDir = System.getenv("QUESTION_BANK_SOURCE_DIR");
-        if (configuredDir != null && !configuredDir.isBlank()) {
-            directories.add(Path.of(configuredDir));
-        }
-        directories.add(Path.of("CET46"));
-        directories.add(Path.of("..", "CET46"));
-        directories.add(Path.of("..", "..", "CET46"));
-
-        for (Path directory : directories) {
-            Path normalizedDirectory = directory.toAbsolutePath().normalize();
-            if (!Files.isDirectory(normalizedDirectory)) {
-                continue;
-            }
-            try (Stream<Path> paths = Files.list(normalizedDirectory)) {
-                Optional<Path> match = paths
-                        .filter(Files::isRegularFile)
-                        .filter(path -> path.getFileName().toString().toLowerCase(Locale.ROOT).contains(SOURCE_MARKER))
-                        .filter(path -> path.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".html"))
-                        .findFirst();
-                if (match.isPresent()) {
-                    return match;
-                }
-            } catch (IOException ex) {
-                log.warn("Failed to scan question bank source directory {}", normalizedDirectory, ex);
-            }
-        }
-        return Optional.empty();
-    }
-
-    private String extractQuestionJson(Path sourcePath) throws IOException {
-        String html = Files.readString(sourcePath, StandardCharsets.UTF_8);
+    private String extractQuestionJson(SourceFile sourceFile) throws IOException {
+        String html = sourceFile.readString();
         int declarationIndex = html.indexOf("var QUESTION_BANK");
         if (declarationIndex < 0) {
             throw new IOException("QUESTION_BANK declaration not found");
@@ -116,9 +82,8 @@ public class MaoismQuestionBankSeeder implements ApplicationRunner {
         return html.substring(objectStart, objectEnd).trim();
     }
 
-    private List<CourseQuestionBankQuestionSeed> toSeeds(MaoismQuestionBank source, Path sourcePath) {
+    private List<CourseQuestionBankQuestionSeed> toSeeds(MaoismQuestionBank source, String sourceName) {
         List<CourseQuestionBankQuestionSeed> questions = new ArrayList<>();
-        String sourceName = sourcePath.getFileName().toString();
         int sortOrder = 10;
         sortOrder = appendChoiceQuestions(questions, source.s(), "single", "单选题", sourceName, sortOrder);
         sortOrder = appendChoiceQuestions(questions, source.m(), "multiple", "多选题", sourceName, sortOrder);

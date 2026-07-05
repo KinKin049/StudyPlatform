@@ -28,6 +28,30 @@ export const submitAcademyAssignment = (assignmentId, answers, userId = 1) =>
     body: JSON.stringify({ userId, answers }),
   })
 
+export const fetchAcademyExams = (userId = 1) =>
+  request(`/api/academy/exams?userId=${encodeURIComponent(userId)}`)
+
+export const fetchAcademyExam = (examId, userId = 1) =>
+  request(`/api/academy/exams/${encodeURIComponent(examId)}?userId=${encodeURIComponent(userId)}`)
+
+export const startAcademyExam = (examId, userId = 1) =>
+  request(`/api/academy/exams/${encodeURIComponent(examId)}/start`, {
+    method: 'POST',
+    body: JSON.stringify({ userId, answers: {} }),
+  })
+
+export const saveAcademyExamDraft = (examId, answers, userId = 1) =>
+  request(`/api/academy/exams/${encodeURIComponent(examId)}/draft`, {
+    method: 'POST',
+    body: JSON.stringify({ userId, answers }),
+  })
+
+export const submitAcademyExam = (examId, answers, userId = 1) =>
+  request(`/api/academy/exams/${encodeURIComponent(examId)}/submit`, {
+    method: 'POST',
+    body: JSON.stringify({ userId, answers }),
+  })
+
 export const enrollAcademyCourse = (resource, id, payload = {}) =>
   request(`/api/academy/${resource}/${encodeURIComponent(id)}/enroll`, {
     method: 'POST',

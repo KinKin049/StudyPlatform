@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { Star, StarFilled } from '@element-plus/icons-vue'
 import { RouterLink, useRoute } from 'vue-router'
 import {
@@ -31,6 +31,7 @@ const vocabularyProgress = ref({})
 const vocabularyCache = ref({})
 const questionListRef = ref(null)
 const favoriteSubmitting = ref({})
+const practiceStarted = ref(false)
 
 const bank = computed(() => detail.value?.bank)
 const questions = computed(() => detail.value?.questions || [])
@@ -397,23 +398,39 @@ const selectVocabularyCard = (question) => {
   cardAnswerVisible.value = false
 }
 
-const scrollToFirstQuestion = () => {
+const scrollToFirstQuestion = (forceFirstQuestion = false) => {
   requestAnimationFrame(() => {
-    const target = questionListRef.value?.querySelector(
-      '.vocabulary-card, .question-bank-question-card, .question-course-empty',
-    )
-    ;(target || questionListRef.value)?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start',
+    requestAnimationFrame(() => {
+      const target = questionListRef.value?.querySelector(
+        forceFirstQuestion
+          ? '.vocabulary-card, .question-bank-question-card'
+          : '.vocabulary-card, .question-bank-question-card, .question-course-empty',
+      )
+      if (!target) {
+        questionListRef.value?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        })
+        return
+      }
+      const headerOffset = 132
+      const targetTop = target.getBoundingClientRect().top + window.scrollY - headerOffset
+      window.scrollTo({
+        top: Math.max(targetTop, 0),
+        behavior: 'smooth',
+      })
     })
   })
 }
 
-const handleStartPractice = () => {
+const handleStartPractice = async () => {
   if (isVocabularyBank.value) {
     setVocabularyMode('sequence')
   }
-  scrollToFirstQuestion()
+  window.dispatchEvent(new CustomEvent('academy-question-practice-start'))
+  practiceStarted.value = true
+  await nextTick()
+  scrollToFirstQuestion(true)
 }
 
 const loadDetail = async () => {
@@ -530,10 +547,15 @@ onMounted(loadDetail)
         </div>
       </section>
 
-      <section ref="questionListRef" class="question-bank-question-list" :aria-label="`${bank.title}题目列表`">
+      <section
+        v-if="practiceStarted"
+        ref="questionListRef"
+        class="question-bank-question-list"
+        :aria-label="`${bank.title}题目列表`"
+      >
         <header class="question-bank-list-header">
           <div>
-            <h2>{{ isVocabularyBank ? '背单词工作台' : '题目预览' }}</h2>
+            <h2>{{ isVocabularyBank ? '背单词工作台' : '开始练习' }}</h2>
             <p>
               {{
                 isVocabularyBank

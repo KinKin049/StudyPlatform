@@ -944,6 +944,9 @@
 .question-bank-detail-hero button,
 .question-bank-detail-actions a,
 .question-bank-answer-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: 44px;
   padding: 0 18px;
   border: 1px solid rgba(255, 255, 255, 0.5);
@@ -955,6 +958,7 @@
     0 14px 30px rgba(45, 87, 107, 0.16);
   cursor: pointer;
   font-weight: 900;
+  line-height: 1;
   text-decoration: none;
 }
 

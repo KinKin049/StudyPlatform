@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ArrowDown } from '@element-plus/icons-vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 import { fetchAcademyCategories } from '../api/academy'
@@ -70,8 +70,16 @@ const navItemsWithCategories = computed(() =>
 )
 
 const collapsedSubnavPaths = ['/academy/my-courses', '/academy/assignments', '/academy/exams']
+const questionPracticeSubnavActive = ref(false)
+const questionPracticeSubnavCollapsed = ref(false)
+
 const isSubnavCollapsed = computed(() =>
-  collapsedSubnavPaths.some((path) => route.path === path || route.path.startsWith(`${path}/`)),
+  collapsedSubnavPaths.some((path) => route.path === path || route.path.startsWith(`${path}/`)) ||
+  questionPracticeSubnavCollapsed.value,
+)
+
+const isQuestionBankCourseDetail = computed(() =>
+  route.path.startsWith('/academy/question-bank/courses/'),
 )
 
 const navigateTo = (target, event) => {
@@ -94,11 +102,54 @@ const loadNavCategories = async () => {
   categoryMap.value = Object.fromEntries(results)
 }
 
-onMounted(loadNavCategories)
+const updateQuestionPracticeSubnav = () => {
+  if (!questionPracticeSubnavActive.value || !isQuestionBankCourseDetail.value) {
+    questionPracticeSubnavCollapsed.value = false
+    return
+  }
+  questionPracticeSubnavCollapsed.value = window.scrollY > 80
+}
+
+const handleQuestionPracticeStart = () => {
+  if (!isQuestionBankCourseDetail.value) return
+  questionPracticeSubnavActive.value = true
+  questionPracticeSubnavCollapsed.value = true
+}
+
+watch(
+  () => route.path,
+  () => {
+    if (!isQuestionBankCourseDetail.value) {
+      questionPracticeSubnavActive.value = false
+      questionPracticeSubnavCollapsed.value = false
+    } else {
+      updateQuestionPracticeSubnav()
+    }
+  },
+)
+
+onMounted(() => {
+  loadNavCategories()
+  window.addEventListener('scroll', updateQuestionPracticeSubnav, { passive: true })
+  window.addEventListener('academy-question-practice-start', handleQuestionPracticeStart)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', updateQuestionPracticeSubnav)
+  window.removeEventListener('academy-question-practice-start', handleQuestionPracticeStart)
+})
 </script>
 
 <template>
-  <div :class="['academy-page', { 'academy-page-subnav-collapsed': isSubnavCollapsed }]">
+  <div
+    :class="[
+      'academy-page',
+      {
+        'academy-page-subnav-collapsed': isSubnavCollapsed,
+        'academy-page-question-practice-collapsed': questionPracticeSubnavCollapsed,
+      },
+    ]"
+  >
     <button
       v-if="isSubnavCollapsed"
       class="academy-subnav-trigger"

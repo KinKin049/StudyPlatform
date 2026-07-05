@@ -110,14 +110,23 @@ button {
 
 .academy-shell {
   min-height: 100vh;
+  padding-top: 102px;
   background: #74ebd5;
   background: -webkit-linear-gradient(to right, #acb6e5, #74ebd5);
   background: linear-gradient(to right, #acb6e5, #74ebd5);
 }
 
-.academy-shell:has(.academy-page-subnav-collapsed) .site-header {
-  position: sticky;
+.academy-shell .site-header {
+  position: fixed;
   top: 0;
+  right: 0;
+  left: 0;
+  z-index: 520;
+  background: #74ebd5;
+  background: -webkit-linear-gradient(to right, #acb6e5, #74ebd5);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.06)),
+    linear-gradient(to right, #acb6e5, #74ebd5);
 }
 
 .academy-course-detail-shell {
