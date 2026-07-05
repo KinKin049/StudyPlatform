@@ -5,6 +5,8 @@ import com.cupk.academy.dto.AcademyCourseReviewResponse;
 import com.cupk.academy.dto.AcademyCourseResponse;
 import com.cupk.academy.dto.AcademyEnrolledCourseResponse;
 import com.cupk.academy.dto.AcademyTextbookResponse;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -23,11 +25,69 @@ public class AcademyRepository {
         String sql = """
                 SELECT external_course_id, course_name, teacher_name, category, school_name,
                        cover_url, cover_file_path, start_time, participant_count,
-                       course_comment, '' AS course_description, source_url
-                FROM online_open_courses
-                ORDER BY id ASC
+                       COALESCE(p.course_overview, course_comment) AS course_comment,
+                       COALESCE(p.course_detail, '') AS course_description,
+                       p.semester_plan, p.course_overview, p.video_file_path,
+                       source_url
+                FROM online_open_courses c
+                LEFT JOIN teacher_published_courses p ON p.course_id = c.external_course_id
+                ORDER BY c.id ASC
                 """;
-        return jdbcTemplate.query(sql, (rs, rowNum) -> new AcademyCourseResponse(
+        return jdbcTemplate.query(sql, (rs, rowNum) -> mapAcademyCourse(rs));
+    }
+
+    public String publishOnlineOpenCourse(
+            long publisherUserId,
+            String courseName,
+            String teacherName,
+            String schoolName,
+            String category,
+            String startTime,
+            String semesterPlan,
+            String courseDetail,
+            String courseOverview,
+            String coverFilePath,
+            String videoFilePath
+    ) {
+        String courseId = "teacher-" + publisherUserId + "-" + System.currentTimeMillis();
+        String insertCourseSql = """
+                INSERT INTO online_open_courses
+                  (external_course_id, course_name, teacher_name, category, school_name,
+                   cover_file_path, start_time, participant_count, course_comment, source_url)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
+                """;
+        jdbcTemplate.update(
+                insertCourseSql,
+                courseId,
+                courseName,
+                teacherName,
+                category,
+                schoolName,
+                coverFilePath,
+                startTime,
+                courseOverview,
+                "/academy/open-courses/" + courseId
+        );
+
+        String insertPublishSql = """
+                INSERT INTO teacher_published_courses
+                  (course_id, publisher_user_id, semester_plan, course_overview, course_detail, video_file_path)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """;
+        jdbcTemplate.update(
+                insertPublishSql,
+                courseId,
+                publisherUserId,
+                semesterPlan,
+                courseOverview,
+                courseDetail,
+                videoFilePath
+        );
+        return courseId;
+    }
+
+    private AcademyCourseResponse mapAcademyCourse(java.sql.ResultSet rs) throws java.sql.SQLException {
+        return new AcademyCourseResponse(
                 rs.getString("external_course_id"),
                 rs.getString("course_name"),
                 rs.getString("teacher_name"),
@@ -40,12 +100,85 @@ public class AcademyRepository {
                 rs.getObject("participant_count", Integer.class),
                 rs.getString("course_comment"),
                 rs.getString("course_description"),
+                getOptionalString(rs, "semester_plan"),
+                getOptionalString(rs, "course_overview"),
+                fileUrl(getOptionalString(rs, "video_file_path")),
+                getOptionalString(rs, "video_file_path"),
                 rs.getString("source_url")
-        ));
+        );
     }
 
     public Optional<AcademyCourseResponse> findOnlineOpenCourseById(String id) {
-        return findLearningCourseById("online_open_courses", true, id);
+        String sql = """
+                SELECT c.external_course_id, c.course_name, c.teacher_name, c.category, c.school_name,
+                       c.cover_url, c.cover_file_path, c.start_time, c.participant_count,
+                       COALESCE(p.course_overview, c.course_comment) AS course_comment,
+                       COALESCE(p.course_detail, '') AS course_description,
+                       p.semester_plan, p.course_overview, p.video_file_path,
+                       c.source_url
+                FROM online_open_courses c
+                LEFT JOIN teacher_published_courses p ON p.course_id = c.external_course_id
+                WHERE c.external_course_id = ?
+                LIMIT 1
+                """;
+        try {
+            return Optional.ofNullable(jdbcTemplate.queryForObject(sql, (rs, rowNum) -> mapAcademyCourse(rs), id));
+        } catch (EmptyResultDataAccessException ex) {
+            return Optional.empty();
+        }
+    }
+
+    public List<AcademyCourseResponse> findPublishedOnlineOpenCourses(long publisherUserId) {
+        String sql = """
+                SELECT c.external_course_id, c.course_name, c.teacher_name, c.category, c.school_name,
+                       c.cover_url, c.cover_file_path, c.start_time, c.participant_count,
+                       COALESCE(p.course_overview, c.course_comment) AS course_comment,
+                       COALESCE(p.course_detail, '') AS course_description,
+                       p.semester_plan, p.course_overview, p.video_file_path,
+                       c.source_url
+                FROM teacher_published_courses p
+                JOIN online_open_courses c ON c.external_course_id = p.course_id
+                WHERE p.publisher_user_id = ?
+                ORDER BY p.updated_at DESC, p.id DESC
+                """;
+        return jdbcTemplate.query(sql, (rs, rowNum) -> mapAcademyCourse(rs), publisherUserId);
+    }
+
+    public boolean isPublishedOnlineOpenCourseOwner(long publisherUserId, String courseId) {
+        Long count = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM teacher_published_courses
+                WHERE publisher_user_id = ? AND course_id = ?
+                """,
+                Long.class,
+                publisherUserId,
+                courseId
+        );
+        return count != null && count > 0;
+    }
+
+    public int deletePublishedOnlineOpenCourse(long publisherUserId, String courseId) {
+        if (!isPublishedOnlineOpenCourseOwner(publisherUserId, courseId)) {
+            return 0;
+        }
+        jdbcTemplate.update(
+                "DELETE FROM academy_course_reviews WHERE resource_type = 'online-open-courses' AND course_id = ?",
+                courseId
+        );
+        jdbcTemplate.update(
+                "DELETE FROM academy_course_enrollments WHERE resource_type = 'online-open-courses' AND course_id = ?",
+                courseId
+        );
+        jdbcTemplate.update(
+                "DELETE FROM teacher_published_courses WHERE publisher_user_id = ? AND course_id = ?",
+                publisherUserId,
+                courseId
+        );
+        return jdbcTemplate.update(
+                "DELETE FROM online_open_courses WHERE external_course_id = ?",
+                courseId
+        );
     }
 
     public List<AcademyCourseResponse> findGeneralCourses() {
@@ -115,20 +248,25 @@ public class AcademyRepository {
                        enrolled.teacher_name, enrolled.category, enrolled.school_name,
                        enrolled.cover_url, enrolled.cover_file_path, enrolled.start_time,
                        enrolled.participant_count, enrolled.course_comment,
-                       enrolled.course_description, enrolled.source_url, enrolled.enrolled_at
+                       enrolled.course_description, enrolled.semester_plan, enrolled.course_overview,
+                       enrolled.video_file_path, enrolled.source_url, enrolled.enrolled_at
                 FROM (
                     SELECT e.resource_type, c.external_course_id, c.course_name, c.teacher_name,
                            c.category, c.school_name, c.cover_url, c.cover_file_path,
                            c.start_time, c.participant_count, c.course_comment,
-                           '' AS course_description, c.source_url, e.created_at AS enrolled_at
+                           COALESCE(p.course_detail, '') AS course_description,
+                           p.semester_plan, p.course_overview, p.video_file_path,
+                           c.source_url, e.created_at AS enrolled_at
                     FROM academy_course_enrollments e
                     JOIN online_open_courses c ON c.external_course_id = e.course_id
+                    LEFT JOIN teacher_published_courses p ON p.course_id = c.external_course_id
                     WHERE e.resource_type = 'online-open-courses' AND e.user_id = ?
                     UNION ALL
                     SELECT e.resource_type, c.external_course_id, c.course_name, c.teacher_name,
                            c.category, c.school_name, c.cover_url, c.cover_file_path,
                            c.start_time, c.participant_count, c.course_comment,
-                           c.course_description, c.source_url, e.created_at AS enrolled_at
+                           c.course_description, NULL AS semester_plan, NULL AS course_overview,
+                           NULL AS video_file_path, c.source_url, e.created_at AS enrolled_at
                     FROM academy_course_enrollments e
                     JOIN general_courses c ON c.external_course_id = e.course_id
                     WHERE e.resource_type = 'general-courses' AND e.user_id = ?
@@ -136,7 +274,8 @@ public class AcademyRepository {
                     SELECT e.resource_type, c.external_course_id, c.course_name, c.teacher_name,
                            c.category, c.school_name, c.cover_url, c.cover_file_path,
                            c.start_time, c.participant_count, c.course_comment,
-                           c.course_description, c.source_url, e.created_at AS enrolled_at
+                           c.course_description, NULL AS semester_plan, NULL AS course_overview,
+                           NULL AS video_file_path, c.source_url, e.created_at AS enrolled_at
                     FROM academy_course_enrollments e
                     JOIN micro_major_courses c ON c.external_course_id = e.course_id
                     WHERE e.resource_type = 'micro-major-courses' AND e.user_id = ?
@@ -157,6 +296,10 @@ public class AcademyRepository {
                 rs.getObject("participant_count", Integer.class),
                 rs.getString("course_comment"),
                 rs.getString("course_description"),
+                rs.getString("semester_plan"),
+                rs.getString("course_overview"),
+                fileUrl(rs.getString("video_file_path")),
+                rs.getString("video_file_path"),
                 rs.getString("source_url"),
                 rs.getTimestamp("enrolled_at").toLocalDateTime()
         ), userId, userId, userId);
@@ -228,6 +371,10 @@ public class AcademyRepository {
                 rs.getObject("participant_count", Integer.class),
                 rs.getString("course_comment"),
                 rs.getString("course_description"),
+                null,
+                null,
+                "",
+                null,
                 rs.getString("source_url")
         ));
     }
@@ -261,10 +408,37 @@ public class AcademyRepository {
                     rs.getObject("participant_count", Integer.class),
                     rs.getString("course_comment"),
                     rs.getString("course_description"),
+                    null,
+                    null,
+                    "",
+                    null,
                     rs.getString("source_url")
             ), id));
         } catch (EmptyResultDataAccessException ex) {
             return Optional.empty();
         }
+    }
+
+    private String getOptionalString(java.sql.ResultSet rs, String columnLabel) {
+        try {
+            return rs.getString(columnLabel);
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
+    private String fileUrl(String filePath) {
+        if (filePath == null || filePath.isBlank()) {
+            return "";
+        }
+        String normalizedPath = filePath.replace("\\", "/");
+        if (normalizedPath.startsWith("storage/")) {
+            normalizedPath = normalizedPath.substring("storage/".length());
+        }
+        String encodedPath = java.util.Arrays.stream(normalizedPath.split("/"))
+                .map(part -> URLEncoder.encode(part, StandardCharsets.UTF_8).replace("+", "%20"))
+                .reduce((left, right) -> left + "/" + right)
+                .orElse("");
+        return "/files/" + encodedPath;
     }
 }

@@ -11,6 +11,7 @@ import java.util.List;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 /**
  * Calls a remote judge sandbox.
@@ -29,10 +30,10 @@ public class RemoteJudgeSandboxClient implements JudgeSandboxClient {
 
     @Override
     public JudgeResult judge(OjProblem problem, OjSubmission submission, List<OjTestCase> testCases) {
+        if ("answer".equalsIgnoreCase(submission.language())) {
+            return judgeAnswerSubmission(submission, testCases);
+        }
         if (!StringUtils.hasText(properties.getSandboxUrl())) {
-            if ("answer".equalsIgnoreCase(submission.language())) {
-                return judgeAnswerSubmission(submission, testCases);
-            }
             return new JudgeResult(
                     SubmissionStatus.SYSTEM_ERROR,
                     0,
@@ -42,12 +43,23 @@ public class RemoteJudgeSandboxClient implements JudgeSandboxClient {
                     List.of()
             );
         }
-        var client = restClientBuilder.baseUrl(properties.getSandboxUrl()).build();
-        return client.post()
-                .uri("/judge")
-                .body(JudgeSandboxRequest.from(problem, submission, testCases))
-                .retrieve()
-                .body(JudgeResult.class);
+        try {
+            var client = restClientBuilder.baseUrl(properties.getSandboxUrl()).build();
+            return client.post()
+                    .uri("/judge")
+                    .body(JudgeSandboxRequest.from(problem, submission, testCases))
+                    .retrieve()
+                    .body(JudgeResult.class);
+        } catch (RestClientException ex) {
+            return new JudgeResult(
+                    SubmissionStatus.SYSTEM_ERROR,
+                    0,
+                    null,
+                    null,
+                    "判题沙箱未连接，请先启动 judge-sandbox 服务：" + properties.getSandboxUrl(),
+                    List.of()
+            );
+        }
     }
 
     private JudgeResult judgeAnswerSubmission(OjSubmission submission, List<OjTestCase> testCases) {

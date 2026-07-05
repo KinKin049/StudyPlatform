@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -27,8 +28,17 @@ public class OjSubmissionController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.ACCEPTED)
-    public OjSubmission createSubmission(@Valid @RequestBody CreateSubmissionRequest request) {
-        return submissionService.createSubmission(request);
+    public OjSubmission createSubmission(
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long userId,
+            @Valid @RequestBody CreateSubmissionRequest request
+    ) {
+        CreateSubmissionRequest scopedRequest = new CreateSubmissionRequest(
+                request.problemId(),
+                userId == null || userId <= 0 ? request.userId() : userId,
+                request.language(),
+                request.sourceCode()
+        );
+        return submissionService.createSubmission(scopedRequest);
     }
 
     @GetMapping("/{id}")

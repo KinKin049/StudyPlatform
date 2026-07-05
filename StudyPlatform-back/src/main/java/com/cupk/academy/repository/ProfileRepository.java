@@ -44,9 +44,13 @@ public class ProfileRepository {
     public ProfileUserResponse findUserProfile(long userId) {
         ensureUserProfile(userId);
         String sql = """
-                SELECT user_id, display_name, handle, role_label, bio, location, school, avatar_path
-                FROM profile_user_profiles
-                WHERE user_id = ?
+                SELECT p.user_id, p.display_name, p.handle, p.role_label,
+                       COALESCE(a.role_type, '') AS role_type,
+                       COALESCE(a.teacher_name, '') AS teacher_name,
+                       p.bio, p.location, p.school, p.avatar_path
+                FROM profile_user_profiles p
+                LEFT JOIN auth_users a ON a.id = p.user_id
+                WHERE p.user_id = ?
                 LIMIT 1
                 """;
         return jdbcTemplate.queryForObject(sql, this::mapUserProfile, userId);
@@ -152,22 +156,31 @@ public class ProfileRepository {
 
     public List<CodingDifficultyRow> findCodingDifficultyRows(long userId) {
         String sql = """
-                SELECT p.difficulty,
-                       COUNT(DISTINCT p.id) AS total_count,
-                       COUNT(DISTINCT CASE WHEN s.id IS NOT NULL THEN p.id END) AS solved_count
-                FROM oj_problems p
-                LEFT JOIN oj_submissions s
-                  ON s.problem_id = p.id
-                 AND s.status = 'ACCEPTED'
-                 AND (s.user_id = ? OR s.user_id IS NULL)
-                WHERE p.status = 'PUBLISHED'
-                GROUP BY p.difficulty
+                SELECT levels.difficulty,
+                       COUNT(DISTINCT attempted.problem_id) AS total_count,
+                       COUNT(DISTINCT accepted.problem_id) AS solved_count
+                FROM (
+                  SELECT 'EASY' AS difficulty
+                  UNION ALL SELECT 'MEDIUM'
+                  UNION ALL SELECT 'HARD'
+                ) levels
+                LEFT JOIN oj_problems p
+                  ON p.difficulty = levels.difficulty
+                 AND p.status = 'PUBLISHED'
+                LEFT JOIN oj_submissions attempted
+                  ON attempted.problem_id = p.id
+                 AND attempted.user_id = ?
+                LEFT JOIN oj_submissions accepted
+                  ON accepted.problem_id = p.id
+                 AND accepted.user_id = ?
+                 AND accepted.status = 'ACCEPTED'
+                GROUP BY levels.difficulty
                 """;
         return jdbcTemplate.query(sql, (rs, rowNum) -> new CodingDifficultyRow(
                 rs.getString("difficulty"),
                 rs.getLong("solved_count"),
                 rs.getLong("total_count")
-        ), userId);
+        ), userId, userId);
     }
 
     public List<DistributionRow> findDistributionRows(long userId) {
@@ -316,6 +329,8 @@ public class ProfileRepository {
                 rs.getString("display_name"),
                 rs.getString("handle"),
                 rs.getString("role_label"),
+                rs.getString("role_type"),
+                rs.getString("teacher_name"),
                 rs.getString("bio"),
                 rs.getString("location"),
                 rs.getString("school"),
@@ -324,6 +339,36 @@ public class ProfileRepository {
     }
 
     private void ensureUserProfile(long userId) {
+        if (queryLong("SELECT COUNT(*) FROM profile_user_profiles WHERE user_id = ?", userId) > 0) {
+            return;
+        }
+
+        int insertedFromAuth = jdbcTemplate.update(
+                """
+                INSERT INTO profile_user_profiles
+                  (user_id, display_name, handle, role_label, bio, location, school)
+                SELECT id,
+                       username,
+                       CONCAT('@', username),
+                       CASE WHEN role_type = 'teacher' THEN '教师' ELSE '学生' END,
+                       CASE
+                         WHEN role_type = 'teacher' AND teacher_name IS NOT NULL AND teacher_name <> ''
+                           THEN CONCAT('教师：', teacher_name)
+                         WHEN learning_goal IS NOT NULL AND learning_goal <> ''
+                           THEN CONCAT('目标：', learning_goal)
+                         ELSE '这个账号正在完善自己的学习主页。'
+                       END,
+                       'China',
+                       COALESCE(NULLIF(school, ''), 'StudyPlatform')
+                FROM auth_users
+                WHERE id = ?
+                """,
+                userId
+        );
+        if (insertedFromAuth > 0) {
+            return;
+        }
+
         String sql = """
                 INSERT INTO profile_user_profiles
                   (user_id, display_name, handle, role_label, bio, location, school)

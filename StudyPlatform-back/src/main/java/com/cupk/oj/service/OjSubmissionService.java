@@ -88,6 +88,7 @@ public class OjSubmissionService {
 
     private Long normalizeUserId(Long userId) {
         Long candidateUserId = userId == null || userId <= 0 ? DEFAULT_USER_ID : userId;
+        ensurePlatformUserFromAuth(candidateUserId);
         if (userExists(candidateUserId)) {
             return candidateUserId;
         }
@@ -96,6 +97,23 @@ public class OjSubmissionService {
             return DEFAULT_USER_ID;
         }
         return null;
+    }
+
+    private void ensurePlatformUserFromAuth(Long userId) {
+        if (userId == null || userId <= 0 || userExists(userId)) {
+            return;
+        }
+        jdbcTemplate.update(
+                """
+                INSERT IGNORE INTO users (id, username, password_hash, nickname, role, enabled)
+                SELECT id, username, password_hash, username,
+                       CASE WHEN role_type = 'teacher' THEN 'TEACHER' ELSE 'STUDENT' END,
+                       1
+                FROM auth_users
+                WHERE id = ?
+                """,
+                userId
+        );
     }
 
     private boolean userExists(Long userId) {

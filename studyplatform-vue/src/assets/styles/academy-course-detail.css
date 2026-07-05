@@ -473,12 +473,20 @@
   background: #142d35;
 }
 
-.course-player-placeholder > img {
+.course-player-placeholder > img,
+.course-player-placeholder > video {
   display: block;
   width: 100%;
   min-height: 420px;
   object-fit: cover;
+}
+
+.course-player-placeholder > img {
   filter: saturate(0.94) brightness(0.68);
+}
+
+.course-player-placeholder > video {
+  background: #142d35;
 }
 
 .course-player-overlay {

@@ -16,6 +16,10 @@ public record AcademyEnrolledCourseResponse(
         Integer participants,
         String comment,
         String description,
+        String semesterPlan,
+        String overview,
+        String video,
+        String videoFilePath,
         String link,
         LocalDateTime enrolledAt
 ) {

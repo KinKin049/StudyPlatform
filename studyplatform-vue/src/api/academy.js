@@ -7,6 +7,20 @@ export const fetchAcademyCourses = (resource) => request(`/api/academy/${resourc
 export const fetchAcademyCourse = (resource, id) =>
   request(`/api/academy/${resource}/${encodeURIComponent(id)}`)
 
+export const publishOnlineOpenCourse = (payload) =>
+  request('/api/academy/online-open-courses', {
+    method: 'POST',
+    body: payload,
+  })
+
+export const fetchMyPublishedOnlineOpenCourses = () =>
+  request('/api/academy/online-open-courses/teacher/mine')
+
+export const deletePublishedOnlineOpenCourse = (id) =>
+  request(`/api/academy/online-open-courses/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  })
+
 export const fetchMyAcademyCourses = (userId = 1) =>
   request(`/api/academy/my-courses?userId=${encodeURIComponent(userId)}`)
 

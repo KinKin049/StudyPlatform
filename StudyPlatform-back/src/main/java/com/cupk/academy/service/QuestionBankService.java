@@ -49,7 +49,6 @@ public class QuestionBankService {
     private static final String LUOGU_BASE_URL = "https://www.luogu.com.cn";
     private static final int MAX_IMPORT_PAGES = 3;
     private static final int MAX_IMPORT_PROBLEMS = 30;
-    private static final long DEFAULT_USER_ID = 1L;
 
     private final QuestionBankRepository questionBankRepository;
     private final ObjectMapper objectMapper;
@@ -97,7 +96,7 @@ public class QuestionBankService {
                 .toList();
     }
 
-    public CourseQuestionBankDetailResponse getCourseQuestionBank(String code, int page, int size, String keyword) {
+    public CourseQuestionBankDetailResponse getCourseQuestionBank(String code, int page, int size, String keyword, long userId) {
         CourseQuestionBankSetResponse bank = questionBankRepository.findCourseQuestionBankSet(code)
                 .map(this::withBankCover)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "课程题库不存在"));
@@ -109,7 +108,7 @@ public class QuestionBankService {
                         keyword,
                         normalizedPage,
                         normalizedSize,
-                        DEFAULT_USER_ID
+                        userId
                 );
         return new CourseQuestionBankDetailResponse(
                 bank,
@@ -121,9 +120,9 @@ public class QuestionBankService {
         );
     }
 
-    public TypeWarriorWordPoolResponse getTypeWarriorWordPool() {
+    public TypeWarriorWordPoolResponse getTypeWarriorWordPool(long userId) {
         Map<String, AggregatedTypeWarriorWord> wordsByKeyword = new LinkedHashMap<>();
-        for (QuestionBankRepository.TypeWarriorVocabularyRow row : questionBankRepository.findTypeWarriorVocabularyRows(DEFAULT_USER_ID)) {
+        for (QuestionBankRepository.TypeWarriorVocabularyRow row : questionBankRepository.findTypeWarriorVocabularyRows(userId)) {
             String normalizedWord = normalizeTypeWarriorWord(row.stem());
             if (normalizedWord.isBlank()) {
                 continue;
@@ -170,11 +169,12 @@ public class QuestionBankService {
         return new TypeWarriorWordPoolResponse(words);
     }
 
-    public QuestionBankMistakeSummaryResponse getMistakeSummary() {
-        return questionBankRepository.findMistakeSummary(DEFAULT_USER_ID);
+    public QuestionBankMistakeSummaryResponse getMistakeSummary(long userId) {
+        return questionBankRepository.findMistakeSummary(userId);
     }
 
     public QuestionBankMistakePageResponse listMistakes(
+            long userId,
             String setCode,
             String status,
             String keyword,
@@ -184,7 +184,7 @@ public class QuestionBankService {
         int normalizedPage = Math.max(page, 0);
         int normalizedSize = Math.max(1, Math.min(size, 100));
         return questionBankRepository.findMistakes(
-                DEFAULT_USER_ID,
+                userId,
                 setCode,
                 status,
                 keyword,
@@ -193,7 +193,7 @@ public class QuestionBankService {
         );
     }
 
-    public QuestionBankMistakeAnswerResponse recordMistakeAnswer(QuestionBankMistakeAnswerRequest request) {
+    public QuestionBankMistakeAnswerResponse recordMistakeAnswer(long userId, QuestionBankMistakeAnswerRequest request) {
         if (request == null || request.questionId() <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "题目编号无效");
         }
@@ -211,7 +211,7 @@ public class QuestionBankService {
 
         if (correct) {
             questionBankRepository.applyCorrectMistakeReview(
-                    DEFAULT_USER_ID,
+                    userId,
                     reference.questionId(),
                     selectedAnswer,
                     correctAnswer,
@@ -219,7 +219,7 @@ public class QuestionBankService {
             );
         } else {
             questionBankRepository.upsertWrongMistake(
-                    DEFAULT_USER_ID,
+                    userId,
                     reference.questionId(),
                     selectedAnswer,
                     correctAnswer
@@ -227,7 +227,7 @@ public class QuestionBankService {
         }
 
         QuestionBankRepository.QuestionBankMistakeState state =
-                questionBankRepository.findMistakeState(DEFAULT_USER_ID, reference.questionId())
+                questionBankRepository.findMistakeState(userId, reference.questionId())
                         .orElse(new QuestionBankRepository.QuestionBankMistakeState(0, 0, false));
         boolean inMistakeBook = state.wrongCount() > 0 && !state.mastered();
         String message;
@@ -251,36 +251,36 @@ public class QuestionBankService {
         );
     }
 
-    public QuestionBankFavoriteSummaryResponse getFavoriteSummary() {
-        return questionBankRepository.findFavoriteSummary(DEFAULT_USER_ID);
+    public QuestionBankFavoriteSummaryResponse getFavoriteSummary(long userId) {
+        return questionBankRepository.findFavoriteSummary(userId);
     }
 
-    public QuestionBankFavoritePageResponse listFavorites(String setCode, String keyword, int page, int size) {
+    public QuestionBankFavoritePageResponse listFavorites(long userId, String setCode, String keyword, int page, int size) {
         int normalizedPage = Math.max(page, 0);
         int normalizedSize = Math.max(1, Math.min(size, 100));
-        return questionBankRepository.findFavorites(DEFAULT_USER_ID, setCode, keyword, normalizedPage, normalizedSize);
+        return questionBankRepository.findFavorites(userId, setCode, keyword, normalizedPage, normalizedSize);
     }
 
-    public QuestionBankFavoriteToggleResponse addFavorite(QuestionBankFavoriteRequest request) {
+    public QuestionBankFavoriteToggleResponse addFavorite(long userId, QuestionBankFavoriteRequest request) {
         long questionId = validateFavoriteQuestion(request);
-        questionBankRepository.addFavorite(DEFAULT_USER_ID, questionId);
+        questionBankRepository.addFavorite(userId, questionId);
         return new QuestionBankFavoriteToggleResponse(
                 questionId,
                 true,
-                questionBankRepository.countFavorites(DEFAULT_USER_ID),
+                questionBankRepository.countFavorites(userId),
                 "已收藏题目"
         );
     }
 
-    public QuestionBankFavoriteToggleResponse removeFavorite(long questionId) {
+    public QuestionBankFavoriteToggleResponse removeFavorite(long userId, long questionId) {
         if (questionId <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "题目编号无效");
         }
-        questionBankRepository.removeFavorite(DEFAULT_USER_ID, questionId);
+        questionBankRepository.removeFavorite(userId, questionId);
         return new QuestionBankFavoriteToggleResponse(
                 questionId,
                 false,
-                questionBankRepository.countFavorites(DEFAULT_USER_ID),
+                questionBankRepository.countFavorites(userId),
                 "已取消收藏"
         );
     }

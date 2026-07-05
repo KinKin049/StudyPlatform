@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class LadderJumpQuestionService {
-    private static final long DEFAULT_USER_ID = 1L;
     private static final Pattern OPTION_PREFIX_PATTERN = Pattern.compile("^[A-Da-d][\\\\.、:：)）\\s]+");
 
     private final QuestionBankRepository questionBankRepository;
@@ -38,11 +37,11 @@ public class LadderJumpQuestionService {
                 .toList();
     }
 
-    public List<LadderJumpQuestionResponse> listQuestions(String setCode) {
+    public List<LadderJumpQuestionResponse> listQuestions(long userId, String setCode) {
         String normalizedSetCode = normalizeSetCode(setCode);
 
         List<CourseQuestionBankQuestionResponse> mistakeQuestions = new ArrayList<>(
-                questionBankRepository.findActiveSingleChoiceMistakeQuestions(DEFAULT_USER_ID, normalizedSetCode)
+                questionBankRepository.findActiveSingleChoiceMistakeQuestions(userId, normalizedSetCode)
         );
         List<CourseQuestionBankQuestionResponse> allQuestions = new ArrayList<>(
                 questionBankRepository.findAllSingleChoiceQuestions(normalizedSetCode)

@@ -10,11 +10,19 @@ import com.cupk.academy.dto.AcademyHomeItemResponse;
 import com.cupk.academy.dto.AcademyHomeSectionResponse;
 import com.cupk.academy.dto.AcademyTextbookResponse;
 import com.cupk.academy.repository.AcademyRepository;
+import com.cupk.auth.dto.AuthUserResponse;
+import com.cupk.auth.repository.AuthUserRepository;
+import java.io.IOException;
 import java.net.URLEncoder;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
@@ -22,9 +30,11 @@ public class AcademyService {
     private static final long DEFAULT_USER_ID = 1L;
 
     private final AcademyRepository academyRepository;
+    private final AuthUserRepository authUserRepository;
 
-    public AcademyService(AcademyRepository academyRepository) {
+    public AcademyService(AcademyRepository academyRepository, AuthUserRepository authUserRepository) {
         this.academyRepository = academyRepository;
+        this.authUserRepository = authUserRepository;
     }
 
     public List<AcademyCourseResponse> listOnlineOpenCourses() {
@@ -54,6 +64,25 @@ public class AcademyService {
     public AcademyCourseResponse getOnlineOpenCourse(String id) {
         return withCourseCover(academyRepository.findOnlineOpenCourseById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "课程不存在")));
+    }
+
+    public List<AcademyCourseResponse> listMyPublishedOnlineOpenCourses(Long userId) {
+        long teacherUserId = normalizeUserId(userId);
+        ensureTeacher(teacherUserId);
+        return withCourseCovers(academyRepository.findPublishedOnlineOpenCourses(teacherUserId));
+    }
+
+    public AcademyCourseEnrollmentResponse deletePublishedOnlineOpenCourse(Long userId, String courseId) {
+        long teacherUserId = normalizeUserId(userId);
+        ensureTeacher(teacherUserId);
+        if (courseId == null || courseId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "课程编号不能为空");
+        }
+        int deleted = academyRepository.deletePublishedOnlineOpenCourse(teacherUserId, courseId.trim());
+        if (deleted <= 0) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "课程不存在或不属于当前教师");
+        }
+        return new AcademyCourseEnrollmentResponse(false, "课程已删除");
     }
 
     public List<AcademyCourseResponse> listGeneralCourses() {
@@ -107,6 +136,49 @@ public class AcademyService {
 
     public List<AcademyCategoryResponse> listTextbookCategories() {
         return academyRepository.findCategories("excellent_textbooks");
+    }
+
+    public AcademyCourseResponse publishOnlineOpenCourse(
+            Long userId,
+            String courseName,
+            String startTime,
+            String semesterPlan,
+            String courseDetail,
+            String courseOverview,
+            MultipartFile cover,
+            MultipartFile video
+    ) {
+        long publisherUserId = normalizeUserId(userId);
+        AuthUserResponse user = ensureTeacher(publisherUserId);
+        String normalizedName = clean(courseName, 120);
+        String normalizedStartTime = clean(startTime, 64);
+        String normalizedSemesterPlan = clean(semesterPlan, 512);
+        String normalizedDetail = clean(courseDetail, 4000);
+        String normalizedOverview = clean(courseOverview, 1200);
+        if (normalizedName.isBlank()
+                || normalizedStartTime.isBlank()
+                || normalizedSemesterPlan.isBlank()
+                || normalizedDetail.isBlank()
+                || normalizedOverview.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "课程信息不能为空");
+        }
+
+        String coverPath = saveCourseFile(publisherUserId, cover, "cover", List.of("jpg", "jpeg", "png", "webp"), true);
+        String videoPath = saveCourseFile(publisherUserId, video, "video", List.of("mp4", "webm", "ogg", "mov"), true);
+        String courseId = academyRepository.publishOnlineOpenCourse(
+                publisherUserId,
+                normalizedName,
+                clean(user.teacherName(), 80),
+                clean(user.school(), 120),
+                "教师发布",
+                normalizedStartTime,
+                normalizedSemesterPlan,
+                normalizedDetail,
+                normalizedOverview,
+                coverPath,
+                videoPath
+        );
+        return getOnlineOpenCourse(courseId);
     }
 
     public AcademyCourseEnrollmentResponse enrollCourse(String resourceType, String courseId, Long userId) {
@@ -175,8 +247,20 @@ public class AcademyService {
                 course.participants(),
                 course.comment(),
                 course.description(),
+                course.semesterPlan(),
+                course.overview(),
+                fileUrl(course.videoFilePath()),
+                course.videoFilePath(),
                 course.link()
         );
+    }
+
+    private AuthUserResponse ensureTeacher(long userId) {
+        AuthUserResponse user = authUserRepository.findResponseById(userId);
+        if (!"teacher".equals(user.roleType())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "只有教师可以使用该功能");
+        }
+        return user;
     }
 
     private AcademyEnrolledCourseResponse withEnrolledCourseCover(AcademyEnrolledCourseResponse course) {
@@ -194,6 +278,10 @@ public class AcademyService {
                 course.participants(),
                 course.comment(),
                 course.description(),
+                course.semesterPlan(),
+                course.overview(),
+                fileUrl(course.videoFilePath()),
+                course.videoFilePath(),
                 course.link(),
                 course.enrolledAt()
         );
@@ -216,5 +304,70 @@ public class AcademyService {
                 .reduce((left, right) -> left + "/" + right)
                 .orElse("");
         return "/files/" + encodedPath;
+    }
+
+    private String saveCourseFile(
+            long userId,
+            MultipartFile file,
+            String type,
+            List<String> allowedExtensions,
+            boolean required
+    ) {
+        if (file == null || file.isEmpty()) {
+            if (required) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请上传课程" + ("cover".equals(type) ? "封面" : "视频"));
+            }
+            return null;
+        }
+        String extension = resolveExtension(file.getOriginalFilename());
+        if (!allowedExtensions.contains(extension)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "课程" + ("cover".equals(type) ? "封面" : "视频") + "格式不支持");
+        }
+        Path storageDirectory = resolveStoragePath()
+                .resolve("teacher_courses")
+                .resolve(String.valueOf(userId))
+                .normalize();
+        String fileName = type + "-" + UUID.randomUUID() + "." + extension;
+        Path targetPath = storageDirectory.resolve(fileName).normalize();
+        if (!targetPath.startsWith(storageDirectory)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "文件名不合法");
+        }
+        try {
+            Files.createDirectories(storageDirectory);
+            file.transferTo(targetPath);
+        } catch (IOException ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "课程文件保存失败", ex);
+        }
+        return "teacher_courses/" + userId + "/" + fileName;
+    }
+
+    private String resolveExtension(String originalFilename) {
+        String fileName = originalFilename == null ? "" : originalFilename.toLowerCase(Locale.ROOT);
+        int dotIndex = fileName.lastIndexOf('.');
+        if (dotIndex < 0 || dotIndex == fileName.length() - 1) {
+            return "";
+        }
+        return fileName.substring(dotIndex + 1);
+    }
+
+    private Path resolveStoragePath() {
+        Path currentDirectory = Path.of("").toAbsolutePath();
+        Path directStorage = currentDirectory.resolve("storage").normalize();
+        if (Files.isDirectory(directStorage)) {
+            return directStorage;
+        }
+        Path backendStorage = currentDirectory.resolve("StudyPlatform-back").resolve("storage").normalize();
+        if (Files.isDirectory(backendStorage)) {
+            return backendStorage;
+        }
+        return directStorage;
+    }
+
+    private String clean(String value, int maxLength) {
+        String normalized = value == null ? "" : value.trim();
+        if (maxLength > 0 && normalized.length() > maxLength) {
+            return normalized.substring(0, maxLength);
+        }
+        return normalized;
     }
 }
