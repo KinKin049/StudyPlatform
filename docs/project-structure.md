@@ -106,7 +106,8 @@ src/main/resources/
 
 ```
 StudyPlatform-back/
-├── sql/                                 # 额外SQL脚本
+├── src/main/resources/db/migration/      # Flyway自动迁移SQL
+├── src/main/resources/db/manual/         # 手工执行SQL，如建库脚本
 ├── storage/                             # 文件存储(教材图片、题库封面)
 ├── logs/                                # 日志文件
 └── docs/                                # 模块文档
