@@ -51,12 +51,14 @@ const sections = [
   },
   {
     title: '优惠券与学习权益',
-    subtitle: '适合后续扩展为课程资料、答疑、考试模拟等权益。',
+    subtitle: '展示满减券与折扣券，后续可接入课程资料、教材购买、答疑服务等真实抵扣场景。',
     items: [
-      { name: '课程资料兑换券', tag: '资料下载', price: 500, status: '暂未开放' },
-      { name: '模拟考试券', tag: '考试训练', price: 800, status: '暂未开放' },
-      { name: '教师答疑券', tag: '人工辅导', price: 1500, status: '暂未开放' },
-      { name: '错题智能分析次数', tag: 'AI 分析', price: 300, status: '暂未开放' },
+      { name: '满 30 元减 5 元优惠券', tag: '课程资料', price: 300, status: '样式展示' },
+      { name: '满 80 元减 15 元优惠券', tag: '教材购买', price: 700, status: '样式展示' },
+      { name: '满 150 元减 35 元优惠券', tag: '学习礼包', price: 1200, status: '样式展示' },
+      { name: '课程资料 9 折券', tag: '折扣优惠', price: 500, status: '样式展示' },
+      { name: '教材购买 8.5 折券', tag: '折扣优惠', price: 900, status: '样式展示' },
+      { name: '答疑服务 8 折券', tag: '学习权益', price: 1500, status: '样式展示' },
     ],
   },
   {

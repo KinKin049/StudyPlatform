@@ -82,11 +82,11 @@ public class ProfileRepository {
         ensureUserProfile(userId);
         String sql = """
                 SELECT p.user_id, p.display_name, p.handle, p.role_label,
-                       COALESCE(a.role_type, '') AS role_type,
-                       COALESCE(a.teacher_name, '') AS teacher_name,
+                       COALESCE(u.role_type, CASE WHEN u.role = 'TEACHER' THEN 'teacher' ELSE 'student' END, '') AS role_type,
+                       COALESCE(u.teacher_name, '') AS teacher_name,
                        p.bio, p.location, p.school, p.avatar_path
                 FROM profile_user_profiles p
-                LEFT JOIN auth_users a ON a.id = p.user_id
+                LEFT JOIN users u ON u.id = p.user_id
                 WHERE p.user_id = ?
                 LIMIT 1
                 """;
@@ -437,16 +437,16 @@ public class ProfileRepository {
             return;
         }
 
-        int insertedFromAuth = jdbcTemplate.update(
+        int insertedFromUser = jdbcTemplate.update(
                 """
                 INSERT INTO profile_user_profiles
                   (user_id, display_name, handle, role_label, bio, location, school)
                 SELECT id,
-                       username,
-                       CONCAT('@', username),
-                       CASE WHEN role_type = 'teacher' THEN '教师' ELSE '学生' END,
+                       COALESCE(NULLIF(nickname, ''), username),
+                       CONCAT('@', COALESCE(NULLIF(nickname, ''), username)),
+                       CASE WHEN COALESCE(role_type, '') = 'teacher' OR role = 'TEACHER' THEN '教师' ELSE '学生' END,
                        CASE
-                         WHEN role_type = 'teacher' AND teacher_name IS NOT NULL AND teacher_name <> ''
+                         WHEN (COALESCE(role_type, '') = 'teacher' OR role = 'TEACHER') AND teacher_name IS NOT NULL AND teacher_name <> ''
                            THEN CONCAT('教师：', teacher_name)
                          WHEN learning_goal IS NOT NULL AND learning_goal <> ''
                            THEN CONCAT('目标：', learning_goal)
@@ -454,12 +454,12 @@ public class ProfileRepository {
                        END,
                        'China',
                        COALESCE(NULLIF(school, ''), 'StudyPlatform')
-                FROM auth_users
+                FROM users
                 WHERE id = ?
                 """,
                 userId
         );
-        if (insertedFromAuth > 0) {
+        if (insertedFromUser > 0) {
             return;
         }
 

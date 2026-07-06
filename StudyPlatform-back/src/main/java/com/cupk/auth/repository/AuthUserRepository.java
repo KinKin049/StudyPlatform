@@ -4,9 +4,12 @@ import com.cupk.auth.dto.AuthOnboardingRequest;
 import com.cupk.auth.dto.AuthUserResponse;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -21,18 +24,30 @@ public class AuthUserRepository {
     }
 
     public boolean existsByEmail(String email) {
-        return count("SELECT COUNT(*) FROM auth_users WHERE email = ?", email) > 0;
+        return count("SELECT COUNT(*) FROM users WHERE email = ?", email) > 0;
     }
 
     public long insertUser(String username, String email, String passwordHash) {
         String sql = """
-                INSERT INTO auth_users (username, email, password_hash, agreement_accepted)
-                VALUES (?, ?, ?, 1)
+                INSERT INTO users
+                  (username, email, password_hash, nickname, role, role_type, enabled,
+                   agreement_accepted, onboarding_completed)
+                VALUES (?, ?, ?, ?, 'STUDENT', 'student', 1, 1, 0)
                 """;
-        jdbcTemplate.update(sql, username, email, passwordHash);
-        Long id = jdbcTemplate.queryForObject("SELECT LAST_INSERT_ID()", Long.class);
-        long userId = id == null ? 0L : id;
-        syncPlatformUserAfterRegistration(userId, username, passwordHash);
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(connection -> {
+            var ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            ps.setString(1, email);
+            ps.setString(2, email);
+            ps.setString(3, passwordHash);
+            ps.setString(4, username);
+            return ps;
+        }, keyHolder);
+        Number key = keyHolder.getKey();
+        long userId = key == null ? 0L : key.longValue();
+        if (userId > 0) {
+            jdbcTemplate.update("UPDATE users SET username = ? WHERE id = ?", username + "_" + userId, userId);
+        }
         syncProfileAfterRegistration(userId, username);
         return userId;
     }
@@ -40,9 +55,16 @@ public class AuthUserRepository {
     public AuthUserRow findByEmail(String email) {
         List<AuthUserRow> rows = jdbcTemplate.query(
                 """
-                SELECT id, username, email, password_hash, role_type, learning_goal, interests_json,
+                SELECT id, COALESCE(NULLIF(nickname, ''), username) AS username,
+                       email, password_hash,
+                       COALESCE(NULLIF(role_type, ''),
+                         CASE WHEN role = 'TEACHER' THEN 'teacher'
+                              WHEN role = 'ADMIN' THEN 'admin'
+                              ELSE 'student' END
+                       ) AS role_type,
+                       learning_goal, interests_json,
                        school, teacher_name, pet_key, onboarding_completed
-                FROM auth_users
+                FROM users
                 WHERE email = ?
                 LIMIT 1
                 """,
@@ -55,9 +77,16 @@ public class AuthUserRepository {
     public AuthUserResponse findResponseById(long userId) {
         return jdbcTemplate.queryForObject(
                 """
-                SELECT id, username, email, password_hash, role_type, learning_goal, interests_json,
+                SELECT id, COALESCE(NULLIF(nickname, ''), username) AS username,
+                       email, password_hash,
+                       COALESCE(NULLIF(role_type, ''),
+                         CASE WHEN role = 'TEACHER' THEN 'teacher'
+                              WHEN role = 'ADMIN' THEN 'admin'
+                              ELSE 'student' END
+                       ) AS role_type,
+                       learning_goal, interests_json,
                        school, teacher_name, pet_key, onboarding_completed
-                FROM auth_users
+                FROM users
                 WHERE id = ?
                 LIMIT 1
                 """,
@@ -67,15 +96,6 @@ public class AuthUserRepository {
     }
 
     public void updatePassword(long userId, String passwordHash) {
-        jdbcTemplate.update(
-                """
-                UPDATE auth_users
-                SET password_hash = ?
-                WHERE id = ?
-                """,
-                passwordHash,
-                userId
-        );
         jdbcTemplate.update(
                 """
                 UPDATE users
@@ -89,53 +109,30 @@ public class AuthUserRepository {
 
     public void updateOnboarding(AuthOnboardingRequest request, String interestsJson) {
         String sql = """
-                UPDATE auth_users
-                SET role_type = ?, learning_goal = ?, interests_json = CAST(? AS JSON),
-                    school = ?, teacher_name = ?, pet_key = ?, onboarding_completed = 1
+                UPDATE users
+                SET role_type = ?,
+                    role = CASE WHEN ? = 'teacher' THEN 'TEACHER'
+                                WHEN ? = 'admin' THEN 'ADMIN'
+                                ELSE 'STUDENT' END,
+                    learning_goal = ?, interests_json = CAST(? AS JSON),
+                    school = ?, teacher_name = ?, pet_key = ?, onboarding_completed = 1,
+                    nickname = COALESCE(NULLIF(?, ''), nickname)
                 WHERE id = ?
                 """;
         jdbcTemplate.update(
                 sql,
+                request.roleType(),
+                request.roleType(),
                 request.roleType(),
                 request.learningGoal(),
                 interestsJson,
                 request.school(),
                 request.teacherName(),
                 request.petKey(),
-                request.userId()
-        );
-        syncProfileAfterOnboarding(request);
-        syncPlatformUserAfterOnboarding(request);
-    }
-
-    private void syncPlatformUserAfterRegistration(long userId, String username, String passwordHash) {
-        if (userId <= 0) {
-            return;
-        }
-        String platformUsername = username + "_" + userId;
-        jdbcTemplate.update(
-                """
-                INSERT IGNORE INTO users (id, username, password_hash, nickname, role, enabled)
-                VALUES (?, ?, ?, ?, 'STUDENT', 1)
-                """,
-                userId,
-                platformUsername,
-                passwordHash,
-                username
-        );
-    }
-
-    private void syncPlatformUserAfterOnboarding(AuthOnboardingRequest request) {
-        jdbcTemplate.update(
-                """
-                UPDATE users
-                SET role = ?, nickname = COALESCE(NULLIF(?, ''), nickname)
-                WHERE id = ?
-                """,
-                "teacher".equals(request.roleType()) ? "TEACHER" : "STUDENT",
                 "teacher".equals(request.roleType()) ? request.teacherName() : null,
                 request.userId()
         );
+        syncProfileAfterOnboarding(request);
     }
 
     private void syncProfileAfterRegistration(long userId, String username) {

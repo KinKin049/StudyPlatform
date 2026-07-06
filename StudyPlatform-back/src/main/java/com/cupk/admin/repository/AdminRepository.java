@@ -37,8 +37,15 @@ public class AdminRepository {
         try {
             return Optional.ofNullable(jdbcTemplate.queryForObject(
                     """
-                    SELECT id, username, email, role_type
-                    FROM auth_users
+                    SELECT id,
+                           COALESCE(NULLIF(nickname, ''), username) AS username,
+                           email,
+                           COALESCE(NULLIF(role_type, ''),
+                             CASE WHEN role = 'TEACHER' THEN 'teacher'
+                                  WHEN role = 'ADMIN' THEN 'admin'
+                                  ELSE 'student' END
+                           ) AS role_type
+                    FROM users
                     WHERE id = ?
                     LIMIT 1
                     """,
@@ -58,13 +65,26 @@ public class AdminRepository {
     public List<AdminUserResponse> findUsers() {
         return jdbcTemplate.query(
                 """
-                SELECT a.id, a.username, a.email, a.role_type, a.learning_goal, a.school,
-                       a.teacher_name, a.onboarding_completed,
+                SELECT u.id,
+                       COALESCE(NULLIF(u.nickname, ''), u.username) AS username,
+                       u.email,
+                       COALESCE(NULLIF(u.role_type, ''),
+                         CASE WHEN u.role = 'TEACHER' THEN 'teacher'
+                              WHEN u.role = 'ADMIN' THEN 'admin'
+                              ELSE 'student' END
+                       ) AS role_type,
+                       u.learning_goal, u.school, u.teacher_name, u.onboarding_completed,
+                       COALESCE(r.reward_total, 0) + COALESCE(p.admin_coin_adjustment, 0) AS coin_total,
                        COALESCE(p.admin_coin_adjustment, 0) AS admin_coin_adjustment,
                        COALESCE(p.admin_data_note, '') AS admin_data_note
-                FROM auth_users a
-                LEFT JOIN profile_user_profiles p ON p.user_id = a.id
-                ORDER BY CASE WHEN a.email = 'admin@admin.com' THEN 0 ELSE 1 END, a.id ASC
+                FROM users u
+                LEFT JOIN profile_user_profiles p ON p.user_id = u.id
+                LEFT JOIN (
+                  SELECT user_id, SUM(amount) AS reward_total
+                  FROM coin_reward_records
+                  GROUP BY user_id
+                ) r ON r.user_id = u.id
+                ORDER BY CASE WHEN u.email = 'admin@admin.com' THEN 0 ELSE 1 END, u.id ASC
                 """,
                 this::mapUser
         );
@@ -74,13 +94,26 @@ public class AdminRepository {
         try {
             return Optional.ofNullable(jdbcTemplate.queryForObject(
                     """
-                    SELECT a.id, a.username, a.email, a.role_type, a.learning_goal, a.school,
-                           a.teacher_name, a.onboarding_completed,
+                    SELECT u.id,
+                           COALESCE(NULLIF(u.nickname, ''), u.username) AS username,
+                           u.email,
+                           COALESCE(NULLIF(u.role_type, ''),
+                             CASE WHEN u.role = 'TEACHER' THEN 'teacher'
+                                  WHEN u.role = 'ADMIN' THEN 'admin'
+                                  ELSE 'student' END
+                           ) AS role_type,
+                           u.learning_goal, u.school, u.teacher_name, u.onboarding_completed,
+                           COALESCE(r.reward_total, 0) + COALESCE(p.admin_coin_adjustment, 0) AS coin_total,
                            COALESCE(p.admin_coin_adjustment, 0) AS admin_coin_adjustment,
                            COALESCE(p.admin_data_note, '') AS admin_data_note
-                    FROM auth_users a
-                    LEFT JOIN profile_user_profiles p ON p.user_id = a.id
-                    WHERE a.id = ?
+                    FROM users u
+                    LEFT JOIN profile_user_profiles p ON p.user_id = u.id
+                    LEFT JOIN (
+                      SELECT user_id, SUM(amount) AS reward_total
+                      FROM coin_reward_records
+                      GROUP BY user_id
+                    ) r ON r.user_id = u.id
+                    WHERE u.id = ?
                     LIMIT 1
                     """,
                     this::mapUser,
@@ -93,7 +126,7 @@ public class AdminRepository {
 
     public boolean emailBelongsToOtherUser(String email, long userId) {
         Long count = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM auth_users WHERE email = ? AND id <> ?",
+                "SELECT COUNT(*) FROM users WHERE email = ? AND id <> ?",
                 Long.class,
                 email,
                 userId
@@ -113,60 +146,44 @@ public class AdminRepository {
             String dataNote,
             String passwordHash
     ) {
+        String displayName = displayName(username, roleType, teacherName);
+        String platformUsername = platformUsername(username, userId);
+        String platformRole = platformRole(roleType);
         if (passwordHash == null || passwordHash.isBlank()) {
             jdbcTemplate.update(
                     """
-                    UPDATE auth_users
-                    SET username = ?, email = ?, role_type = ?, learning_goal = ?, school = ?,
-                        teacher_name = ?, onboarding_completed = 1
+                    UPDATE users
+                    SET username = ?, nickname = ?, email = ?, role_type = ?, role = ?,
+                        learning_goal = ?, school = ?, teacher_name = ?, onboarding_completed = 1
                     WHERE id = ?
                     """,
-                    username,
+                    platformUsername,
+                    displayName,
                     email,
                     roleType,
+                    platformRole,
                     learningGoal,
                     school,
                     teacherName,
-                    userId
-            );
-            jdbcTemplate.update(
-                    """
-                    UPDATE users
-                    SET username = ?, nickname = ?, role = ?
-                    WHERE id = ?
-                    """,
-                    username + "_" + userId,
-                    "teacher".equals(roleType) && !teacherName.isBlank() ? teacherName : username,
-                    "teacher".equals(roleType) ? "TEACHER" : "STUDENT",
                     userId
             );
         } else {
             jdbcTemplate.update(
                     """
-                    UPDATE auth_users
-                    SET username = ?, email = ?, password_hash = ?, role_type = ?, learning_goal = ?, school = ?,
-                        teacher_name = ?, onboarding_completed = 1
+                    UPDATE users
+                    SET username = ?, nickname = ?, email = ?, password_hash = ?, role_type = ?, role = ?,
+                        learning_goal = ?, school = ?, teacher_name = ?, onboarding_completed = 1
                     WHERE id = ?
                     """,
-                    username,
+                    platformUsername,
+                    displayName,
                     email,
                     passwordHash,
                     roleType,
+                    platformRole,
                     learningGoal,
                     school,
                     teacherName,
-                    userId
-            );
-            jdbcTemplate.update(
-                    """
-                    UPDATE users
-                    SET username = ?, password_hash = ?, nickname = ?, role = ?
-                    WHERE id = ?
-                    """,
-                    username + "_" + userId,
-                    passwordHash,
-                    "teacher".equals(roleType) && !teacherName.isBlank() ? teacherName : username,
-                    "teacher".equals(roleType) ? "TEACHER" : "STUDENT",
                     userId
             );
         }
@@ -187,7 +204,7 @@ public class AdminRepository {
                   admin_data_note = VALUES(admin_data_note)
                 """,
                 userId,
-                "teacher".equals(roleType) && !teacherName.isBlank() ? teacherName : username,
+                displayName,
                 "@" + username,
                 "teacher".equals(roleType) ? "教师" : "学生",
                 "teacher".equals(roleType) ? "教师：" + teacherName : "目标：" + learningGoal,
@@ -208,8 +225,7 @@ public class AdminRepository {
         jdbcTemplate.update("DELETE FROM coin_reward_records WHERE user_id = ?", userId);
         jdbcTemplate.update("DELETE FROM teacher_published_courses WHERE publisher_user_id = ?", userId);
         jdbcTemplate.update("DELETE FROM profile_user_profiles WHERE user_id = ?", userId);
-        jdbcTemplate.update("DELETE FROM users WHERE id = ?", userId);
-        return jdbcTemplate.update("DELETE FROM auth_users WHERE id = ?", userId);
+        return jdbcTemplate.update("DELETE FROM users WHERE id = ?", userId);
     }
 
     public List<AdminCourseResponse> findCourses(String resourceType) {
@@ -516,6 +532,7 @@ public class AdminRepository {
                 rs.getString("learning_goal"),
                 rs.getString("school"),
                 rs.getString("teacher_name"),
+                rs.getLong("coin_total"),
                 rs.getLong("admin_coin_adjustment"),
                 rs.getString("admin_data_note"),
                 rs.getBoolean("onboarding_completed")
@@ -617,6 +634,27 @@ public class AdminRepository {
         } catch (Exception ex) {
             return null;
         }
+    }
+
+    private String displayName(String username, String roleType, String teacherName) {
+        if ("teacher".equals(roleType) && teacherName != null && !teacherName.isBlank()) {
+            return teacherName;
+        }
+        return username;
+    }
+
+    private String platformUsername(String username, long userId) {
+        return username + "_" + userId;
+    }
+
+    private String platformRole(String roleType) {
+        if ("teacher".equals(roleType)) {
+            return "TEACHER";
+        }
+        if ("admin".equals(roleType)) {
+            return "ADMIN";
+        }
+        return "STUDENT";
     }
 
     private List<String> parseStringList(String json) {
