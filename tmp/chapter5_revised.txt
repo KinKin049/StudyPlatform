@@ -1,0 +1,56 @@
+5  系统详细设计
+5.1  在线学堂模块
+5.1.1  模块描述
+在线学堂模块是 StudyPlatform 承载课程学习、作业考试和精品教材服务的核心业务模块，负责把不同来源的课程资源组织为统一的学习入口，并把学习行为继续沉淀到用户画像和金币激励中心。前端由在线学堂外壳页（AcademyPage.vue）、在线学堂首页（AcademyHome.vue）、我的班级页（AcademyMyClass.vue）、我的课程/作业/考试聚合页（AcademyAggregatePage.vue）、作业详情页（AcademyAssignmentDetail.vue）、考试介绍页（AcademyExamIntro.vue）、考试作答页（AcademyExamDetail.vue）、在线开放课程列表页（AcademyOpenCourses.vue）、通识课程列表页（AcademyGeneralCourses.vue）、微专业课程列表页（AcademyMicroMajors.vue）、课程详情与视频播放页（AcademyCourseDetail.vue）、精品教材列表页（AcademyTextbooks.vue）、教材详情与购买页（AcademyTextbookDetail.vue）以及教材购物车与结算页（AcademyTextbookCart.vue）组成。后端主要由 AcademyController、AcademyService、AcademyAssignmentService 和 AcademyExamService 提供 REST 接口与业务处理。
+模块设计采用“资源类型 + 资源编号”的抽象方式，将在线开放课程、通识课程和微专业课程分别映射为 online-open-courses、general-courses 和 micro-major-courses。前端路由把 resource、listPath、moduleTitle 和 courseId 传入课程详情页，使同一套详情、加入课程、评价和视频学习逻辑可以复用于三类课程，同时又保留不同课程来源在分类、学校、教师、封面和来源链接上的差异。
+5.1.2  课程资源聚合与详情展示
+课程资源聚合由 useAcademyList.js 统一完成。该组合函数同时请求分类接口和资源列表接口，按“全部/分类”按钮、关键词和分页参数生成前端可展示的课程卡片。在线开放课程、通识课程、微专业课程和精品教材均复用该机制，只是搜索字段分别对应课程名称、教师、学校、分类或教材名称、主编、出版社、ISBN 等业务字段。后端根据资源类型分别查询 online_open_courses、general_courses、micro_major_courses 和 excellent_textbooks 等表，并返回封面、来源链接、参与人数、课程介绍等展示信息。
+课程详情页（AcademyCourseDetail.vue）根据路由传入的 resource 和 courseId 调用 fetchAcademyCourse(resource, id)，展示课程封面、教师、学校、开课时间、课程说明、评价列表和视频资源。封面与视频地址通过 resolveResourceUrl 统一处理，既兼容外部采集链接，也兼容教师上传后保存到本地 storage/teacher_courses 目录的资源文件。课程评价通过 /reviews 接口独立加载和提交，避免课程基础信息与用户互动数据相互耦合。
+5.1.3  课程加入、视频学习与作业考试
+课程加入流程以“平台内部资源”为准，而不是直接依赖外部网站页面地址。系统在课程采集/导入阶段从中国大学MOOC、超星、雨课堂、智慧树等来源保留 external_course_id、source_url、cover_url 和 cover_file_path 等字段；用户点击“立即参加”时，前端调用 enrollAcademyCourse(resource, id, { userId })，后端先通过 ensureCourseExists 校验对应资源类型下课程存在，再写入 academy_course_enrollments 关系记录。这样既能追溯课程来源，也能保证加入关系属于平台自身数据闭环。
+视频学习由 useVideoLearningTimeTracker 封装。该逻辑只在视频处于 play/playing 状态且页面可见时累计学习时长，在 pause、ended、waiting、页面隐藏或离开页面时通过 /api/profile/learning-time 上报 moduleType=video、targetCode 和 durationSeconds。后端 ProfileService 保存学习时长记录后交由 CoinRewardService 按 10 分钟一个结算单元计算金币，避免前端直接决定奖励数量。
+作业与考试入口由在线学堂首页和聚合页共同承载。我的课程/作业/考试聚合页（AcademyAggregatePage.vue）通过 variant 区分三类数据；作业详情页支持草稿保存和最终提交；考试介绍页负责展示考试说明，考试作答页负责开始考试、保存草稿和提交试卷。考试与作业详情路由配置 hidePet 元数据，答题过程中隐藏 AI 宠物浮窗，减少对严肃作答场景的干扰。
+5.1.4  精品教材浏览与教材订单
+精品教材列表页（AcademyTextbooks.vue）复用 useAcademyList('textbooks') 实现分类筛选、关键词检索和分页展示。教材基础数据在导入阶段保留 external_textbook_id、source_url、cover_url、cover_file_path、ISBN、出版社和出版日期等字段，来源主要对应中国大学MOOC精品教材页面；教材详情扩展信息由 academy_textbook_details 表保存推荐语、原价、折扣价、阅读人数、内容概述、目录和评论文本，使列表数据与商店化详情数据分层维护。
+教材详情与购买页（AcademyTextbookDetail.vue）支持教材介绍、目录展开、购物车、立即购买、模拟支付和购买后评论。购物车页（AcademyTextbookCart.vue）支持勾选教材、调整数量、删除条目、计算优惠/运费/应付金额并创建订单。后端通过 academy_textbook_cart_items、academy_textbook_orders 和 academy_textbook_order_items 保存购物车与订单明细，支付接口将订单状态更新为“已支付”，并据此控制用户是否可以发布教材评价。
+表5-1  在线学堂核心功能与技术设计
+5.2  题库练习与金币激励模块
+5.2.1  模块描述
+题库练习模块负责将课程题库、英语词汇题库、错题复习和收藏题目组织为统一练习流程。前端由题库首页（AcademyQuestionBank.vue）、课程题库列表页（AcademyQuestionBankCourses.vue）、课程题库练习页（AcademyQuestionBankCourseDetail.vue）、错题本页（AcademyQuestionBankMistakes.vue）和收藏题目页（AcademyQuestionBankFavorites.vue）组成。后端由 QuestionBankController 和 QuestionBankService 提供题库目录、题目分页、答题记录、错题统计、收藏状态和 Type Warrior 单词池接口。
+题库首页负责展示错题数、收藏数和练习入口；课程题库列表页负责按课程或题库分类组织入口；课程题库练习页负责题目分页、关键词检索、选择题/词汇题作答、收藏切换和学习时长记录；错题本页负责按题库、状态和关键词筛选错题，并在连续答对后更新掌握状态；收藏题目页负责保存重点题目并支持快速复习。
+5.2.2  练习流程与数据闭环
+普通题目练习时，前端在用户提交答案后同时执行两类上报：一是调用 recordQuestionBankAnswer 写入错题/掌握状态，二是调用 recordProfileLearningEvent 写入学习行为事件。对于选择题，系统比对用户选项与正确答案后生成 isCorrect；对于词汇题，系统根据“认识/不认识”等状态写入 vocabularyStatus。题库页面还通过 useLearningTimeTracker 记录 moduleType=question_bank、mistake 或 favorite 的在线时长，使“答题行为”和“复习时长”都能进入用户画像。
+题库数据来源包括平台内置课程题库、英语词汇题库以及洛谷题目导入接口。/api/academy/question-bank/import/luogu 支持按页数和数量导入外部题目，导入后统一进入题库目录和题目分页接口。这样做可以把外部题目抓取、平台题目展示和用户练习记录解耦，便于后续扩展更多题源。
+5.2.3  金币激励结算设计
+金币激励模块的核心原则是“前端提交行为，后端统一结算”。前端只提交学习时长、答题正确性、词汇掌握状态或游戏成绩，奖励金额由后端 CoinRewardService 根据 moduleType、eventType、questionType 和游戏记录统一计算。学习时长按 10 分钟为一个结算单元，视频学习每单元 5 金币，可视化学习每单元 3 金币，油气仿真每单元 4 金币，题库、错题、OJ、作业和考试每单元 2 金币；答对选择题、简答题和掌握词汇可获得事件奖励；万题天梯跳直接按游戏金币结算，Type Warrior 按得分折算。
+金币奖励记录写入 coin_reward_records 表，表中 source_type 和 source_key 用于区分奖励来源，唯一约束 user_id + source_type + source_key 用于幂等去重。ProfileService 在生成个人主页概览时汇总 CoinRewardService.totalCoins(userId)，并叠加管理员调整值，供个人主页和兑换中心展示当前金币余额。
+图5-1  金币激励与学习模块详细设计流程图
+表5-2  题库与金币关键接口设计
+5.3  用户画像、教师端与后台管理模块
+5.3.1  用户画像与账号角色
+用户画像模块用于沉淀学习过程数据，前端主要由个人主页（ProfilePage.vue）展示学习时长、今日学习、答题正确率、词汇掌握、错题统计、游戏成绩、金币余额、近期动态和成就徽章。后端通过 ProfileController 和 ProfileService 提供 /api/profile/overview、/user、/avatar、/events 和 /learning-time 等接口，其中学习事件和学习时长在写入画像数据后会进一步触发金币奖励服务。
+账号与角色能力贯穿登录注册、忘记密码、引导页、个人主页和后台管理。系统通过 AuthLoginPage.vue、AuthRegisterPage.vue、AuthForgotPasswordPage.vue 和 AuthOnboardingPage.vue 完成账号登录、注册、密码重置和初始资料补充；后台用户字段包含 roleType，用于区分学生、教师和管理员。学生主要使用学习与练习功能，教师侧重课程发布与维护，管理员负责平台数据和运营配置。
+5.3.2  教师端课程发布
+教师端不是单独的路由模块，而是嵌入个人主页和在线学堂服务中。教师账号进入个人主页后可使用课程发布面板，调用 publishOnlineOpenCourse 提交课程名称、开课时间、学期安排、课程详情、课程概述、课程封面和课程视频。后端通过 X-Auth-User-Id 获取当前用户，ensureTeacher 校验 roleType=teacher 后才允许继续处理，并将封面和视频保存到 storage/teacher_courses/{userId} 目录。
+教师发布的课程会写入在线开放课程数据源，并标记为“教师发布”分类，便于与外部采集课程共同展示但来源可区分。教师还可以通过 /api/academy/online-open-courses/teacher/mine 查看自己发布的课程，并只能删除属于当前教师的课程，避免不同教师之间误删资源。
+5.3.3  后台管理
+后台管理模块面向管理员账号，前端由后台管理页（AdminPage.vue）承载，后端由 AdminController 和 AdminService 提供用户管理、课程管理、课程评价管理、题库集管理和题目管理接口。管理员可以维护用户角色、教师信息和账号状态，管理在线学堂课程资源，删除不合规评论，维护题库集合与题目内容。后端在进入管理逻辑前校验管理员身份，避免普通学生或教师访问管理接口。
+金币规则和兑换商品属于平台运营配置。当前代码已经实现金币奖励记录、金币余额汇总和兑换中心展示，但兑换中心仍处于展示阶段，页面明确标注“暂未开启真实扣费兑换”。因此报告中将金币规则管理和兑换商品管理作为后台管理的扩展方向，当前实现重点是学习行为奖励结算与余额展示。
+5.4  AI宠物与学习辅助模块
+5.4.1  模块描述
+AI宠物模块由全局浮窗组件（AiPetWidget.vue）实现，不是独立页面路由。组件在应用主要页面中以可拖拽宠物形象存在，并根据路由 meta.hidePet 在作业、考试等严肃作答页面自动隐藏。前端资源包含待机、思考、开心、专注和休息等多组帧动画，组件将当前聊天状态、番茄钟状态和待办完成状态映射为不同情绪。
+AI宠物提供三个层次的学习辅助：第一，聊天问答通过 chatWithAiPet 调用 /api/ai-pet/chat，并携带 pageContext，使后端能够结合当前页面上下文生成学习建议；第二，内置导航意图识别可根据“打开题库”“进入可视化学习”等自然语言跳转到在线学堂、题库、个人主页、可视化和游戏页面；第三，待办清单和番茄钟在本地 localStorage 保存，支持创建学习任务、勾选完成、设置专注/休息时长和累计专注轮次。
+从系统设计角度看，AI宠物是学习动机增强层，与金币激励和兑换中心存在天然关联。当前实现已经具备陪伴、问答、导航、待办和专注计时功能；后续可将兑换中心中的宠物形象、装扮和称号与金币余额关联，使学习奖励能够反馈到宠物外观和互动体验上。
+5.5  可视化、实验与 OJ 模块
+5.5.1  可视化学习模块
+可视化学习模块由可视化实验中心（VisualizationHome.vue）、算法结构可视化页（DataStructureVisualization.vue）、算法演示查看页（AlgorithmDemoViewer.vue）、二维函数图像实验室（FunctionGraph2D.vue）、空间模型实验室入口页（SpaceModelGuide.vue）和三维空间模型页（SpaceModel3D.vue）组成。算法结构可视化主要加载本地演示资源；函数图像实验室基于 ECharts 绘制函数曲线；三维空间模型页基于 Three.js 和 OrbitControls 展示可交互的空间几何模型。上述页面均通过 useLearningTimeTracker 上报 moduleType=visualization 的学习时长。
+5.5.2  实验平台与 OJ 模块
+实验平台入口页（LabPlatform.vue）负责引导用户进入 OJ 在线编程和石油气仿真平台。OJ 在线编程页（OjPlatform.vue）加载题目、展示题面、接收 C++ 代码并提交到后端判题接口，后端再与独立 judge-sandbox 服务交互完成编译运行和结果回传。页面提示需要启动 judge-sandbox 并配置 oj.sandbox-url=http://localhost:9000，体现了平台后端与外部判题沙箱之间的边界。
+石油气仿真平台（PetroleumSimulation.vue）将测井曲线仿真、抽油机展示功图和注水开发分析组织为选项卡式实验场景，并通过 moduleType=petroleum 上报实验学习时长。测井仿真旧入口（WellLogSimulation.vue）会自动重定向到石油气仿真平台，避免同一实验能力在路由层重复维护。
+5.6  学习游戏、金币激励与兑换中心模块
+5.6.1  学习游戏模块
+学习游戏模块由游戏学习平台（GamePlatform.vue）统一承载，目前包含万题天梯跳和 Type Warrior 两类游戏。万题天梯跳通过题库答题、平台跳跃和游戏内金币形成低门槛练习体验；Type Warrior 通过英文单词输入、波次、连击、击杀数和得分训练词汇反应能力。游戏结束后，前端分别调用 /api/games/ladder-jump/records 和 /api/games/type-warrior/records 保存记录。
+后端 GameRecordService 对游戏记录中的金币、答对/答错数量、得分、波次、连击和有效输入时长进行非负校验后入库，并立即调用 CoinRewardService。万题天梯跳按 totalCoins 发放平台金币，Type Warrior 按 score/100 折算金币。游戏成绩随后进入 ProfileService 的个人主页聚合指标，用于展示最佳成绩、平均成绩和累计金币。
+5.6.2  兑换中心模块
+兑换中心页（ExchangeCenter.vue）通过 fetchProfileOverview 获取当前金币余额，并展示金币来源规则、AI宠物形象、装扮、主题和徽章等兑换展示项。当前页面按钮处于禁用状态，说明系统已经完成金币获取、余额展示和兑换资产展示原型，但尚未实现真实扣减金币和发放资产的交易流程。该设计为后续扩展兑换订单、用户虚拟资产表和后台商品管理预留了清晰入口。
+表5-3  第五章补充模块与第四章功能架构对应关系
