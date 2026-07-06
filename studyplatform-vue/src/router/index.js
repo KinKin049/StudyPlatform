@@ -185,6 +185,19 @@ const routes = [
         component: AcademyTextbooks,
       },
       {
+        path: 'textbooks/:id',
+        name: 'academy-textbook-detail',
+        component: AcademyTextbookDetail,
+        props: (route) => ({
+          textbookId: route.params.id,
+        }),
+      },
+      {
+        path: 'textbook-cart',
+        name: 'academy-textbook-cart',
+        component: AcademyTextbookCart,
+      },
+      {
         path: 'question-bank',
         name: 'academy-question-bank',
         component: AcademyQuestionBank,

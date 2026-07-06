@@ -1,12 +1,17 @@
 package com.cupk.academy.repository;
 
 import com.cupk.academy.dto.AcademyCategoryResponse;
+import com.cupk.academy.dto.AcademyTextbookCommentResponse;
 import com.cupk.academy.dto.AcademyCourseReviewResponse;
 import com.cupk.academy.dto.AcademyCourseResponse;
 import com.cupk.academy.dto.AcademyEnrolledCourseResponse;
+import com.cupk.academy.dto.AcademyTextbookCartItemResponse;
+import com.cupk.academy.dto.AcademyTextbookDetailResponse;
 import com.cupk.academy.dto.AcademyTextbookResponse;
+import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -218,6 +223,323 @@ public class AcademyRepository {
                 rs.getString("cover_url"),
                 rs.getString("cover_file_path"),
                 rs.getString("source_url")
+        ));
+    }
+
+    public Optional<AcademyTextbookDetailResponse> findTextbookById(String id) {
+        String sql = """
+                SELECT t.external_textbook_id, t.textbook_name, t.chief_editor, t.category, t.publisher,
+                       t.publish_date, t.isbn, t.description, t.cover_url, t.cover_file_path, t.source_url,
+                       d.recommendation, d.original_price, d.discount_price, d.reader_count,
+                       d.overview, d.catalog_text, d.comments_text
+                FROM excellent_textbooks t
+                LEFT JOIN academy_textbook_details d ON d.textbook_id = t.external_textbook_id
+                WHERE t.external_textbook_id = ?
+                LIMIT 1
+                """;
+        try {
+            return Optional.ofNullable(jdbcTemplate.queryForObject(sql, (rs, rowNum) -> new AcademyTextbookDetailResponse(
+                    rs.getString("external_textbook_id"),
+                    rs.getString("textbook_name"),
+                    rs.getString("chief_editor"),
+                    rs.getString("category"),
+                    rs.getString("publisher"),
+                    rs.getString("publish_date"),
+                    rs.getString("isbn"),
+                    rs.getString("description"),
+                    null,
+                    rs.getString("cover_url"),
+                    rs.getString("cover_file_path"),
+                    rs.getString("source_url"),
+                    getOptionalString(rs, "recommendation"),
+                    getOptionalBigDecimal(rs, "original_price", new BigDecimal("69.00")),
+                    getOptionalBigDecimal(rs, "discount_price", new BigDecimal("49.00")),
+                    getOptionalInt(rs, "reader_count", 0),
+                    getOptionalString(rs, "overview"),
+                    parseCatalog(getOptionalString(rs, "catalog_text")),
+                    parseComments(getOptionalString(rs, "comments_text")),
+                    false
+            ), id));
+        } catch (EmptyResultDataAccessException ex) {
+            return Optional.empty();
+        }
+    }
+
+    public boolean hasPurchasedTextbook(Long userId, String textbookId) {
+        Long count = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM academy_textbook_orders o
+                JOIN academy_textbook_order_items i ON i.order_id = o.id
+                WHERE o.user_id = ?
+                  AND i.textbook_id = ?
+                  AND o.order_status IN ('已支付', '已完成')
+                """,
+                Long.class,
+                userId,
+                textbookId
+        );
+        return count != null && count > 0;
+    }
+
+    public List<AcademyTextbookCommentResponse> findTextbookReviews(String textbookId) {
+        String sql = """
+                SELECT user_name, rating, content
+                FROM academy_textbook_reviews
+                WHERE textbook_id = ?
+                ORDER BY created_at DESC, id DESC
+                """;
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new AcademyTextbookCommentResponse(
+                rs.getString("user_name"),
+                rs.getInt("rating"),
+                rs.getString("content")
+        ), textbookId);
+    }
+
+    public AcademyTextbookCommentResponse saveTextbookReview(
+            Long userId,
+            String textbookId,
+            String userName,
+            int rating,
+            String content
+    ) {
+        jdbcTemplate.update(
+                """
+                INSERT INTO academy_textbook_reviews (user_id, textbook_id, user_name, rating, content)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                userId,
+                textbookId,
+                userName,
+                rating,
+                content
+        );
+        return jdbcTemplate.queryForObject(
+                """
+                SELECT user_name, rating, content
+                FROM academy_textbook_reviews
+                WHERE user_id = ? AND textbook_id = ?
+                ORDER BY id DESC
+                LIMIT 1
+                """,
+                (rs, rowNum) -> new AcademyTextbookCommentResponse(
+                        rs.getString("user_name"),
+                        rs.getInt("rating"),
+                        rs.getString("content")
+                ),
+                userId,
+                textbookId
+        );
+    }
+
+    public List<AcademyTextbookCartItemResponse> findTextbookCartItems(Long userId) {
+        String sql = """
+                SELECT c.id, c.textbook_id, t.textbook_name, t.chief_editor, t.publisher,
+                       t.cover_url, t.cover_file_path,
+                       COALESCE(d.discount_price, 49.00) AS unit_price,
+                       c.quantity, c.created_at
+                FROM academy_textbook_cart_items c
+                JOIN excellent_textbooks t ON t.external_textbook_id = c.textbook_id
+                LEFT JOIN academy_textbook_details d ON d.textbook_id = t.external_textbook_id
+                WHERE c.user_id = ?
+                ORDER BY c.updated_at DESC, c.id DESC
+                """;
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new AcademyTextbookCartItemResponse(
+                rs.getLong("id"),
+                rs.getString("textbook_id"),
+                rs.getString("textbook_name"),
+                rs.getString("chief_editor"),
+                rs.getString("publisher"),
+                fileUrl(rs.getString("cover_file_path")),
+                rs.getString("cover_url"),
+                rs.getBigDecimal("unit_price"),
+                rs.getInt("quantity"),
+                rs.getTimestamp("created_at").toLocalDateTime()
+        ), userId);
+    }
+
+    public void addTextbookCartItem(Long userId, String textbookId, Integer quantity) {
+        String sql = """
+                INSERT INTO academy_textbook_cart_items (user_id, textbook_id, quantity)
+                VALUES (?, ?, ?)
+                ON DUPLICATE KEY UPDATE
+                  quantity = LEAST(quantity + VALUES(quantity), 99),
+                  updated_at = CURRENT_TIMESTAMP
+                """;
+        jdbcTemplate.update(sql, userId, textbookId, quantity);
+    }
+
+    public int deleteTextbookCartItem(Long userId, Long itemId) {
+        return jdbcTemplate.update(
+                "DELETE FROM academy_textbook_cart_items WHERE user_id = ? AND id = ?",
+                userId,
+                itemId
+        );
+    }
+
+    public int updateTextbookCartItem(Long userId, Long itemId, Integer quantity) {
+        return jdbcTemplate.update(
+                """
+                UPDATE academy_textbook_cart_items
+                SET quantity = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE user_id = ? AND id = ?
+                """,
+                quantity,
+                userId,
+                itemId
+        );
+    }
+
+    public AcademyTextbookOrderResponseData createTextbookOrder(
+            Long userId,
+            AcademyTextbookDetailResponse textbook,
+            Integer quantity
+    ) {
+        String orderNo = "TB" + System.currentTimeMillis() + userId;
+        BigDecimal unitPrice = textbook.discountPrice() == null ? BigDecimal.ZERO : textbook.discountPrice();
+        BigDecimal totalAmount = unitPrice.multiply(BigDecimal.valueOf(quantity));
+        jdbcTemplate.update(
+                """
+                INSERT INTO academy_textbook_orders (user_id, order_no, total_amount, order_status)
+                VALUES (?, ?, ?, '待支付')
+                """,
+                userId,
+                orderNo,
+                totalAmount
+        );
+        Long orderId = jdbcTemplate.queryForObject(
+                "SELECT id FROM academy_textbook_orders WHERE order_no = ?",
+                Long.class,
+                orderNo
+        );
+        jdbcTemplate.update(
+                """
+                INSERT INTO academy_textbook_order_items (order_id, textbook_id, textbook_name, unit_price, quantity)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                orderId,
+                textbook.id(),
+                textbook.name(),
+                unitPrice,
+                quantity
+        );
+        return new AcademyTextbookOrderResponseData(orderNo, totalAmount);
+    }
+
+    public AcademyTextbookOrderResponseData createTextbookOrderFromCart(
+            Long userId,
+            List<Long> cartItemIds
+    ) {
+        String placeholders = String.join(", ", Collections.nCopies(cartItemIds.size(), "?"));
+        Object[] queryParams = new Object[cartItemIds.size() + 1];
+        queryParams[0] = userId;
+        for (int index = 0; index < cartItemIds.size(); index += 1) {
+            queryParams[index + 1] = cartItemIds.get(index);
+        }
+
+        String selectSql = """
+                SELECT c.id, c.textbook_id, t.textbook_name,
+                       COALESCE(d.discount_price, 49.00) AS unit_price,
+                       c.quantity
+                FROM academy_textbook_cart_items c
+                JOIN excellent_textbooks t ON t.external_textbook_id = c.textbook_id
+                LEFT JOIN academy_textbook_details d ON d.textbook_id = t.external_textbook_id
+                WHERE c.user_id = ? AND c.id IN (%s)
+                ORDER BY c.id ASC
+                """.formatted(placeholders);
+        List<TextbookCartOrderItem> items = jdbcTemplate.query(selectSql, (rs, rowNum) -> new TextbookCartOrderItem(
+                rs.getLong("id"),
+                rs.getString("textbook_id"),
+                rs.getString("textbook_name"),
+                rs.getBigDecimal("unit_price"),
+                rs.getInt("quantity")
+        ), queryParams);
+        if (items.isEmpty()) {
+            return new AcademyTextbookOrderResponseData("", BigDecimal.ZERO);
+        }
+
+        BigDecimal totalAmount = items.stream()
+                .map(item -> item.unitPrice().multiply(BigDecimal.valueOf(item.quantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        String orderNo = "TB" + System.currentTimeMillis() + userId;
+        jdbcTemplate.update(
+                """
+                INSERT INTO academy_textbook_orders (user_id, order_no, total_amount, order_status)
+                VALUES (?, ?, ?, '待支付')
+                """,
+                userId,
+                orderNo,
+                totalAmount
+        );
+        Long orderId = jdbcTemplate.queryForObject(
+                "SELECT id FROM academy_textbook_orders WHERE order_no = ?",
+                Long.class,
+                orderNo
+        );
+        for (TextbookCartOrderItem item : items) {
+            jdbcTemplate.update(
+                    """
+                    INSERT INTO academy_textbook_order_items (order_id, textbook_id, textbook_name, unit_price, quantity)
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    orderId,
+                    item.textbookId(),
+                    item.textbookName(),
+                    item.unitPrice(),
+                    item.quantity()
+            );
+        }
+
+        Object[] deleteParams = new Object[cartItemIds.size() + 1];
+        deleteParams[0] = userId;
+        for (int index = 0; index < cartItemIds.size(); index += 1) {
+            deleteParams[index + 1] = cartItemIds.get(index);
+        }
+        jdbcTemplate.update(
+                "DELETE FROM academy_textbook_cart_items WHERE user_id = ? AND id IN (%s)".formatted(placeholders),
+                deleteParams
+        );
+        return new AcademyTextbookOrderResponseData(orderNo, totalAmount);
+    }
+
+    public Optional<AcademyTextbookOrderResponseData> payTextbookOrder(Long userId, String orderNo) {
+        int updated = jdbcTemplate.update(
+                """
+                UPDATE academy_textbook_orders
+                SET order_status = '已支付'
+                WHERE user_id = ? AND order_no = ? AND order_status = '待支付'
+                """,
+                userId,
+                orderNo
+        );
+        if (updated <= 0) {
+            Long exists = jdbcTemplate.queryForObject(
+                    """
+                    SELECT COUNT(*)
+                    FROM academy_textbook_orders
+                    WHERE user_id = ? AND order_no = ? AND order_status IN ('已支付', '已完成')
+                    """,
+                    Long.class,
+                    userId,
+                    orderNo
+            );
+            if (exists == null || exists <= 0) {
+                return Optional.empty();
+            }
+        }
+        return Optional.ofNullable(jdbcTemplate.queryForObject(
+                """
+                SELECT order_no, total_amount
+                FROM academy_textbook_orders
+                WHERE user_id = ? AND order_no = ?
+                LIMIT 1
+                """,
+                (rs, rowNum) -> new AcademyTextbookOrderResponseData(
+                        rs.getString("order_no"),
+                        rs.getBigDecimal("total_amount")
+                ),
+                userId,
+                orderNo
         ));
     }
 
@@ -436,6 +758,73 @@ public class AcademyRepository {
         } catch (Exception ex) {
             return false;
         }
+    }
+
+    private BigDecimal getOptionalBigDecimal(java.sql.ResultSet rs, String columnLabel, BigDecimal fallback) {
+        try {
+            BigDecimal value = rs.getBigDecimal(columnLabel);
+            return value == null ? fallback : value;
+        } catch (Exception ex) {
+            return fallback;
+        }
+    }
+
+    private Integer getOptionalInt(java.sql.ResultSet rs, String columnLabel, Integer fallback) {
+        try {
+            int value = rs.getInt(columnLabel);
+            return rs.wasNull() ? fallback : value;
+        } catch (Exception ex) {
+            return fallback;
+        }
+    }
+
+    private List<String> parseCatalog(String value) {
+        if (value == null || value.isBlank()) {
+            return List.of();
+        }
+        return value.lines()
+                .map(String::trim)
+                .filter(line -> !line.isBlank())
+                .toList();
+    }
+
+    private List<AcademyTextbookCommentResponse> parseComments(String value) {
+        if (value == null || value.isBlank()) {
+            return List.of();
+        }
+        return value.lines()
+                .map(String::trim)
+                .filter(line -> !line.isBlank())
+                .map(line -> {
+                    String[] parts = line.split("\\|", 3);
+                    String user = parts.length > 0 && !parts[0].isBlank() ? parts[0] : "平台用户";
+                    int rating = 5;
+                    if (parts.length > 1) {
+                        try {
+                            rating = Integer.parseInt(parts[1]);
+                        } catch (NumberFormatException ignored) {
+                            rating = 5;
+                        }
+                    }
+                    String content = parts.length > 2 ? parts[2] : line;
+                    return new AcademyTextbookCommentResponse(user, rating, content);
+                })
+                .toList();
+    }
+
+    public record AcademyTextbookOrderResponseData(
+            String orderNo,
+            BigDecimal totalAmount
+    ) {
+    }
+
+    private record TextbookCartOrderItem(
+            Long id,
+            String textbookId,
+            String textbookName,
+            BigDecimal unitPrice,
+            Integer quantity
+    ) {
     }
 
     private String fileUrl(String filePath) {

@@ -7,6 +7,46 @@ export const fetchAcademyCourses = (resource) => request(`/api/academy/${resourc
 export const fetchAcademyCourse = (resource, id) =>
   request(`/api/academy/${resource}/${encodeURIComponent(id)}`)
 
+export const fetchAcademyTextbook = (id, userId = 1) =>
+  request(`/api/academy/textbooks/${encodeURIComponent(id)}?userId=${encodeURIComponent(userId)}`)
+
+export const fetchAcademyTextbookCart = (userId = 1) =>
+  request(`/api/academy/textbook-cart?userId=${encodeURIComponent(userId)}`)
+
+export const addAcademyTextbookCartItem = (payload) =>
+  request('/api/academy/textbook-cart', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+
+export const removeAcademyTextbookCartItem = (itemId, userId = 1) =>
+  request(`/api/academy/textbook-cart/${encodeURIComponent(itemId)}?userId=${encodeURIComponent(userId)}`, {
+    method: 'DELETE',
+  })
+
+export const updateAcademyTextbookCartItem = (itemId, payload) =>
+  request(`/api/academy/textbook-cart/${encodeURIComponent(itemId)}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
+
+export const createAcademyTextbookOrder = (payload) =>
+  request('/api/academy/textbook-orders', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+
+export const payAcademyTextbookOrder = (orderNo, userId = 1) =>
+  request(`/api/academy/textbook-orders/${encodeURIComponent(orderNo)}/pay?userId=${encodeURIComponent(userId)}`, {
+    method: 'POST',
+  })
+
+export const createAcademyTextbookReview = (textbookId, payload) =>
+  request(`/api/academy/textbooks/${encodeURIComponent(textbookId)}/reviews`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+
 export const publishOnlineOpenCourse = (payload) =>
   request('/api/academy/online-open-courses', {
     method: 'POST',

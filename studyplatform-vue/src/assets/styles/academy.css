@@ -465,6 +465,63 @@
   box-shadow: 0 0 0 3px rgba(116, 235, 213, 0.22);
 }
 
+.academy-course-suggestions {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 8px;
+  border: 1px solid rgba(71, 128, 151, 0.12);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 16px 32px rgba(45, 87, 107, 0.12);
+  backdrop-filter: blur(10px);
+}
+
+.academy-course-suggestion,
+.academy-course-suggestion-state {
+  border: 0;
+  border-radius: 8px;
+  padding: 10px;
+  background: rgba(247, 254, 253, 0.86);
+  text-align: left;
+}
+
+.academy-course-suggestion {
+  display: grid;
+  gap: 3px;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.academy-course-suggestion:hover,
+.academy-course-suggestion:focus-visible {
+  background: rgba(116, 235, 213, 0.22);
+  transform: translateY(-1px);
+}
+
+.academy-course-suggestion span {
+  color: #178f86;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.academy-course-suggestion strong {
+  color: #233f4d;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.academy-course-suggestion em,
+.academy-course-suggestion-state {
+  color: #6a7f8a;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 750;
+  line-height: 1.5;
+}
+
 .academy-add-course button,
 .academy-class-hero button {
   height: 42px;
@@ -1803,6 +1860,12 @@
   font-size: 13px;
   font-style: normal;
   font-weight: 850;
+}
+
+.academy-add-course input:disabled,
+.academy-add-course button:disabled {
+  cursor: wait;
+  opacity: 0.66;
 }
 
 .academy-exam-countdown.is-warning {

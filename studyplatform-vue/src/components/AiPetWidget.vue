@@ -1,8 +1,9 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { Hide, View } from '@element-plus/icons-vue'
 
+import { chatWithAiPet } from '../api/aiPet'
 import idle01 from '../assets/pet/nebula-cat/idle-01.png'
 import idle02 from '../assets/pet/nebula-cat/idle-02.png'
 import idle03 from '../assets/pet/nebula-cat/idle-03.png'
@@ -29,6 +30,7 @@ import sleep03 from '../assets/pet/nebula-cat/sleep-03.png'
 import sleep04 from '../assets/pet/nebula-cat/sleep-04.png'
 
 const route = useRoute()
+const router = useRouter()
 
 const frames = {
   idle: [idle01, idle02, idle03, idle04],
@@ -45,12 +47,25 @@ const positionStorageKey = 'study-platform-ai-pet-position'
 const visibilityStorageKey = 'study-platform-ai-pet-hidden'
 const petSize = 116
 const viewportPadding = 14
+const navigationTargets = [
+  { label: '在线学堂首页', path: '/academy/home', keywords: ['在线学堂', '学堂首页', '课程首页'] },
+  { label: '我的课程', path: '/academy/my-courses', keywords: ['我的课程', '课程聚合页'] },
+  { label: '课程作业', path: '/academy/assignments', keywords: ['课程作业', '作业页', '作业列表', '作业'] },
+  { label: '考试中心', path: '/academy/exams', keywords: ['考试中心', '考试页', '考试列表', '考试'] },
+  { label: '课程题库', path: '/academy/question-bank', keywords: ['课程题库', '题库首页', '题库'] },
+  { label: '错题本', path: '/academy/question-bank/mistakes', keywords: ['错题本', '我的错题', '错题'] },
+  { label: '收藏题目', path: '/academy/question-bank/favorites', keywords: ['收藏题目', '我的收藏', '收藏'] },
+  { label: '个人主页', path: '/profile', keywords: ['个人主页', '个人中心', '主页资料'] },
+  { label: '可视化学习', path: '/visualization', keywords: ['可视化', '可视化学习'] },
+  { label: '游戏学习', path: '/games', keywords: ['游戏学习', '小游戏', '游戏'] },
+]
 
 const open = ref(false)
 const activeTab = ref('chat')
 const frameIndex = ref(0)
 const mood = ref('idle')
 const chatInput = ref('')
+const chatLoading = ref(false)
 const newTodo = ref('')
 const todos = ref([])
 const focusMinutes = ref(25)
@@ -71,10 +86,14 @@ const petBubble = ref({
   visible: false,
   text: '',
 })
+const actionFeedback = ref({
+  visible: false,
+  text: '',
+})
 const messages = ref([
   {
     role: 'pet',
-    text: '喵，我是星云学习猫。现在先陪你管理待办和专注，下一步就能接真实 AI 对话。',
+    text: '喵，我是星云学习猫。现在可以真的帮你跳转页面、创建待办、启动番茄专注啦。',
   },
 ])
 
@@ -85,6 +104,7 @@ let landingTimer = null
 let celebrationTimer = null
 let suppressClickTimer = null
 let petBubbleTimer = null
+let actionFeedbackTimer = null
 let dragState = null
 
 const hidden = computed(() => route.meta?.hidePet === true)
@@ -170,10 +190,15 @@ const pageContext = computed(() => {
     .slice(0, 5)
     .map((element) => element.textContent?.trim())
     .filter(Boolean)
+  const visibleText = document.body?.innerText
+    ?.replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 1800) || ''
   return {
     path: route.path,
     title: document.title || 'StudyPlatform',
     headings,
+    textSnippet: visibleText,
   }
 })
 
@@ -225,6 +250,144 @@ function pushPetMessage(text) {
     text,
   })
   showPetBubble(text)
+}
+
+function showActionFeedback(text) {
+  actionFeedback.value = {
+    visible: true,
+    text,
+  }
+  if (actionFeedbackTimer) {
+    window.clearTimeout(actionFeedbackTimer)
+  }
+  actionFeedbackTimer = window.setTimeout(() => {
+    actionFeedback.value.visible = false
+    actionFeedbackTimer = null
+  }, 1800)
+}
+
+function normalizeCommand(text) {
+  return text
+    .replace(/\s+/g, '')
+    .replace(/[，。！？、,.!?]/g, '')
+    .toLowerCase()
+}
+
+function cleanActionTitle(text) {
+  return text
+    .replace(/^(请|麻烦|帮我|给我|帮忙|可以)?/g, '')
+    .replace(/(创建|添加|新增|记录|安排|加入|加一个|加一条|建一个|建一条)/g, '')
+    .replace(/(一个|一条|一项|个|条|项)/g, '')
+    .replace(/(待办事项|待办|任务|todo|TODO)/gi, '')
+    .replace(/[：:，,。！!？?]/g, ' ')
+    .trim()
+}
+
+function resolveTodoTitle(text) {
+  const colonTitle = text.match(/(?:待办|任务|todo|TODO)[：:]\s*(.+)$/)
+  if (colonTitle?.[1]?.trim()) {
+    return colonTitle[1].trim()
+  }
+  const quotedTitle = text.match(/[“"']([^“”"']+)[”"']/)
+  if (quotedTitle?.[1]?.trim()) {
+    return quotedTitle[1].trim()
+  }
+  return cleanActionTitle(text)
+}
+
+function addTodoWithTitle(title) {
+  todos.value.unshift({
+    id: Date.now(),
+    title,
+    done: false,
+    createdAt: new Date().toISOString(),
+  })
+  saveTodos()
+  activeTab.value = 'todo'
+  setMood('happy')
+}
+
+function resolveCourseKeyword(text) {
+  return text
+    .replace(/(请|麻烦|帮我|给我|帮忙|可以|想要|我要|我想)/g, '')
+    .replace(/(找一门|找门|找|搜索|查找|看看|打开|进入)/g, '')
+    .replace(/(课程|课|相关|有关|关于|的)/g, ' ')
+    .replace(/[：:，,。！!？?]/g, ' ')
+    .trim()
+}
+
+function findNavigationTarget(text) {
+  return navigationTargets.find((target) => target.keywords.some((keyword) => text.includes(keyword)))
+}
+
+async function handleLocalToolAction(text) {
+  const normalizedText = normalizeCommand(text)
+  const actionReplies = []
+
+  const wantsTodo = /(创建|添加|新增|记录|安排|加入|加一个|加一条|建一个|建一条).*(待办|任务|todo)/i.test(text)
+    || /(待办|任务|todo).*(创建|添加|新增|记录|安排|加入)/i.test(text)
+  if (wantsTodo) {
+    const title = resolveTodoTitle(text)
+    if (!title) {
+      pushPetMessage('可以呀，把待办内容也告诉我，例如：创建待办：复习数据结构。')
+      return true
+    }
+    addTodoWithTitle(title)
+    actionReplies.push(`已创建待办「${title}」`)
+  }
+
+  const wantsPomodoro = /(启动|开始|开启|进入).*(番茄|专注)/.test(normalizedText)
+    || /(番茄|专注).*(启动|开始|开启)/.test(normalizedText)
+  if (wantsPomodoro) {
+    startFocus()
+    open.value = true
+    activeTab.value = 'focus'
+    actionReplies.push('已启动番茄专注')
+  }
+
+  const wantsCourseSearch = /(找|搜索|查找).*(课程|课)/.test(normalizedText)
+    || /(课程|课).*(找|搜索|查找)/.test(normalizedText)
+  if (wantsCourseSearch) {
+    const keyword = resolveCourseKeyword(text)
+    if (!keyword) {
+      pushPetMessage('可以呀，你想找哪类课程？例如：帮我找 Python 课程。')
+      return true
+    }
+    await router.push({
+      path: '/academy/open-courses',
+      query: { keyword },
+    })
+    open.value = false
+    actionReplies.push(`已为你搜索「${keyword}」课程`)
+  }
+
+  const wantsNavigation = /(打开|跳转|进入|去|查看|带我去)/.test(normalizedText)
+  const navigationTarget = wantsNavigation ? findNavigationTarget(text) : null
+  if (navigationTarget) {
+    await router.push(navigationTarget.path)
+    open.value = false
+    actionReplies.push(`已打开${navigationTarget.label}`)
+  }
+
+  if (!actionReplies.length) {
+    return false
+  }
+
+  const feedbackText = actionReplies.join('，')
+  showActionFeedback(feedbackText)
+  pushPetMessage(`${feedbackText}。`)
+  setMood('happy', 1800)
+  return true
+}
+
+function buildChatHistory() {
+  return messages.value
+    .slice(0, -1)
+    .slice(-8)
+    .map((message) => ({
+      role: message.role === 'user' ? 'user' : 'assistant',
+      text: message.text,
+    }))
 }
 
 function loadTodos() {
@@ -444,15 +607,8 @@ function addTodo() {
   if (!title) {
     return
   }
-  todos.value.unshift({
-    id: Date.now(),
-    title,
-    done: false,
-    createdAt: new Date().toISOString(),
-  })
+  addTodoWithTitle(title)
   newTodo.value = ''
-  saveTodos()
-  setMood('happy')
 }
 
 function toggleTodo(todo) {
@@ -558,18 +714,32 @@ function resetFocus() {
   setMood('idle')
 }
 
-function sendMessage() {
+async function sendMessage() {
   const text = chatInput.value.trim()
-  if (!text) {
+  if (!text || chatLoading.value) {
     return
   }
   messages.value.push({ role: 'user', text })
   chatInput.value = ''
-  setMood('thinking', 1000)
-  window.setTimeout(() => {
-    pushPetMessage('我已经拿到当前页面摘要啦。真实大模型接口接入后，我会结合页面内容直接帮你分析和操作。')
-    setMood('talk', 1800)
-  }, 600)
+  if (await handleLocalToolAction(text)) {
+    return
+  }
+  chatLoading.value = true
+  setMood('thinking', 8000)
+  try {
+    const response = await chatWithAiPet({
+      message: text,
+      pageContext: pageContext.value,
+      history: buildChatHistory(),
+    })
+    pushPetMessage(response.reply || '喵，我刚刚有点走神，没有拿到有效回复。')
+    setMood('talk', 2200)
+  } catch (error) {
+    pushPetMessage(error.message || '喵，AI 中转站现在没有连上，请稍后再试。')
+    setMood('thinking', 1600)
+  } finally {
+    chatLoading.value = false
+  }
 }
 
 function tickFocus() {
@@ -639,6 +809,9 @@ onBeforeUnmount(() => {
   if (petBubbleTimer) {
     window.clearTimeout(petBubbleTimer)
   }
+  if (actionFeedbackTimer) {
+    window.clearTimeout(actionFeedbackTimer)
+  }
   clearDragListeners()
   window.removeEventListener('resize', handleResize)
 })
@@ -652,6 +825,12 @@ onBeforeUnmount(() => {
     :style="widgetStyle"
     aria-label="AI 学习宠物"
   >
+    <Transition name="ai-pet-action-feedback">
+      <div v-if="actionFeedback.visible" class="ai-pet-action-feedback" role="status">
+        {{ actionFeedback.text }}
+      </div>
+    </Transition>
+
     <button
       v-if="petBubble.visible && !open && !userHidden && !dragging"
       type="button"
@@ -722,7 +901,7 @@ onBeforeUnmount(() => {
         </div>
         <form class="ai-pet-input-row" @submit.prevent="sendMessage">
           <input v-model="chatInput" type="text" placeholder="问问星云猫当前页面的问题..." />
-          <button type="submit">发送</button>
+          <button type="submit" :disabled="chatLoading">{{ chatLoading ? '思考中' : '发送' }}</button>
         </form>
       </div>
 

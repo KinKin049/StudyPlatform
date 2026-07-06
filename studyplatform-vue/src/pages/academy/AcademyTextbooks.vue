@@ -87,7 +87,7 @@ watch(
 
       <div v-else class="textbook-grid">
         <article v-for="textbook in pagedTextbooks" :key="textbook.id" class="textbook-card">
-          <a :href="textbook.link" target="_blank" rel="noreferrer">
+          <RouterLink :to="`/academy/textbooks/${encodeURIComponent(textbook.id)}`">
             <div class="textbook-cover">
               <img
                 :src="resolveCover(textbook)"
@@ -114,7 +114,7 @@ watch(
               </dl>
               <p>{{ textbook.description || '暂无简介' }}</p>
             </div>
-          </a>
+          </RouterLink>
         </article>
       </div>
 

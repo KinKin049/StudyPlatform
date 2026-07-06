@@ -8,7 +8,15 @@ import com.cupk.academy.dto.AcademyCourseResponse;
 import com.cupk.academy.dto.AcademyEnrolledCourseResponse;
 import com.cupk.academy.dto.AcademyHomeItemResponse;
 import com.cupk.academy.dto.AcademyHomeSectionResponse;
+import com.cupk.academy.dto.AcademyTextbookCartItemResponse;
+import com.cupk.academy.dto.AcademyTextbookCartRequest;
+import com.cupk.academy.dto.AcademyTextbookDetailResponse;
+import com.cupk.academy.dto.AcademyTextbookOrderRequest;
+import com.cupk.academy.dto.AcademyTextbookOrderResponse;
+import com.cupk.academy.dto.AcademyTextbookCommentResponse;
+import com.cupk.academy.dto.AcademyTextbookReviewRequest;
 import com.cupk.academy.dto.AcademyTextbookResponse;
+import com.cupk.academy.repository.AcademyRepository.AcademyTextbookOrderResponseData;
 import com.cupk.academy.repository.AcademyRepository;
 import com.cupk.auth.dto.AuthUserResponse;
 import com.cupk.auth.repository.AuthUserRepository;
@@ -120,6 +128,109 @@ public class AcademyService {
                         textbook.link()
                 ))
                 .toList();
+    }
+
+    public AcademyTextbookDetailResponse getTextbook(String id) {
+        return getTextbook(id, DEFAULT_USER_ID);
+    }
+
+    public AcademyTextbookDetailResponse getTextbook(String id, Long userId) {
+        if (id == null || id.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "教材编号不能为空");
+        }
+        long normalizedUserId = normalizeUserId(userId);
+        AcademyTextbookDetailResponse textbook = academyRepository.findTextbookById(id.trim())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "教材不存在"));
+        return withTextbookCover(textbook, normalizedUserId);
+    }
+
+    public List<AcademyTextbookCartItemResponse> listTextbookCart(Long userId) {
+        return academyRepository.findTextbookCartItems(normalizeUserId(userId));
+    }
+
+    public List<AcademyTextbookCartItemResponse> addTextbookCartItem(AcademyTextbookCartRequest request) {
+        if (request == null || request.textbookId() == null || request.textbookId().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "教材编号不能为空");
+        }
+        getTextbook(request.textbookId());
+        long userId = normalizeUserId(request.userId());
+        academyRepository.addTextbookCartItem(userId, request.textbookId().trim(), normalizeQuantity(request.quantity()));
+        return listTextbookCart(userId);
+    }
+
+    public List<AcademyTextbookCartItemResponse> deleteTextbookCartItem(Long userId, Long itemId) {
+        long normalizedUserId = normalizeUserId(userId);
+        if (itemId == null || itemId <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "购物车条目不能为空");
+        }
+        academyRepository.deleteTextbookCartItem(normalizedUserId, itemId);
+        return listTextbookCart(normalizedUserId);
+    }
+
+    public List<AcademyTextbookCartItemResponse> updateTextbookCartItem(Long userId, Long itemId, Integer quantity) {
+        long normalizedUserId = normalizeUserId(userId);
+        if (itemId == null || itemId <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "购物车条目不能为空");
+        }
+        academyRepository.updateTextbookCartItem(normalizedUserId, itemId, normalizeQuantity(quantity));
+        return listTextbookCart(normalizedUserId);
+    }
+
+    public AcademyTextbookOrderResponse createTextbookOrder(AcademyTextbookOrderRequest request) {
+        long userId = normalizeUserId(request == null ? null : request.userId());
+        List<Long> cartItemIds = request == null || request.cartItemIds() == null
+                ? List.of()
+                : request.cartItemIds().stream()
+                        .filter(itemId -> itemId != null && itemId > 0)
+                        .distinct()
+                        .toList();
+        if (!cartItemIds.isEmpty()) {
+            AcademyTextbookOrderResponseData order = academyRepository.createTextbookOrderFromCart(userId, cartItemIds);
+            if (order.orderNo() == null || order.orderNo().isBlank()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请选择有效的购物车教材");
+            }
+            return new AcademyTextbookOrderResponse(order.orderNo(), order.totalAmount(), "待支付", "订单已创建，请完成结算", false);
+        }
+        if (request == null || request.textbookId() == null || request.textbookId().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "教材编号不能为空");
+        }
+        AcademyTextbookDetailResponse textbook = getTextbook(request.textbookId());
+        AcademyTextbookOrderResponseData order = academyRepository.createTextbookOrder(
+                userId,
+                textbook,
+                normalizeQuantity(request.quantity())
+        );
+        return new AcademyTextbookOrderResponse(order.orderNo(), order.totalAmount(), "待支付", "订单已创建", false);
+    }
+
+    public AcademyTextbookOrderResponse payTextbookOrder(String orderNo, Long userId) {
+        if (orderNo == null || orderNo.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "订单编号不能为空");
+        }
+        AcademyTextbookOrderResponseData order = academyRepository.payTextbookOrder(normalizeUserId(userId), orderNo.trim())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "订单不存在或不可支付"));
+        return new AcademyTextbookOrderResponse(order.orderNo(), order.totalAmount(), "已支付", "支付成功，教材已购买", true);
+    }
+
+    public AcademyTextbookCommentResponse saveTextbookReview(String textbookId, AcademyTextbookReviewRequest request) {
+        if (textbookId == null || textbookId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "教材编号不能为空");
+        }
+        getTextbook(textbookId);
+        long userId = normalizeUserId(request == null ? null : request.userId());
+        if (!academyRepository.hasPurchasedTextbook(userId, textbookId.trim())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "购买教材后才能评论");
+        }
+        String content = clean(request == null ? null : request.content(), 800);
+        if (content.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "评论内容不能为空");
+        }
+        String userName = clean(request == null ? null : request.userName(), 80);
+        if (userName.isBlank()) {
+            userName = "默认用户";
+        }
+        int rating = normalizeRating(request == null ? null : request.rating());
+        return academyRepository.saveTextbookReview(userId, textbookId.trim(), userName, rating, content);
     }
 
     public List<AcademyCategoryResponse> listOnlineOpenCourseCategories() {
@@ -256,6 +367,34 @@ public class AcademyService {
         );
     }
 
+    private AcademyTextbookDetailResponse withTextbookCover(AcademyTextbookDetailResponse textbook, long userId) {
+        List<AcademyTextbookCommentResponse> reviews = academyRepository.findTextbookReviews(textbook.id());
+        List<AcademyTextbookCommentResponse> comments = reviews.isEmpty() ? textbook.comments() : reviews;
+        boolean purchased = academyRepository.hasPurchasedTextbook(userId, textbook.id());
+        return new AcademyTextbookDetailResponse(
+                textbook.id(),
+                textbook.name(),
+                textbook.editor(),
+                textbook.category(),
+                textbook.publisher(),
+                textbook.publishDate(),
+                textbook.isbn(),
+                textbook.description(),
+                fileUrl(textbook.coverFilePath()),
+                textbook.coverUrl(),
+                textbook.coverFilePath(),
+                textbook.link(),
+                textbook.recommendation(),
+                textbook.originalPrice(),
+                textbook.discountPrice(),
+                textbook.readerCount(),
+                textbook.overview(),
+                textbook.catalog(),
+                comments,
+                purchased
+        );
+    }
+
     private AuthUserResponse ensureTeacher(long userId) {
         AuthUserResponse user = authUserRepository.findResponseById(userId);
         if (!"teacher".equals(user.roleType())) {
@@ -290,6 +429,20 @@ public class AcademyService {
 
     private Long normalizeUserId(Long userId) {
         return userId == null || userId <= 0 ? DEFAULT_USER_ID : userId;
+    }
+
+    private int normalizeQuantity(Integer quantity) {
+        if (quantity == null || quantity <= 0) {
+            return 1;
+        }
+        return Math.min(quantity, 99);
+    }
+
+    private int normalizeRating(Integer rating) {
+        if (rating == null) {
+            return 5;
+        }
+        return Math.max(1, Math.min(rating, 5));
     }
 
     private String fileUrl(String coverFilePath) {

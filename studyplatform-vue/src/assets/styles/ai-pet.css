@@ -31,6 +31,38 @@
   z-index: 2050;
 }
 
+.ai-pet-action-feedback {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  z-index: 2300;
+  min-width: 220px;
+  max-width: min(420px, calc(100vw - 48px));
+  border-radius: 18px;
+  padding: 15px 24px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.45;
+  text-align: center;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.28);
+}
+
+.ai-pet-action-feedback-enter-active,
+.ai-pet-action-feedback-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.ai-pet-action-feedback-enter-from,
+.ai-pet-action-feedback-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -44%) scale(0.94);
+}
+
 .ai-pet-avatar {
   position: relative;
   width: 116px;
@@ -211,11 +243,11 @@
 }
 
 .ai-pet-widget.mood-happy:not(.is-dragging):not(.is-landing):not(.is-celebrating):not(.is-user-hidden) .ai-pet-avatar {
-  animation: ai-pet-happy-hop 0.72s cubic-bezier(0.2, 0.9, 0.28, 1.2) infinite;
+  animation: ai-pet-happy-hop 0.46s cubic-bezier(0.2, 0.9, 0.28, 1.2) infinite;
 }
 
 .ai-pet-widget.mood-happy:not(.is-dragging):not(.is-landing):not(.is-celebrating):not(.is-user-hidden) .ai-pet-avatar img {
-  animation: ai-pet-happy-squash 0.36s steps(2, end) infinite;
+  animation: ai-pet-happy-squash 0.23s steps(2, end) infinite;
 }
 
 .ai-pet-widget.mood-talk:not(.is-dragging):not(.is-landing):not(.is-user-hidden) .ai-pet-avatar img {
@@ -653,6 +685,12 @@
   padding: 0 15px;
 }
 
+.ai-pet-input-row button:disabled {
+  cursor: wait;
+  opacity: 0.68;
+  transform: none;
+}
+
 .ai-pet-stat {
   display: flex;
   align-items: center;
@@ -840,15 +878,15 @@
 @keyframes ai-pet-happy-hop {
   0%,
   100% {
-    transform: translateY(0) scale(1) rotate(0);
+    transform: translateY(0) scale(1);
   }
 
   32% {
-    transform: translateY(-18px) scale(1.08) rotate(-8deg);
+    transform: translateY(-18px) scale(1.08);
   }
 
   62% {
-    transform: translateY(5px) scale(1.03, 0.96) rotate(6deg);
+    transform: translateY(5px) scale(1.03, 0.96);
   }
 }
 

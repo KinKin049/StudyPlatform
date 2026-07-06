@@ -21,7 +21,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**", "/api/academy/**", "/api/oj/**", "/api/games/**", "/files/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/api/academy/**", "/api/oj/**", "/api/games/**", "/api/ai-pet/**", "/files/**").permitAll()
                         .anyRequest().permitAll()
                 )
                 .build();
