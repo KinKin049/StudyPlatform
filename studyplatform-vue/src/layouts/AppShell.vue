@@ -89,6 +89,7 @@ const shellClass = computed(() => ({
   'home-page': route.path === '/',
   'auth-shell': route.path === '/login' || route.path === '/register' || route.path === '/forgot-password' || route.path === '/onboarding',
   'profile-shell': route.path.startsWith('/profile'),
+  'exchange-shell': route.path.startsWith('/exchange'),
   'academy-shell': route.path.startsWith('/academy'),
   'academy-course-detail-shell': route.path.startsWith('/academy/open-courses/'),
   'app-page lab-shell': route.path === '/lab',
