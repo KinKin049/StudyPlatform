@@ -3,6 +3,7 @@ package com.cupk.games.service;
 import com.cupk.games.dto.LadderJumpRecordSaveRequest;
 import com.cupk.games.dto.TypeWarriorRecordSaveRequest;
 import com.cupk.games.repository.GameRecordRepository;
+import com.cupk.rewards.CoinRewardService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -13,9 +14,11 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class GameRecordService {
     private final GameRecordRepository gameRecordRepository;
+    private final CoinRewardService coinRewardService;
 
-    public GameRecordService(GameRecordRepository gameRecordRepository) {
+    public GameRecordService(GameRecordRepository gameRecordRepository, CoinRewardService coinRewardService) {
         this.gameRecordRepository = gameRecordRepository;
+        this.coinRewardService = coinRewardService;
     }
 
     public void saveLadderJumpRecord(long userId, LadderJumpRecordSaveRequest request) {
@@ -26,7 +29,8 @@ public class GameRecordService {
         validateNonNegative(request.correctCount(), "答对题数");
         validateNonNegative(request.wrongCount(), "答错题数");
         validateNonNegative(request.durationSeconds(), "游戏时长");
-        gameRecordRepository.insertLadderJumpRecord(userId, request);
+        long recordId = gameRecordRepository.insertLadderJumpRecord(userId, request);
+        coinRewardService.rewardLadderJump(userId, recordId, request.totalCoins());
     }
 
     public void saveTypeWarriorRecord(long userId, TypeWarriorRecordSaveRequest request) {
@@ -42,7 +46,8 @@ public class GameRecordService {
         validateNonNegative(request.typedLetterCount(), "键入字母数");
         validateNonNegative(request.durationSeconds(), "游戏时长");
         validateNonNegative(request.effectiveTypingSeconds(), "有效输入时长");
-        gameRecordRepository.insertTypeWarriorRecord(userId, request);
+        long recordId = gameRecordRepository.insertTypeWarriorRecord(userId, request);
+        coinRewardService.rewardTypeWarrior(userId, recordId, request.score());
     }
 
     private void validateNonNegative(Integer value, String fieldName) {

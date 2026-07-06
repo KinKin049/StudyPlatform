@@ -24,6 +24,7 @@ const AuthLoginPage = () => import('../pages/AuthLoginPage.vue')
 const AuthOnboardingPage = () => import('../pages/AuthOnboardingPage.vue')
 const AuthRegisterPage = () => import('../pages/AuthRegisterPage.vue')
 const AuthForgotPasswordPage = () => import('../pages/AuthForgotPasswordPage.vue')
+const ExchangeCenter = () => import('../pages/ExchangeCenter.vue')
 const HomePage = () => import('../pages/HomePage.vue')
 const LabPlatform = () => import('../pages/LabPlatform.vue')
 const OjPlatform = () => import('../pages/OjPlatform.vue')
@@ -68,6 +69,11 @@ const routes = [
     path: '/admin',
     name: 'admin',
     component: AdminPage,
+  },
+  {
+    path: '/exchange',
+    name: 'exchange',
+    component: ExchangeCenter,
   },
   {
     path: '/academy',

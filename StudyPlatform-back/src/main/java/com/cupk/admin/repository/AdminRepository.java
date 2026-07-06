@@ -205,6 +205,7 @@ public class AdminRepository {
         jdbcTemplate.update("DELETE FROM profile_learning_time_records WHERE user_id = ?", userId);
         jdbcTemplate.update("DELETE FROM game_ladder_jump_records WHERE user_id = ?", userId);
         jdbcTemplate.update("DELETE FROM game_type_warrior_records WHERE user_id = ?", userId);
+        jdbcTemplate.update("DELETE FROM coin_reward_records WHERE user_id = ?", userId);
         jdbcTemplate.update("DELETE FROM teacher_published_courses WHERE publisher_user_id = ?", userId);
         jdbcTemplate.update("DELETE FROM profile_user_profiles WHERE user_id = ?", userId);
         jdbcTemplate.update("DELETE FROM users WHERE id = ?", userId);

@@ -133,6 +133,9 @@ onBeforeUnmount(() => {
           <button class="user-menu-link" type="button" role="menuitem" @click="navigateTo('/profile', $event)">
             个人主页
           </button>
+          <button class="user-menu-link" type="button" role="menuitem" @click="navigateTo('/exchange', $event)">
+            金币兑换中心
+          </button>
           <button v-if="isAdmin" class="user-menu-link" type="button" role="menuitem" @click="navigateTo('/admin', $event)">
             管理后台
           </button>
@@ -149,6 +152,9 @@ onBeforeUnmount(() => {
           </button>
           <button class="user-menu-link" type="button" role="menuitem" @click="navigateTo('/register', $event)">
             注册
+          </button>
+          <button class="user-menu-link" type="button" role="menuitem" @click="navigateTo('/exchange', $event)">
+            金币兑换中心
           </button>
         </template>
       </div>
