@@ -397,7 +397,7 @@ onMounted(async () => {
                 <strong>{{ user.username }}</strong>
                 <span>{{ user.email }}</span>
                 <span>{{ user.roleType === 'teacher' ? '教师' : user.roleType === 'admin' ? '管理员' : '学生' }}</span>
-                <span>金币调整 {{ user.coinAdjustment }}</span>
+                <span>金币 {{ Number(user.coinTotal ?? 0).toLocaleString('zh-CN') }}</span>
                 <span>{{ user.school || '未填写学校' }}</span>
                 <div class="admin-actions">
                   <button type="button" @click="editUser(user)" :disabled="user.roleType === 'admin'">编辑</button>

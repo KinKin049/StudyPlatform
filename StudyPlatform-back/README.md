@@ -10,7 +10,7 @@ CREATE DATABASE IF NOT EXISTS study_platform
   DEFAULT COLLATE utf8mb4_unicode_ci;
 ```
 
-The same SQL is available in `sql/create-database.sql`.
+The same SQL is available in `src/main/resources/db/manual/create-database.sql`.
 
 Copy the local configuration template:
 
@@ -42,6 +42,12 @@ Flyway runs automatically when the Spring Boot application starts. Migration fil
 src/main/resources/db/migration
 ```
 
+Manual SQL files that are not executed automatically are stored in:
+
+```text
+src/main/resources/db/manual
+```
+
 Naming format:
 
 ```text
@@ -55,6 +61,8 @@ Rules for team development:
 - Do not edit a migration file that has already been pulled or executed by others.
 - Add a new versioned migration file for every database schema change.
 - Commit migration files together with the backend code that depends on them.
+- Keep automatically executed SQL under `src/main/resources/db/migration`.
+- Keep one-off setup SQL under `src/main/resources/db/manual`; do not place runtime migrations in the project root.
 - Do not commit local database passwords.
 
 ## Run

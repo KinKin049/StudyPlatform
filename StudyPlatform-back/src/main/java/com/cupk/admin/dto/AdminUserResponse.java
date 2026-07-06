@@ -8,6 +8,7 @@ public record AdminUserResponse(
         String learningGoal,
         String school,
         String teacherName,
+        long coinTotal,
         long coinAdjustment,
         String dataNote,
         boolean onboardingCompleted
