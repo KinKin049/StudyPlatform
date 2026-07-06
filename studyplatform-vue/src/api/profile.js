@@ -24,3 +24,10 @@ export const recordProfileLearningEvent = (payload) =>
     method: 'POST',
     body: JSON.stringify(payload),
   })
+
+export const recordProfileLearningTime = (payload, options = {}) =>
+  request('/api/profile/learning-time', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    keepalive: Boolean(options.keepalive),
+  })

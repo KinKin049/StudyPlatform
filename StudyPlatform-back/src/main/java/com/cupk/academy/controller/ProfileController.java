@@ -1,6 +1,7 @@
 package com.cupk.academy.controller;
 
 import com.cupk.academy.dto.ProfileLearningEventRequest;
+import com.cupk.academy.dto.ProfileLearningTimeRecordRequest;
 import com.cupk.academy.dto.ProfileOverviewResponse;
 import com.cupk.academy.dto.ProfileUserResponse;
 import com.cupk.academy.dto.ProfileUserUpdateRequest;
@@ -60,6 +61,15 @@ public class ProfileController {
             @RequestBody ProfileLearningEventRequest request
     ) {
         profileService.recordLearningEvent(resolveUserId(userId), request);
+    }
+
+    @PostMapping("/learning-time")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void recordLearningTime(
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long userId,
+            @RequestBody ProfileLearningTimeRecordRequest request
+    ) {
+        profileService.recordLearningTime(resolveUserId(userId), request);
     }
 
     private long resolveUserId(Long userId) {

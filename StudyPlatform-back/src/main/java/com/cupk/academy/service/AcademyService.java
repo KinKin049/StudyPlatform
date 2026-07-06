@@ -362,7 +362,8 @@ public class AcademyService {
                 course.overview(),
                 fileUrl(course.videoFilePath()),
                 course.videoFilePath(),
-                course.link()
+                course.link(),
+                course.certified()
         );
     }
 

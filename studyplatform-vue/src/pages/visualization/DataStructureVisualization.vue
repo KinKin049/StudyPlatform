@@ -1,5 +1,12 @@
 <script setup>
+import { useLearningTimeTracker } from '../../composables/useLearningTimeTracker'
 import { algorithmDemos } from './algorithmDemos'
+
+useLearningTimeTracker({
+  moduleType: 'visualization',
+  targetCode: 'data-structure',
+  targetTitle: '数据结构可视化',
+})
 </script>
 
 <template>

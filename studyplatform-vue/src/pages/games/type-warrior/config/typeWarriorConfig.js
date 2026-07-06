@@ -19,6 +19,7 @@ export const TYPE_WARRIOR_CONFIG = {
 export const TYPE_WARRIOR_BALANCE = {
   ui: {
     showSkillDebugPanel: true,
+    showWaveDebugPanel: true,
   },
   player: {
     baseHealth: 100,
@@ -79,6 +80,7 @@ export const TYPE_WARRIOR_BALANCE = {
     emissionDuration: 0.34,
     emissionDistance: 64,
     emissionJitter: 0.18,
+    spawnIntervalSeconds: 30,
     maxMinions: 9,
     minionInitialDelay: 4.6,
     minionInterval: 4.2,

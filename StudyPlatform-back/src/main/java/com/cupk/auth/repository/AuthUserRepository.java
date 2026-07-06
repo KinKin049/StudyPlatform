@@ -66,6 +66,27 @@ public class AuthUserRepository {
         );
     }
 
+    public void updatePassword(long userId, String passwordHash) {
+        jdbcTemplate.update(
+                """
+                UPDATE auth_users
+                SET password_hash = ?
+                WHERE id = ?
+                """,
+                passwordHash,
+                userId
+        );
+        jdbcTemplate.update(
+                """
+                UPDATE users
+                SET password_hash = ?
+                WHERE id = ?
+                """,
+                passwordHash,
+                userId
+        );
+    }
+
     public void updateOnboarding(AuthOnboardingRequest request, String interestsJson) {
         String sql = """
                 UPDATE auth_users

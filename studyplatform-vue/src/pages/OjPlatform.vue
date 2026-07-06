@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
+import { useLearningTimeTracker } from '../composables/useLearningTimeTracker'
 import {
   createSubmission,
   getProblem,
@@ -8,6 +9,12 @@ import {
   listProblems,
   listSubmissionCases,
 } from '../oj/api'
+
+useLearningTimeTracker({
+  moduleType: 'oj',
+  targetCode: 'lab-oj',
+  targetTitle: 'OJ 在线判题',
+})
 
 const problems = ref([])
 const selectedProblem = ref(null)

@@ -3,6 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } 
 import { useRoute, useRouter } from 'vue-router'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { useLearningTimeTracker } from '../../composables/useLearningTimeTracker'
 import { calculusModelOptions, physicsModelOptions, probabilityModelOptions, subjectOptions } from './spaceModelCatalog'
 
 const canvasHost = ref(null)
@@ -45,6 +46,12 @@ const state = reactive({
   autoRotate: true,
   question: '',
   lastQuestion: '',
+})
+
+useLearningTimeTracker({
+  moduleType: 'visualization',
+  targetCode: () => `space-3d:${state.subject}:${state.modelId}`,
+  targetTitle: () => activeModel.value?.name || '三维空间模型',
 })
 
 const activeSubject = computed(() => subjectOptions.find((item) => item.id === state.subject) ?? subjectOptions[0])

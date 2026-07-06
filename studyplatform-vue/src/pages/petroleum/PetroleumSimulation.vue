@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { RouterLink } from 'vue-router'
+import { useLearningTimeTracker } from '../../composables/useLearningTimeTracker'
 import PumpIndicatorPanel from './PumpIndicatorPanel.vue'
 import ReservoirDynamicsPanel from './ReservoirDynamicsPanel.vue'
 import WaterfloodPanel from './WaterfloodPanel.vue'
@@ -12,6 +13,12 @@ import WellLogPanel from './WellLogPanel.vue'
  */
 
 const activeTab = ref('wellLog')
+
+useLearningTimeTracker({
+  moduleType: 'petroleum',
+  targetCode: () => `petroleum:${activeTab.value}`,
+  targetTitle: '油气仿真平台',
+})
 </script>
 
 <template>

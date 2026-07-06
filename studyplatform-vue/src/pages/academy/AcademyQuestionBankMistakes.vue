@@ -6,8 +6,14 @@ import {
   fetchQuestionBankMistakeSummary,
   recordQuestionBankAnswer,
 } from '../../api/academy'
+import { useLearningTimeTracker } from '../../composables/useLearningTimeTracker'
 
 const route = useRoute()
+useLearningTimeTracker({
+  moduleType: 'mistake',
+  targetCode: () => setCode.value || 'all',
+  targetTitle: '错题本复习',
+})
 
 const summary = ref({
   total: 0,

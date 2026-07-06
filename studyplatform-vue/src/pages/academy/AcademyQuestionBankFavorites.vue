@@ -7,8 +7,14 @@ import {
   fetchQuestionBankFavoriteSummary,
   removeQuestionBankFavorite,
 } from '../../api/academy'
+import { useLearningTimeTracker } from '../../composables/useLearningTimeTracker'
 
 const route = useRoute()
+useLearningTimeTracker({
+  moduleType: 'favorite',
+  targetCode: () => setCode.value || 'all',
+  targetTitle: '收藏题目复习',
+})
 
 const summary = ref({
   total: 0,

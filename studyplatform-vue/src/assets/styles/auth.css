@@ -94,6 +94,18 @@
   box-shadow: 0 0 0 4px rgba(116, 235, 213, 0.18);
 }
 
+.auth-code-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 132px;
+  gap: 10px;
+}
+
+.auth-code-row button {
+  height: 46px;
+  white-space: nowrap;
+  box-shadow: 0 12px 26px rgba(23, 143, 134, 0.18);
+}
+
 .auth-agreement {
   display: flex !important;
   align-items: center;
@@ -330,6 +342,7 @@
   }
 
   .auth-pet-grid,
+  .auth-code-row,
   .auth-step-actions {
     grid-template-columns: 1fr;
   }

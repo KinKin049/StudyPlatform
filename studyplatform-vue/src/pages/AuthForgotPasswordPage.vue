@@ -1,5 +1,6 @@
 <script setup>
-import { ref } from 'vue'
+import { onBeforeUnmount, ref } from 'vue'
+import { confirmPasswordReset, sendPasswordResetCode } from '../api/auth'
 
 const form = ref({
   email: '',
@@ -9,9 +10,49 @@ const form = ref({
 })
 const message = ref('')
 const errorMessage = ref('')
+const sendingCode = ref(false)
+const resetting = ref(false)
+const countdown = ref(0)
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+let countdownTimer = null
 
-function submitResetPassword() {
+function startCountdown() {
+  countdown.value = 60
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+  }
+  countdownTimer = window.setInterval(() => {
+    countdown.value -= 1
+    if (countdown.value <= 0) {
+      clearInterval(countdownTimer)
+      countdownTimer = null
+    }
+  }, 1000)
+}
+
+async function sendCode() {
+  const email = form.value.email.trim()
+  errorMessage.value = ''
+  message.value = ''
+
+  if (!emailPattern.test(email)) {
+    errorMessage.value = '请输入正确的邮箱'
+    return
+  }
+
+  sendingCode.value = true
+  try {
+    const response = await sendPasswordResetCode({ email })
+    message.value = response.message || '如果邮箱存在，验证码已发送'
+    startCountdown()
+  } catch (error) {
+    errorMessage.value = error.message || '验证码发送失败'
+  } finally {
+    sendingCode.value = false
+  }
+}
+
+async function submitResetPassword() {
   const email = form.value.email.trim()
   errorMessage.value = ''
   message.value = ''
@@ -33,8 +74,30 @@ function submitResetPassword() {
     return
   }
 
-  message.value = '找回密码模块已创建，验证码与重置功能暂未接入。'
+  resetting.value = true
+  try {
+    const response = await confirmPasswordReset({
+      email,
+      password: form.value.password,
+      confirmPassword: form.value.confirmPassword,
+      code: form.value.code.trim(),
+    })
+    message.value = response.message || '密码已重置，请返回登录'
+    form.value.password = ''
+    form.value.confirmPassword = ''
+    form.value.code = ''
+  } catch (error) {
+    errorMessage.value = error.message || '密码重置失败'
+  } finally {
+    resetting.value = false
+  }
 }
+
+onBeforeUnmount(() => {
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+  }
+})
 </script>
 
 <template>
@@ -58,11 +121,16 @@ function submitResetPassword() {
         </label>
         <label>
           验证码
-          <input v-model="form.code" type="text" inputmode="numeric" maxlength="12" required />
+          <div class="auth-code-row">
+            <input v-model="form.code" type="text" inputmode="numeric" maxlength="12" required />
+            <button type="button" :disabled="sendingCode || countdown > 0" @click="sendCode">
+              {{ countdown > 0 ? `${countdown}s` : sendingCode ? '发送中...' : '发送验证码' }}
+            </button>
+          </div>
         </label>
         <p v-if="errorMessage" class="auth-error">{{ errorMessage }}</p>
         <p v-if="message" class="auth-success">{{ message }}</p>
-        <button type="submit">确认找回</button>
+        <button type="submit" :disabled="resetting">{{ resetting ? '重置中...' : '确认找回' }}</button>
       </form>
 
       <p class="auth-switch">想起密码了？<RouterLink to="/login">返回登录</RouterLink></p>

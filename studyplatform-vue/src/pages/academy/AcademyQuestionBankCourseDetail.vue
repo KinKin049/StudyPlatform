@@ -10,6 +10,7 @@ import {
 } from '../../api/academy'
 import { recordProfileLearningEvent } from '../../api/profile'
 import { resolveResourceUrl } from '../../api/request'
+import { useLearningTimeTracker } from '../../composables/useLearningTimeTracker'
 
 const route = useRoute()
 
@@ -32,6 +33,12 @@ const vocabularyCache = ref({})
 const questionListRef = ref(null)
 const favoriteSubmitting = ref({})
 const practiceStarted = ref(false)
+const practiceTimeTracker = useLearningTimeTracker({
+  moduleType: 'question_bank',
+  targetCode: () => bank.value?.code || route.params.courseCode,
+  targetTitle: () => bank.value?.title || '题库练习',
+  autoStart: false,
+})
 
 const bank = computed(() => detail.value?.bank)
 const questions = computed(() => detail.value?.questions || [])
@@ -429,6 +436,7 @@ const handleStartPractice = async () => {
   }
   window.dispatchEvent(new CustomEvent('academy-question-practice-start'))
   practiceStarted.value = true
+  practiceTimeTracker.start()
   await nextTick()
   scrollToFirstQuestion(true)
 }

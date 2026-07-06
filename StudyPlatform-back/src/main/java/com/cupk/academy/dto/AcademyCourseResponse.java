@@ -17,6 +17,7 @@ public record AcademyCourseResponse(
         String overview,
         String video,
         String videoFilePath,
-        String link
+        String link,
+        boolean certified
 ) {
 }

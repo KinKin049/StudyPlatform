@@ -882,6 +882,15 @@
   font-weight: 950;
 }
 
+.academy-aggregate-stat small {
+  display: block;
+  margin-top: 6px;
+  max-width: 220px;
+  color: rgba(133, 54, 45, 0.82);
+  font-size: 12px;
+  font-weight: 750;
+}
+
 .academy-aggregate-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(250px, 300px);

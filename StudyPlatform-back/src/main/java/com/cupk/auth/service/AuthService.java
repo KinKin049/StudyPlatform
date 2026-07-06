@@ -4,28 +4,55 @@ import com.cupk.auth.dto.AuthLoginRequest;
 import com.cupk.auth.dto.AuthOnboardingRequest;
 import com.cupk.auth.dto.AuthRegisterRequest;
 import com.cupk.auth.dto.AuthUserResponse;
+import com.cupk.auth.dto.PasswordResetCodeRequest;
+import com.cupk.auth.dto.PasswordResetConfirmRequest;
 import com.cupk.auth.repository.AuthUserRepository;
 import com.cupk.auth.repository.AuthUserRepository.AuthUserRow;
+import com.cupk.auth.repository.PasswordResetCodeRepository;
+import com.cupk.auth.repository.PasswordResetCodeRepository.PasswordResetCodeRow;
+import java.security.SecureRandom;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.regex.Pattern;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.mail.MailException;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * Handles account registration, credential checks, and onboarding choices.
+ * Handles account registration, credential checks, onboarding choices, and password recovery.
  */
 @Service
 public class AuthService {
     private static final Pattern USERNAME_PATTERN = Pattern.compile("^[A-Za-z0-9_\\u4e00-\\u9fa5-]{2,64}$");
+    private static final Duration RESET_CODE_TTL = Duration.ofMinutes(10);
+    private static final Duration RESET_CODE_SEND_INTERVAL = Duration.ofSeconds(60);
+    private static final int RESET_CODE_MAX_ATTEMPTS = 5;
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final AuthUserRepository authUserRepository;
+    private final PasswordResetCodeRepository passwordResetCodeRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JavaMailSender mailSender;
+    private final String mailUsername;
 
-    public AuthService(AuthUserRepository authUserRepository, PasswordEncoder passwordEncoder) {
+    public AuthService(
+            AuthUserRepository authUserRepository,
+            PasswordResetCodeRepository passwordResetCodeRepository,
+            PasswordEncoder passwordEncoder,
+            JavaMailSender mailSender,
+            @Value("${spring.mail.username:}") String mailUsername
+    ) {
         this.authUserRepository = authUserRepository;
+        this.passwordResetCodeRepository = passwordResetCodeRepository;
         this.passwordEncoder = passwordEncoder;
+        this.mailSender = mailSender;
+        this.mailUsername = mailUsername == null ? "" : mailUsername.trim();
     }
 
     public AuthUserResponse register(AuthRegisterRequest request) {
@@ -56,6 +83,59 @@ public class AuthService {
         return user.toResponse();
     }
 
+    public void sendPasswordResetCode(PasswordResetCodeRequest request) {
+        String email = clean(request.email()).toLowerCase();
+        AuthUserRow user = authUserRepository.findByEmail(email);
+        if (user == null) {
+            return;
+        }
+        if (mailUsername.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "邮箱发送服务未配置");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        PasswordResetCodeRow latest = passwordResetCodeRepository.findLatest(email);
+        if (latest != null && latest.createdAt().plus(RESET_CODE_SEND_INTERVAL).isAfter(now)) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "验证码发送过于频繁，请稍后再试");
+        }
+
+        String code = generateResetCode();
+        sendResetCodeEmail(email, code);
+        passwordResetCodeRepository.markActiveCodesUsed(email);
+        passwordResetCodeRepository.insert(email, passwordEncoder.encode(code), now.plus(RESET_CODE_TTL));
+    }
+
+    public void resetPassword(PasswordResetConfirmRequest request) {
+        String email = clean(request.email()).toLowerCase();
+        String code = clean(request.code());
+        String password = request.password() == null ? "" : request.password();
+
+        if (!password.equals(request.confirmPassword())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "两次输入的新密码不一致");
+        }
+
+        AuthUserRow user = authUserRepository.findByEmail(email);
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "验证码错误或已过期");
+        }
+
+        PasswordResetCodeRow resetCode = passwordResetCodeRepository.findLatestUsable(email, LocalDateTime.now());
+        if (resetCode == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "验证码错误或已过期");
+        }
+        if (resetCode.attemptCount() >= RESET_CODE_MAX_ATTEMPTS) {
+            passwordResetCodeRepository.markUsed(resetCode.id());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "验证码错误次数过多，请重新获取");
+        }
+        if (!passwordEncoder.matches(code, resetCode.codeHash())) {
+            passwordResetCodeRepository.incrementAttempt(resetCode.id());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "验证码错误");
+        }
+
+        authUserRepository.updatePassword(user.id(), passwordEncoder.encode(password));
+        passwordResetCodeRepository.markUsed(resetCode.id());
+    }
+
     public AuthUserResponse saveOnboarding(AuthOnboardingRequest request) {
         if (request == null || request.userId() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少用户信息");
@@ -76,6 +156,29 @@ public class AuthService {
 
         authUserRepository.updateOnboarding(request, toJsonArray(request.interests()));
         return authUserRepository.findResponseById(request.userId());
+    }
+
+    private String generateResetCode() {
+        return String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
+    }
+
+    private void sendResetCodeEmail(String email, String code) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(mailUsername);
+        message.setTo(email);
+        message.setSubject("StudyPlatform 找回密码验证码");
+        message.setText("""
+                你正在找回 StudyPlatform 账号密码。
+
+                验证码：%s
+
+                验证码 10 分钟内有效。若不是你本人操作，请忽略这封邮件。
+                """.formatted(code));
+        try {
+            mailSender.send(message);
+        } catch (MailException error) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "验证码发送失败，请检查邮箱服务配置");
+        }
     }
 
     private String clean(String value) {
