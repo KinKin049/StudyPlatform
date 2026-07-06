@@ -2,7 +2,10 @@ package com.cupk.games.repository;
 
 import com.cupk.games.dto.LadderJumpRecordSaveRequest;
 import com.cupk.games.dto.TypeWarriorRecordSaveRequest;
+import java.sql.Statement;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -16,43 +19,51 @@ public class GameRecordRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insertLadderJumpRecord(long userId, LadderJumpRecordSaveRequest request) {
+    public long insertLadderJumpRecord(long userId, LadderJumpRecordSaveRequest request) {
         String sql = """
                 INSERT INTO game_ladder_jump_records
                   (user_id, question_bank_code, total_coins, correct_count, wrong_count, duration_seconds)
                 VALUES (?, ?, ?, ?, ?, ?)
                 """;
-        jdbcTemplate.update(
-                sql,
-                userId,
-                blankToNull(request.questionBankCode()),
-                safeInt(request.totalCoins()),
-                safeInt(request.correctCount()),
-                safeInt(request.wrongCount()),
-                safeDouble(request.durationSeconds())
-        );
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(connection -> {
+            var ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            ps.setLong(1, userId);
+            ps.setString(2, blankToNull(request.questionBankCode()));
+            ps.setInt(3, safeInt(request.totalCoins()));
+            ps.setInt(4, safeInt(request.correctCount()));
+            ps.setInt(5, safeInt(request.wrongCount()));
+            ps.setDouble(6, safeDouble(request.durationSeconds()));
+            return ps;
+        }, keyHolder);
+        Number key = keyHolder.getKey();
+        return key == null ? 0L : key.longValue();
     }
 
-    public void insertTypeWarriorRecord(long userId, TypeWarriorRecordSaveRequest request) {
+    public long insertTypeWarriorRecord(long userId, TypeWarriorRecordSaveRequest request) {
         String sql = """
                 INSERT INTO game_type_warrior_records
                   (user_id, reached_wave, completed_wave_count, score, max_combo, solved_word_count,
                    total_kill_count, typed_letter_count, duration_seconds, effective_typing_seconds)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
-        jdbcTemplate.update(
-                sql,
-                userId,
-                safeInt(request.reachedWave()),
-                safeInt(request.completedWaveCount()),
-                safeLong(request.score()),
-                safeInt(request.maxCombo()),
-                safeInt(request.solvedWordCount()),
-                safeInt(request.totalKillCount()),
-                safeInt(request.typedLetterCount()),
-                safeDouble(request.durationSeconds()),
-                safeDouble(request.effectiveTypingSeconds())
-        );
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(connection -> {
+            var ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            ps.setLong(1, userId);
+            ps.setInt(2, safeInt(request.reachedWave()));
+            ps.setInt(3, safeInt(request.completedWaveCount()));
+            ps.setLong(4, safeLong(request.score()));
+            ps.setInt(5, safeInt(request.maxCombo()));
+            ps.setInt(6, safeInt(request.solvedWordCount()));
+            ps.setInt(7, safeInt(request.totalKillCount()));
+            ps.setInt(8, safeInt(request.typedLetterCount()));
+            ps.setDouble(9, safeDouble(request.durationSeconds()));
+            ps.setDouble(10, safeDouble(request.effectiveTypingSeconds()));
+            return ps;
+        }, keyHolder);
+        Number key = keyHolder.getKey();
+        return key == null ? 0L : key.longValue();
     }
 
     public LadderJumpAggregateRow findLadderJumpAggregate(long userId) {

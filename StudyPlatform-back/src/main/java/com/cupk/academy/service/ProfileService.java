@@ -17,6 +17,7 @@ import com.cupk.academy.dto.QuestionBankMistakeSummaryResponse;
 import com.cupk.academy.repository.ProfileRepository;
 import com.cupk.academy.repository.QuestionBankRepository;
 import com.cupk.games.repository.GameRecordRepository;
+import com.cupk.rewards.CoinRewardService;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -49,15 +50,18 @@ public class ProfileService {
     private final ProfileRepository profileRepository;
     private final GameRecordRepository gameRecordRepository;
     private final QuestionBankRepository questionBankRepository;
+    private final CoinRewardService coinRewardService;
 
     public ProfileService(
             ProfileRepository profileRepository,
             GameRecordRepository gameRecordRepository,
-            QuestionBankRepository questionBankRepository
+            QuestionBankRepository questionBankRepository,
+            CoinRewardService coinRewardService
     ) {
         this.profileRepository = profileRepository;
         this.gameRecordRepository = gameRecordRepository;
         this.questionBankRepository = questionBankRepository;
+        this.coinRewardService = coinRewardService;
     }
 
     public ProfileOverviewResponse getOverview(long userId) {
@@ -100,7 +104,7 @@ public class ProfileService {
                 buildLearningTimes(userId),
                 buildCodingDifficulties(userId),
                 buildGameMetrics(userId, ladderJumpAggregate, typeWarriorAggregate),
-                ladderJumpAggregate.totalCoins() + typeWarriorAggregate.totalCoins() + adminCoinAdjustment,
+                coinRewardService.totalCoins(userId) + adminCoinAdjustment,
                 buildMistakeMetrics(userId),
                 buildRankingMetrics(),
                 buildAchievementMetrics(),
@@ -109,7 +113,9 @@ public class ProfileService {
     }
 
     public void recordLearningEvent(long userId, ProfileLearningEventRequest request) {
-        profileRepository.insertLearningEvent(userId, normalizeRequest(request));
+        ProfileLearningEventRequest normalizedRequest = normalizeRequest(request);
+        long eventId = profileRepository.insertLearningEvent(userId, normalizedRequest);
+        coinRewardService.rewardLearningEvent(userId, eventId, normalizedRequest);
     }
 
     public void recordLearningTime(long userId, ProfileLearningTimeRecordRequest request) {
@@ -120,13 +126,16 @@ public class ProfileService {
         if (durationSeconds <= 0) {
             return;
         }
-        profileRepository.insertLearningTimeRecord(
+        String moduleType = normalizeLearningModuleType(request.moduleType());
+        String targetTitle = clean(request.targetTitle(), null, 128);
+        long recordId = profileRepository.insertLearningTimeRecord(
                 userId,
-                normalizeLearningModuleType(request.moduleType()),
+                moduleType,
                 clean(request.targetCode(), null, 128),
-                clean(request.targetTitle(), null, 128),
+                targetTitle,
                 durationSeconds
         );
+        coinRewardService.rewardLearningTime(userId, recordId, moduleType, targetTitle, durationSeconds);
     }
 
     public ProfileUserResponse getUserProfile(long userId) {

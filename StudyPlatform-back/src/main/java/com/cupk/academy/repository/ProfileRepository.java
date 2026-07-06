@@ -4,12 +4,15 @@ import com.cupk.academy.dto.ProfileLearningEventRequest;
 import com.cupk.academy.dto.ProfileUserResponse;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -20,28 +23,36 @@ public class ProfileRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insertLearningEvent(long userId, ProfileLearningEventRequest request) {
+    public long insertLearningEvent(long userId, ProfileLearningEventRequest request) {
         String sql = """
                 INSERT INTO profile_learning_events
                   (user_id, event_type, set_code, question_id, question_type, selected_answer,
                    correct_answer, is_correct, vocabulary_status)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
-        jdbcTemplate.update(
-                sql,
-                userId,
-                request.eventType(),
-                request.setCode(),
-                request.questionId(),
-                request.questionType(),
-                request.selectedAnswer(),
-                request.correctAnswer(),
-                request.isCorrect(),
-                request.vocabularyStatus()
-        );
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(connection -> {
+            var ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            ps.setLong(1, userId);
+            ps.setString(2, request.eventType());
+            ps.setString(3, request.setCode());
+            if (request.questionId() == null) {
+                ps.setObject(4, null);
+            } else {
+                ps.setLong(4, request.questionId());
+            }
+            ps.setString(5, request.questionType());
+            ps.setString(6, request.selectedAnswer());
+            ps.setString(7, request.correctAnswer());
+            ps.setObject(8, request.isCorrect());
+            ps.setString(9, request.vocabularyStatus());
+            return ps;
+        }, keyHolder);
+        Number key = keyHolder.getKey();
+        return key == null ? 0L : key.longValue();
     }
 
-    public void insertLearningTimeRecord(
+    public long insertLearningTimeRecord(
             long userId,
             String moduleType,
             String targetCode,
@@ -53,7 +64,18 @@ public class ProfileRepository {
                   (user_id, module_type, target_code, target_title, duration_seconds)
                 VALUES (?, ?, ?, ?, ?)
                 """;
-        jdbcTemplate.update(sql, userId, moduleType, targetCode, targetTitle, durationSeconds);
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(connection -> {
+            var ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            ps.setLong(1, userId);
+            ps.setString(2, moduleType);
+            ps.setString(3, targetCode);
+            ps.setString(4, targetTitle);
+            ps.setInt(5, durationSeconds);
+            return ps;
+        }, keyHolder);
+        Number key = keyHolder.getKey();
+        return key == null ? 0L : key.longValue();
     }
 
     public ProfileUserResponse findUserProfile(long userId) {
