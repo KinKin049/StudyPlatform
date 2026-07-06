@@ -7,6 +7,7 @@ import {
   fetchMyAcademyCourses,
   unenrollAcademyCourse,
 } from '../../api/academy'
+import { fetchProfileOverview } from '../../api/profile'
 import { resolveResourceUrl } from '../../api/request'
 
 const props = defineProps({
@@ -22,7 +23,6 @@ const userInfo = {
   accountId: 'STU-2026-0001',
   role: '学生',
   initial: 'K',
-  studyTime: '85 时 37 分',
 }
 
 const statusFilters = ['全部', '正在进行', '即将开始', '已结束']
@@ -62,6 +62,9 @@ const assignmentsError = ref('')
 const exams = ref([])
 const examsLoading = ref(false)
 const examsError = ref('')
+const profileOverview = ref(null)
+const studyTimeLoading = ref(false)
+const studyTimeError = ref('')
 const droppingCourseKey = ref('')
 const pendingDropCourse = ref(null)
 const dropFeedbackVisible = ref(false)
@@ -82,6 +85,12 @@ watch(
 )
 
 const pageTitle = computed(() => pageTitles[props.variant] || pageTitles.courses)
+const realStudyTime = computed(() => {
+  if (studyTimeLoading.value) return '加载中'
+  const learningTime = profileOverview.value?.learningTimes?.find((item) => item.label === '学习时长')
+    || profileOverview.value?.learningTimes?.[0]
+  return learningTime?.value || '0m'
+})
 
 const myCourseCards = computed(() =>
   myCourses.value.map((course) => {
@@ -313,6 +322,20 @@ const loadExams = async () => {
   }
 }
 
+const loadProfileStudyTime = async () => {
+  studyTimeLoading.value = true
+  studyTimeError.value = ''
+
+  try {
+    profileOverview.value = await fetchProfileOverview()
+  } catch (error) {
+    studyTimeError.value = error instanceof Error ? error.message : '学习时长加载失败'
+    profileOverview.value = null
+  } finally {
+    studyTimeLoading.value = false
+  }
+}
+
 const openDropCourseDialog = (card) => {
   if (!card.canDrop || droppingCourseKey.value) return
   pendingDropCourse.value = card
@@ -348,6 +371,7 @@ const confirmDropCourse = async () => {
 }
 
 onMounted(() => {
+  loadProfileStudyTime()
   loadMyCourses()
   loadAssignments()
   loadExams()
@@ -401,7 +425,8 @@ onBeforeUnmount(() => {
 
       <div class="academy-aggregate-stat">
         <span>学习时长</span>
-        <strong>{{ userInfo.studyTime }}</strong>
+        <strong>{{ realStudyTime }}</strong>
+        <small v-if="studyTimeError">{{ studyTimeError }}</small>
       </div>
     </section>
 

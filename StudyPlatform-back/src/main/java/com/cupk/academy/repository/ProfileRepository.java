@@ -41,6 +41,21 @@ public class ProfileRepository {
         );
     }
 
+    public void insertLearningTimeRecord(
+            long userId,
+            String moduleType,
+            String targetCode,
+            String targetTitle,
+            int durationSeconds
+    ) {
+        String sql = """
+                INSERT INTO profile_learning_time_records
+                  (user_id, module_type, target_code, target_title, duration_seconds)
+                VALUES (?, ?, ?, ?, ?)
+                """;
+        jdbcTemplate.update(sql, userId, moduleType, targetCode, targetTitle, durationSeconds);
+    }
+
     public ProfileUserResponse findUserProfile(long userId) {
         ensureUserProfile(userId);
         String sql = """
@@ -154,6 +169,34 @@ public class ProfileRepository {
         return value == null ? 0 : value;
     }
 
+    public long sumAllLearningTimeSeconds(long userId) {
+        Long value = jdbcTemplate.queryForObject(
+                """
+                SELECT COALESCE(SUM(duration_seconds), 0)
+                FROM profile_learning_time_records
+                WHERE user_id = ?
+                """,
+                Long.class,
+                userId
+        );
+        return value == null ? 0 : value;
+    }
+
+    public long sumLearningTimeSecondsBetween(long userId, LocalDateTime startAt, LocalDateTime endAt) {
+        Long value = jdbcTemplate.queryForObject(
+                """
+                SELECT COALESCE(SUM(duration_seconds), 0)
+                FROM profile_learning_time_records
+                WHERE user_id = ? AND created_at >= ? AND created_at < ?
+                """,
+                Long.class,
+                userId,
+                startAt,
+                endAt
+        );
+        return value == null ? 0 : value;
+    }
+
     public long findAdminCoinAdjustment(long userId) {
         ensureUserProfile(userId);
         return queryLong(
@@ -237,35 +280,56 @@ public class ProfileRepository {
 
     public Map<LocalDate, Integer> countEventsByDate(long userId, LocalDate startDate, LocalDate endDate) {
         String sql = """
-                SELECT DATE(created_at) AS activity_date, COUNT(*) AS event_count
-                FROM profile_learning_events
-                WHERE user_id = ? AND created_at >= ? AND created_at < ?
-                GROUP BY DATE(created_at)
+                SELECT activity_date, COUNT(*) AS event_count
+                FROM (
+                  SELECT DATE(created_at) AS activity_date
+                  FROM profile_learning_events
+                  WHERE user_id = ? AND created_at >= ? AND created_at < ?
+                  UNION ALL
+                  SELECT DATE(created_at) AS activity_date
+                  FROM profile_learning_time_records
+                  WHERE user_id = ? AND created_at >= ? AND created_at < ?
+                ) activity
+                GROUP BY activity_date
                 ORDER BY activity_date ASC
                 """;
         Map<LocalDate, Integer> counts = new LinkedHashMap<>();
+        LocalDateTime startAt = startDate.atStartOfDay();
+        LocalDateTime endAt = endDate.plusDays(1).atStartOfDay();
         jdbcTemplate.query(
                 sql,
                 rs -> {
                     counts.put(rs.getDate("activity_date").toLocalDate(), rs.getInt("event_count"));
                 },
                 userId,
-                startDate.atStartOfDay(),
-                endDate.plusDays(1).atStartOfDay()
+                startAt,
+                endAt,
+                userId,
+                startAt,
+                endAt
         );
         return counts;
     }
 
     public List<LocalDate> findActiveDates(long userId, LocalDate startDate) {
         String sql = """
-                SELECT DISTINCT DATE(created_at) AS activity_date
-                FROM profile_learning_events
-                WHERE user_id = ? AND created_at >= ?
+                SELECT DISTINCT activity_date
+                FROM (
+                  SELECT DATE(created_at) AS activity_date
+                  FROM profile_learning_events
+                  WHERE user_id = ? AND created_at >= ?
+                  UNION ALL
+                  SELECT DATE(created_at) AS activity_date
+                  FROM profile_learning_time_records
+                  WHERE user_id = ? AND created_at >= ?
+                ) activity
                 ORDER BY activity_date DESC
                 """;
         return jdbcTemplate.query(
                 sql,
                 (rs, rowNum) -> rs.getDate("activity_date").toLocalDate(),
+                userId,
+                startDate.atStartOfDay(),
                 userId,
                 startDate.atStartOfDay()
         );

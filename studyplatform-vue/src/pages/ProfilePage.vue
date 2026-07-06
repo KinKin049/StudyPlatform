@@ -27,10 +27,10 @@ const fallbackUser = {
 
 const fallbackOverview = {
   stats: [
-    { label: '累计练习', value: '0', hint: '题 / 词 / 卡片' },
-    { label: '已掌握', value: '0', hint: '正确或标记认识' },
+    { label: '学习时长', value: '0m', hint: '真实累计时长' },
+    { label: '今日学习', value: '0m', hint: '今日真实时长' },
+    { label: '练习记录', value: '0', hint: '答题 / 查答案 / 背词' },
     { label: '连续学习', value: '0', hint: '天' },
-    { label: '题库进度', value: '0%', hint: '整体完成度' },
   ],
   overallProgress: 0,
   difficultyStats: [
@@ -54,8 +54,8 @@ const fallbackOverview = {
     count: 0,
   })),
   learningTimes: [
-    { label: '视频学习时长', value: '0m', hint: '数据库暂无记录', tone: 'cyan' },
-    { label: '可视化学习时长', value: '0m', hint: '数据库暂无记录', tone: 'violet' },
+    { label: '学习时长', value: '0m', hint: '暂无学习时长记录', tone: 'cyan' },
+    { label: '可视化时长', value: '0m', hint: '暂无可视化时长记录', tone: 'violet' },
   ],
   codingDifficulties: [
     { label: '简单', level: 'EASY', solved: 0, total: 0, color: '#00b8a3' },

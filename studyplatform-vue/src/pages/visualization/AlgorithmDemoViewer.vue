@@ -1,12 +1,19 @@
 <script setup>
 import { computed } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
+import { useLearningTimeTracker } from '../../composables/useLearningTimeTracker'
 import { algorithmDemos, getAlgorithmAssetPath } from './algorithmDemos'
 
 const route = useRoute()
 
 const currentDemo = computed(() => algorithmDemos.find((demo) => demo.id === route.params.demoId))
 const demoSrc = computed(() => (currentDemo.value ? getAlgorithmAssetPath(currentDemo.value.file) : ''))
+
+useLearningTimeTracker({
+  moduleType: 'visualization',
+  targetCode: () => `data-structure:${route.params.demoId || 'unknown'}`,
+  targetTitle: () => currentDemo.value?.title || '数据结构可视化',
+})
 </script>
 
 <template>

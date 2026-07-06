@@ -15,7 +15,6 @@ const openPetroleumSimulation = () => {
 <template>
   <main class="lab-page" aria-labelledby="lab-title">
     <section class="lab-hero">
-      <p class="lab-kicker">Experimental Platform</p>
       <h1 id="lab-title">实验平台</h1>
       <p>
         面向课程实践、工程训练和虚拟仿真的统一入口。当前已接入在线编程平台与石油气仿真平台。
@@ -27,7 +26,6 @@ const openPetroleumSimulation = () => {
         <div class="lab-panel-header">
           <span class="lab-panel-index">01</span>
           <div>
-            <p>Online Judge</p>
             <h2>在线编程平台</h2>
           </div>
         </div>
@@ -60,7 +58,6 @@ const openPetroleumSimulation = () => {
         <div class="lab-panel-header">
           <span class="lab-panel-index">02</span>
           <div>
-            <p>Petroleum Simulation</p>
             <h2>石油气仿真</h2>
           </div>
         </div>

@@ -9,6 +9,7 @@ import {
   fetchMyAcademyCourses,
 } from '../../api/academy'
 import { resolveResourceUrl } from '../../api/request'
+import { useVideoLearningTimeTracker } from '../../composables/useLearningTimeTracker'
 
 const props = defineProps({
   resource: {
@@ -46,6 +47,13 @@ const reviewForm = ref({
   content: '',
 })
 const submittingReview = ref(false)
+const courseVideoRef = ref(null)
+
+useVideoLearningTimeTracker(courseVideoRef, {
+  moduleType: 'video',
+  targetCode: () => `${props.resource}:${props.courseId}`,
+  targetTitle: () => course.value?.name || props.moduleTitle,
+})
 
 const featureItems = [
   { icon: '◌', title: 'AI 助教智能问答', text: '预留课程答疑、知识点解释和代码问题分析入口' },
@@ -343,6 +351,7 @@ watch(() => [props.resource, props.courseId], loadCourse)
             <div class="course-player-placeholder">
               <video
                 v-if="videoUrl"
+                ref="courseVideoRef"
                 :src="videoUrl"
                 :poster="coverUrl"
                 controls

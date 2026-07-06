@@ -1,12 +1,19 @@
 <script setup>
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
+import { useLearningTimeTracker } from '../../composables/useLearningTimeTracker'
 import {
   calculusModelOptions,
   physicsModelOptions,
   probabilityModelOptions,
   subjectOptions,
 } from './spaceModelCatalog'
+
+useLearningTimeTracker({
+  moduleType: 'visualization',
+  targetCode: 'space-models',
+  targetTitle: '空间模型实验室',
+})
 
 const subjectModels = {
   calculus: calculusModelOptions,

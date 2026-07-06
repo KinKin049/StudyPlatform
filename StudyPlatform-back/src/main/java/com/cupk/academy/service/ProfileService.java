@@ -5,6 +5,7 @@ import com.cupk.academy.dto.ProfileCodingDifficultyResponse;
 import com.cupk.academy.dto.ProfileDifficultyResponse;
 import com.cupk.academy.dto.ProfileLearningEventRequest;
 import com.cupk.academy.dto.ProfileLearningTimeResponse;
+import com.cupk.academy.dto.ProfileLearningTimeRecordRequest;
 import com.cupk.academy.dto.ProfileOverviewResponse;
 import com.cupk.academy.dto.ProfilePreviewMetricResponse;
 import com.cupk.academy.dto.ProfileRecentActivityResponse;
@@ -41,6 +42,7 @@ public class ProfileService {
     private static final Logger LOGGER = LoggerFactory.getLogger(ProfileService.class);
     private static final int HEATMAP_DAYS = 119;
     private static final long MAX_AVATAR_SIZE = 2L * 1024L * 1024L;
+    private static final int MAX_LEARNING_TIME_SECONDS = 12 * 60 * 60;
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("MM-dd HH:mm");
 
@@ -65,6 +67,13 @@ public class ProfileService {
         long vocabularyEvents = profileRepository.countVocabularyEvents(userId);
         long practicedQuestions = profileRepository.countDistinctPracticedQuestions(userId);
         long totalQuestions = profileRepository.countTotalQuestions();
+        LocalDate today = LocalDate.now();
+        long totalLearningSeconds = profileRepository.sumAllLearningTimeSeconds(userId);
+        long todayLearningSeconds = profileRepository.sumLearningTimeSecondsBetween(
+                userId,
+                today.atStartOfDay(),
+                today.plusDays(1).atStartOfDay()
+        );
         int overallProgress = percentage(practicedQuestions, totalQuestions);
         int streak = currentStreak(userId);
 
@@ -77,10 +86,10 @@ public class ProfileService {
 
         return new ProfileOverviewResponse(
                 List.of(
-                        new ProfileStatResponse("累计练习", formatNumber(totalEvents), "题 / 词 / 卡片"),
-                        new ProfileStatResponse("已掌握", formatNumber(correctAnswers + knownVocabulary), "正确或标记认识"),
-                        new ProfileStatResponse("连续学习", String.valueOf(streak), "天"),
-                        new ProfileStatResponse("题库进度", overallProgress + "%", "整体完成度")
+                        new ProfileStatResponse("学习时长", formatDuration(totalLearningSeconds), "真实累计时长"),
+                        new ProfileStatResponse("今日学习", formatDuration(todayLearningSeconds), "今日真实时长"),
+                        new ProfileStatResponse("练习记录", formatNumber(totalEvents), "答题 / 查答案 / 背词"),
+                        new ProfileStatResponse("连续学习", String.valueOf(streak), "天")
                 ),
                 overallProgress,
                 buildDistribution(userId),
@@ -101,6 +110,23 @@ public class ProfileService {
 
     public void recordLearningEvent(long userId, ProfileLearningEventRequest request) {
         profileRepository.insertLearningEvent(userId, normalizeRequest(request));
+    }
+
+    public void recordLearningTime(long userId, ProfileLearningTimeRecordRequest request) {
+        if (request == null || request.durationSeconds() == null) {
+            return;
+        }
+        int durationSeconds = Math.min(Math.max(request.durationSeconds(), 0), MAX_LEARNING_TIME_SECONDS);
+        if (durationSeconds <= 0) {
+            return;
+        }
+        profileRepository.insertLearningTimeRecord(
+                userId,
+                normalizeLearningModuleType(request.moduleType()),
+                clean(request.targetCode(), null, 128),
+                clean(request.targetTitle(), null, 128),
+                durationSeconds
+        );
     }
 
     public ProfileUserResponse getUserProfile(long userId) {
@@ -198,19 +224,19 @@ public class ProfileService {
     }
 
     private List<ProfileLearningTimeResponse> buildLearningTimes(long userId) {
-        long videoSeconds = profileRepository.sumLearningTimeSeconds(userId, "video");
+        long totalSeconds = profileRepository.sumAllLearningTimeSeconds(userId);
         long visualizationSeconds = profileRepository.sumLearningTimeSeconds(userId, "visualization");
         return List.of(
                 new ProfileLearningTimeResponse(
-                        "视频学习时长",
-                        formatDuration(videoSeconds),
-                        videoSeconds > 0 ? "来自数据库记录" : "数据库暂无记录",
+                        "学习时长",
+                        formatDuration(totalSeconds),
+                        totalSeconds > 0 ? "题库、课程、OJ、可视化和油气仿真累计" : "暂无学习时长记录",
                         "cyan"
                 ),
                 new ProfileLearningTimeResponse(
-                        "可视化学习时长",
+                        "可视化时长",
                         formatDuration(visualizationSeconds),
-                        visualizationSeconds > 0 ? "来自数据库记录" : "数据库暂无记录",
+                        visualizationSeconds > 0 ? "仅统计可视化具体页面" : "暂无可视化时长记录",
                         "violet"
                 )
         );
@@ -455,6 +481,15 @@ public class ProfileService {
                 safeRequest.isCorrect(),
                 normalizeVocabularyStatus(safeRequest.vocabularyStatus())
         );
+    }
+
+    private String normalizeLearningModuleType(String moduleType) {
+        String normalized = clean(moduleType, "general", 32).toLowerCase(Locale.ROOT);
+        return switch (normalized) {
+            case "question", "question_bank", "mistake", "favorite", "video", "oj",
+                    "visualization", "petroleum", "assignment", "exam" -> normalized;
+            default -> "general";
+        };
     }
 
     private String resolveAvatarExtension(MultipartFile file) {

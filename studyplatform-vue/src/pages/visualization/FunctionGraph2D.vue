@@ -2,6 +2,13 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import * as echarts from 'echarts'
+import { useLearningTimeTracker } from '../../composables/useLearningTimeTracker'
+
+useLearningTimeTracker({
+  moduleType: 'visualization',
+  targetCode: 'function-2d',
+  targetTitle: '二维函数图像实验室',
+})
 
 const expression = ref('sin(x) + 0.2 * x')
 const xMin = ref(-10)
