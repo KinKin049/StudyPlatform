@@ -102,3 +102,29 @@ oj.sandbox-url=http://localhost:9000
 ```
 
 See `docs/oj-module.md` for API details and the sandbox contract.
+
+## AI pet model
+
+The AI pet calls the model through the backend proxy endpoint `POST /api/ai-pet/chat`.
+Do not put the API key in the Vue frontend. Configure it in `application-local.properties`
+or environment variables:
+
+```properties
+ai.pet.base-url=https://yunwu.ai
+ai.pet.api-key=your_token_here
+ai.pet.model=deepseek-v4-falsh
+```
+
+Environment variables are also supported:
+
+```text
+AI_PET_BASE_URL=https://yunwu.ai
+AI_PET_API_KEY=your_token_here
+AI_PET_MODEL=deepseek-v4-falsh
+```
+
+The proxy uses an OpenAI-compatible chat endpoint:
+
+```text
+POST {ai.pet.base-url}/v1/chat/completions
+```

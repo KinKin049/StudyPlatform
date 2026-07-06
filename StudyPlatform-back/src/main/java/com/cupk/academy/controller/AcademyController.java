@@ -16,6 +16,13 @@ import com.cupk.academy.dto.AcademyExamDetailResponse;
 import com.cupk.academy.dto.AcademyExamSubmitResponse;
 import com.cupk.academy.dto.AcademyExamSummaryResponse;
 import com.cupk.academy.dto.AcademyHomeSectionResponse;
+import com.cupk.academy.dto.AcademyTextbookCartItemResponse;
+import com.cupk.academy.dto.AcademyTextbookCartRequest;
+import com.cupk.academy.dto.AcademyTextbookDetailResponse;
+import com.cupk.academy.dto.AcademyTextbookOrderRequest;
+import com.cupk.academy.dto.AcademyTextbookOrderResponse;
+import com.cupk.academy.dto.AcademyTextbookCommentResponse;
+import com.cupk.academy.dto.AcademyTextbookReviewRequest;
 import com.cupk.academy.dto.AcademyTextbookResponse;
 import com.cupk.academy.service.AcademyAssignmentService;
 import com.cupk.academy.service.AcademyExamService;
@@ -26,6 +33,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -280,6 +288,67 @@ public class AcademyController {
     @GetMapping("/textbooks")
     public List<AcademyTextbookResponse> listTextbooks() {
         return academyService.listTextbooks();
+    }
+
+    @GetMapping("/textbooks/{id}")
+    public AcademyTextbookDetailResponse getTextbook(
+            @PathVariable String id,
+            @RequestParam(required = false) Long userId
+    ) {
+        return academyService.getTextbook(id, userId);
+    }
+
+    @GetMapping("/textbook-cart")
+    public List<AcademyTextbookCartItemResponse> listTextbookCart(
+            @RequestParam(required = false) Long userId
+    ) {
+        return academyService.listTextbookCart(userId);
+    }
+
+    @PostMapping("/textbook-cart")
+    public List<AcademyTextbookCartItemResponse> addTextbookCartItem(
+            @RequestBody(required = false) AcademyTextbookCartRequest request
+    ) {
+        return academyService.addTextbookCartItem(request);
+    }
+
+    @DeleteMapping("/textbook-cart/{itemId}")
+    public List<AcademyTextbookCartItemResponse> deleteTextbookCartItem(
+            @PathVariable Long itemId,
+            @RequestParam(required = false) Long userId
+    ) {
+        return academyService.deleteTextbookCartItem(userId, itemId);
+    }
+
+    @PutMapping("/textbook-cart/{itemId}")
+    public List<AcademyTextbookCartItemResponse> updateTextbookCartItem(
+            @PathVariable Long itemId,
+            @RequestBody(required = false) AcademyTextbookCartRequest request
+    ) {
+        return academyService.updateTextbookCartItem(request == null ? null : request.userId(), itemId, request == null ? null : request.quantity());
+    }
+
+    @PostMapping("/textbook-orders")
+    public AcademyTextbookOrderResponse createTextbookOrder(
+            @RequestBody(required = false) AcademyTextbookOrderRequest request
+    ) {
+        return academyService.createTextbookOrder(request);
+    }
+
+    @PostMapping("/textbook-orders/{orderNo}/pay")
+    public AcademyTextbookOrderResponse payTextbookOrder(
+            @PathVariable String orderNo,
+            @RequestParam(required = false) Long userId
+    ) {
+        return academyService.payTextbookOrder(orderNo, userId);
+    }
+
+    @PostMapping("/textbooks/{id}/reviews")
+    public AcademyTextbookCommentResponse saveTextbookReview(
+            @PathVariable String id,
+            @RequestBody(required = false) AcademyTextbookReviewRequest request
+    ) {
+        return academyService.saveTextbookReview(id, request);
     }
 
     @GetMapping("/textbooks/categories")

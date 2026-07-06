@@ -17,6 +17,8 @@ const AcademyQuestionBankCourses = () => import('../pages/academy/AcademyQuestio
 const AcademyQuestionBankFavorites = () => import('../pages/academy/AcademyQuestionBankFavorites.vue')
 const AcademyQuestionBankMistakes = () => import('../pages/academy/AcademyQuestionBankMistakes.vue')
 const AcademyTextbooks = () => import('../pages/academy/AcademyTextbooks.vue')
+const AcademyTextbookDetail = () => import('../pages/academy/AcademyTextbookDetail.vue')
+const AcademyTextbookCart = () => import('../pages/academy/AcademyTextbookCart.vue')
 const AuthLoginPage = () => import('../pages/AuthLoginPage.vue')
 const AuthOnboardingPage = () => import('../pages/AuthOnboardingPage.vue')
 const AuthRegisterPage = () => import('../pages/AuthRegisterPage.vue')
@@ -177,6 +179,19 @@ const routes = [
         path: 'textbooks',
         name: 'academy-textbooks',
         component: AcademyTextbooks,
+      },
+      {
+        path: 'textbooks/:id',
+        name: 'academy-textbook-detail',
+        component: AcademyTextbookDetail,
+        props: (route) => ({
+          textbookId: route.params.id,
+        }),
+      },
+      {
+        path: 'textbook-cart',
+        name: 'academy-textbook-cart',
+        component: AcademyTextbookCart,
       },
       {
         path: 'question-bank',
