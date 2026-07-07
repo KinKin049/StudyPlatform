@@ -91,7 +91,7 @@ onMounted(() => {
     <section class="question-bank-hero" aria-labelledby="question-bank-title">
       <div>
         <h1 id="question-bank-title">题库</h1>
-        <span>围绕课程学习建立练习、错题、收藏和模拟组卷入口，后续可接入统一题目 API。</span>
+        <span>围绕课程学习建立练习、错题、收藏和模拟组卷入口，接入统一题目 API。</span>
       </div>
       <!-- 学习统计数据展示 -->
       <div class="question-bank-stats" aria-label="题库学习状态">
