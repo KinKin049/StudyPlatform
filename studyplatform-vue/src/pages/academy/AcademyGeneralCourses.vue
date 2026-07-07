@@ -59,12 +59,7 @@ watch(
     <!-- 页面顶部标题区域 -->
     <section class="online-course-hero" aria-labelledby="general-course-title">
       <div>
-        <p class="academy-kicker">General Education Courses</p>
         <h1 id="general-course-title">通识课程</h1>
-        <p>
-          数据来源于中国石油大学（北京）泛雅通识课程页面，按课程分类整理展示，封面文件存储在后端
-          general_course 目录中。
-        </p>
       </div>
 
       <!-- 搜索框 -->

@@ -62,9 +62,7 @@ watch(
     <!-- 页面头部区域 -->
     <section class="online-course-hero" aria-labelledby="textbook-title">
       <div>
-        <p class="academy-kicker">Excellent Textbooks</p>
         <h1 id="textbook-title">精品教材</h1>
-        <p>数据来源于爱课程精品教材页面，由后端 API 从 MySQL 读取并返回给前端渲染。</p>
       </div>
 
       <!-- 搜索框 -->

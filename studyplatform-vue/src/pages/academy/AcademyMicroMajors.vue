@@ -59,12 +59,7 @@ watch(
     <!-- 页面顶部标题区域 -->
     <section class="online-course-hero" aria-labelledby="micro-major-title">
       <div>
-        <p class="academy-kicker">Micro Major Courses</p>
         <h1 id="micro-major-title">微专业课程</h1>
-        <p>
-          数据来源于中国石油大学（北京）微专业课程页面，按微专业方向整理展示，封面文件存储在后端
-          micro_major_course 目录中。
-        </p>
       </div>
 
       <!-- 搜索框 -->

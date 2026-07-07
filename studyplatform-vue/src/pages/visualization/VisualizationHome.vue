@@ -55,7 +55,6 @@ const metrics = [
     <!-- 页面头部区域 - 展示标题和能力概览 -->
     <section class="visual-command-hero">
       <div class="visual-command-copy">
-        <p class="visual-kicker">Visualization Lab</p>
         <h1>可视化实验中心</h1>
         <span>把算法、函数与空间模型变成可交互的学习对象，支撑课程讲解、实验演示和自主探索。</span>
       </div>

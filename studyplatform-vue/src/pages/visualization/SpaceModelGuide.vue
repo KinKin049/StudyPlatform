@@ -67,7 +67,6 @@ const modelRoute = (subjectId, modelId) => ({
     <!-- 页面头部区域 -->
     <section class="space-guide-simple-hero">
       <RouterLink class="space-guide-back" to="/visualization">返回可视化</RouterLink>
-      <p>3D Model Atlas</p>
       <h1>空间模型实验室</h1>
       <span>
         选择一个科目下的模型名称，直接进入对应的三维实验台。当前共 {{ subjects.length }} 个科目，

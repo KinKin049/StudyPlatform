@@ -129,7 +129,6 @@ onMounted(loadCatalog)
     <!-- 头部区域：标题和统计数据 -->
     <section class="question-catalog-hero">
       <div>
-        <p>Course Question Bank</p>
         <h1>课程题库首页</h1>
         <span>按课程和考试方向整理题库入口，前端通过后端 API 读取 MySQL 目录与题目数据。</span>
       </div>

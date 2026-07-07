@@ -166,7 +166,6 @@ watch([expression, xMin, xMax, samples], renderChart)
 
     <!-- 页面标题区域 -->
     <section class="visual-hero compact">
-      <p class="visual-kicker">2D Math</p>
       <h1>函数图像实验室</h1>
       <p>输入关于 x 的函数表达式，实时绘制二维曲线。支持 {{ functionNames.join(' / ') }} 等常用函数。</p>
     </section>

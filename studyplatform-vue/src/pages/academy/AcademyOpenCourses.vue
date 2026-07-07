@@ -167,9 +167,7 @@ watch(
     <!-- 页面顶部标题区域 -->
     <section class="online-course-hero" aria-labelledby="online-course-title">
       <div>
-        <p class="academy-kicker">Online Open Courses</p>
         <h1 id="online-course-title">在线开放课程</h1>
-        <p>数据来源于爱课程公开课程列表，由后端 API 从 MySQL 读取并返回给前端渲染。</p>
       </div>
 
       <!-- 搜索框 -->

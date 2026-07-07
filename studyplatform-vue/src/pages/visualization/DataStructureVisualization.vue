@@ -26,7 +26,6 @@ useLearningTimeTracker({
     <!-- 页面标题区域 -->
     <section class="algorithm-lab-hero">
       <div>
-        <p class="visual-kicker">Data Structure</p>
         <h1>算法结构可视化</h1>
         <span>整合链表、排序、字符串匹配和表达式树动画，把抽象的数据结构过程拆成可观察的执行步骤。</span>
       </div>
