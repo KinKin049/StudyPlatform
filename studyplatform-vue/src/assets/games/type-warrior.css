@@ -1087,6 +1087,23 @@
   opacity: 0.72;
 }
 
+.type-warrior-skill-refresh {
+  justify-self: start;
+  border: 1px solid rgba(201, 90, 82, 0.18);
+  border-radius: 999px;
+  padding: 10px 16px;
+  color: #4b2f2c;
+  background: linear-gradient(135deg, #facc15, #2dd4bf);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.type-warrior-skill-refresh:disabled {
+  color: rgba(75, 47, 44, 0.56);
+  background: rgba(75, 47, 44, 0.1);
+  cursor: not-allowed;
+}
+
 .type-warrior-skill-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1231,12 +1248,32 @@
   background: linear-gradient(180deg, #3d3b3a, #1f1d1c);
 }
 
+.type-warrior-overlay-panel button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .type-warrior-overlay-actions {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 10px;
   margin-top: 8px;
+}
+
+.type-warrior-voucher-error {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 140;
+  transform: translateX(-50%);
+  margin: 0;
+  border: 1px solid rgba(248, 113, 113, 0.32);
+  border-radius: 999px;
+  padding: 10px 16px;
+  color: #fecaca;
+  background: rgba(69, 10, 10, 0.86);
+  font-weight: 900;
 }
 
 .type-warrior-start-overlay {

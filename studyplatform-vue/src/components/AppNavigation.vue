@@ -1,4 +1,5 @@
 <script setup>
+// 顶部导航栏组件，包含品牌标识、主导航菜单和用户操作区域
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { clearStoredAuthUser, getStoredAuthUser } from '../api/auth'
@@ -19,33 +20,43 @@ const navigationUser = ref({
   avatarUrl: '',
 })
 
+// 判断用户是否已登录
 const isLoggedIn = computed(() => Boolean(authUser.value?.id))
+// 判断当前用户是否为管理员
 const isAdmin = computed(() => authUser.value?.email === 'admin@admin.com' && authUser.value?.roleType === 'admin')
+// 获取用户显示名称，优先级：认证用户名 > 导航用户名称 > 默认名称
 const userDisplayName = computed(() => authUser.value?.username || navigationUser.value.name || 'Kinkin')
+// 获取用户头像完整 URL
 const avatarSrc = computed(() => resolveResourceUrl(navigationUser.value.avatarUrl))
+// 获取用户名称首字母用于头像占位
 const avatarInitial = computed(() => (userDisplayName.value || 'K').trim().slice(0, 1).toUpperCase())
 
+// 导航跳转方法，点击后移除按钮焦点
 const navigateTo = (path, event) => {
   event?.currentTarget?.blur()
   router.push(path)
 }
 
+// 处理用户入口点击，已登录跳转到个人主页，未登录跳转到登录页
 const handleUserEntryClick = (event) => {
   navigateTo(isLoggedIn.value ? '/profile' : '/login', event)
 }
 
+// 切换用户，清除本地认证信息并跳转到登录页
 const switchUser = (event) => {
   event?.currentTarget?.blur()
   clearStoredAuthUser()
   router.push('/login')
 }
 
+// 注册新用户，清除本地认证信息并跳转到注册页
 const registerNewUser = (event) => {
   event?.currentTarget?.blur()
   clearStoredAuthUser()
   router.push('/register')
 }
 
+// 加载导航栏用户信息
 const loadNavigationUser = async () => {
   try {
     navigationUser.value = await fetchProfileUser()
@@ -54,6 +65,7 @@ const loadNavigationUser = async () => {
   }
 }
 
+// 处理个人资料更新事件
 const handleProfileUpdated = (event) => {
   if (event.detail) {
     navigationUser.value = event.detail
@@ -62,6 +74,7 @@ const handleProfileUpdated = (event) => {
   loadNavigationUser()
 }
 
+// 处理认证状态更新事件
 const handleAuthUpdated = (event) => {
   authUser.value = event.detail || getStoredAuthUser()
 }
@@ -79,11 +92,14 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+  <!-- 页面顶部导航栏 -->
   <header class="site-header">
+    <!-- 品牌标识，点击返回首页 -->
     <RouterLink class="site-brand" to="/" aria-label="返回首页">
       EpistemeHub
     </RouterLink>
 
+    <!-- 主导航菜单 -->
     <nav class="site-nav" aria-label="主导航">
       <div
         v-for="item in props.navItems"
@@ -95,6 +111,7 @@ onBeforeUnmount(() => {
           <span class="nav-arrow" aria-hidden="true">▾</span>
         </button>
 
+        <!-- 下拉菜单 -->
         <div class="dropdown-menu" role="menu">
           <a
             v-for="child in item.children"
@@ -111,7 +128,9 @@ onBeforeUnmount(() => {
       </div>
     </nav>
 
+    <!-- 用户操作区域 -->
     <div class="user-area">
+      <!-- 用户头像入口按钮 -->
       <button
         class="user-entry"
         type="button"
@@ -124,7 +143,9 @@ onBeforeUnmount(() => {
         </span>
       </button>
 
+      <!-- 用户菜单下拉面板 -->
       <div class="user-menu" role="menu">
+        <!-- 已登录状态菜单 -->
         <template v-if="isLoggedIn">
           <div class="user-menu-account">
             <span>当前用户</span>
@@ -146,6 +167,7 @@ onBeforeUnmount(() => {
             注册新账号
           </button>
         </template>
+        <!-- 未登录状态菜单 -->
         <template v-else>
           <button class="user-menu-link" type="button" role="menuitem" @click="navigateTo('/login', $event)">
             登录

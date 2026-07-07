@@ -1448,6 +1448,52 @@
   font-weight: 950;
 }
 
+.textbook-voucher-toggle {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px 10px;
+  align-items: center;
+  border: 1px solid rgba(15, 118, 110, 0.16);
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(20, 184, 166, 0.08);
+  cursor: pointer;
+}
+
+.textbook-voucher-toggle input {
+  width: 16px;
+  height: 16px;
+  accent-color: #0f766e;
+}
+
+.textbook-voucher-toggle span {
+  color: #0f172a;
+  font-weight: 950;
+}
+
+.textbook-voucher-toggle strong {
+  grid-column: 2;
+  color: #b45309;
+  font-size: 13px;
+  text-align: left;
+}
+
+.textbook-voucher-toggle:has(input:disabled) {
+  opacity: 0.62;
+  cursor: not-allowed;
+}
+
+.textbook-detail-voucher-toggle {
+  max-width: 420px;
+  margin-top: 14px;
+}
+
+.textbook-detail-payable {
+  margin: 10px 0 0;
+  color: #0f766e;
+  font-weight: 950;
+}
+
 .textbook-cart-checkout-summary .is-payable {
   margin-top: 6px;
   padding-top: 14px;

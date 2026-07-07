@@ -19,12 +19,28 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public class OjSubmissionRepository {
+
+    /**
+     * 在线判题系统提交记录数据访问层，提供提交创建、查询、状态更新和判题结果记录等功能。
+     */
+
     private final JdbcTemplate jdbcTemplate;
 
+    /**
+     * 构造函数
+     *
+     * @param jdbcTemplate JDBC模板
+     */
     public OjSubmissionRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    /**
+     * 创建新的代码提交记录
+     *
+     * @param request 创建提交请求
+     * @return 提交ID
+     */
     public Long create(CreateSubmissionRequest request) {
         String sql = """
                 INSERT INTO oj_submissions (problem_id, user_id, language, source_code)
@@ -46,6 +62,12 @@ public class OjSubmissionRepository {
         return generatedId(keyHolder);
     }
 
+    /**
+     * 根据ID查询提交记录
+     *
+     * @param id 提交ID
+     * @return 提交记录，不存在则返回空
+     */
     public Optional<OjSubmission> findById(Long id) {
         return jdbcTemplate.query("""
                 SELECT id, problem_id, user_id, language, source_code, status, score,
@@ -55,6 +77,12 @@ public class OjSubmissionRepository {
                 """, mapper(), id).stream().findFirst();
     }
 
+    /**
+     * 根据题目ID查询提交记录列表（最多100条）
+     *
+     * @param problemId 题目ID
+     * @return 提交记录列表
+     */
     public List<OjSubmission> findByProblemId(Long problemId) {
         return jdbcTemplate.query("""
                 SELECT id, problem_id, user_id, language, source_code, status, score,
@@ -66,6 +94,14 @@ public class OjSubmissionRepository {
                 """, mapper(), problemId);
     }
 
+    /**
+     * 更新提交状态
+     *
+     * @param id 提交ID
+     * @param status 状态
+     * @param message 状态消息
+     * @return 更新的行数
+     */
     public int updateStatus(Long id, SubmissionStatus status, String message) {
         return jdbcTemplate.update("""
                 UPDATE oj_submissions
@@ -74,6 +110,13 @@ public class OjSubmissionRepository {
                 """, status.name(), message, id);
     }
 
+    /**
+     * 更新判题结果
+     *
+     * @param id 提交ID
+     * @param result 判题结果
+     * @return 更新的行数
+     */
     public int updateJudgeResult(Long id, JudgeResult result) {
         return jdbcTemplate.update("""
                 UPDATE oj_submissions
@@ -89,6 +132,11 @@ public class OjSubmissionRepository {
                 id);
     }
 
+    /**
+     * 创建提交记录行映射器
+     *
+     * @return RowMapper
+     */
     private RowMapper<OjSubmission> mapper() {
         return (rs, rowNum) -> new OjSubmission(
                 rs.getLong("id"),
@@ -107,11 +155,27 @@ public class OjSubmissionRepository {
         );
     }
 
+    /**
+     * 安全获取长整型值（空值时返回null）
+     *
+     * @param rs 结果集
+     * @param column 列名
+     * @return 长整型值，空则返回null
+     * @throws SQLException SQL异常
+     */
     private Long getNullableLong(ResultSet rs, String column) throws SQLException {
         long value = rs.getLong(column);
         return rs.wasNull() ? null : value;
     }
 
+    /**
+     * 安全获取整数值（空值时返回null）
+     *
+     * @param rs 结果集
+     * @param column 列名
+     * @return 整数值，空则返回null
+     * @throws SQLException SQL异常
+     */
     private Integer getNullableInt(ResultSet rs, String column) throws SQLException {
         int value = rs.getInt(column);
         return rs.wasNull() ? null : value;

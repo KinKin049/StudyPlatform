@@ -1,6 +1,14 @@
 <script setup>
+/**
+ * 可视化实验中心主页
+ * 展示可视化模块入口，包括算法结构可视化、函数图像实验室和空间模型实验室
+ */
 import { RouterLink } from 'vue-router'
 
+/**
+ * 可视化模块配置列表
+ * 每个模块包含标题、路由路径、标签、指标、操作按钮和描述信息
+ */
 const modules = [
   {
     title: '算法结构可视化',
@@ -31,6 +39,10 @@ const modules = [
   },
 ]
 
+/**
+ * 可视化能力概览指标
+ * 展示核心实验模块数量、三维知识模型数量和交互特性
+ */
 const metrics = [
   { value: '3', label: '核心实验模块' },
   { value: '28+', label: '三维知识模型' },
@@ -40,6 +52,7 @@ const metrics = [
 
 <template>
   <main class="visual-page visual-home">
+    <!-- 页面头部区域 - 展示标题和能力概览 -->
     <section class="visual-command-hero">
       <div class="visual-command-copy">
         <p class="visual-kicker">Visualization Lab</p>
@@ -47,6 +60,7 @@ const metrics = [
         <span>把算法、函数与空间模型变成可交互的学习对象，支撑课程讲解、实验演示和自主探索。</span>
       </div>
 
+      <!-- 能力概览面板 - 展示核心指标 -->
       <div class="visual-command-panel" aria-label="可视化能力概览">
         <div v-for="item in metrics" :key="item.label">
           <strong>{{ item.value }}</strong>
@@ -55,6 +69,7 @@ const metrics = [
       </div>
     </section>
 
+    <!-- 模块网格区域 - 展示各可视化模块入口卡片 -->
     <section class="visual-module-grid" aria-label="可视化模块">
       <article v-for="item in modules" :key="item.path" class="visual-module-card">
         <div class="visual-module-head">
@@ -63,6 +78,7 @@ const metrics = [
         </div>
         <h2>{{ item.title }}</h2>
         <span>{{ item.description }}</span>
+        <!-- 模块特性标签 -->
         <div class="visual-module-tags">
           <small v-for="point in item.points" :key="point">{{ point }}</small>
         </div>

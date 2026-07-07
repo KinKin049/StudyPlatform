@@ -33,17 +33,33 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public class QuestionBankRepository {
+
+    /**
+     * 题库数据访问层，提供题目查询、错题管理、收藏管理和词汇学习等功能。
+     */
+
     private static final TypeReference<List<String>> STRING_LIST = new TypeReference<>() {
     };
 
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
 
+    /**
+     * 构造函数
+     *
+     * @param jdbcTemplate JDBC模板
+     * @param objectMapper JSON序列化器
+     */
     public QuestionBankRepository(JdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * 查询题库学科列表
+     *
+     * @return 学科列表
+     */
     public List<QuestionBankSubjectResponse> findSubjects() {
         String sql = """
                 SELECT s.subject_code, s.subject_name, s.description, COUNT(ps.problem_id) AS problem_count
@@ -60,6 +76,16 @@ public class QuestionBankRepository {
         ));
     }
 
+    /**
+     * 分页查询题库题目列表
+     *
+     * @param subjectCode 学科代码
+     * @param keyword 关键词
+     * @param difficulty 难度
+     * @param page 页码
+     * @param size 每页大小
+     * @return 题目分页结果
+     */
     public QuestionBankProblemPageResponse findProblems(
             String subjectCode,
             String keyword,
@@ -88,6 +114,12 @@ public class QuestionBankRepository {
         return new QuestionBankProblemPageResponse(items, Math.max(0, page), size, total == null ? 0 : total);
     }
 
+    /**
+     * 根据ID查询题目详情
+     *
+     * @param id 题目ID
+     * @return 题目详情，不存在则返回空
+     */
     public Optional<QuestionBankProblemResponse> findProblemById(long id) {
         String sql = """
                 SELECT p.id, p.source, p.external_problem_id, p.title, p.difficulty, p.difficulty_label,
@@ -104,6 +136,16 @@ public class QuestionBankRepository {
         }
     }
 
+    /**
+     * 插入或更新标签
+     *
+     * @param source 来源
+     * @param externalTagId 外部标签ID
+     * @param tagName 标签名称
+     * @param tagType 标签类型
+     * @param parentExternalTagId 父标签ID
+     * @return 更新的行数
+     */
     public int upsertTag(String source, int externalTagId, String tagName, Integer tagType, Integer parentExternalTagId) {
         String sql = """
                 INSERT INTO question_bank_tags (source, external_tag_id, tag_name, tag_type, parent_external_tag_id)
@@ -116,6 +158,25 @@ public class QuestionBankRepository {
         return jdbcTemplate.update(sql, source, externalTagId, tagName, tagType, parentExternalTagId);
     }
 
+    /**
+     * 插入或更新题目
+     *
+     * @param source 来源
+     * @param externalProblemId 外部题目ID
+     * @param title 题目标题
+     * @param difficulty 难度
+     * @param difficultyLabel 难度标签
+     * @param tagIds 标签ID列表
+     * @param tagNames 标签名称列表
+     * @param description 题目描述
+     * @param inputDescription 输入描述
+     * @param outputDescription 输出描述
+     * @param hint 提示
+     * @param totalSubmit 提交次数
+     * @param totalAccepted 通过次数
+     * @param sourceUrl 来源URL
+     * @return 题目ID
+     */
     public long upsertProblem(
             String source,
             String externalProblemId,
@@ -163,6 +224,11 @@ public class QuestionBankRepository {
         );
     }
 
+    /**
+     * 将题目关联到所有学科
+     *
+     * @param problemId 题目ID
+     */
     public void attachProblemToAllSubjects(long problemId) {
         String sql = """
                 INSERT IGNORE INTO question_bank_problem_subjects (problem_id, subject_id)
@@ -172,6 +238,13 @@ public class QuestionBankRepository {
         jdbcTemplate.update(sql, problemId);
     }
 
+    /**
+     * 查询标签名称列表
+     *
+     * @param source 来源
+     * @param tagIds 标签ID列表
+     * @return 标签名称列表
+     */
     public List<String> findTagNames(String source, List<Integer> tagIds) {
         if (tagIds == null || tagIds.isEmpty()) {
             return List.of();
@@ -184,6 +257,11 @@ public class QuestionBankRepository {
         return jdbcTemplate.query(sql, (rs, rowNum) -> rs.getString("tag_name"), params.toArray());
     }
 
+    /**
+     * 查询课程题库目录（分类和题目集）
+     *
+     * @return 题库目录列表
+     */
     public List<CourseQuestionBankCategoryResponse> findCourseQuestionBankCatalog() {
         String sql = """
                 SELECT c.category_code, c.category_name, c.description AS category_description,
@@ -225,6 +303,12 @@ public class QuestionBankRepository {
                 .toList();
     }
 
+    /**
+     * 根据代码查询课程题目集详情
+     *
+     * @param code 题目集代码
+     * @return 题目集详情，不存在则返回空
+     */
     public Optional<CourseQuestionBankSetResponse> findCourseQuestionBankSet(String code) {
         String sql = """
                 SELECT c.category_code, c.category_name, c.description AS category_description,
@@ -248,6 +332,16 @@ public class QuestionBankRepository {
         }
     }
 
+    /**
+     * 分页查询课程题目集下的题目列表
+     *
+     * @param code 题目集代码
+     * @param keyword 关键词
+     * @param page 页码
+     * @param size 每页大小
+     * @param userId 用户ID（用于判断收藏状态）
+     * @return 题目分页结果
+     */
     public CourseQuestionBankQuestionPageResponse findCourseQuestionBankQuestions(
             String code,
             String keyword,
@@ -302,6 +396,12 @@ public class QuestionBankRepository {
         return new CourseQuestionBankQuestionPageResponse(items, Math.max(0, page), size, safeTotal, totalPages);
     }
 
+    /**
+     * 查询用户错题汇总信息
+     *
+     * @param userId 用户ID
+     * @return 错题汇总
+     */
     public QuestionBankMistakeSummaryResponse findMistakeSummary(long userId) {
         String totalsSql = """
                 SELECT
@@ -359,6 +459,17 @@ public class QuestionBankRepository {
         );
     }
 
+    /**
+     * 分页查询用户错题列表
+     *
+     * @param userId 用户ID
+     * @param setCode 题目集代码
+     * @param status 状态（mastered/all/默认active）
+     * @param keyword 关键词
+     * @param page 页码
+     * @param size 每页大小
+     * @return 错题分页结果
+     */
     public QuestionBankMistakePageResponse findMistakes(
             long userId,
             String setCode,
@@ -431,6 +542,13 @@ public class QuestionBankRepository {
         return new QuestionBankMistakePageResponse(items, Math.max(0, page), size, safeTotal, totalPages);
     }
 
+    /**
+     * 查询用户未掌握的单选题错题列表
+     *
+     * @param userId 用户ID
+     * @param setCode 题目集代码
+     * @return 单选题错题列表
+     */
     public List<CourseQuestionBankQuestionResponse> findActiveSingleChoiceMistakeQuestions(long userId, String setCode) {
         List<Object> params = new ArrayList<>();
         params.add(userId);
@@ -453,6 +571,12 @@ public class QuestionBankRepository {
         return jdbcTemplate.query(sql.toString(), this::mapCourseQuestionBankQuestion, params.toArray());
     }
 
+    /**
+     * 查询所有单选题列表
+     *
+     * @param setCode 题目集代码
+     * @return 单选题列表
+     */
     public List<CourseQuestionBankQuestionResponse> findAllSingleChoiceQuestions(String setCode) {
         List<Object> params = new ArrayList<>();
         StringBuilder sql = new StringBuilder("""
@@ -471,6 +595,11 @@ public class QuestionBankRepository {
         return jdbcTemplate.query(sql.toString(), this::mapCourseQuestionBankQuestion, params.toArray());
     }
 
+    /**
+     * 查询包含单选题的题目集列表
+     *
+     * @return 题目集列表
+     */
     public List<SingleChoiceQuestionBankRow> findSingleChoiceQuestionBanks() {
         String sql = """
                 SELECT s.set_code, s.title, c.category_name, COUNT(*) AS question_count
@@ -493,6 +622,12 @@ public class QuestionBankRepository {
         );
     }
 
+    /**
+     * 查询用户收藏汇总信息
+     *
+     * @param userId 用户ID
+     * @return 收藏汇总
+     */
     public QuestionBankFavoriteSummaryResponse findFavoriteSummary(long userId) {
         Long total = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM course_question_bank_favorites WHERE user_id = ?",
@@ -525,6 +660,16 @@ public class QuestionBankRepository {
         return new QuestionBankFavoriteSummaryResponse(total == null ? 0 : total, sets);
     }
 
+    /**
+     * 分页查询用户收藏列表
+     *
+     * @param userId 用户ID
+     * @param setCode 题目集代码
+     * @param keyword 关键词
+     * @param page 页码
+     * @param size 每页大小
+     * @return 收藏分页结果
+     */
     public QuestionBankFavoritePageResponse findFavorites(
             long userId,
             String setCode,
@@ -585,6 +730,12 @@ public class QuestionBankRepository {
         return new QuestionBankFavoritePageResponse(items, Math.max(0, page), size, safeTotal, totalPages);
     }
 
+    /**
+     * 添加题目收藏（已存在则忽略）
+     *
+     * @param userId 用户ID
+     * @param questionId 题目ID
+     */
     public void addFavorite(long userId, long questionId) {
         String sql = """
                 INSERT IGNORE INTO course_question_bank_favorites (user_id, question_id)
@@ -593,6 +744,12 @@ public class QuestionBankRepository {
         jdbcTemplate.update(sql, userId, questionId);
     }
 
+    /**
+     * 移除题目收藏
+     *
+     * @param userId 用户ID
+     * @param questionId 题目ID
+     */
     public void removeFavorite(long userId, long questionId) {
         jdbcTemplate.update(
                 "DELETE FROM course_question_bank_favorites WHERE user_id = ? AND question_id = ?",
@@ -601,6 +758,12 @@ public class QuestionBankRepository {
         );
     }
 
+    /**
+     * 统计用户收藏数量
+     *
+     * @param userId 用户ID
+     * @return 收藏数量
+     */
     public long countFavorites(long userId) {
         Long total = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM course_question_bank_favorites WHERE user_id = ?",
@@ -610,6 +773,12 @@ public class QuestionBankRepository {
         return total == null ? 0 : total;
     }
 
+    /**
+     * 查询课程题目答案参考
+     *
+     * @param questionId 题目ID
+     * @return 答案参考，不存在则返回空
+     */
     public Optional<CourseQuestionAnswerReference> findCourseQuestionAnswerReference(long questionId) {
         String sql = """
                 SELECT q.id, s.set_code, q.question_type, q.answer
@@ -634,6 +803,14 @@ public class QuestionBankRepository {
         }
     }
 
+    /**
+     * 插入或更新错题记录（答错时）
+     *
+     * @param userId 用户ID
+     * @param questionId 题目ID
+     * @param selectedAnswer 选中答案
+     * @param correctAnswer 正确答案
+     */
     public void upsertWrongMistake(long userId, long questionId, String selectedAnswer, String correctAnswer) {
         String sql = """
                 INSERT INTO course_question_bank_mistakes
@@ -652,6 +829,16 @@ public class QuestionBankRepository {
         jdbcTemplate.update(sql, userId, questionId, selectedAnswer, correctAnswer);
     }
 
+    /**
+     * 应用错题正确复习（答对时）
+     *
+     * @param userId 用户ID
+     * @param questionId 题目ID
+     * @param selectedAnswer 选中答案
+     * @param correctAnswer 正确答案
+     * @param masteredThreshold 掌握阈值（连续答对次数）
+     * @return 更新的行数
+     */
     public int applyCorrectMistakeReview(
             long userId,
             long questionId,
@@ -671,6 +858,13 @@ public class QuestionBankRepository {
         return jdbcTemplate.update(sql, selectedAnswer, correctAnswer, masteredThreshold, userId, questionId);
     }
 
+    /**
+     * 查询用户错题状态
+     *
+     * @param userId 用户ID
+     * @param questionId 题目ID
+     * @return 错题状态，不存在则返回空
+     */
     public Optional<QuestionBankMistakeState> findMistakeState(long userId, long questionId) {
         String sql = """
                 SELECT wrong_count, correct_streak, mastered
@@ -694,6 +888,13 @@ public class QuestionBankRepository {
         }
     }
 
+    /**
+     * 统计课程题目集下指定类型的题目数量
+     *
+     * @param code 题目集代码
+     * @param questionType 题目类型
+     * @return 题目数量
+     */
     public long countCourseQuestionBankQuestions(String code, String questionType) {
         Long total = jdbcTemplate.queryForObject(
                 """
@@ -709,6 +910,11 @@ public class QuestionBankRepository {
         return total == null ? 0 : total;
     }
 
+    /**
+     * 删除课程题目集下的所有题目
+     *
+     * @param code 题目集代码
+     */
     public void deleteCourseQuestionBankQuestions(String code) {
         jdbcTemplate.update(
                 """
@@ -721,6 +927,12 @@ public class QuestionBankRepository {
         );
     }
 
+    /**
+     * 批量插入课程题目集题目
+     *
+     * @param code 题目集代码
+     * @param questions 题目列表
+     */
     public void batchInsertCourseQuestionBankQuestions(String code, List<CourseQuestionBankQuestionSeed> questions) {
         if (questions == null || questions.isEmpty()) {
             return;
@@ -751,6 +963,12 @@ public class QuestionBankRepository {
         });
     }
 
+    /**
+     * 查询打字勇士词汇列表（含熟悉度状态）
+     *
+     * @param userId 用户ID
+     * @return 词汇列表
+     */
     public List<TypeWarriorVocabularyRow> findTypeWarriorVocabularyRows(long userId) {
         String sql = """
                 SELECT q.id,
@@ -783,6 +1001,15 @@ public class QuestionBankRepository {
         ), userId);
     }
 
+    /**
+     * 构建题目查询条件
+     *
+     * @param subjectCode 学科代码
+     * @param keyword 关键词
+     * @param difficulty 难度
+     * @param params 参数列表（用于收集动态参数）
+     * @return WHERE子句
+     */
     private String buildProblemWhere(String subjectCode, String keyword, Integer difficulty, List<Object> params) {
         List<String> conditions = new ArrayList<>();
         if (subjectCode != null && !subjectCode.isBlank()) {
@@ -809,6 +1036,14 @@ public class QuestionBankRepository {
         return conditions.isEmpty() ? "" : "WHERE " + String.join(" AND ", conditions);
     }
 
+    /**
+     * 将结果集映射为题目标题响应对象
+     *
+     * @param rs 结果集
+     * @param rowNum 行号
+     * @return 题目标题响应对象
+     * @throws SQLException SQL异常
+     */
     private QuestionBankProblemResponse mapProblem(ResultSet rs, int rowNum) throws SQLException {
         return new QuestionBankProblemResponse(
                 rs.getLong("id"),
@@ -829,10 +1064,25 @@ public class QuestionBankRepository {
         );
     }
 
+    /**
+     * 将结果集映射为课程题目集响应对象（兼容RowMapper接口）
+     *
+     * @param rs 结果集
+     * @param rowNum 行号
+     * @return 课程题目集响应对象
+     * @throws SQLException SQL异常
+     */
     private CourseQuestionBankSetResponse mapCourseQuestionBankSet(ResultSet rs, int rowNum) throws SQLException {
         return mapCourseQuestionBankSet(rs);
     }
 
+    /**
+     * 将结果集映射为课程题目集响应对象
+     *
+     * @param rs 结果集
+     * @return 课程题目集响应对象
+     * @throws SQLException SQL异常
+     */
     private CourseQuestionBankSetResponse mapCourseQuestionBankSet(ResultSet rs) throws SQLException {
         return new CourseQuestionBankSetResponse(
                 rs.getLong("id"),
@@ -855,6 +1105,14 @@ public class QuestionBankRepository {
         );
     }
 
+    /**
+     * 将结果集映射为课程题目响应对象
+     *
+     * @param rs 结果集
+     * @param rowNum 行号
+     * @return 课程题目响应对象
+     * @throws SQLException SQL异常
+     */
     private CourseQuestionBankQuestionResponse mapCourseQuestionBankQuestion(ResultSet rs, int rowNum) throws SQLException {
         return new CourseQuestionBankQuestionResponse(
                 rs.getLong("id"),
@@ -869,6 +1127,14 @@ public class QuestionBankRepository {
         );
     }
 
+    /**
+     * 将结果集映射为收藏响应对象
+     *
+     * @param rs 结果集
+     * @param rowNum 行号
+     * @return 收藏响应对象
+     * @throws SQLException SQL异常
+     */
     private QuestionBankFavoriteResponse mapFavorite(ResultSet rs, int rowNum) throws SQLException {
         return new QuestionBankFavoriteResponse(
                 rs.getLong("favorite_id"),
@@ -888,6 +1154,14 @@ public class QuestionBankRepository {
         );
     }
 
+    /**
+     * 将结果集映射为错题响应对象
+     *
+     * @param rs 结果集
+     * @param rowNum 行号
+     * @return 错题响应对象
+     * @throws SQLException SQL异常
+     */
     private QuestionBankMistakeResponse mapMistake(ResultSet rs, int rowNum) throws SQLException {
         return new QuestionBankMistakeResponse(
                 rs.getLong("mistake_id"),
@@ -914,6 +1188,13 @@ public class QuestionBankRepository {
         );
     }
 
+    /**
+     * 安全获取字符串值（异常时返回空字符串）
+     *
+     * @param rs 结果集
+     * @param columnLabel 列名
+     * @return 字符串值，异常则返回空字符串
+     */
     private String getString(ResultSet rs, String columnLabel) {
         try {
             return rs.getString(columnLabel);
@@ -922,6 +1203,12 @@ public class QuestionBankRepository {
         }
     }
 
+    /**
+     * 将JSON字符串解析为字符串列表
+     *
+     * @param json JSON字符串
+     * @return 字符串列表
+     */
     private List<String> parseStringList(String json) {
         if (json == null || json.isBlank()) {
             return List.of();
@@ -933,6 +1220,12 @@ public class QuestionBankRepository {
         }
     }
 
+    /**
+     * 将对象转换为JSON字符串
+     *
+     * @param value 对象
+     * @return JSON字符串
+     */
     private String toJson(Object value) {
         try {
             return objectMapper.writeValueAsString(value == null ? List.of() : value);

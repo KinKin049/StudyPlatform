@@ -1,4 +1,9 @@
 <script setup>
+/**
+ * 数据结构可视化主页
+ * 展示算法结构可视化模块的入口列表
+ * 包含链表、排序、字符串匹配和表达式树等算法演示
+ */
 import { useLearningTimeTracker } from '../../composables/useLearningTimeTracker'
 import { algorithmDemos } from './algorithmDemos'
 
@@ -11,12 +16,14 @@ useLearningTimeTracker({
 
 <template>
   <main class="visual-page algorithm-lab-page">
+    <!-- 面包屑导航 -->
     <nav class="algorithm-viewer-breadcrumb visual-page-breadcrumb" aria-label="当前位置">
       <RouterLink to="/visualization">可视化</RouterLink>
       <span>&gt;</span>
       <strong>算法结构可视化</strong>
     </nav>
 
+    <!-- 页面标题区域 -->
     <section class="algorithm-lab-hero">
       <div>
         <p class="visual-kicker">Data Structure</p>
@@ -25,6 +32,7 @@ useLearningTimeTracker({
       </div>
     </section>
 
+    <!-- 算法演示卡片网格 -->
     <section class="algorithm-demo-grid algorithm-lab-grid" aria-label="数据结构可视化列表">
       <RouterLink
         v-for="demo in algorithmDemos"

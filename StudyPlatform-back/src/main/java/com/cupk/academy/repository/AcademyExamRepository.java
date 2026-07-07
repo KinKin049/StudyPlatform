@@ -15,14 +15,31 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public class AcademyExamRepository {
+
+    /**
+     * 考试数据访问层，提供考试查询、题目管理、答题提交和成绩记录等功能。
+     */
+
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
 
+    /**
+     * 构造函数
+     *
+     * @param jdbcTemplate JDBC模板
+     * @param objectMapper JSON序列化器
+     */
     public AcademyExamRepository(JdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * 查询考试列表（含用户最新提交状态）
+     *
+     * @param userId 用户ID
+     * @return 考试列表
+     */
     public List<ExamSummaryRow> findExams(Long userId) {
         String sql = """
                 SELECT e.exam_code, e.course_title, e.exam_title, e.teacher_name,
@@ -50,6 +67,12 @@ public class AcademyExamRepository {
         return jdbcTemplate.query(sql, examSummaryMapper(), userId);
     }
 
+    /**
+     * 根据代码查询考试详情
+     *
+     * @param examCode 考试代码
+     * @return 考试详情，不存在则返回空
+     */
     public Optional<ExamDetailRow> findExamByCode(String examCode) {
         String sql = """
                 SELECT id, exam_code, course_title, exam_title, teacher_name,
@@ -66,6 +89,12 @@ public class AcademyExamRepository {
         }
     }
 
+    /**
+     * 查询考试题目列表
+     *
+     * @param examId 考试ID
+     * @return 题目列表
+     */
     public List<ExamQuestionRow> findQuestions(Long examId) {
         String sql = """
                 SELECT id, question_type, question_label, question_title, question_options,
@@ -78,6 +107,13 @@ public class AcademyExamRepository {
         return jdbcTemplate.query(sql, examQuestionMapper(), examId);
     }
 
+    /**
+     * 查询用户最新答题记录
+     *
+     * @param examId 考试ID
+     * @param userId 用户ID
+     * @return 答题记录（JSON反序列化后的Map）
+     */
     public Map<String, Object> findLatestAnswers(Long examId, Long userId) {
         String sql = """
                 SELECT answer_payload
@@ -94,6 +130,13 @@ public class AcademyExamRepository {
         }
     }
 
+    /**
+     * 查询用户最新提交状态
+     *
+     * @param examId 考试ID
+     * @param userId 用户ID
+     * @return 提交状态，不存在则返回空
+     */
     public Optional<SubmissionStatusRow> findLatestSubmissionStatus(Long examId, Long userId) {
         String sql = """
                 SELECT submission_status, score, started_at, submitted_at
@@ -119,6 +162,12 @@ public class AcademyExamRepository {
         }
     }
 
+    /**
+     * 开始考试（创建提交记录）
+     *
+     * @param examId 考试ID
+     * @param userId 用户ID
+     */
     public void startExam(Long examId, Long userId) {
         String sql = """
                 INSERT INTO academy_exam_submissions
@@ -128,6 +177,14 @@ public class AcademyExamRepository {
         jdbcTemplate.update(sql, examId, userId);
     }
 
+    /**
+     * 保存考试草稿
+     *
+     * @param examId 考试ID
+     * @param userId 用户ID
+     * @param answers 答案Map
+     * @param startedAt 开始时间
+     */
     public void saveDraft(Long examId, Long userId, Map<String, Object> answers, LocalDateTime startedAt) {
         String sql = """
                 INSERT INTO academy_exam_submissions
@@ -137,6 +194,16 @@ public class AcademyExamRepository {
         jdbcTemplate.update(sql, examId, userId, writeJson(answers), startedAt);
     }
 
+    /**
+     * 提交考试答案
+     *
+     * @param examId 考试ID
+     * @param userId 用户ID
+     * @param answers 答案Map
+     * @param score 分数
+     * @param pendingTeacherReview 是否待教师审核
+     * @param startedAt 开始时间
+     */
     public void saveSubmission(
             Long examId,
             Long userId,
@@ -162,6 +229,11 @@ public class AcademyExamRepository {
         );
     }
 
+    /**
+     * 创建考试汇总行映射器
+     *
+     * @return RowMapper
+     */
     private RowMapper<ExamSummaryRow> examSummaryMapper() {
         return (rs, rowNum) -> new ExamSummaryRow(
                 rs.getString("exam_code"),
@@ -184,6 +256,11 @@ public class AcademyExamRepository {
         );
     }
 
+    /**
+     * 创建考试详情行映射器
+     *
+     * @return RowMapper
+     */
     private RowMapper<ExamDetailRow> examDetailMapper() {
         return (rs, rowNum) -> new ExamDetailRow(
                 rs.getLong("id"),
@@ -201,6 +278,11 @@ public class AcademyExamRepository {
         );
     }
 
+    /**
+     * 创建考试题目行映射器
+     *
+     * @return RowMapper
+     */
     private RowMapper<ExamQuestionRow> examQuestionMapper() {
         return (rs, rowNum) -> new ExamQuestionRow(
                 rs.getLong("id"),
@@ -218,11 +300,25 @@ public class AcademyExamRepository {
         );
     }
 
+    /**
+     * 从结果集读取LocalDateTime
+     *
+     * @param rs 结果集
+     * @param column 列名
+     * @return LocalDateTime，为空则返回null
+     * @throws SQLException SQL异常
+     */
     private LocalDateTime readDateTime(ResultSet rs, String column) throws SQLException {
         var timestamp = rs.getTimestamp(column);
         return timestamp == null ? null : timestamp.toLocalDateTime();
     }
 
+    /**
+     * 将JSON字符串解析为字符串列表
+     *
+     * @param json JSON字符串
+     * @return 字符串列表
+     */
     private List<String> readStringList(String json) {
         if (json == null || json.isBlank()) {
             return List.of();
@@ -234,6 +330,12 @@ public class AcademyExamRepository {
         }
     }
 
+    /**
+     * 将JSON字符串解析为对象
+     *
+     * @param json JSON字符串
+     * @return 对象，为空则返回null
+     */
     private Object readJsonValue(String json) {
         if (json == null || json.isBlank()) {
             return null;
@@ -245,6 +347,12 @@ public class AcademyExamRepository {
         }
     }
 
+    /**
+     * 将JSON字符串解析为Map
+     *
+     * @param json JSON字符串
+     * @return Map，为空则返回空Map
+     */
     private Map<String, Object> readObjectMap(String json) {
         if (json == null || json.isBlank()) {
             return Map.of();
@@ -256,6 +364,12 @@ public class AcademyExamRepository {
         }
     }
 
+    /**
+     * 将对象转换为JSON字符串
+     *
+     * @param value 对象
+     * @return JSON字符串
+     */
     private String writeJson(Object value) {
         try {
             return objectMapper.writeValueAsString(value == null ? Map.of() : value);

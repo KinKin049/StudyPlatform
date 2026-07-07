@@ -2,58 +2,35 @@
 import { recordQuestionBankAnswer } from '../../../../api/academy'
 import { fetchLadderJumpQuestionBanks, saveLadderJumpRecord } from '../../../../api/games'
 import { request } from '../../../../api/request'
+import {
+  answeredLeftPadding,
+  answerPlatformWidth,
+  assetBase,
+  confirmOffset,
+  defaultQuestions,
+  excludedQuestionBankCategoryCodes,
+  excludedQuestionBankSetCodes,
+  gravity,
+  groundY,
+  initialCars,
+  jumpSpeed,
+  maxJumpCount,
+  moveSpeed,
+  platformLayouts,
+  playerSize,
+  questionGap,
+  questionStartX,
+  sceneLayers,
+  stageHeight,
+  stageWidth,
+  travelCoinBetweenStartOffset,
+  travelCoinBetweenWidth,
+  travelCoinCountPerQuestion,
+  travelCoinLanes,
+} from '../config/ladderJumpConfig'
+import { formatAverageDuration, formatDuration, seededRandom } from '../utils/ladderJumpFormat'
 
 export function useLadderJumpGame() {
-const assetBase = '/games/ladder-jump'
-const stageWidth = 1800
-const stageHeight = 760
-const playerSize = { width: 114, height: 135 }
-const gravity = 0.78
-const moveSpeed = 6.2
-const jumpSpeed = 13.8
-const maxJumpCount = 3
-const questionStartX = 520
-const questionGap = 2100
-const groundY = 660
-const answerPlatformWidth = 990
-const confirmOffset = 430
-const answeredLeftPadding = 240
-const travelCoinCountPerQuestion = 7
-const travelCoinBetweenStartOffset = questionGap - 220
-const travelCoinBetweenWidth = 520
-const travelCoinLanes = [groundY - 92, 520 - 64, 405 - 64]
-const platformLayouts = [
-  { xOffset: 400, y: 520 },
-  { xOffset: 640, y: 405 },
-  { xOffset: 880, y: 290 },
-  { xOffset: 1120, y: 175 },
-]
-const excludedQuestionBankCategoryCodes = new Set(['english'])
-const excludedQuestionBankSetCodes = new Set(['ncre'])
-const defaultQuestions = [
-  {
-    id: 1,
-    question: 'Java 涓敤浜庡０鏄庣被缁ф壙鍏崇郴鐨勫叧閿瓧鏄紵',
-    options: ['extends', 'implements', 'instanceof'],
-    answerIndex: 0,
-    explanation: 'extends 鐢ㄤ簬澹版槑涓€涓被缁ф壙鍙︿竴涓被銆?,
-  },
-  {
-    id: 2,
-    question: 'Vue 3 缁勫悎寮?API 涓敤浜庡垱寤哄搷搴斿紡寮曠敤鐨勬槸锛?,
-    options: ['ref', 'map', 'bind'],
-    answerIndex: 0,
-    explanation: 'ref 鍙互鍒涘缓涓€涓搷搴斿紡寮曠敤鍊笺€?,
-  },
-  {
-    id: 3,
-    question: 'HTTP 鐘舵€佺爜 404 閫氬父琛ㄧず锛?,
-    options: ['璇锋眰鎴愬姛', '璧勬簮涓嶅瓨鍦?, '鏈嶅姟鍣ㄩ噸鍚?],
-    answerIndex: 1,
-    explanation: '404 琛ㄧず瀹㈡埛绔姹傜殑璧勬簮娌℃湁鎵惧埌銆?,
-  },
-]
-
 const questions = ref(defaultQuestions)
 const questionBanks = ref([])
 const selectedQuestionBankCode = ref('')
@@ -69,10 +46,10 @@ const combo = ref(0)
 const correctAnswerCount = ref(0)
 const wrongAnswerCount = ref(0)
 const elapsedMs = ref(0)
-const feedback = ref('浣跨敤 A/D 鎴?WASD 绉诲姩锛岀┖鏍艰烦璺冿紝钀藉埌閫夐」骞冲彴鍚庡悜鍙崇┛杩囩‘璁ょ嚎瀹屾垚绛旈')
+const feedback = ref('使用 A/D 或 WASD 移动，空格跳跃，落到选项平台后向右穿过确认线完成答题')
 const isPaused = ref(false)
 const isGameOver = ref(false)
-const gameOverTitle = ref('鎸戞垬缁撴潫')
+const gameOverTitle = ref('挑战结束')
 const damageFlash = ref(false)
 const playerFrame = ref(0)
 const player = ref({
@@ -90,12 +67,7 @@ const collectedTravelCoinIds = ref([])
 const routes = ref([])
 const selectedPlatform = ref(null)
 const leftBounds = ref({})
-const cars = ref([
-  { id: 'car-taxi', file: 'taxi.png', x: 260, bottom: 4, direction: 1, speed: 2.4 },
-  { id: 'car-red', file: 'red.png', x: 980, bottom: 6, direction: -1, speed: 1.9 },
-  { id: 'car-blue', file: 'blue.png', x: 1540, bottom: 5, direction: 1, speed: 2.1 },
-  { id: 'car-white', file: 'white.png', x: 2280, bottom: 6, direction: -1, speed: 2.7 },
-])
+const cars = ref(initialCars.map((car) => ({ ...car })))
 const pressedKeys = new Set()
 let animationId = 0
 let frameTimer = 0
@@ -109,15 +81,15 @@ const selectedQuestionBank = computed(() =>
   questionBanks.value.find((item) => item.code === selectedQuestionBankCode.value) || null,
 )
 const currentQuestionPoolCount = computed(() => questions.value.length)
-const questionBankButtonTitle = computed(() => selectedQuestionBank.value?.title || '鍏ㄩ儴鍗曢€夐搴?)
+const questionBankButtonTitle = computed(() => selectedQuestionBank.value?.title || '全部单选题库')
 const questionBankButtonSubtitle = computed(() =>
-  selectedQuestionBank.value ? selectedQuestionBank.value.categoryName : '闅忔満娣峰悎棰樻睜',
+  selectedQuestionBank.value ? selectedQuestionBank.value.categoryName : '随机混合题池',
 )
 const questionBankSummary = computed(() => {
   if (selectedQuestionBank.value) {
-    return `${selectedQuestionBank.value.title} 路 褰撳墠鍙殢鏈洪鏁?${currentQuestionPoolCount.value}`
+    return `${selectedQuestionBank.value.title} · 当前可随机题数 ${currentQuestionPoolCount.value}`
   }
-  return `鍏ㄩ儴鍗曢€夐搴?路 褰撳墠鍙殢鏈洪鏁?${currentQuestionPoolCount.value}`
+  return `全部单选题库 · 当前可随机题数 ${currentQuestionPoolCount.value}`
 })
 const answeredCount = computed(() => correctAnswerCount.value + wrongAnswerCount.value)
 const gameTimeText = computed(() => formatDuration(elapsedMs.value))
@@ -128,16 +100,16 @@ const averageTimePerCorrectText = computed(() =>
   correctAnswerCount.value > 0 ? formatAverageDuration(elapsedMs.value / correctAnswerCount.value) : '--',
 )
 const overlayStats = computed(() => [
-  { label: '鏈鑾峰緱閲戝竵', value: String(score.value) },
-  { label: '娓告垙鏃堕棿', value: gameTimeText.value },
-  { label: '绛斿棰樼洰鏁伴噺', value: String(correctAnswerCount.value) },
-  { label: '绛旈敊棰樼洰鏁伴噺', value: String(wrongAnswerCount.value) },
-  { label: '骞冲潎姣忛鑰楁椂', value: averageTimePerQuestionText.value },
-  { label: '骞冲潎绛斿棰樿€楁椂', value: averageTimePerCorrectText.value },
+  { label: '本次获得金币', value: String(score.value) },
+  { label: '游戏时间', value: gameTimeText.value },
+  { label: '答对题目数量', value: String(correctAnswerCount.value) },
+  { label: '答错题目数量', value: String(wrongAnswerCount.value) },
+  { label: '平均每题耗时', value: averageTimePerQuestionText.value },
+  { label: '平均答对题耗时', value: averageTimePerCorrectText.value },
 ])
-const overlayTitle = computed(() => (isPaused.value ? '娓告垙鏆傚仠' : gameOverTitle.value))
+const overlayTitle = computed(() => (isPaused.value ? '游戏暂停' : gameOverTitle.value))
 const overlaySubtitle = computed(() =>
-  isPaused.value ? '褰撳墠杩涘害宸插喕缁擄紝缁х画鍚庡皢浠庡綋鍓嶄綅缃仮澶嶃€? : '鏈眬缁熻宸茬粨绠椼€?
+  isPaused.value ? '当前进度已冻结，继续后将从当前位置恢复。' : '本局统计已结算。'
 )
 const playerSprite = computed(() => {
   if (Math.abs(player.value.vx) > 0.1) {
@@ -145,7 +117,7 @@ const playerSprite = computed(() => {
   }
   return `${assetBase}/player/idle_${playerFrame.value % 4}.png`
 })
-const heartText = computed(() => '鈾?.repeat(Math.max(health.value, 0)))
+const heartText = computed(() => '♥'.repeat(Math.max(health.value, 0)))
 const currentQuestionBaseX = computed(() => questionStartX + questionIndex.value * questionGap)
 const currentQuestionKey = computed(() => `${currentQuestion.value.id}-${questionIndex.value}`)
 const visibleQuestionIndexes = computed(() =>
@@ -166,17 +138,6 @@ const questionCards = computed(() =>
 
 function optionLetter(index) {
   return String.fromCharCode(65 + index)
-}
-
-function formatDuration(durationMs) {
-  const totalSeconds = Math.max(0, Math.floor(durationMs / 1000))
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-}
-
-function formatAverageDuration(durationMs) {
-  return `${(durationMs / 1000).toFixed(1)} 绉抈
 }
 
 function syncElapsed(now = performance.now()) {
@@ -296,15 +257,6 @@ const worldStyle = computed(() => ({
   height: `${stageHeight}px`,
   transform: `translateX(${-cameraX.value}px)`,
 }))
-const sceneLayers = [
-  { key: 'sky', className: 'ladder-bg-layer ladder-bg-sky' },
-  { key: 'cloud', className: 'ladder-bg-layer ladder-bg-cloud' },
-  { key: 'far-house', className: 'ladder-bg-layer ladder-bg-far' },
-  { key: 'mid-house', className: 'ladder-bg-layer ladder-bg-mid' },
-  { key: 'house', className: 'ladder-bg-layer ladder-bg-house' },
-  { key: 'tree', className: 'ladder-bg-layer ladder-bg-tree' },
-  { key: 'lamp', className: 'ladder-bg-layer ladder-bg-lamp' },
-]
 const playerStyle = computed(() => ({
   left: `${player.value.x}px`,
   top: `${player.value.y}px`,
@@ -378,19 +330,14 @@ async function selectQuestionBank(code) {
   await loadQuestions()
   restartGame(false)
   feedback.value = selectedQuestionBank.value
-    ? `宸插垏鎹㈠埌棰樺簱銆?{selectedQuestionBank.value.title}銆嶏紝褰撳墠棰樼洰灏嗛殢鏈烘娊鍙栥€俙
-    : '宸插垏鎹㈠埌鍏ㄩ儴鍗曢€夐搴擄紝褰撳墠棰樼洰灏嗛殢鏈烘娊鍙栥€?
+    ? `已切换到题库「${selectedQuestionBank.value.title}」，当前题目将随机抽取。`
+    : '已切换到全部单选题库，当前题目将随机抽取。'
 }
 
 function handleDocumentPointerDown(event) {
   if (!questionDropdownOpen.value) return
   if (questionBankPanelRef.value?.contains(event.target)) return
   questionDropdownOpen.value = false
-}
-
-function seededRandom(seed) {
-  const value = Math.sin(seed) * 10000
-  return value - Math.floor(value)
 }
 
 function pauseGame() {
@@ -422,7 +369,25 @@ function finishGame(title = '\u6311\u6218\u7ed3\u675f') {
   isGameOver.value = true
   pressedKeys.clear()
   stopPlayTimer()
-  persistLadderJumpRecord()
+}
+
+function reviveGame() {
+  if (!isGameOver.value) return false
+  isGameOver.value = false
+  isPaused.value = false
+  gameOverTitle.value = '\u6311\u6218\u7ed3\u675f'
+  health.value = Math.max(1, health.value)
+  damageFlash.value = false
+  feedback.value = '已使用复活券，生命恢复并继续挑战。'
+  player.value = {
+    ...player.value,
+    y: groundY - playerSize.height,
+    vy: 0,
+    onGround: true,
+    jumpCount: 0,
+  }
+  startPlayTimer()
+  return true
 }
 
 
@@ -603,7 +568,7 @@ function syncSelectedPlatform(platform) {
   if (answeredQuestionIds.value.includes(platform.questionId)) return
 
   selectedPlatform.value = platform
-  feedback.value = `宸茶繘鍏ラ€夐」 ${optionLetter(platform.index)}锛?{platform.option}銆傜户缁悜鍙崇┛杩囩‘璁ょ嚎鍗冲彲浣滅瓟銆俙
+  feedback.value = `已进入选项 ${optionLetter(platform.index)}：${platform.option}。继续向右穿过确认线即可作答。`
 }
 
 function rescuePlayerFromVoid() {
@@ -646,7 +611,7 @@ function judgePlatform(platform) {
     ]
     combo.value += 1
     score.value += 10 + combo.value * 2
-    feedback.value = `鍥炵瓟姝ｇ‘銆?{currentQuestion.value.explanation} 缁х画鍚戝彸鍓嶈繘锛屼笅涓€棰樹細浠庡睆骞曞杩涘叆銆俙
+    feedback.value = `回答正确。${currentQuestion.value.explanation} 继续向右前进，下一题会从屏幕外进入。`
     playAudio('data.mp3')
     return
   }
@@ -661,10 +626,10 @@ function judgePlatform(platform) {
   health.value -= 1
   applyWrongAnswerKnockback(platform)
   triggerDamageFeedback()
-  feedback.value = `鍥炵瓟閿欒銆?{currentQuestion.value.explanation} 鐢熷懡 -1锛岄敊棰樺凡鍔犲叆閿欓鏈€俙
+  feedback.value = `回答错误。${currentQuestion.value.explanation} 生命 -1，错题已加入错题本。`
   playAudio('damage.mp3')
   if (health.value <= 0) {
-    finishGame('鎸戞垬澶辫触')
+    finishGame('挑战失败')
   }
 }
 
@@ -740,7 +705,7 @@ function advanceQuestionAfterLeavingCurrentArea() {
     window.requestAnimationFrame(() => {
       syncSelectedPlatform(findStandingOptionPlatform())
     })
-    feedback.value = '鏂伴宸叉縺娲汇€傝烦鍒扮洰鏍囧钩鍙板苟绌胯繃纭绾夸綔绛斻€?
+    feedback.value = '新题已激活。跳到目标平台并穿过确认线作答。'
   }
 }
 
@@ -880,6 +845,8 @@ onBeforeUnmount(() => {
     resumeGame,
     restartGame,
     finishGame,
+    reviveGame,
+    persistLadderJumpRecord,
   }
 }
 

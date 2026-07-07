@@ -15,6 +15,9 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * OJ提交服务，提供代码提交、查询提交记录和测试用例结果等功能。
+ */
 @Service
 public class OjSubmissionService {
     private static final long DEFAULT_USER_ID = 1L;
@@ -25,6 +28,15 @@ public class OjSubmissionService {
     private final OjJudgeService judgeService;
     private final JdbcTemplate jdbcTemplate;
 
+    /**
+     * 构造函数，注入依赖的仓库、服务和模板。
+     *
+     * @param problemRepository      题目数据访问层
+     * @param submissionRepository   提交记录数据访问层
+     * @param submissionCaseRepository 提交测试用例数据访问层
+     * @param judgeService           判题服务
+     * @param jdbcTemplate           JDBC模板
+     */
     public OjSubmissionService(
             OjProblemRepository problemRepository,
             OjSubmissionRepository submissionRepository,
@@ -39,6 +51,12 @@ public class OjSubmissionService {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    /**
+     * 创建代码提交，提交后触发异步判题。
+     *
+     * @param request 提交请求对象
+     * @return 提交记录对象
+     */
     @Transactional
     public OjSubmission createSubmission(CreateSubmissionRequest request) {
         if (!problemRepository.existsById(request.problemId())) {
@@ -55,11 +73,23 @@ public class OjSubmissionService {
         return getSubmission(id);
     }
 
+    /**
+     * 根据ID获取提交记录。
+     *
+     * @param id 提交记录ID
+     * @return 提交记录对象
+     */
     public OjSubmission getSubmission(Long id) {
         return submissionRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Submission not found"));
     }
 
+    /**
+     * 根据题目ID查询提交记录列表。
+     *
+     * @param problemId 题目ID
+     * @return 提交记录列表
+     */
     public List<OjSubmission> listSubmissions(Long problemId) {
         if (!problemRepository.existsById(problemId)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Problem not found");
@@ -67,11 +97,22 @@ public class OjSubmissionService {
         return submissionRepository.findByProblemId(problemId);
     }
 
+    /**
+     * 根据提交记录ID查询测试用例结果列表。
+     *
+     * @param submissionId 提交记录ID
+     * @return 测试用例结果列表
+     */
     public List<OjSubmissionCase> listSubmissionCases(Long submissionId) {
         getSubmission(submissionId);
         return submissionCaseRepository.findBySubmissionId(submissionId);
     }
 
+    /**
+     * 在事务提交后分发判题任务，确保异步工作线程能读取到已保存的提交记录。
+     *
+     * @param submissionId 提交记录ID
+     */
     private void dispatchJudgeAfterCommit(Long submissionId) {
         if (!TransactionSynchronizationManager.isSynchronizationActive()) {
             judgeService.judgeSubmission(submissionId);
@@ -86,6 +127,12 @@ public class OjSubmissionService {
         });
     }
 
+    /**
+     * 规范化用户ID，确保用户存在，不存在时创建默认用户。
+     *
+     * @param userId 用户ID
+     * @return 规范化后的用户ID
+     */
     private Long normalizeUserId(Long userId) {
         Long candidateUserId = userId == null || userId <= 0 ? DEFAULT_USER_ID : userId;
         if (userExists(candidateUserId)) {
@@ -98,6 +145,12 @@ public class OjSubmissionService {
         return null;
     }
 
+    /**
+     * 检查用户是否存在。
+     *
+     * @param userId 用户ID
+     * @return 是否存在
+     */
     private boolean userExists(Long userId) {
         Integer count = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM users WHERE id = ?",
@@ -107,6 +160,9 @@ public class OjSubmissionService {
         return count != null && count > 0;
     }
 
+    /**
+     * 确保默认用户存在，不存在时创建。
+     */
     private void ensureDefaultUser() {
         jdbcTemplate.update("""
                 INSERT IGNORE INTO users (id, username, password_hash, nickname, role, enabled)

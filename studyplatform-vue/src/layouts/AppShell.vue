@@ -1,4 +1,5 @@
 <script setup>
+// 应用根布局组件，提供全局导航、路由视图和 AI 宠物组件的容器
 import { computed } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import AiPetWidget from '../components/AiPetWidget.vue'
@@ -6,6 +7,7 @@ import AppNavigation from '../components/AppNavigation.vue'
 
 const route = useRoute()
 
+// 导航菜单项配置，包含在线学堂、实验平台、可视化和游戏四大模块
 const navItems = [
   {
     label: '在线学堂',
@@ -78,13 +80,14 @@ const navItems = [
         path: '/games/type-warrior',
       },
       {
-        label: '\u4e07\u9898\u5929\u68af\u8df3',
+        label: '万题天梯跳',
         path: '/games/ladder-jump',
       },
     ],
   },
 ]
 
+// 根据当前路由动态计算布局容器的 CSS 类名，用于不同页面的样式差异化
 const shellClass = computed(() => ({
   'home-page': route.path === '/',
   'auth-shell': route.path === '/login' || route.path === '/register' || route.path === '/forgot-password' || route.path === '/onboarding',
@@ -103,6 +106,7 @@ const shellClass = computed(() => ({
   'immersive-game-shell': route.path.startsWith('/games/'),
 }))
 
+// 判断是否显示顶部导航栏，游戏详情页和认证相关页面不显示导航
 const showNavigation = computed(() =>
   !route.path.startsWith('/games/') &&
     route.path !== '/login' &&
@@ -113,9 +117,13 @@ const showNavigation = computed(() =>
 </script>
 
 <template>
+  <!-- 应用根布局容器，根据路由动态添加样式类 -->
   <div :class="shellClass">
+    <!-- 顶部导航栏组件，条件渲染 -->
     <AppNavigation v-if="showNavigation" :nav-items="navItems" />
+    <!-- 路由视图容器，渲染当前路由对应的页面组件 -->
     <RouterView />
+    <!-- AI 学习宠物组件，全局显示 -->
     <AiPetWidget />
   </div>
 </template>

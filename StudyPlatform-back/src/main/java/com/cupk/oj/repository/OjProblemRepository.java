@@ -21,12 +21,28 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public class OjProblemRepository {
+
+    /**
+     * 在线判题系统题目数据访问层，提供题目创建、更新、查询和搜索等功能。
+     */
+
     private final JdbcTemplate jdbcTemplate;
 
+    /**
+     * 构造函数
+     *
+     * @param jdbcTemplate JDBC模板
+     */
     public OjProblemRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    /**
+     * 创建新题目
+     *
+     * @param request 创建题目请求
+     * @return 题目ID
+     */
     public Long create(CreateProblemRequest request) {
         String sql = """
                 INSERT INTO oj_problems
@@ -58,6 +74,13 @@ public class OjProblemRepository {
         return generatedId(keyHolder);
     }
 
+    /**
+     * 更新题目信息
+     *
+     * @param id 题目ID
+     * @param request 更新题目请求
+     * @return 更新的行数
+     */
     public int update(Long id, UpdateProblemRequest request) {
         String sql = """
                 UPDATE oj_problems
@@ -80,6 +103,16 @@ public class OjProblemRepository {
                 id);
     }
 
+    /**
+     * 根据条件查询题目列表
+     *
+     * @param status 题目状态
+     * @param keyword 关键词
+     * @param tags 标签（逗号分隔）
+     * @param difficulties 难度（逗号分隔）
+     * @param languages 语言（逗号分隔）
+     * @return 题目列表
+     */
     public List<ProblemSummary> findAll(
             ProblemStatus status,
             String keyword,
@@ -170,6 +203,12 @@ public class OjProblemRepository {
         return jdbcTemplate.query(sql.toString(), summaryMapper(), args.toArray());
     }
 
+    /**
+     * 根据ID查询题目详情
+     *
+     * @param id 题目ID
+     * @return 题目详情，不存在则返回空
+     */
     public Optional<OjProblem> findById(Long id) {
         String sql = """
                 SELECT id, title, slug, description, input_description, output_description,
@@ -181,11 +220,22 @@ public class OjProblemRepository {
         return jdbcTemplate.query(sql, problemMapper(), id).stream().findFirst();
     }
 
+    /**
+     * 判断题目是否存在
+     *
+     * @param id 题目ID
+     * @return 是否存在
+     */
     public boolean existsById(Long id) {
         Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM oj_problems WHERE id = ?", Integer.class, id);
         return count != null && count > 0;
     }
 
+    /**
+     * 创建题目行映射器
+     *
+     * @return RowMapper
+     */
     private RowMapper<OjProblem> problemMapper() {
         return (rs, rowNum) -> new OjProblem(
                 rs.getLong("id"),
@@ -206,6 +256,11 @@ public class OjProblemRepository {
         );
     }
 
+    /**
+     * 创建题目摘要行映射器
+     *
+     * @return RowMapper
+     */
     private RowMapper<ProblemSummary> summaryMapper() {
         return (rs, rowNum) -> new ProblemSummary(
                 rs.getLong("id"),
@@ -221,11 +276,25 @@ public class OjProblemRepository {
         );
     }
 
+    /**
+     * 安全获取长整型值（空值时返回null）
+     *
+     * @param rs 结果集
+     * @param column 列名
+     * @return 长整型值，空则返回null
+     * @throws SQLException SQL异常
+     */
     private Long getNullableLong(ResultSet rs, String column) throws SQLException {
         long value = rs.getLong(column);
         return rs.wasNull() ? null : value;
     }
 
+    /**
+     * 获取生成的主键ID
+     *
+     * @param keyHolder 主键持有者
+     * @return 主键ID
+     */
     private Long generatedId(KeyHolder keyHolder) {
         Number key = keyHolder.getKey();
         if (key == null) {
@@ -234,6 +303,12 @@ public class OjProblemRepository {
         return key.longValue();
     }
 
+    /**
+     * 规范化关键词（去除首尾空格并转小写）
+     *
+     * @param keyword 关键词
+     * @return 规范化后的关键词，为空则返回null
+     */
     private String normalizeKeyword(String keyword) {
         if (keyword == null || keyword.isBlank()) {
             return null;
@@ -241,6 +316,12 @@ public class OjProblemRepository {
         return keyword.trim().toLowerCase();
     }
 
+    /**
+     * 将CSV字符串分割为列表
+     *
+     * @param value CSV字符串
+     * @return 字符串列表，为空则返回空列表
+     */
     private List<String> splitCsv(String value) {
         if (value == null || value.isBlank()) {
             return List.of();
@@ -251,6 +332,12 @@ public class OjProblemRepository {
                 .toList();
     }
 
+    /**
+     * 在SQL中追加占位符
+     *
+     * @param sql SQL字符串构建器
+     * @param count 占位符数量
+     */
     private void appendPlaceholders(StringBuilder sql, int count) {
         for (int index = 0; index < count; index += 1) {
             if (index > 0) {
@@ -260,6 +347,12 @@ public class OjProblemRepository {
         }
     }
 
+    /**
+     * 根据关键词获取标签列表（支持中英文关键词映射）
+     *
+     * @param keyword 关键词
+     * @return 标签列表，无匹配则返回空列表
+     */
     private List<String> tagsForKeyword(String keyword) {
         if (keyword == null) {
             return List.of();
@@ -285,6 +378,12 @@ public class OjProblemRepository {
         };
     }
 
+    /**
+     * 根据关键词获取难度列表（支持中英文关键词映射）
+     *
+     * @param keyword 关键词
+     * @return 难度列表，无匹配则返回空列表
+     */
     private List<String> difficultiesForKeyword(String keyword) {
         if (keyword == null) {
             return List.of();

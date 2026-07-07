@@ -11,7 +11,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Receives ladder jump run summaries from the frontend.
+ * 天梯跳游戏记录控制器
+ * 提供天梯跳游戏记录保存相关接口
  */
 @RestController
 @RequestMapping("/api/games/ladder-jump")
@@ -24,6 +25,11 @@ public class LadderJumpRecordController {
         this.gameRecordService = gameRecordService;
     }
 
+    /**
+     * 保存天梯跳游戏记录
+     * @param userId 用户ID，从请求头获取，可选
+     * @param request 游戏记录保存请求
+     */
     @PostMapping("/records")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void saveRecord(

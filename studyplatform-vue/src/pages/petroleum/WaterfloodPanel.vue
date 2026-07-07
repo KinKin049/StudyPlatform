@@ -6,22 +6,34 @@ import { downloadTextReport } from './api'
 
 /**
  * 注水开发仿真面板。
+ * 模拟注水井向油藏补充能量后的生产响应，覆盖见效期、稳产期和水淹期三个阶段。
+ * 支持配注量调节和自动播放功能，展示日产油、日产水和含水率的变化曲线。
  */
 
+// 日配注量 m³/d（用户输入参数）
 const injectionRate = ref(100)
+// 当前模拟天数 d
 const waterfloodDay = ref(180)
+// 自动播放状态
 const waterfloodPlaying = ref(false)
+// 自动播放定时器
 const waterfloodTimer = ref(null)
+// 报告抽屉显示状态
 const reportVisible = ref(false)
+// 图表DOM引用
 const waterfloodChartRef = ref(null)
+// ECharts图表实例
 const chartInstance = ref(null)
+// 图表尺寸变化监听器
 const chartResizeObserver = ref(null)
 
+// 关键时间节点：见效时间和见水时间，配注量越大见效越快但见水时间也会提前
 const waterfloodKeyDays = computed(() => ({
   effectDay: Math.round(Math.max(25, Math.min(90, 90 - injectionRate.value * 0.18))),
   breakthroughDay: Math.round(Math.max(120, Math.min(260, 230 - injectionRate.value * 0.35))),
 }))
 
+// 完整的注水开发曲线数据（365天），包含见效期、稳产期和水淹期三个阶段的产量变化
 const waterfloodFullCurve = computed(() => {
   const { effectDay, breakthroughDay } = waterfloodKeyDays.value
   const peakOil = 22 + injectionRate.value * 0.13
@@ -32,15 +44,20 @@ const waterfloodFullCurve = computed(() => {
     let dailyOil
     let waterCut
 
+    // 见效期：日产油上升，含水率缓慢增加
     if (day <= effectDay) {
       const ratio = day / effectDay
       dailyOil = initialOil + (peakOil - initialOil) * ratio * 0.78
       waterCut = initialWaterCut + ratio * 0.02
-    } else if (day <= breakthroughDay) {
+    }
+    // 稳产期：日产油接近峰值并小幅波动，含水率缓慢上升
+    else if (day <= breakthroughDay) {
       const ratio = (day - effectDay) / (breakthroughDay - effectDay)
       dailyOil = peakOil - Math.sin(ratio * Math.PI) * 1.2
       waterCut = 0.24 + ratio * 0.05
-    } else {
+    }
+    // 水淹期：日产油递减，含水率快速升高
+    else {
       const ratio = (day - breakthroughDay) / (365 - breakthroughDay)
       const declineRate = 0.48 + injectionRate.value / 900
       dailyOil = Math.max(4, peakOil * (1 - ratio * declineRate))
@@ -59,10 +76,12 @@ const waterfloodFullCurve = computed(() => {
   })
 })
 
+// 当前可见的曲线数据（0到waterfloodDay天）
 const waterfloodVisibleCurve = computed(() =>
   waterfloodFullCurve.value.filter((point) => point.day <= waterfloodDay.value),
 )
 
+// 注水开发综合统计数据，包含关键时间节点和峰值日产油
 const waterfloodSummary = computed(() => {
   const peakOil = Math.max(...waterfloodFullCurve.value.map((point) => point.dailyOil))
   return {
@@ -71,16 +90,19 @@ const waterfloodSummary = computed(() => {
   }
 })
 
+// 当前模拟天数对应的生产数据点
 const currentWaterfloodPoint = computed(() =>
   waterfloodFullCurve.value.find((point) => point.day === waterfloodDay.value) || waterfloodFullCurve.value[0],
 )
 
+// 当前所处的开发阶段
 const waterfloodStage = computed(() => {
   if (waterfloodDay.value <= waterfloodSummary.value.effectDay) return '见效期'
   if (waterfloodDay.value <= waterfloodSummary.value.breakthroughDay) return '稳产期'
   return '水淹期'
 })
 
+// 报告表格数据行
 const waterfloodReportRows = computed(() => [
   { name: '见效时间', value: `${waterfloodSummary.value.effectDay} d` },
   { name: '见水时间', value: `${waterfloodSummary.value.breakthroughDay} d` },
@@ -90,6 +112,7 @@ const waterfloodReportRows = computed(() => [
   { name: '当前含水率', value: `${currentWaterfloodPoint.value.waterCut}%` },
 ])
 
+// 报告解释结论，根据当前开发阶段生成
 const waterfloodReportConclusion = computed(() => {
   if (waterfloodStage.value === '见效期') {
     return '当前处于注水见效期，地层能量逐步恢复，日产油随注水推进呈上升趋势，含水率整体较稳定。'
@@ -100,6 +123,9 @@ const waterfloodReportConclusion = computed(() => {
   return '当前处于水淹期，注入水已突破并导致含水率快速升高，日产油递减、日产水增加，应考虑调剖堵水或优化注采井网。'
 })
 
+/**
+ * 渲染注水开发图表，初始化或更新ECharts实例
+ */
 function renderWaterfloodChart() {
   if (!waterfloodChartRef.value) return
   const { width, height } = waterfloodChartRef.value.getBoundingClientRect()
@@ -164,10 +190,16 @@ function renderWaterfloodChart() {
   }, true)
 }
 
+/**
+ * 调整图表尺寸
+ */
 function resizeChart() {
   chartInstance.value?.resize()
 }
 
+/**
+ * 调度图表渲染，使用requestAnimationFrame优化性能
+ */
 function scheduleRenderChart() {
   window.requestAnimationFrame(() => {
     if (!chartInstance.value) {
@@ -179,6 +211,9 @@ function scheduleRenderChart() {
   })
 }
 
+/**
+ * 切换自动播放状态，自动播放时逐天推进模拟时间
+ */
 function toggleWaterfloodPlayback() {
   waterfloodPlaying.value = !waterfloodPlaying.value
   if (!waterfloodPlaying.value) {
@@ -192,6 +227,9 @@ function toggleWaterfloodPlayback() {
   }, 80)
 }
 
+/**
+ * 下载注水开发解释报告到本地
+ */
 function downloadWaterfloodReport() {
   const rows = waterfloodReportRows.value.map((row) => `${row.name}：${row.value}`).join('\n')
   const content = [
@@ -213,8 +251,10 @@ function downloadWaterfloodReport() {
   ElMessage.success('报告已下载到本地')
 }
 
+// 监听配注量和模拟时间变化，重新渲染图表
 watch([injectionRate, waterfloodDay], renderWaterfloodChart)
 
+// 组件挂载时初始化图表和尺寸监听
 onMounted(async () => {
   await nextTick()
   window.requestAnimationFrame(() => {
@@ -229,6 +269,7 @@ onMounted(async () => {
   window.addEventListener('resize', resizeChart)
 })
 
+// 组件卸载时清理资源
 onBeforeUnmount(() => {
   window.clearInterval(waterfloodTimer.value)
   window.removeEventListener('resize', resizeChart)
@@ -239,28 +280,36 @@ onBeforeUnmount(() => {
 
 <template>
   <section class="production-layout">
+    <!-- 左侧控制面板 -->
     <aside class="production-control">
+      <!-- 注水参数配置卡片 -->
       <el-card shadow="never">
         <template #header>注水参数</template>
+        <!-- 日配注量滑块 -->
         <div class="control-item">
           <div class="control-label"><span>日配注量</span><strong>{{ injectionRate }} m³/d</strong></div>
           <el-slider v-model="injectionRate" :min="0" :max="300" :step="10" />
         </div>
+        <!-- 模拟时间滑块 -->
         <div class="control-item">
           <div class="control-label"><span>模拟时间</span><strong>{{ waterfloodDay }} d</strong></div>
           <el-slider v-model="waterfloodDay" :min="0" :max="365" :step="1" />
         </div>
+        <!-- 关键指标汇总 -->
         <div class="summary-list">
           <p>见效时间：{{ waterfloodSummary.effectDay }} d</p>
           <p>见水时间：{{ waterfloodSummary.breakthroughDay }} d</p>
           <p>峰值日产油：{{ waterfloodSummary.peakOil }} t/d</p>
         </div>
+        <!-- 自动播放按钮 -->
         <el-button type="primary" class="full-control" @click="toggleWaterfloodPlayback">
           {{ waterfloodPlaying ? '暂停播放' : '自动播放' }}
         </el-button>
+        <!-- 生成报告按钮 -->
         <el-button class="full-control secondary-action" @click="reportVisible = true">生成解释报告</el-button>
       </el-card>
 
+      <!-- 仿真说明卡片 -->
       <el-card shadow="never" class="simulation-intro-card">
         <template #header>仿真说明</template>
         <p>
@@ -273,7 +322,9 @@ onBeforeUnmount(() => {
       </el-card>
     </aside>
 
+    <!-- 右侧图表展示区域 -->
     <section class="production-visual waterflood-visual">
+      <!-- 注水开发图表卡片 -->
       <el-card shadow="never" class="chart-card-fill waterflood-chart-card">
         <template #header>注水见效、稳产与水淹过程</template>
         <div ref="waterfloodChartRef" class="production-chart waterflood-chart"></div>
@@ -281,7 +332,9 @@ onBeforeUnmount(() => {
     </section>
   </section>
 
+  <!-- 注水开发解释报告抽屉 -->
   <el-drawer v-model="reportVisible" title="注水开发解释报告" size="44%">
+    <!-- 当前仿真参数 -->
     <section class="report-section">
       <h3>当前仿真参数</h3>
       <p>日配注量：{{ injectionRate }} m³/d</p>
@@ -289,6 +342,7 @@ onBeforeUnmount(() => {
       <p>当前阶段：{{ waterfloodStage }}</p>
     </section>
 
+    <!-- 开发指标表格 -->
     <section class="report-section">
       <h3>开发指标</h3>
       <el-table :data="waterfloodReportRows" border>
@@ -297,11 +351,13 @@ onBeforeUnmount(() => {
       </el-table>
     </section>
 
+    <!-- 解释结论 -->
     <section class="report-section">
       <h3>解释结论</h3>
       <p>{{ waterfloodReportConclusion }}</p>
     </section>
 
+    <!-- 下载报告按钮 -->
     <el-button type="primary" @click="downloadWaterfloodReport">下载报告到本地</el-button>
   </el-drawer>
 </template>

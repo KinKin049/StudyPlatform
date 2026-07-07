@@ -1,3 +1,4 @@
+<!-- 课程详情页面组件，展示课程信息、视频播放、课程评价和教师信息 -->
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
@@ -11,6 +12,7 @@ import {
 import { resolveResourceUrl } from '../../api/request'
 import { useVideoLearningTimeTracker } from '../../composables/useLearningTimeTracker'
 
+// 组件属性定义
 const props = defineProps({
   resource: {
     type: String,
@@ -30,35 +32,47 @@ const props = defineProps({
   },
 })
 
+// 课程数据
 const course = ref(null)
+// 页面加载状态
 const loading = ref(true)
 const error = ref('')
+// 报名课程状态
 const enrolling = ref(false)
 const enrollmentState = ref('idle')
 const enrollmentMessage = ref('')
 const enrollmentToastVisible = ref(false)
 let enrollmentToastTimer = null
+// 课程评价数据
 const reviews = ref([])
 const reviewsLoading = ref(false)
 const reviewError = ref('')
+// 评价表单数据
 const reviewForm = ref({
   userName: '游客',
   rating: 5,
   content: '',
 })
 const submittingReview = ref(false)
+// 课程视频引用
 const courseVideoRef = ref(null)
 
+// 使用视频学习时间追踪器
 useVideoLearningTimeTracker(courseVideoRef, {
   moduleType: 'video',
   targetCode: () => `${props.resource}:${props.courseId}`,
   targetTitle: () => course.value?.name || props.moduleTitle,
 })
 
+// 智慧课堂功能列表
 const featureItems = [
   { icon: '◌', title: 'AI 助教智能问答', text: '预留课程答疑、知识点解释和代码问题分析入口' },
 ]
 
+/**
+ * 计算属性：课程简介
+ * 优先使用课程数据中的 overview 或 description，特殊课程使用预设简介，否则使用默认提示
+ */
 const courseIntro = computed(() => {
   if (!course.value) return ''
   if (course.value.overview || course.value.description) {
@@ -75,16 +89,25 @@ const courseIntro = computed(() => {
   return '课程详情暂未提供完整简介，后续可由后台维护课程介绍、目录、学习目标和教学资源。'
 })
 
+/**
+ * 计算属性：课程封面图片 URL
+ */
 const coverUrl = computed(() => {
   if (!course.value) return ''
   return resolveResourceUrl(course.value.cover || course.value.coverUrl)
 })
 
+/**
+ * 计算属性：课程视频 URL
+ */
 const videoUrl = computed(() => {
   if (!course.value?.video) return ''
   return resolveResourceUrl(course.value.video)
 })
 
+/**
+ * 计算属性：课程学习进度周数
+ */
 const courseWeeks = computed(() => {
   if (course.value?.semesterPlan) {
     return course.value.semesterPlan
@@ -95,6 +118,9 @@ const courseWeeks = computed(() => {
   return '学习进度待同步'
 })
 
+/**
+ * 计算属性：课程开课时间范围
+ */
 const coursePeriod = computed(() => {
   if (!course.value?.startTime) {
     return '开课时间待定'
@@ -105,6 +131,10 @@ const coursePeriod = computed(() => {
   return course.value.startTime
 })
 
+/**
+ * 计算属性：授课教师列表
+ * 将教师名字字符串分割为数组
+ */
 const teacherList = computed(() => {
   const teacherNames = String(course.value?.teacher || '')
     .split(/[、,，\s]+/)
@@ -114,13 +144,24 @@ const teacherList = computed(() => {
   return teacherNames.length > 0 ? teacherNames : ['授课教师待补充']
 })
 
+/**
+ * 计算属性：评价数量
+ */
 const reviewCount = computed(() => reviews.value.length)
 
+/**
+ * 计算属性：分类路由
+ * 根据课程分类生成列表页跳转路径
+ */
 const categoryRoute = computed(() => ({
   path: props.listPath,
   query: course.value?.category ? { category: course.value.category } : {},
 }))
 
+/**
+ * 加载课程详情数据
+ * 依次获取课程信息、报名状态和评价列表
+ */
 const loadCourse = async () => {
   loading.value = true
   error.value = ''
@@ -141,6 +182,10 @@ const loadCourse = async () => {
   }
 }
 
+/**
+ * 加载课程报名状态
+ * 查询用户已报名课程列表，判断当前课程是否已报名
+ */
 const loadEnrollmentStatus = async () => {
   try {
     const enrolledCourses = await fetchMyAcademyCourses(1)
@@ -154,6 +199,9 @@ const loadEnrollmentStatus = async () => {
   }
 }
 
+/**
+ * 加载课程评价列表
+ */
 const loadReviews = async () => {
   reviewsLoading.value = true
   reviewError.value = ''
@@ -168,6 +216,9 @@ const loadReviews = async () => {
   }
 }
 
+/**
+ * 处理报名课程操作
+ */
 const handleEnroll = async () => {
   enrolling.value = true
   enrollmentMessage.value = ''
@@ -187,6 +238,9 @@ const handleEnroll = async () => {
   }
 }
 
+/**
+ * 提交课程评价
+ */
 const submitReview = async () => {
   if (!reviewForm.value.content.trim()) {
     reviewError.value = '请先填写评价内容'
@@ -211,6 +265,9 @@ const submitReview = async () => {
   }
 }
 
+/**
+ * 平滑滚动到评价区域
+ */
 const scrollToReviews = () => {
   document.getElementById('course-reviews')?.scrollIntoView({
     behavior: 'smooth',
@@ -218,6 +275,9 @@ const scrollToReviews = () => {
   })
 }
 
+/**
+ * 封面图片加载失败时使用备用地址
+ */
 const useCoverFallback = (event) => {
   if (course.value?.coverUrl && event.target.src !== course.value.coverUrl) {
     event.target.src = course.value.coverUrl
@@ -225,28 +285,37 @@ const useCoverFallback = (event) => {
 }
 
 onMounted(loadCourse)
+
 onBeforeUnmount(() => {
   window.clearTimeout(enrollmentToastTimer)
 })
+
+// 监听资源类型和课程 ID 变化，重新加载课程数据
 watch(() => [props.resource, props.courseId], loadCourse)
 </script>
 
 <template>
+  <!-- 课程详情页面主容器 -->
   <main class="course-detail-main course-playback-main">
+    <!-- 报名成功提示 -->
     <Transition name="course-enrollment-toast">
       <div v-if="enrollmentToastVisible" class="course-enrollment-toast" role="status">
         已成功添加到我的课程
       </div>
     </Transition>
 
+    <!-- 加载状态 -->
     <div v-if="loading" class="academy-state">正在加载课程详情...</div>
 
+    <!-- 错误状态 -->
     <div v-else-if="error" class="academy-state academy-state-error">
       <span>{{ error }}</span>
       <button type="button" @click="loadCourse">重试</button>
     </div>
 
+    <!-- 课程详情内容 -->
     <article v-else-if="course" class="course-playback-shell">
+      <!-- 面包屑导航 -->
       <nav class="course-breadcrumb" aria-label="面包屑导航">
         <RouterLink to="/academy/home">首页</RouterLink>
         <span aria-hidden="true">&gt;</span>
@@ -257,11 +326,14 @@ watch(() => [props.resource, props.courseId], loadCourse)
         <RouterLink :to="$route.fullPath">{{ course.name }}</RouterLink>
       </nav>
 
+      <!-- 课程头部信息区域 -->
       <section class="course-hero-panel">
+        <!-- 课程封面图 -->
         <div class="course-cover-stage">
           <img :src="coverUrl" :alt="course.name" @error="useCoverFallback" />
         </div>
 
+        <!-- 课程信息卡片 -->
         <section class="course-info-card" aria-labelledby="course-title">
           <div class="course-info-topline">
             <div class="course-badge-group">
@@ -295,6 +367,7 @@ watch(() => [props.resource, props.courseId], loadCourse)
             </div>
           </dl>
 
+          <!-- 报名按钮 -->
           <div class="course-action-row">
             <button
               class="course-join-button"
@@ -310,6 +383,7 @@ watch(() => [props.resource, props.courseId], loadCourse)
         </section>
       </section>
 
+      <!-- 智慧课堂功能区域 -->
       <section class="smart-mooc-panel" aria-label="智慧课堂功能">
         <div class="smart-mooc-title">
           <strong>智慧课堂</strong>
@@ -324,18 +398,23 @@ watch(() => [props.resource, props.courseId], loadCourse)
         </div>
       </section>
 
+      <!-- 课程主体内容布局 -->
       <div class="course-body-layout">
+        <!-- 主内容区域 -->
         <section class="course-main-content">
+          <!-- 内容切换标签 -->
           <nav class="course-tabs" aria-label="课程内容切换">
             <button class="active" type="button">课程详情</button>
             <button type="button" @click="scrollToReviews">课程评价 ({{ reviewCount }})</button>
           </nav>
 
+          <!-- 课程简介卡片 -->
           <div class="course-description-card">
             <p>{{ courseIntro }}</p>
             <span>—— 课程团队</span>
           </div>
 
+          <!-- 课程概述卡片 -->
           <section class="course-outline-card">
             <h2><span></span>课程概述</h2>
             <h3>一、为什么要学习这门课？</h3>
@@ -347,6 +426,7 @@ watch(() => [props.resource, props.courseId], loadCourse)
             </p>
           </section>
 
+          <!-- 课程视频播放区域 -->
           <section class="course-player-page" aria-label="课程视频播放区域">
             <div class="course-player-placeholder">
               <video
@@ -366,12 +446,14 @@ watch(() => [props.resource, props.courseId], loadCourse)
             </div>
           </section>
 
+          <!-- 课程评价区域 -->
           <section id="course-reviews" class="course-review-card" aria-label="课程评价">
             <div class="course-review-heading">
               <h2>课程评价</h2>
               <span>{{ reviewCount }} 条评价</span>
             </div>
 
+            <!-- 评价提交表单 -->
             <form class="course-review-form" @submit.prevent="submitReview">
               <div class="review-form-row">
                 <label>
@@ -403,6 +485,7 @@ watch(() => [props.resource, props.courseId], loadCourse)
               </div>
             </form>
 
+            <!-- 评价列表 -->
             <div v-if="reviewsLoading" class="course-review-state">正在加载评价...</div>
             <div v-else-if="reviews.length === 0" class="course-review-state">暂无评价，欢迎发布第一条评价。</div>
             <div v-else class="course-review-list">
@@ -421,13 +504,16 @@ watch(() => [props.resource, props.courseId], loadCourse)
           </section>
         </section>
 
+        <!-- 侧边栏信息 -->
         <aside class="course-side-card">
+          <!-- 院校信息 -->
           <section class="school-profile">
             <div class="school-logo">{{ course.school?.slice(0, 2) || '院校' }}</div>
             <h2>{{ course.school || '院校信息待补充' }}</h2>
             <p>{{ course.school === '北京理工大学' ? 'BEIJING INSTITUTE OF TECHNOLOGY' : 'UNIVERSITY COURSE PROVIDER' }}</p>
           </section>
 
+          <!-- 教师信息 -->
           <section class="teacher-profile">
             <h3><span></span>{{ teacherList.length }} 位授课老师</h3>
             <div class="teacher-list">
@@ -441,6 +527,7 @@ watch(() => [props.resource, props.courseId], loadCourse)
             </div>
           </section>
 
+          <!-- 侧边栏操作 -->
           <div class="course-side-actions">
             <RouterLink class="course-side-link" :to="listPath">返回课程列表</RouterLink>
           </div>

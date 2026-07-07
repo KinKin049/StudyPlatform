@@ -20,6 +20,10 @@ import com.cupk.academy.repository.AcademyRepository.AcademyTextbookOrderRespons
 import com.cupk.academy.repository.AcademyRepository;
 import com.cupk.auth.dto.AuthUserResponse;
 import com.cupk.auth.repository.AuthUserRepository;
+import com.cupk.rewards.VoucherCatalog;
+import com.cupk.rewards.VoucherService;
+import com.cupk.rewards.dto.VoucherItemResponse;
+import java.math.BigDecimal;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.file.Files;
@@ -33,22 +37,48 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * 学习服务，提供课程管理、教材商城、购物车和订单等学习相关业务逻辑。
+ */
 @Service
 public class AcademyService {
     private static final long DEFAULT_USER_ID = 1L;
 
     private final AcademyRepository academyRepository;
     private final AuthUserRepository authUserRepository;
+    private final VoucherService voucherService;
 
-    public AcademyService(AcademyRepository academyRepository, AuthUserRepository authUserRepository) {
+    /**
+     * 构造函数，注入依赖组件。
+     *
+     * @param academyRepository 学习数据访问层
+     * @param authUserRepository 用户认证数据访问层
+     * @param voucherService 优惠券服务
+     */
+    public AcademyService(
+            AcademyRepository academyRepository,
+            AuthUserRepository authUserRepository,
+            VoucherService voucherService
+    ) {
         this.academyRepository = academyRepository;
         this.authUserRepository = authUserRepository;
+        this.voucherService = voucherService;
     }
 
+    /**
+     * 获取在线开放课程列表。
+     *
+     * @return 在线开放课程列表
+     */
     public List<AcademyCourseResponse> listOnlineOpenCourses() {
         return withCourseCovers(academyRepository.findOnlineOpenCourses());
     }
 
+    /**
+     * 获取学习中心首页数据。返回模拟数据，包含我的课程、课程作业和我的考试三个分区。
+     *
+     * @return 首页分区数据列表
+     */
     public List<AcademyHomeSectionResponse> getAcademyHome() {
         return List.of(
                 new AcademyHomeSectionResponse("my-courses", "我的课程", List.of(
@@ -69,17 +99,36 @@ public class AcademyService {
         );
     }
 
+    /**
+     * 获取在线开放课程详情。
+     *
+     * @param id 课程ID
+     * @return 课程详情
+     */
     public AcademyCourseResponse getOnlineOpenCourse(String id) {
         return withCourseCover(academyRepository.findOnlineOpenCourseById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "课程不存在")));
     }
 
+    /**
+     * 获取教师已发布的在线开放课程列表。验证教师身份后查询。
+     *
+     * @param userId 用户ID
+     * @return 教师已发布课程列表
+     */
     public List<AcademyCourseResponse> listMyPublishedOnlineOpenCourses(Long userId) {
         long teacherUserId = normalizeUserId(userId);
         ensureTeacher(teacherUserId);
         return withCourseCovers(academyRepository.findPublishedOnlineOpenCourses(teacherUserId));
     }
 
+    /**
+     * 删除教师已发布的在线开放课程。验证教师身份后删除。
+     *
+     * @param userId 用户ID
+     * @param courseId 课程ID
+     * @return 课程报名响应
+     */
     public AcademyCourseEnrollmentResponse deletePublishedOnlineOpenCourse(Long userId, String courseId) {
         long teacherUserId = normalizeUserId(userId);
         ensureTeacher(teacherUserId);
@@ -93,24 +142,51 @@ public class AcademyService {
         return new AcademyCourseEnrollmentResponse(false, "课程已删除");
     }
 
+    /**
+     * 获取通识课程列表。
+     *
+     * @return 通识课程列表
+     */
     public List<AcademyCourseResponse> listGeneralCourses() {
         return withCourseCovers(academyRepository.findGeneralCourses());
     }
 
+    /**
+     * 获取通识课程详情。
+     *
+     * @param id 课程ID
+     * @return 课程详情
+     */
     public AcademyCourseResponse getGeneralCourse(String id) {
         return withCourseCover(academyRepository.findGeneralCourseById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "课程不存在")));
     }
 
+    /**
+     * 获取微专业课程列表。
+     *
+     * @return 微专业课程列表
+     */
     public List<AcademyCourseResponse> listMicroMajorCourses() {
         return withCourseCovers(academyRepository.findMicroMajorCourses());
     }
 
+    /**
+     * 获取微专业课程详情。
+     *
+     * @param id 课程ID
+     * @return 课程详情
+     */
     public AcademyCourseResponse getMicroMajorCourse(String id) {
         return withCourseCover(academyRepository.findMicroMajorCourseById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "课程不存在")));
     }
 
+    /**
+     * 获取教材列表。转换封面路径为可访问URL。
+     *
+     * @return 教材列表
+     */
     public List<AcademyTextbookResponse> listTextbooks() {
         return academyRepository.findTextbooks().stream()
                 .map(textbook -> new AcademyTextbookResponse(
@@ -130,10 +206,23 @@ public class AcademyService {
                 .toList();
     }
 
+    /**
+     * 获取教材详情。使用默认用户ID。
+     *
+     * @param id 教材ID
+     * @return 教材详情
+     */
     public AcademyTextbookDetailResponse getTextbook(String id) {
         return getTextbook(id, DEFAULT_USER_ID);
     }
 
+    /**
+     * 获取教材详情。包含评论列表和购买状态。
+     *
+     * @param id 教材ID
+     * @param userId 用户ID
+     * @return 教材详情
+     */
     public AcademyTextbookDetailResponse getTextbook(String id, Long userId) {
         if (id == null || id.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "教材编号不能为空");
@@ -144,10 +233,22 @@ public class AcademyService {
         return withTextbookCover(textbook, normalizedUserId);
     }
 
+    /**
+     * 获取教材购物车列表。
+     *
+     * @param userId 用户ID
+     * @return 购物车列表
+     */
     public List<AcademyTextbookCartItemResponse> listTextbookCart(Long userId) {
         return academyRepository.findTextbookCartItems(normalizeUserId(userId));
     }
 
+    /**
+     * 添加教材到购物车。验证教材存在后添加。
+     *
+     * @param request 购物车请求
+     * @return 更新后的购物车列表
+     */
     public List<AcademyTextbookCartItemResponse> addTextbookCartItem(AcademyTextbookCartRequest request) {
         if (request == null || request.textbookId() == null || request.textbookId().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "教材编号不能为空");
@@ -158,6 +259,13 @@ public class AcademyService {
         return listTextbookCart(userId);
     }
 
+    /**
+     * 删除购物车中的教材。
+     *
+     * @param userId 用户ID
+     * @param itemId 购物车条目ID
+     * @return 更新后的购物车列表
+     */
     public List<AcademyTextbookCartItemResponse> deleteTextbookCartItem(Long userId, Long itemId) {
         long normalizedUserId = normalizeUserId(userId);
         if (itemId == null || itemId <= 0) {
@@ -167,6 +275,14 @@ public class AcademyService {
         return listTextbookCart(normalizedUserId);
     }
 
+    /**
+     * 更新购物车中教材的数量。
+     *
+     * @param userId 用户ID
+     * @param itemId 购物车条目ID
+     * @param quantity 数量
+     * @return 更新后的购物车列表
+     */
     public List<AcademyTextbookCartItemResponse> updateTextbookCartItem(Long userId, Long itemId, Integer quantity) {
         long normalizedUserId = normalizeUserId(userId);
         if (itemId == null || itemId <= 0) {
@@ -176,6 +292,12 @@ public class AcademyService {
         return listTextbookCart(normalizedUserId);
     }
 
+    /**
+     * 创建教材订单。支持从购物车创建或直接购买单个教材，可使用优惠券。
+     *
+     * @param request 订单请求
+     * @return 订单响应
+     */
     public AcademyTextbookOrderResponse createTextbookOrder(AcademyTextbookOrderRequest request) {
         long userId = normalizeUserId(request == null ? null : request.userId());
         List<Long> cartItemIds = request == null || request.cartItemIds() == null
@@ -185,33 +307,149 @@ public class AcademyService {
                         .distinct()
                         .toList();
         if (!cartItemIds.isEmpty()) {
-            AcademyTextbookOrderResponseData order = academyRepository.createTextbookOrderFromCart(userId, cartItemIds);
+            BigDecimal originalAmount = academyRepository.sumTextbookCartItems(userId, cartItemIds);
+            TextbookVoucherChoice voucherChoice = resolveTextbookVoucherChoice(userId, request, originalAmount);
+            AcademyTextbookOrderResponseData order = academyRepository.createTextbookOrderFromCart(
+                    userId,
+                    cartItemIds,
+                    voucherChoice.voucherKey(),
+                    voucherChoice.voucherName(),
+                    voucherChoice.discountAmount()
+            );
             if (order.orderNo() == null || order.orderNo().isBlank()) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请选择有效的购物车教材");
             }
-            return new AcademyTextbookOrderResponse(order.orderNo(), order.totalAmount(), "待支付", "订单已创建，请完成结算", false);
+            return toTextbookOrderResponse(order, "待支付", "订单已创建，请完成结算", false);
         }
         if (request == null || request.textbookId() == null || request.textbookId().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "教材编号不能为空");
         }
         AcademyTextbookDetailResponse textbook = getTextbook(request.textbookId());
+        BigDecimal originalAmount = (textbook.discountPrice() == null ? BigDecimal.ZERO : textbook.discountPrice())
+                .multiply(BigDecimal.valueOf(normalizeQuantity(request.quantity())));
+        TextbookVoucherChoice voucherChoice = resolveTextbookVoucherChoice(userId, request, originalAmount);
         AcademyTextbookOrderResponseData order = academyRepository.createTextbookOrder(
                 userId,
                 textbook,
-                normalizeQuantity(request.quantity())
+                normalizeQuantity(request.quantity()),
+                voucherChoice.voucherKey(),
+                voucherChoice.voucherName(),
+                voucherChoice.discountAmount()
         );
-        return new AcademyTextbookOrderResponse(order.orderNo(), order.totalAmount(), "待支付", "订单已创建", false);
+        return toTextbookOrderResponse(order, "待支付", "订单已创建", false);
     }
 
+    /**
+     * 支付教材订单。更新订单状态并消费优惠券。
+     *
+     * @param orderNo 订单编号
+     * @param userId 用户ID
+     * @return 订单响应
+     */
     public AcademyTextbookOrderResponse payTextbookOrder(String orderNo, Long userId) {
         if (orderNo == null || orderNo.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "订单编号不能为空");
         }
-        AcademyTextbookOrderResponseData order = academyRepository.payTextbookOrder(normalizeUserId(userId), orderNo.trim())
+        long normalizedUserId = normalizeUserId(userId);
+        AcademyTextbookOrderResponseData order = academyRepository.payTextbookOrder(normalizedUserId, orderNo.trim())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "订单不存在或不可支付"));
-        return new AcademyTextbookOrderResponse(order.orderNo(), order.totalAmount(), "已支付", "支付成功，教材已购买", true);
+        if (order.voucherKey() != null && !order.voucherKey().isBlank() && !order.voucherConsumed()) {
+            voucherService.consumeDiscountVoucher(normalizedUserId, order.voucherKey());
+            academyRepository.markTextbookOrderVoucherConsumed(normalizedUserId, order.orderNo());
+        }
+        return toTextbookOrderResponse(order, "已支付", "支付成功，教材已购买", true);
     }
 
+    /**
+     * 解析教材订单的优惠券选择。验证优惠券有效性并计算折扣金额。
+     *
+     * @param userId 用户ID
+     * @param request 订单请求
+     * @param knownOriginalAmount 原始金额
+     * @return 优惠券选择
+     */
+    private TextbookVoucherChoice resolveTextbookVoucherChoice(
+            long userId,
+            AcademyTextbookOrderRequest request,
+            BigDecimal knownOriginalAmount
+    ) {
+        if (!Boolean.TRUE.equals(request == null ? null : request.useVoucher())) {
+            return TextbookVoucherChoice.none();
+        }
+        String voucherKey = VoucherCatalog.normalize(request.voucherKey());
+        if (voucherKey.isBlank()) {
+            voucherKey = VoucherCatalog.TEXTBOOK_80_15;
+        }
+        if (!VoucherCatalog.isTextbookVoucher(voucherKey)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "该优惠券不能用于教材购买");
+        }
+        if (!voucherService.hasVoucher(userId, voucherKey)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "优惠券数量不足");
+        }
+        VoucherItemResponse item = voucherService.findDiscountVoucher(voucherKey);
+        BigDecimal discountAmount = knownOriginalAmount == null
+                ? BigDecimal.ZERO
+                : voucherService.calculateDiscount(item, knownOriginalAmount);
+        return new TextbookVoucherChoice(voucherKey, item.name(), discountAmount);
+    }
+
+    /**
+     * 将订单数据转换为订单响应对象。
+     *
+     * @param order 订单数据
+     * @param status 订单状态
+     * @param message 提示消息
+     * @param paid 是否已支付
+     * @return 订单响应
+     */
+    private AcademyTextbookOrderResponse toTextbookOrderResponse(
+            AcademyTextbookOrderResponseData order,
+            String status,
+            String message,
+            boolean paid
+    ) {
+        return new AcademyTextbookOrderResponse(
+                order.orderNo(),
+                order.totalAmount(),
+                order.originalAmount() == null ? order.totalAmount() : order.originalAmount(),
+                order.discountAmount() == null ? BigDecimal.ZERO : order.discountAmount(),
+                order.voucherKey(),
+                order.voucherName(),
+                status,
+                message,
+                paid
+        );
+    }
+
+    /**
+     * 教材优惠券选择记录。
+     *
+     * @param voucherKey 优惠券编号
+     * @param voucherName 优惠券名称
+     * @param discountAmount 折扣金额
+     */
+    private record TextbookVoucherChoice(
+            String voucherKey,
+            String voucherName,
+            BigDecimal discountAmount
+    ) {
+        /**
+         * 创建空的优惠券选择。
+         *
+         * @return 空优惠券选择
+         */
+        static TextbookVoucherChoice none() {
+            return new TextbookVoucherChoice(null, null, BigDecimal.ZERO);
+        }
+    }
+
+    /**
+     * 保存教材评论。验证用户已购买教材后保存评论。
+     *
+     * @param textbookId 教材ID
+     * @param request 评论请求
+     * @return 评论响应
+     */
     public AcademyTextbookCommentResponse saveTextbookReview(String textbookId, AcademyTextbookReviewRequest request) {
         if (textbookId == null || textbookId.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "教材编号不能为空");
@@ -233,22 +471,55 @@ public class AcademyService {
         return academyRepository.saveTextbookReview(userId, textbookId.trim(), userName, rating, content);
     }
 
+    /**
+     * 获取在线开放课程分类列表。
+     *
+     * @return 分类列表
+     */
     public List<AcademyCategoryResponse> listOnlineOpenCourseCategories() {
         return academyRepository.findCategories("online_open_courses");
     }
 
+    /**
+     * 获取通识课程分类列表。
+     *
+     * @return 分类列表
+     */
     public List<AcademyCategoryResponse> listGeneralCourseCategories() {
         return academyRepository.findCategories("general_courses");
     }
 
+    /**
+     * 获取微专业课程分类列表。
+     *
+     * @return 分类列表
+     */
     public List<AcademyCategoryResponse> listMicroMajorCourseCategories() {
         return academyRepository.findCategories("micro_major_courses");
     }
 
+    /**
+     * 获取教材分类列表。
+     *
+     * @return 分类列表
+     */
     public List<AcademyCategoryResponse> listTextbookCategories() {
         return academyRepository.findCategories("excellent_textbooks");
     }
 
+    /**
+     * 发布在线开放课程。验证教师身份，上传课程封面和视频，保存课程信息。
+     *
+     * @param userId 用户ID
+     * @param courseName 课程名称
+     * @param startTime 开课时间
+     * @param semesterPlan 学期计划
+     * @param courseDetail 课程详情
+     * @param courseOverview 课程概述
+     * @param cover 课程封面
+     * @param video 课程视频
+     * @return 课程响应
+     */
     public AcademyCourseResponse publishOnlineOpenCourse(
             Long userId,
             String courseName,
@@ -292,29 +563,66 @@ public class AcademyService {
         return getOnlineOpenCourse(courseId);
     }
 
+    /**
+     * 报名参加课程。验证课程存在后添加报名记录。
+     *
+     * @param resourceType 课程类型
+     * @param courseId 课程ID
+     * @param userId 用户ID
+     * @return 课程报名响应
+     */
     public AcademyCourseEnrollmentResponse enrollCourse(String resourceType, String courseId, Long userId) {
         ensureCourseExists(resourceType, courseId);
         academyRepository.enrollCourse(resourceType, courseId, normalizeUserId(userId));
         return new AcademyCourseEnrollmentResponse(true, "已参加课程");
     }
 
+    /**
+     * 退出课程。验证课程存在后删除报名记录。
+     *
+     * @param resourceType 课程类型
+     * @param courseId 课程ID
+     * @param userId 用户ID
+     * @return 课程报名响应
+     */
     public AcademyCourseEnrollmentResponse unenrollCourse(String resourceType, String courseId, Long userId) {
         ensureCourseExists(resourceType, courseId);
         academyRepository.unenrollCourse(resourceType, courseId, normalizeUserId(userId));
         return new AcademyCourseEnrollmentResponse(false, "已退出课程");
     }
 
+    /**
+     * 获取用户已参加的课程列表。转换封面路径为可访问URL。
+     *
+     * @param userId 用户ID
+     * @return 已参加课程列表
+     */
     public List<AcademyEnrolledCourseResponse> listMyCourses(Long userId) {
         return academyRepository.findEnrolledCourses(normalizeUserId(userId)).stream()
                 .map(this::withEnrolledCourseCover)
                 .toList();
     }
 
+    /**
+     * 获取课程评论列表。验证课程存在后查询。
+     *
+     * @param resourceType 课程类型
+     * @param courseId 课程ID
+     * @return 评论列表
+     */
     public List<AcademyCourseReviewResponse> listCourseReviews(String resourceType, String courseId) {
         ensureCourseExists(resourceType, courseId);
         return academyRepository.findCourseReviews(resourceType, courseId);
     }
 
+    /**
+     * 保存课程评论。验证课程存在和评论内容后保存。
+     *
+     * @param resourceType 课程类型
+     * @param courseId 课程ID
+     * @param request 评论请求
+     * @return 评论响应
+     */
     public AcademyCourseReviewResponse saveCourseReview(
             String resourceType,
             String courseId,
@@ -329,6 +637,12 @@ public class AcademyService {
         return academyRepository.saveCourseReview(resourceType, courseId, userName, request.rating(), content);
     }
 
+    /**
+     * 验证课程是否存在。根据课程类型调用对应的获取方法。
+     *
+     * @param resourceType 课程类型
+     * @param courseId 课程ID
+     */
     private void ensureCourseExists(String resourceType, String courseId) {
         switch (resourceType) {
             case "online-open-courses" -> getOnlineOpenCourse(courseId);
@@ -338,12 +652,24 @@ public class AcademyService {
         }
     }
 
+    /**
+     * 批量转换课程封面路径为可访问URL。
+     *
+     * @param courses 课程列表
+     * @return 转换后的课程列表
+     */
     private List<AcademyCourseResponse> withCourseCovers(List<AcademyCourseResponse> courses) {
         return courses.stream()
                 .map(this::withCourseCover)
                 .toList();
     }
 
+    /**
+     * 转换课程封面和视频路径为可访问URL。
+     *
+     * @param course 课程对象
+     * @return 转换后的课程对象
+     */
     private AcademyCourseResponse withCourseCover(AcademyCourseResponse course) {
         return new AcademyCourseResponse(
                 course.id(),
@@ -367,6 +693,13 @@ public class AcademyService {
         );
     }
 
+    /**
+     * 转换教材封面路径为可访问URL，添加评论列表和购买状态。
+     *
+     * @param textbook 教材对象
+     * @param userId 用户ID
+     * @return 转换后的教材对象
+     */
     private AcademyTextbookDetailResponse withTextbookCover(AcademyTextbookDetailResponse textbook, long userId) {
         List<AcademyTextbookCommentResponse> reviews = academyRepository.findTextbookReviews(textbook.id());
         List<AcademyTextbookCommentResponse> comments = reviews.isEmpty() ? textbook.comments() : reviews;
@@ -395,6 +728,12 @@ public class AcademyService {
         );
     }
 
+    /**
+     * 验证用户是否为教师角色。
+     *
+     * @param userId 用户ID
+     * @return 用户信息
+     */
     private AuthUserResponse ensureTeacher(long userId) {
         AuthUserResponse user = authUserRepository.findResponseById(userId);
         if (!"teacher".equals(user.roleType())) {
@@ -403,6 +742,12 @@ public class AcademyService {
         return user;
     }
 
+    /**
+     * 转换已参加课程的封面和视频路径为可访问URL。
+     *
+     * @param course 已参加课程对象
+     * @return 转换后的课程对象
+     */
     private AcademyEnrolledCourseResponse withEnrolledCourseCover(AcademyEnrolledCourseResponse course) {
         return new AcademyEnrolledCourseResponse(
                 course.resourceType(),
@@ -427,10 +772,22 @@ public class AcademyService {
         );
     }
 
+    /**
+     * 标准化用户ID。空值或无效值使用默认用户ID。
+     *
+     * @param userId 用户ID
+     * @return 标准化后的用户ID
+     */
     private Long normalizeUserId(Long userId) {
         return userId == null || userId <= 0 ? DEFAULT_USER_ID : userId;
     }
 
+    /**
+     * 标准化数量。空值或无效值使用1，最大值限制为99。
+     *
+     * @param quantity 数量
+     * @return 标准化后的数量
+     */
     private int normalizeQuantity(Integer quantity) {
         if (quantity == null || quantity <= 0) {
             return 1;
@@ -438,6 +795,12 @@ public class AcademyService {
         return Math.min(quantity, 99);
     }
 
+    /**
+     * 标准化评分。空值使用5，范围限制在1到5之间。
+     *
+     * @param rating 评分
+     * @return 标准化后的评分
+     */
     private int normalizeRating(Integer rating) {
         if (rating == null) {
             return 5;
@@ -445,6 +808,12 @@ public class AcademyService {
         return Math.max(1, Math.min(rating, 5));
     }
 
+    /**
+     * 将文件路径转换为可访问的URL。
+     *
+     * @param coverFilePath 文件路径
+     * @return 可访问的URL
+     */
     private String fileUrl(String coverFilePath) {
         if (coverFilePath == null || coverFilePath.isBlank()) {
             return "";
@@ -460,6 +829,16 @@ public class AcademyService {
         return "/files/" + encodedPath;
     }
 
+    /**
+     * 保存课程文件（封面或视频）。验证文件格式后保存到存储目录。
+     *
+     * @param userId 用户ID
+     * @param file 文件
+     * @param type 文件类型（cover/video）
+     * @param allowedExtensions 允许的文件扩展名
+     * @param required 是否必填
+     * @return 文件存储路径
+     */
     private String saveCourseFile(
             long userId,
             MultipartFile file,
@@ -495,6 +874,12 @@ public class AcademyService {
         return "teacher_courses/" + userId + "/" + fileName;
     }
 
+    /**
+     * 解析文件扩展名。
+     *
+     * @param originalFilename 原始文件名
+     * @return 文件扩展名
+     */
     private String resolveExtension(String originalFilename) {
         String fileName = originalFilename == null ? "" : originalFilename.toLowerCase(Locale.ROOT);
         int dotIndex = fileName.lastIndexOf('.');
@@ -504,6 +889,11 @@ public class AcademyService {
         return fileName.substring(dotIndex + 1);
     }
 
+    /**
+     * 解析存储路径。优先使用当前目录下的storage，其次使用backend目录下的storage。
+     *
+     * @return 存储路径
+     */
     private Path resolveStoragePath() {
         Path currentDirectory = Path.of("").toAbsolutePath();
         Path directStorage = currentDirectory.resolve("storage").normalize();
@@ -517,6 +907,13 @@ public class AcademyService {
         return directStorage;
     }
 
+    /**
+     * 清理字符串，空值返回空字符串，超长截断。
+     *
+     * @param value 待清理的字符串
+     * @param maxLength 最大长度
+     * @return 清理后的字符串
+     */
     private String clean(String value, int maxLength) {
         String normalized = value == null ? "" : value.trim();
         if (maxLength > 0 && normalized.length() > maxLength) {

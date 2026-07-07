@@ -1,8 +1,11 @@
 <script setup>
+// 学习平台首页组件，作为平台统一入口页面
 </script>
 
 <template>
+  <!-- 首页主容器 -->
   <main class="home-main">
+    <!-- 介绍面板 -->
     <section class="intro-panel" aria-labelledby="home-title">
       <p class="intro-kicker">Study Platform</p>
       <h1 id="home-title">学习平台入口</h1>

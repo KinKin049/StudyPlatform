@@ -1,4 +1,8 @@
 <script setup>
+/**
+ * 错题本组件
+ * 展示用户错题列表，支持按题库、状态筛选，错题复习和标记掌握
+ */
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import {
@@ -8,48 +12,95 @@ import {
 } from '../../api/academy'
 import { useLearningTimeTracker } from '../../composables/useLearningTimeTracker'
 
+/** 当前路由信息 */
 const route = useRoute()
+
+/** 学习时间追踪器 */
 useLearningTimeTracker({
   moduleType: 'mistake',
   targetCode: () => setCode.value || 'all',
   targetTitle: '错题本复习',
 })
 
+/** 错题统计摘要 */
 const summary = ref({
   total: 0,
   active: 0,
   mastered: 0,
   sets: [],
 })
+
+/** 错题分页数据 */
 const mistakePage = ref(null)
+
+/** 加载状态 */
 const loading = ref(false)
+
+/** 错误提示信息 */
 const errorMessage = ref('')
+
+/** 用户选中的选项 */
 const selectedOptions = ref({})
+
+/** 答题结果状态 */
 const answerStates = ref({})
+
+/** 提交中的题目 ID 集合 */
 const submittingAnswers = ref({})
+
+/** 当前页码 */
 const page = ref(0)
+
+/** 每页大小 */
 const pageSize = ref(20)
+
+/** 跳转页码输入框值 */
 const pageJumpInput = ref('1')
+
+/** 搜索关键词 */
 const keyword = ref('')
+
+/** 搜索关键词输入框值 */
 const keywordInput = ref('')
+
+/** 状态筛选：active-待复习，mastered-已掌握，all-全部 */
 const status = ref('active')
+
+/** 题库编码筛选 */
 const setCode = ref('')
+
+/** 题目列表容器引用 */
 const questionListRef = ref(null)
 
+/** 错题列表 */
 const mistakes = computed(() => mistakePage.value?.items || [])
+
+/** 错题总数 */
 const total = computed(() => mistakePage.value?.total ?? 0)
+
+/** 总页数 */
 const totalPages = computed(() => mistakePage.value?.totalPages || 0)
+
+/** 响应返回的每页大小 */
 const responsePageSize = computed(() => mistakePage.value?.size || pageSize.value)
+
+/** 安全的总页数 */
 const safeTotalPages = computed(() => Math.max(totalPages.value || 1, 1))
+
+/** 当前页起始序号 */
 const pageStart = computed(() => (total.value ? page.value * responsePageSize.value + 1 : 0))
+
+/** 当前页结束序号 */
 const pageEnd = computed(() => Math.min(total.value, page.value * responsePageSize.value + mistakes.value.length))
 
+/** 状态筛选选项 */
 const statusOptions = [
   { value: 'active', label: '待复习' },
   { value: 'mastered', label: '已掌握' },
   { value: 'all', label: '全部错题' },
 ]
 
+/** 获取题目类型标签 */
 const questionTypeLabel = (type) => {
   const labels = {
     single: '单选题',
@@ -60,6 +111,7 @@ const questionTypeLabel = (type) => {
   return labels[type] || '题目'
 }
 
+/** 格式化日期时间 */
 const formatDateTime = (value) => {
   if (!value) return '暂无记录'
   const date = new Date(value)
@@ -72,11 +124,13 @@ const formatDateTime = (value) => {
   })
 }
 
+/** 从选项文本中提取选项键 */
 const optionKey = (option) => {
   const match = String(option || '').match(/^\s*([A-Z])[\.\、]/i)
   return match ? match[1].toUpperCase() : String(option || '').trim()
 }
 
+/** 将答案字符串解析为选项键数组 */
 const answerKeys = (question) => {
   const keys = String(question.answer || '')
     .split(/[,，、\s]+/)
@@ -88,6 +142,7 @@ const answerKeys = (question) => {
   return keys
 }
 
+/** 获取题目已选中的选项键数组 */
 const selectedOptionKeys = (question) => {
   const selected = selectedOptions.value[question.questionId]
   if (Array.isArray(selected)) {
@@ -96,16 +151,20 @@ const selectedOptionKeys = (question) => {
   return selected ? [selected] : []
 }
 
+/** 判断是否为多选题 */
 const isMultipleQuestion = (question) => question.type === 'multiple' || answerKeys(question).length > 1
 
+/** 判断选项是否被选中 */
 const isOptionSelected = (question, option) => {
   return selectedOptionKeys(question).includes(optionKey(option))
 }
 
+/** 判断两个键数组是否相等 */
 const hasSameKeys = (left, right) => {
   return left.length === right.length && left.every((item) => right.includes(item))
 }
 
+/** 判断题目答案是否正确 */
 const isQuestionCorrect = (question) => {
   const answerState = answerStates.value[question.questionId]
   if (answerState) {
@@ -114,14 +173,17 @@ const isQuestionCorrect = (question) => {
   return hasSameKeys(selectedOptionKeys(question), answerKeys(question))
 }
 
+/** 判断题目是否已作答 */
 const hasAnswered = (question) => {
   return Boolean(answerStates.value[question.questionId]) || selectedOptionKeys(question).length > 0
 }
 
+/** 判断选项是否为正确答案 */
 const isOptionCorrect = (question, option) => {
   return answerKeys(question).includes(optionKey(option))
 }
 
+/** 判断是否应该记录选择题作答 */
 const shouldRecordChoiceAnswer = (question, selectedKeys) => {
   const correctKeys = answerKeys(question)
   if (!selectedKeys.length || !correctKeys.length) {
@@ -134,6 +196,7 @@ const shouldRecordChoiceAnswer = (question, selectedKeys) => {
   return hasWrongKey || selectedKeys.length >= correctKeys.length
 }
 
+/** 更新错题状态 */
 const updateMistakeState = (questionId, result) => {
   if (!mistakePage.value?.items) {
     return
@@ -153,6 +216,7 @@ const updateMistakeState = (questionId, result) => {
   }
 }
 
+/** 提交错题答案 */
 const submitAnswer = async (question, selectedAnswer) => {
   if (!question?.questionId || submittingAnswers.value[question.questionId]) {
     return
@@ -186,6 +250,7 @@ const submitAnswer = async (question, selectedAnswer) => {
   }
 }
 
+/** 选择题目选项 */
 const selectOption = (question, option) => {
   const key = optionKey(option)
   if (isMultipleQuestion(question)) {
@@ -209,6 +274,7 @@ const selectOption = (question, option) => {
   submitAnswer(question, key)
 }
 
+/** 标记词汇掌握状态 */
 const markVocabulary = (question, value) => {
   selectedOptions.value = {
     ...selectedOptions.value,
@@ -217,6 +283,7 @@ const markVocabulary = (question, value) => {
   submitAnswer(question, value)
 }
 
+/** 滚动到第一个错题位置 */
 const scrollToFirstMistake = () => {
   requestAnimationFrame(() => {
     const target = questionListRef.value?.querySelector('.question-bank-question-card, .question-course-empty')
@@ -227,6 +294,7 @@ const scrollToFirstMistake = () => {
   })
 }
 
+/** 加载错题统计摘要 */
 const loadSummary = async () => {
   try {
     summary.value = await fetchQuestionBankMistakeSummary()
@@ -235,6 +303,7 @@ const loadSummary = async () => {
   }
 }
 
+/** 加载错题列表数据 */
 const loadMistakes = async (shouldScroll = false) => {
   loading.value = true
   errorMessage.value = ''
@@ -262,17 +331,20 @@ const loadMistakes = async (shouldScroll = false) => {
   }
 }
 
+/** 提交搜索 */
 const submitSearch = () => {
   keyword.value = keywordInput.value.trim()
   page.value = 0
   loadMistakes()
 }
 
+/** 应用筛选条件 */
 const applyFilters = () => {
   page.value = 0
   loadMistakes()
 }
 
+/** 清空筛选条件 */
 const clearFilters = () => {
   keyword.value = ''
   keywordInput.value = ''
@@ -282,6 +354,7 @@ const clearFilters = () => {
   loadMistakes()
 }
 
+/** 跳转到指定页码 */
 const goToPage = (nextPage, shouldScroll = false) => {
   if (nextPage < 0 || (totalPages.value && nextPage >= totalPages.value)) {
     return
@@ -290,6 +363,7 @@ const goToPage = (nextPage, shouldScroll = false) => {
   loadMistakes(shouldScroll)
 }
 
+/** 跳转到输入的页码 */
 const jumpToPage = () => {
   const requestedPage = Number(pageJumpInput.value)
   if (!Number.isFinite(requestedPage)) {
@@ -300,6 +374,7 @@ const jumpToPage = () => {
   goToPage(targetPage, true)
 }
 
+/** 监听路由参数变化，同步题库编码 */
 watch(
   () => route.query.setCode,
   (nextSetCode) => {
@@ -309,6 +384,7 @@ watch(
   },
 )
 
+/** 组件挂载时加载统计和错题数据 */
 onMounted(() => {
   setCode.value = typeof route.query.setCode === 'string' ? route.query.setCode : ''
   loadSummary()
@@ -318,6 +394,7 @@ onMounted(() => {
 
 <template>
   <main class="academy-main question-course-main question-bank-detail-main">
+    <!-- 面包屑导航 -->
     <nav class="question-course-breadcrumb" aria-label="题库面包屑">
       <RouterLink to="/academy/home">在线学堂</RouterLink>
       <span>&gt;</span>
@@ -326,11 +403,13 @@ onMounted(() => {
       <strong>错题本</strong>
     </nav>
 
+    <!-- 头部区域：标题和统计数据 -->
     <section class="question-bank-mistake-hero">
       <div>
         <h1>我的错题本</h1>
         <span>自动收集课程题库中的错误答案；连续答对 2 次后，错题会标记为已掌握。</span>
       </div>
+      <!-- 错题统计数据 -->
       <div class="question-bank-stats" aria-label="错题本统计">
         <div>
           <strong>{{ summary.active || 0 }}</strong>
@@ -347,26 +426,33 @@ onMounted(() => {
       </div>
     </section>
 
+    <!-- 错误提示 -->
     <p v-if="errorMessage" class="question-course-message is-error">{{ errorMessage }}</p>
 
+    <!-- 错题列表区域 -->
     <section ref="questionListRef" class="question-bank-question-list" aria-label="错题列表">
+      <!-- 列表头部：标题和筛选 -->
       <header class="question-bank-list-header question-bank-mistake-list-header">
         <div class="question-bank-mistake-list-title">
           <h2>错题复习</h2>
           <p>按题库、状态和关键词筛选错题，也可以直接开始当前筛选范围的复习。</p>
         </div>
+        <!-- 筛选表单 -->
         <form class="question-bank-filter question-bank-mistake-filter" @submit.prevent="submitSearch">
+          <!-- 题库筛选 -->
           <select v-model="setCode" @change="applyFilters">
             <option value="">全部题库</option>
             <option v-for="item in summary.sets" :key="item.setCode" :value="item.setCode">
               {{ item.setTitle }}（{{ item.active }}）
             </option>
           </select>
+          <!-- 状态筛选 -->
           <select v-model="status" @change="applyFilters">
             <option v-for="item in statusOptions" :key="item.value" :value="item.value">
               {{ item.label }}
             </option>
           </select>
+          <!-- 关键词搜索 -->
           <input v-model="keywordInput" type="search" placeholder="搜索题干、答案或题库" />
           <button type="submit">搜索</button>
           <button type="button" @click="clearFilters">重置</button>
@@ -374,19 +460,24 @@ onMounted(() => {
         </form>
       </header>
 
+      <!-- 加载状态 -->
       <div v-if="loading" class="question-course-empty">正在加载错题...</div>
 
+      <!-- 空状态 -->
       <div v-else-if="!mistakes.length" class="question-course-empty">
         当前筛选范围内没有错题。去课程题库练几道题，小本本就会自己长出来。
       </div>
 
+      <!-- 错题列表内容 -->
       <template v-else>
         <article v-for="(question, index) in mistakes" :key="question.id" class="question-bank-question-card">
+          <!-- 题目头部信息 -->
           <div class="question-bank-question-head">
             <span>{{ page * responsePageSize + index + 1 }}</span>
             <div>
               <p>{{ question.categoryName }} · {{ question.setTitle }} · {{ questionTypeLabel(question.type) }}</p>
               <h3>{{ question.stem }}</h3>
+              <!-- 错题元信息 -->
               <div class="question-bank-mistake-meta">
                 <strong>错误 {{ question.wrongCount }} 次</strong>
                 <strong>连续答对 {{ question.correctStreak }} 次</strong>
@@ -395,6 +486,7 @@ onMounted(() => {
                   {{ question.mastered ? '已掌握' : '待复习' }}
                 </strong>
               </div>
+              <!-- 错题快照 -->
               <div class="question-bank-mistake-snapshot">
                 <span>上次错选：{{ question.selectedAnswer || '未记录' }}</span>
                 <span>正确答案：{{ question.correctAnswer || question.answer || '暂无' }}</span>
@@ -402,6 +494,7 @@ onMounted(() => {
             </div>
           </div>
 
+          <!-- 选择题选项 -->
           <ul v-if="question.options?.length" class="question-bank-options">
             <li v-for="option in question.options" :key="option">
               <button
@@ -427,6 +520,7 @@ onMounted(() => {
             </li>
           </ul>
 
+          <!-- 词汇错题 -->
           <div v-else-if="question.type === 'vocabulary'" class="question-bank-mistake-vocabulary">
             <strong>{{ question.answer }}</strong>
             <p>{{ question.explanation }}</p>
@@ -437,11 +531,13 @@ onMounted(() => {
             </div>
           </div>
 
+          <!-- 非选择题答案 -->
           <div v-else class="question-bank-answer">
             <strong>参考答案：{{ question.answer }}</strong>
             <p>{{ question.explanation }}</p>
           </div>
 
+          <!-- 选择题答案判定 -->
           <div
             v-if="question.options?.length && hasAnswered(question)"
             class="question-bank-answer"
@@ -458,6 +554,7 @@ onMounted(() => {
         </article>
       </template>
 
+      <!-- 分页导航 -->
       <footer class="question-bank-pagination">
         <span>当前 {{ pageStart }}-{{ pageEnd }} / 共 {{ total }} 题</span>
         <div>
@@ -467,6 +564,7 @@ onMounted(() => {
             下一页
           </button>
         </div>
+        <!-- 跳转页码表单 -->
         <form class="question-bank-page-jump" @submit.prevent="jumpToPage">
           <label for="question-bank-mistake-page-jump">跳转到</label>
           <input

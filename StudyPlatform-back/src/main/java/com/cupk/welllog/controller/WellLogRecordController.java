@@ -25,12 +25,18 @@ import org.springframework.web.bind.annotation.RestController;
 public class WellLogRecordController {
     private final WellLogRecordService recordService;
 
+    /**
+     * 构造函数。
+     * @param recordService 测井记录服务
+     */
     public WellLogRecordController(WellLogRecordService recordService) {
         this.recordService = recordService;
     }
 
     /**
      * 保存一次测井仿真报告记录。
+     * @param request 保存请求
+     * @return 保存后的记录
      */
     @PostMapping("/save")
     @ResponseStatus(HttpStatus.CREATED)
@@ -39,7 +45,11 @@ public class WellLogRecordController {
     }
 
     /**
-     * 分页查询测井仿真历史；userId 为空时查询匿名记录。
+     * 分页查询测井仿真历史；userId为空时查询匿名记录。
+     * @param userId 用户ID（可选）
+     * @param page 页码（默认1）
+     * @param size 每页数量（默认10）
+     * @return 分页结果
      */
     @GetMapping("/page")
     public WellLogRecordPage pageRecords(
@@ -52,6 +62,8 @@ public class WellLogRecordController {
 
     /**
      * 根据记录主键查询单条报告详情。
+     * @param id 记录ID
+     * @return 记录详情
      */
     @GetMapping("/{id}")
     public WellLogRecord getRecord(@PathVariable Long id) {
@@ -60,6 +72,7 @@ public class WellLogRecordController {
 
     /**
      * 删除指定测井仿真记录。
+     * @param id 记录ID
      */
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)

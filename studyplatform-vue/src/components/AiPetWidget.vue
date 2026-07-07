@@ -1,4 +1,5 @@
 <script setup>
+// AI 学习宠物组件，提供待办管理、番茄钟专注和 AI 对话功能
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Hide, View } from '@element-plus/icons-vue'
@@ -32,6 +33,7 @@ import sleep04 from '../assets/pet/nebula-cat/sleep-04.png'
 const route = useRoute()
 const router = useRouter()
 
+// 宠物表情帧动画配置，包含空闲、说话、思考、开心、专注、睡眠六种状态
 const frames = {
   idle: [idle01, idle02, idle03, idle04],
   talk: [talk01, talk02, talk03, talk04],
@@ -41,12 +43,15 @@ const frames = {
   sleep: [sleep01, sleep02, sleep03, sleep04],
 }
 
+// 本地存储键名配置
 const todoStorageKey = 'study-platform-ai-pet-todos'
 const focusStorageKey = 'study-platform-ai-pet-focus-summary'
 const positionStorageKey = 'study-platform-ai-pet-position'
 const visibilityStorageKey = 'study-platform-ai-pet-hidden'
 const petSize = 116
 const viewportPadding = 14
+
+// 导航目标配置，用于语义理解跳转
 const navigationTargets = [
   { label: '在线学堂首页', path: '/academy/home', keywords: ['在线学堂', '学堂首页', '课程首页'] },
   { label: '我的课程', path: '/academy/my-courses', keywords: ['我的课程', '课程聚合页'] },
@@ -60,6 +65,7 @@ const navigationTargets = [
   { label: '游戏学习', path: '/games', keywords: ['游戏学习', '小游戏', '游戏'] },
 ]
 
+// 面板状态
 const open = ref(false)
 const activeTab = ref('chat')
 const frameIndex = ref(0)
@@ -97,6 +103,7 @@ const messages = ref([
   },
 ])
 
+// 定时器引用
 let animationTimer = null
 let focusTimer = null
 let moodResetTimer = null
@@ -107,8 +114,10 @@ let petBubbleTimer = null
 let actionFeedbackTimer = null
 let dragState = null
 
+// 根据路由元信息判断是否隐藏宠物
 const hidden = computed(() => route.meta?.hidePet === true)
 
+// 计算当前活跃的宠物心情状态
 const activeMood = computed(() => {
   if (celebrating.value) {
     return 'happy'
@@ -122,18 +131,22 @@ const activeMood = computed(() => {
   return mood.value
 })
 
+// 获取当前显示的宠物图片帧
 const petImage = computed(() => {
   const currentFrames = frames[activeMood.value] || frames.idle
   return currentFrames[frameIndex.value % currentFrames.length]
 })
 
+// 已完成待办数量
 const completedTodoCount = computed(() => todos.value.filter((todo) => todo.done).length)
 
+// 宠物挂件样式
 const widgetStyle = computed(() => ({
   left: `${displayPosition.value.x}px`,
   top: `${displayPosition.value.y}px`,
 }))
 
+// 宠物挂件 CSS 类名
 const widgetClasses = computed(() => ({
   'is-open': open.value,
   'is-ready': positionReady.value,
@@ -145,6 +158,7 @@ const widgetClasses = computed(() => ({
   [`mood-${activeMood.value}`]: true,
 }))
 
+// 宠物挂件显示位置（隐藏状态时有特殊处理）
 const displayPosition = computed(() => {
   if (!userHidden.value) {
     return widgetPosition.value
@@ -158,26 +172,31 @@ const displayPosition = computed(() => {
   }
 })
 
+// 番茄钟进度百分比
 const focusProgress = computed(() => {
   const total = getPhaseMinutes() * 60
   const elapsed = Math.min(total, Math.max(0, total - focusRemaining.value))
   return Math.round((elapsed / total) * 100)
 })
 
+// 番茄钟时间显示文本
 const focusTimeText = computed(() => {
   const minutes = Math.floor(focusRemaining.value / 60)
   const seconds = focusRemaining.value % 60
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 })
 
+// 番茄钟阶段标题
 const focusPhaseTitle = computed(() => (focusPhase.value === 'break' ? '休息倒计时' : '专注倒计时'))
 
+// 番茄钟阶段提示信息
 const focusPhaseTip = computed(() => (
   focusPhase.value === 'break'
     ? `休息 ${getPhaseMinutes('break')} 分钟后自动进入下一轮`
     : `每 ${getPhaseMinutes('focus')} 分钟完成一轮番茄钟`
 ))
 
+// 番茄钟主按钮文本
 const focusPrimaryButtonText = computed(() => {
   if (!focusRunning.value) {
     return '开始'
@@ -185,6 +204,7 @@ const focusPrimaryButtonText = computed(() => {
   return focusPhase.value === 'break' ? '休息中' : '专注中'
 })
 
+// 当前页面上下文信息，用于 AI 对话
 const pageContext = computed(() => {
   const headings = Array.from(document.querySelectorAll('h1, h2, h3'))
     .slice(0, 5)
@@ -202,11 +222,13 @@ const pageContext = computed(() => {
   }
 })
 
+// 页面上下文摘要
 const contextSummary = computed(() => {
   const headingText = pageContext.value.headings.length ? pageContext.value.headings.join(' / ') : '当前页面暂无标题摘要'
   return `${pageContext.value.path} · ${headingText}`
 })
 
+// 设置宠物心情状态，duration 毫秒后自动恢复为 idle
 function setMood(nextMood, duration = 1800) {
   mood.value = nextMood
   if (moodResetTimer) {
@@ -217,6 +239,7 @@ function setMood(nextMood, duration = 1800) {
   }, duration)
 }
 
+// 清除宠物气泡消息
 function clearPetBubble() {
   petBubble.value = {
     visible: false,
@@ -228,6 +251,7 @@ function clearPetBubble() {
   }
 }
 
+// 显示宠物气泡消息
 function showPetBubble(text) {
   if (open.value || userHidden.value || hidden.value || dragging.value) {
     return
@@ -244,6 +268,7 @@ function showPetBubble(text) {
   }, 7200)
 }
 
+// 添加宠物消息并显示气泡
 function pushPetMessage(text) {
   messages.value.push({
     role: 'pet',
@@ -252,6 +277,7 @@ function pushPetMessage(text) {
   showPetBubble(text)
 }
 
+// 显示操作反馈提示
 function showActionFeedback(text) {
   actionFeedback.value = {
     visible: true,
@@ -266,6 +292,7 @@ function showActionFeedback(text) {
   }, 1800)
 }
 
+// 规范化命令文本，去除空格和标点
 function normalizeCommand(text) {
   return text
     .replace(/\s+/g, '')
@@ -273,6 +300,7 @@ function normalizeCommand(text) {
     .toLowerCase()
 }
 
+// 清理待办标题文本，去除多余前缀和后缀
 function cleanActionTitle(text) {
   return text
     .replace(/^(请|麻烦|帮我|给我|帮忙|可以)?/g, '')
@@ -283,6 +311,7 @@ function cleanActionTitle(text) {
     .trim()
 }
 
+// 解析待办标题，支持冒号格式和引号格式
 function resolveTodoTitle(text) {
   const colonTitle = text.match(/(?:待办|任务|todo|TODO)[：:]\s*(.+)$/)
   if (colonTitle?.[1]?.trim()) {
@@ -295,6 +324,7 @@ function resolveTodoTitle(text) {
   return cleanActionTitle(text)
 }
 
+// 添加待办事项
 function addTodoWithTitle(title) {
   todos.value.unshift({
     id: Date.now(),
@@ -307,6 +337,7 @@ function addTodoWithTitle(title) {
   setMood('happy')
 }
 
+// 解析课程搜索关键词
 function resolveCourseKeyword(text) {
   return text
     .replace(/(请|麻烦|帮我|给我|帮忙|可以|想要|我要|我想)/g, '')
@@ -316,14 +347,17 @@ function resolveCourseKeyword(text) {
     .trim()
 }
 
+// 根据关键词查找导航目标
 function findNavigationTarget(text) {
   return navigationTargets.find((target) => target.keywords.some((keyword) => text.includes(keyword)))
 }
 
+// 处理本地工具操作，包括创建待办、启动番茄钟、搜索课程和页面导航
 async function handleLocalToolAction(text) {
   const normalizedText = normalizeCommand(text)
   const actionReplies = []
 
+  // 处理创建待办命令
   const wantsTodo = /(创建|添加|新增|记录|安排|加入|加一个|加一条|建一个|建一条).*(待办|任务|todo)/i.test(text)
     || /(待办|任务|todo).*(创建|添加|新增|记录|安排|加入)/i.test(text)
   if (wantsTodo) {
@@ -336,6 +370,7 @@ async function handleLocalToolAction(text) {
     actionReplies.push(`已创建待办「${title}」`)
   }
 
+  // 处理启动番茄钟命令
   const wantsPomodoro = /(启动|开始|开启|进入).*(番茄|专注)/.test(normalizedText)
     || /(番茄|专注).*(启动|开始|开启)/.test(normalizedText)
   if (wantsPomodoro) {
@@ -345,6 +380,7 @@ async function handleLocalToolAction(text) {
     actionReplies.push('已启动番茄专注')
   }
 
+  // 处理课程搜索命令
   const wantsCourseSearch = /(找|搜索|查找).*(课程|课)/.test(normalizedText)
     || /(课程|课).*(找|搜索|查找)/.test(normalizedText)
   if (wantsCourseSearch) {
@@ -361,6 +397,7 @@ async function handleLocalToolAction(text) {
     actionReplies.push(`已为你搜索「${keyword}」课程`)
   }
 
+  // 处理页面导航命令
   const wantsNavigation = /(打开|跳转|进入|去|查看|带我去)/.test(normalizedText)
   const navigationTarget = wantsNavigation ? findNavigationTarget(text) : null
   if (navigationTarget) {
@@ -369,10 +406,12 @@ async function handleLocalToolAction(text) {
     actionReplies.push(`已打开${navigationTarget.label}`)
   }
 
+  // 无匹配操作时返回 false，交给 AI 处理
   if (!actionReplies.length) {
     return false
   }
 
+  // 显示操作反馈
   const feedbackText = actionReplies.join('，')
   showActionFeedback(feedbackText)
   pushPetMessage(`${feedbackText}。`)
@@ -380,6 +419,7 @@ async function handleLocalToolAction(text) {
   return true
 }
 
+// 构建聊天历史，用于 AI 对话上下文
 function buildChatHistory() {
   return messages.value
     .slice(0, -1)
@@ -390,6 +430,7 @@ function buildChatHistory() {
     }))
 }
 
+// 从本地存储加载待办列表
 function loadTodos() {
   try {
     const savedTodos = JSON.parse(window.localStorage.getItem(todoStorageKey) || '[]')
@@ -399,10 +440,12 @@ function loadTodos() {
   }
 }
 
+// 保存待办列表到本地存储
 function saveTodos() {
   window.localStorage.setItem(todoStorageKey, JSON.stringify(todos.value))
 }
 
+// 从本地存储加载专注统计数据
 function loadFocusSummary() {
   try {
     const savedSummary = JSON.parse(window.localStorage.getItem(focusStorageKey) || '{}')
@@ -415,18 +458,22 @@ function loadFocusSummary() {
   }
 }
 
+// 保存专注统计数据到本地存储
 function saveFocusSummary() {
   window.localStorage.setItem(focusStorageKey, JSON.stringify(focusSummary.value))
 }
 
+// 从本地存储加载宠物隐藏状态
 function loadPetVisibility() {
   userHidden.value = window.localStorage.getItem(visibilityStorageKey) === '1'
 }
 
+// 保存宠物隐藏状态到本地存储
 function savePetVisibility() {
   window.localStorage.setItem(visibilityStorageKey, userHidden.value ? '1' : '0')
 }
 
+// 更新视口大小
 function updateViewportSize() {
   viewportSize.value = {
     width: window.innerWidth || 1280,
@@ -434,6 +481,7 @@ function updateViewportSize() {
   }
 }
 
+// 限制宠物位置在视口范围内
 function clampPosition(position) {
   const maxX = Math.max(viewportPadding, viewportSize.value.width - petSize - viewportPadding)
   const maxY = Math.max(viewportPadding, viewportSize.value.height - petSize - viewportPadding)
@@ -443,6 +491,7 @@ function clampPosition(position) {
   }
 }
 
+// 从本地存储加载宠物位置
 function loadPosition() {
   updateViewportSize()
   try {
@@ -462,16 +511,19 @@ function loadPosition() {
   positionReady.value = true
 }
 
+// 保存宠物位置到本地存储
 function savePosition() {
   window.localStorage.setItem(positionStorageKey, JSON.stringify(widgetPosition.value))
 }
 
+// 处理窗口大小变化
 function handleResize() {
   updateViewportSize()
   widgetPosition.value = clampPosition(widgetPosition.value)
   savePosition()
 }
 
+// 切换面板展开/收起状态
 function togglePanel() {
   if (userHidden.value) {
     return
@@ -483,6 +535,7 @@ function togglePanel() {
   setMood(open.value ? 'happy' : 'idle', 1200)
 }
 
+// 处理宠物头像点击事件
 function handleAvatarClick() {
   if (suppressClick.value || dragging.value) {
     return
@@ -490,6 +543,7 @@ function handleAvatarClick() {
   togglePanel()
 }
 
+// 打开宠物气泡并切换到聊天面板
 function openPetBubble() {
   clearPetBubble()
   open.value = true
@@ -497,6 +551,7 @@ function openPetBubble() {
   setMood('happy', 1200)
 }
 
+// 开始拖动宠物挂件
 function beginDrag(event) {
   if (userHidden.value) {
     return
@@ -518,6 +573,7 @@ function beginDrag(event) {
   window.addEventListener('pointercancel', cancelDrag)
 }
 
+// 处理拖动移动事件
 function handleDragMove(event) {
   if (!dragState || event.pointerId !== dragState.pointerId) {
     return
@@ -540,12 +596,14 @@ function handleDragMove(event) {
   })
 }
 
+// 清除拖动事件监听
 function clearDragListeners() {
   window.removeEventListener('pointermove', handleDragMove)
   window.removeEventListener('pointerup', endDrag)
   window.removeEventListener('pointercancel', cancelDrag)
 }
 
+// 结束拖动操作
 function endDrag(event) {
   if (!dragState || event.pointerId !== dragState.pointerId) {
     clearDragListeners()
@@ -570,12 +628,14 @@ function endDrag(event) {
   triggerLanding()
 }
 
+// 取消拖动操作
 function cancelDrag() {
   clearDragListeners()
   dragState = null
   dragging.value = false
 }
 
+// 触发宠物着陆动画效果
 function triggerLanding() {
   landing.value = true
   setMood('happy', 1200)
@@ -587,6 +647,7 @@ function triggerLanding() {
   }, 720)
 }
 
+// 隐藏宠物挂件
 function hidePet() {
   open.value = false
   dragging.value = false
@@ -596,12 +657,14 @@ function hidePet() {
   savePetVisibility()
 }
 
+// 唤醒宠物挂件
 function wakePet() {
   userHidden.value = false
   savePetVisibility()
   setMood('happy', 1400)
 }
 
+// 添加待办事项（从输入框）
 function addTodo() {
   const title = newTodo.value.trim()
   if (!title) {
@@ -611,32 +674,38 @@ function addTodo() {
   newTodo.value = ''
 }
 
+// 切换待办事项完成状态
 function toggleTodo(todo) {
   todo.done = !todo.done
   saveTodos()
   setMood(todo.done ? 'happy' : 'idle')
 }
 
+// 删除待办事项
 function removeTodo(todoId) {
   todos.value = todos.value.filter((todo) => todo.id !== todoId)
   saveTodos()
 }
 
+// 获取当前阶段的分钟数（专注或休息）
 function getPhaseMinutes(phase = focusPhase.value) {
   const fallbackMinutes = phase === 'break' ? 5 : 25
   const rawMinutes = phase === 'break' ? breakMinutes.value : focusMinutes.value
   return Math.max(1, Number(rawMinutes) || fallbackMinutes)
 }
 
+// 重置专注倒计时时长
 function resetFocusDuration(phase = focusPhase.value) {
   focusRemaining.value = getPhaseMinutes(phase) * 60
 }
 
+// 切换专注阶段（专注/休息）
 function switchFocusPhase(nextPhase) {
   focusPhase.value = nextPhase
   resetFocusDuration(nextPhase)
 }
 
+// 开始番茄钟专注
 function startFocus() {
   if (focusRemaining.value <= 0) {
     resetFocusDuration()
@@ -645,11 +714,13 @@ function startFocus() {
   activeTab.value = 'focus'
 }
 
+// 暂停番茄钟
 function pauseFocus() {
   focusRunning.value = false
   setMood('idle')
 }
 
+// 播放专注完成提示音效
 function playFocusCompleteSound() {
   try {
     const AudioContextConstructor = window.AudioContext || window.webkitAudioContext
@@ -679,6 +750,7 @@ function playFocusCompleteSound() {
   } catch {}
 }
 
+// 触发专注完成庆祝动画
 function triggerFocusCelebration() {
   celebrating.value = true
   setMood('happy', 4200)
@@ -690,6 +762,7 @@ function triggerFocusCelebration() {
   }, 2200)
 }
 
+// 完成一轮专注
 function finishFocusSegment() {
   const completedMinutes = getPhaseMinutes('focus')
   focusSummary.value = {
@@ -703,17 +776,20 @@ function finishFocusSegment() {
   switchFocusPhase('break')
 }
 
+// 完成休息阶段
 function finishBreak() {
   pushPetMessage('休息结束啦，下一轮番茄钟自动开始。星云猫继续陪你冲！')
   switchFocusPhase('focus')
 }
 
+// 重置番茄钟
 function resetFocus() {
   focusRunning.value = false
   switchFocusPhase('focus')
   setMood('idle')
 }
 
+// 发送消息给 AI 宠物
 async function sendMessage() {
   const text = chatInput.value.trim()
   if (!text || chatLoading.value) {
@@ -721,9 +797,11 @@ async function sendMessage() {
   }
   messages.value.push({ role: 'user', text })
   chatInput.value = ''
+  // 先尝试本地工具操作
   if (await handleLocalToolAction(text)) {
     return
   }
+  // 本地无匹配则调用 AI
   chatLoading.value = true
   setMood('thinking', 8000)
   try {
@@ -742,6 +820,7 @@ async function sendMessage() {
   }
 }
 
+// 番茄钟倒计时 tick 函数
 function tickFocus() {
   if (!focusRunning.value) {
     return
@@ -756,18 +835,21 @@ function tickFocus() {
   }
 }
 
+// 监听专注时长变化
 watch(focusMinutes, () => {
   if (!focusRunning.value && focusPhase.value === 'focus') {
     resetFocusDuration('focus')
   }
 })
 
+// 监听休息时长变化
 watch(breakMinutes, () => {
   if (!focusRunning.value && focusPhase.value === 'break') {
     resetFocusDuration('break')
   }
 })
 
+// 监听路由隐藏宠物状态变化
 watch(hidden, (isHidden) => {
   if (isHidden) {
     open.value = false
@@ -776,18 +858,23 @@ watch(hidden, (isHidden) => {
 })
 
 onMounted(() => {
+  // 加载本地存储数据
   loadTodos()
   loadFocusSummary()
   loadPetVisibility()
   loadPosition()
+  // 启动帧动画定时器
   animationTimer = window.setInterval(() => {
     frameIndex.value += 1
   }, 250)
+  // 启动番茄钟 tick 定时器
   focusTimer = window.setInterval(tickFocus, 1000)
+  // 监听窗口大小变化
   window.addEventListener('resize', handleResize)
 })
 
 onBeforeUnmount(() => {
+  // 清理所有定时器
   if (animationTimer) {
     window.clearInterval(animationTimer)
   }
@@ -812,12 +899,14 @@ onBeforeUnmount(() => {
   if (actionFeedbackTimer) {
     window.clearTimeout(actionFeedbackTimer)
   }
+  // 清理拖动事件监听
   clearDragListeners()
   window.removeEventListener('resize', handleResize)
 })
 </script>
 
 <template>
+  <!-- AI 学习宠物挂件主容器 -->
   <aside
     v-if="!hidden"
     class="ai-pet-widget"
@@ -825,12 +914,14 @@ onBeforeUnmount(() => {
     :style="widgetStyle"
     aria-label="AI 学习宠物"
   >
+    <!-- 操作反馈提示 -->
     <Transition name="ai-pet-action-feedback">
       <div v-if="actionFeedback.visible" class="ai-pet-action-feedback" role="status">
         {{ actionFeedback.text }}
       </div>
     </Transition>
 
+    <!-- 宠物气泡消息 -->
     <button
       v-if="petBubble.visible && !open && !userHidden && !dragging"
       type="button"
@@ -841,7 +932,9 @@ onBeforeUnmount(() => {
       <strong>{{ petBubble.text }}</strong>
     </button>
 
+    <!-- 功能面板 -->
     <section v-if="open" class="ai-pet-panel">
+      <!-- 面板头部 -->
       <div class="ai-pet-panel__header">
         <div>
           <div class="ai-pet-panel__title-row">
@@ -861,6 +954,7 @@ onBeforeUnmount(() => {
         <button type="button" class="ai-pet-panel__close" @click="togglePanel">×</button>
       </div>
 
+      <!-- 功能标签页 -->
       <div class="ai-pet-tabs">
         <button
           type="button"
@@ -885,6 +979,7 @@ onBeforeUnmount(() => {
         </button>
       </div>
 
+      <!-- 对话面板 -->
       <div v-if="activeTab === 'chat'" class="ai-pet-content ai-pet-chat">
         <div class="ai-pet-context">
           <strong>页面摘要</strong>
@@ -905,6 +1000,7 @@ onBeforeUnmount(() => {
         </form>
       </div>
 
+      <!-- 待办面板 -->
       <div v-else-if="activeTab === 'todo'" class="ai-pet-content">
         <div class="ai-pet-stat">
           <span>今日待办</span>
@@ -926,6 +1022,7 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
+      <!-- 番茄钟面板 -->
       <div v-else class="ai-pet-content">
         <div class="ai-pet-focus-card">
           <span>{{ focusPhaseTitle }}</span>
@@ -956,6 +1053,7 @@ onBeforeUnmount(() => {
       </div>
     </section>
 
+    <!-- 宠物头像按钮（可点击展开面板，可拖动） -->
     <button
       type="button"
       class="ai-pet-avatar"
@@ -977,6 +1075,7 @@ onBeforeUnmount(() => {
       <span v-if="!open" class="ai-pet-avatar__label">星云猫</span>
     </button>
 
+    <!-- 唤醒宠物按钮（宠物隐藏时显示） -->
     <button
       v-if="userHidden"
       type="button"

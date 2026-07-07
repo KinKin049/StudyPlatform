@@ -43,6 +43,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * 题库服务，提供题库管理、题目查询、错题本、收藏夹和类型战士等功能。
+ */
 @Service
 public class QuestionBankService {
     private static final String LUOGU_SOURCE = "luogu";
@@ -55,6 +58,12 @@ public class QuestionBankService {
     private final HttpClient httpClient;
     private final Map<String, String> luoguCookies = new ConcurrentHashMap<>();
 
+    /**
+     * 构造函数，注入依赖组件并初始化HTTP客户端。
+     *
+     * @param questionBankRepository 题库数据访问层
+     * @param objectMapper JSON映射器
+     */
     public QuestionBankService(QuestionBankRepository questionBankRepository, ObjectMapper objectMapper) {
         this.questionBankRepository = questionBankRepository;
         this.objectMapper = objectMapper;
@@ -65,10 +74,25 @@ public class QuestionBankService {
                 .build();
     }
 
+    /**
+     * 获取科目列表。
+     *
+     * @return 科目列表
+     */
     public List<QuestionBankSubjectResponse> listSubjects() {
         return questionBankRepository.findSubjects();
     }
 
+    /**
+     * 分页查询题目列表。支持科目、关键词和难度筛选。
+     *
+     * @param subject 科目
+     * @param keyword 关键词
+     * @param difficulty 难度
+     * @param page 页码
+     * @param size 每页数量
+     * @return 题目分页响应
+     */
     public QuestionBankProblemPageResponse listProblems(
             String subject,
             String keyword,
@@ -80,11 +104,22 @@ public class QuestionBankService {
         return questionBankRepository.findProblems(subject, keyword, difficulty, Math.max(page, 0), normalizedSize);
     }
 
+    /**
+     * 获取题目详情。
+     *
+     * @param id 题目ID
+     * @return 题目详情
+     */
     public QuestionBankProblemResponse getProblem(long id) {
         return questionBankRepository.findProblemById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "题目不存在"));
     }
 
+    /**
+     * 获取课程题库分类目录。包含分类信息和所属题库集合。
+     *
+     * @return 题库分类目录列表
+     */
     public List<CourseQuestionBankCategoryResponse> listCourseQuestionBankCatalog() {
         return questionBankRepository.findCourseQuestionBankCatalog().stream()
                 .map(category -> new CourseQuestionBankCategoryResponse(
@@ -96,6 +131,16 @@ public class QuestionBankService {
                 .toList();
     }
 
+    /**
+     * 获取课程题库详情。包含题库信息和分页题目列表。
+     *
+     * @param code 题库编号
+     * @param page 页码
+     * @param size 每页数量
+     * @param keyword 关键词
+     * @param userId 用户ID
+     * @return 题库详情
+     */
     public CourseQuestionBankDetailResponse getCourseQuestionBank(String code, int page, int size, String keyword, long userId) {
         CourseQuestionBankSetResponse bank = questionBankRepository.findCourseQuestionBankSet(code)
                 .map(this::withBankCover)
@@ -120,6 +165,12 @@ public class QuestionBankService {
         );
     }
 
+    /**
+     * 获取类型战士词库。聚合用户的词汇题目，根据熟悉度和难度分级。
+     *
+     * @param userId 用户ID
+     * @return 词库响应
+     */
     public TypeWarriorWordPoolResponse getTypeWarriorWordPool(long userId) {
         Map<String, AggregatedTypeWarriorWord> wordsByKeyword = new LinkedHashMap<>();
         for (QuestionBankRepository.TypeWarriorVocabularyRow row : questionBankRepository.findTypeWarriorVocabularyRows(userId)) {
@@ -169,10 +220,27 @@ public class QuestionBankService {
         return new TypeWarriorWordPoolResponse(words);
     }
 
+    /**
+     * 获取错题本摘要。
+     *
+     * @param userId 用户ID
+     * @return 错题本摘要
+     */
     public QuestionBankMistakeSummaryResponse getMistakeSummary(long userId) {
         return questionBankRepository.findMistakeSummary(userId);
     }
 
+    /**
+     * 分页查询错题列表。支持题库编号、状态和关键词筛选。
+     *
+     * @param userId 用户ID
+     * @param setCode 题库编号
+     * @param status 状态
+     * @param keyword 关键词
+     * @param page 页码
+     * @param size 每页数量
+     * @return 错题分页响应
+     */
     public QuestionBankMistakePageResponse listMistakes(
             long userId,
             String setCode,
@@ -193,6 +261,13 @@ public class QuestionBankService {
         );
     }
 
+    /**
+     * 记录错题回答。验证答案正确性，更新错题状态，连续答对达到阈值后标记掌握。
+     *
+     * @param userId 用户ID
+     * @param request 错题回答请求
+     * @return 错题回答响应
+     */
     public QuestionBankMistakeAnswerResponse recordMistakeAnswer(long userId, QuestionBankMistakeAnswerRequest request) {
         if (request == null || request.questionId() <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "题目编号无效");
@@ -251,16 +326,39 @@ public class QuestionBankService {
         );
     }
 
+    /**
+     * 获取收藏夹摘要。
+     *
+     * @param userId 用户ID
+     * @return 收藏夹摘要
+     */
     public QuestionBankFavoriteSummaryResponse getFavoriteSummary(long userId) {
         return questionBankRepository.findFavoriteSummary(userId);
     }
 
+    /**
+     * 分页查询收藏题目列表。支持题库编号和关键词筛选。
+     *
+     * @param userId 用户ID
+     * @param setCode 题库编号
+     * @param keyword 关键词
+     * @param page 页码
+     * @param size 每页数量
+     * @return 收藏分页响应
+     */
     public QuestionBankFavoritePageResponse listFavorites(long userId, String setCode, String keyword, int page, int size) {
         int normalizedPage = Math.max(page, 0);
         int normalizedSize = Math.max(1, Math.min(size, 100));
         return questionBankRepository.findFavorites(userId, setCode, keyword, normalizedPage, normalizedSize);
     }
 
+    /**
+     * 添加题目到收藏夹。验证题目存在后添加。
+     *
+     * @param userId 用户ID
+     * @param request 收藏请求
+     * @return 收藏切换响应
+     */
     public QuestionBankFavoriteToggleResponse addFavorite(long userId, QuestionBankFavoriteRequest request) {
         long questionId = validateFavoriteQuestion(request);
         questionBankRepository.addFavorite(userId, questionId);
@@ -272,6 +370,13 @@ public class QuestionBankService {
         );
     }
 
+    /**
+     * 取消题目收藏。
+     *
+     * @param userId 用户ID
+     * @param questionId 题目ID
+     * @return 收藏切换响应
+     */
     public QuestionBankFavoriteToggleResponse removeFavorite(long userId, long questionId) {
         if (questionId <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "题目编号无效");
@@ -285,6 +390,13 @@ public class QuestionBankService {
         );
     }
 
+    /**
+     * 从洛谷平台导入题目。先导入标签，再分页抓取题目详情并存储到数据库，自动挂载到科目。
+     *
+     * @param pages 导入页数
+     * @param limit 最大导入数量
+     * @return 导入结果响应
+     */
     public QuestionBankImportResponse importLuoguProblems(int pages, int limit) {
         int normalizedPages = Math.max(1, Math.min(pages, MAX_IMPORT_PAGES));
         int normalizedLimit = Math.max(1, Math.min(limit, MAX_IMPORT_PROBLEMS));
@@ -339,6 +451,11 @@ public class QuestionBankService {
         }
     }
 
+    /**
+     * 导入洛谷标签数据。获取标签列表并存储到数据库。
+     *
+     * @return 标签ID到名称的映射
+     */
     private Map<Integer, String> importLuoguTags() throws IOException, InterruptedException {
         String body = get(LUOGU_BASE_URL + "/_lfe/tags/zh-CN");
         JsonNode root = objectMapper.readTree(body);
@@ -361,6 +478,12 @@ public class QuestionBankService {
         return tagNameMap;
     }
 
+    /**
+     * 验证收藏题目是否存在。
+     *
+     * @param request 收藏请求
+     * @return 题目ID
+     */
     private long validateFavoriteQuestion(QuestionBankFavoriteRequest request) {
         if (request == null || request.questionId() <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "题目编号无效");
@@ -370,6 +493,14 @@ public class QuestionBankService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "题目不存在"));
     }
 
+    /**
+     * 判断课程题目的答案是否正确。支持词汇类题目和普通选择题。
+     *
+     * @param type 题目类型
+     * @param selectedAnswer 用户选择的答案
+     * @param correctAnswer 正确答案
+     * @return 是否正确
+     */
     private boolean isCourseQuestionAnswerCorrect(String type, String selectedAnswer, String correctAnswer) {
         if ("vocabulary".equalsIgnoreCase(type)) {
             return "known".equalsIgnoreCase(selectedAnswer);
@@ -383,6 +514,12 @@ public class QuestionBankService {
                 && correctKeys.containsAll(selectedKeys);
     }
 
+    /**
+     * 标准化答案键。支持多种分隔符，将连续字母拆分为单个字母。
+     *
+     * @param answer 答案字符串
+     * @return 标准化的答案键列表
+     */
     private List<String> normalizeAnswerKeys(String answer) {
         if (answer == null || answer.isBlank()) {
             return List.of();
@@ -406,6 +543,13 @@ public class QuestionBankService {
         return keys;
     }
 
+    /**
+     * 获取洛谷题目列表页面。解析HTML提取题目基本信息。
+     *
+     * @param page 页码
+     * @param tagNameMap 标签映射
+     * @return 题目列表
+     */
     private List<LuoguListProblem> fetchLuoguProblemList(int page, Map<Integer, String> tagNameMap)
             throws IOException, InterruptedException {
         String url = LUOGU_BASE_URL + "/problem/list?page=" + page;
@@ -453,6 +597,12 @@ public class QuestionBankService {
         return problems;
     }
 
+    /**
+     * 获取洛谷题目详情。解析HTML提取题目描述、输入输出格式和提示。
+     *
+     * @param pid 题目ID
+     * @return 题目详情
+     */
     private LuoguProblemDetail fetchLuoguProblemDetail(String pid) throws IOException, InterruptedException {
         String body = get(LUOGU_BASE_URL + "/problem/" + URLEncoder.encode(pid, StandardCharsets.UTF_8));
         Document document = Jsoup.parse(body);
@@ -464,6 +614,13 @@ public class QuestionBankService {
         );
     }
 
+    /**
+     * 从HTML文档中提取指定标题的章节内容。
+     *
+     * @param document HTML文档
+     * @param heading 章节标题
+     * @return 章节文本内容
+     */
     private String sectionText(Document document, String heading) {
         for (Element section : document.select("article section")) {
             Element h2 = section.selectFirst("h2");
@@ -475,6 +632,12 @@ public class QuestionBankService {
         return "";
     }
 
+    /**
+     * 标准化类型战士词汇。转小写并移除非字母字符。
+     *
+     * @param word 原始词汇
+     * @return 标准化后的词汇
+     */
     private String normalizeTypeWarriorWord(String word) {
         if (word == null) {
             return "";
@@ -482,6 +645,12 @@ public class QuestionBankService {
         return word.toLowerCase().replaceAll("[^a-z]", "");
     }
 
+    /**
+     * 摘要翻译内容。截取第一个逗号前的内容作为摘要。
+     *
+     * @param answer 答案/翻译内容
+     * @return 摘要内容
+     */
     private String summarizeTranslation(String answer) {
         if (answer == null || answer.isBlank()) {
             return "";
@@ -491,6 +660,12 @@ public class QuestionBankService {
         return (separatorIndex >= 0 ? normalized.substring(0, separatorIndex) : normalized).trim();
     }
 
+    /**
+     * 标准化熟悉度标签。将输入转换为标准值：known、fuzzy、unknown、unmarked。
+     *
+     * @param familiarity 原始熟悉度
+     * @return 标准化后的熟悉度
+     */
     private String normalizeFamiliarity(String familiarity) {
         if (familiarity == null || familiarity.isBlank()) {
             return "unmarked";
@@ -502,6 +677,12 @@ public class QuestionBankService {
         };
     }
 
+    /**
+     * 获取熟悉度等级。用于比较熟悉度高低，数值越大越不熟悉。
+     *
+     * @param familiarity 熟悉度
+     * @return 等级数值
+     */
     private int familiarityRank(String familiarity) {
         return switch (normalizeFamiliarity(familiarity)) {
             case "unknown" -> 4;
@@ -511,6 +692,13 @@ public class QuestionBankService {
         };
     }
 
+    /**
+     * 推断类型战士词汇等级。根据词汇长度和题库编号计算难度等级。
+     *
+     * @param normalizedWord 标准化后的词汇
+     * @param setCode 题库编号
+     * @return 等级(1-4)
+     */
     private int inferTypeWarriorTier(String normalizedWord, String setCode) {
         int length = normalizedWord.length();
         int tier;
@@ -529,6 +717,12 @@ public class QuestionBankService {
         return Math.max(1, Math.min(4, tier));
     }
 
+    /**
+     * 发送HTTP GET请求。支持重定向和Cookie管理。
+     *
+     * @param url 请求URL
+     * @return 响应体内容
+     */
     private String get(String url) throws IOException, InterruptedException {
         String currentUrl = url;
         for (int redirectCount = 0; redirectCount < 5; redirectCount += 1) {
@@ -559,6 +753,11 @@ public class QuestionBankService {
         throw new IOException("redirect limit exceeded");
     }
 
+    /**
+     * 保存HTTP响应中的Cookie。从Set-Cookie头中提取键值对。
+     *
+     * @param response HTTP响应
+     */
     private void rememberCookies(HttpResponse<?> response) {
         response.headers().allValues("Set-Cookie").forEach(cookie -> {
             String pair = cookie.split(";", 2)[0];
@@ -570,6 +769,11 @@ public class QuestionBankService {
         });
     }
 
+    /**
+     * 构建Cookie请求头。将存储的Cookie转换为请求头格式。
+     *
+     * @return Cookie头字符串
+     */
     private String cookieHeader() {
         return luoguCookies.entrySet().stream()
                 .map(entry -> entry.getKey() + "=" + entry.getValue())
@@ -577,6 +781,12 @@ public class QuestionBankService {
                 .orElse("");
     }
 
+    /**
+     * 将难度数值转换为中文标签。
+     *
+     * @param difficulty 难度数值
+     * @return 中文难度标签
+     */
     private String difficultyLabel(Integer difficulty) {
         if (difficulty == null) {
             return "未知";
@@ -594,10 +804,21 @@ public class QuestionBankService {
         };
     }
 
+    /**
+     * 安静地休眠指定毫秒数。封装Thread.sleep以提高代码可读性。
+     *
+     * @param millis 休眠毫秒数
+     */
     private void sleepQuietly(long millis) throws InterruptedException {
         Thread.sleep(millis);
     }
 
+    /**
+     * 为题库集合设置封面URL。优先使用本地文件路径，否则使用远程URL。
+     *
+     * @param bank 题库集合响应
+     * @return 更新封面URL后的响应
+     */
     private CourseQuestionBankSetResponse withBankCover(CourseQuestionBankSetResponse bank) {
         String localCoverUrl = fileUrl(bank.coverFilePath());
         String resolvedCoverUrl = localCoverUrl.isBlank() ? bank.coverUrl() : localCoverUrl;

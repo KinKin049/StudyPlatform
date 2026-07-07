@@ -1,44 +1,92 @@
+/**
+ * 路由配置文件
+ * 定义应用的所有页面路由，包括路由路径、名称、组件映射及嵌套路由结构
+ */
 import { createRouter, createWebHistory } from 'vue-router'
 
+// 首页
 const AcademyPage = () => import('../pages/AcademyPage.vue')
+// 学院聚合页
 const AcademyAggregatePage = () => import('../pages/academy/AcademyAggregatePage.vue')
+// 作业详情页
 const AcademyAssignmentDetail = () => import('../pages/academy/AcademyAssignmentDetail.vue')
+// 考试详情页
 const AcademyExamDetail = () => import('../pages/academy/AcademyExamDetail.vue')
+// 考试介绍页
 const AcademyExamIntro = () => import('../pages/academy/AcademyExamIntro.vue')
+// 通识课程页
 const AcademyGeneralCourses = () => import('../pages/academy/AcademyGeneralCourses.vue')
+// 学院首页
 const AcademyHome = () => import('../pages/academy/AcademyHome.vue')
+// 微专业课程页
 const AcademyMicroMajors = () => import('../pages/academy/AcademyMicroMajors.vue')
+// 我的课程页
 const AcademyMyClass = () => import('../pages/academy/AcademyMyClass.vue')
+// 开放课程页
 const AcademyOpenCourses = () => import('../pages/academy/AcademyOpenCourses.vue')
+// 课程详情页
 const AcademyCourseDetail = () => import('../pages/academy/AcademyCourseDetail.vue')
+// 题库首页
 const AcademyQuestionBank = () => import('../pages/academy/AcademyQuestionBank.vue')
+// 题库课程详情页
 const AcademyQuestionBankCourseDetail = () => import('../pages/academy/AcademyQuestionBankCourseDetail.vue')
+// 题库课程列表页
 const AcademyQuestionBankCourses = () => import('../pages/academy/AcademyQuestionBankCourses.vue')
+// 题库收藏页
 const AcademyQuestionBankFavorites = () => import('../pages/academy/AcademyQuestionBankFavorites.vue')
+// 题库错题页
 const AcademyQuestionBankMistakes = () => import('../pages/academy/AcademyQuestionBankMistakes.vue')
+// 教材首页
 const AcademyTextbooks = () => import('../pages/academy/AcademyTextbooks.vue')
+// 教材详情页
 const AcademyTextbookDetail = () => import('../pages/academy/AcademyTextbookDetail.vue')
+// 教材购物车页
 const AcademyTextbookCart = () => import('../pages/academy/AcademyTextbookCart.vue')
+// 管理后台页
 const AdminPage = () => import('../pages/AdminPage.vue')
+// 登录页
 const AuthLoginPage = () => import('../pages/AuthLoginPage.vue')
+// 引导页
 const AuthOnboardingPage = () => import('../pages/AuthOnboardingPage.vue')
+// 注册页
 const AuthRegisterPage = () => import('../pages/AuthRegisterPage.vue')
+// 忘记密码页
 const AuthForgotPasswordPage = () => import('../pages/AuthForgotPasswordPage.vue')
+// 兑换中心页
 const ExchangeCenter = () => import('../pages/ExchangeCenter.vue')
+// 我的卡券页
+const MyVouchers = () => import('../pages/MyVouchers.vue')
+// 首页
 const HomePage = () => import('../pages/HomePage.vue')
+// 实验平台页
 const LabPlatform = () => import('../pages/LabPlatform.vue')
+// 在线评测平台页
 const OjPlatform = () => import('../pages/OjPlatform.vue')
+// 石油模拟页
 const PetroleumSimulation = () => import('../pages/petroleum/PetroleumSimulation.vue')
+// 个人中心页
 const ProfilePage = () => import('../pages/ProfilePage.vue')
+// 测井模拟页
 const WellLogSimulation = () => import('../pages/WellLogSimulation.vue')
+// 可视化首页
 const VisualizationHome = () => import('../pages/visualization/VisualizationHome.vue')
+// 数据结构可视化页
 const DataStructureVisualization = () => import('../pages/visualization/DataStructureVisualization.vue')
+// 算法演示页
 const AlgorithmDemoViewer = () => import('../pages/visualization/AlgorithmDemoViewer.vue')
+// 二维函数图像页
 const FunctionGraph2D = () => import('../pages/visualization/FunctionGraph2D.vue')
+// 空间模型引导页
 const SpaceModelGuide = () => import('../pages/visualization/SpaceModelGuide.vue')
+// 三维空间模型页
 const SpaceModel3D = () => import('../pages/visualization/SpaceModel3D.vue')
+// 游戏平台页
 const GamePlatform = () => import('../pages/games/GamePlatform.vue')
 
+/**
+ * 路由配置数组
+ * 定义应用的所有路由规则，包含路径、名称、组件及嵌套路由
+ */
 const routes = [
   {
     path: '/',
@@ -74,6 +122,11 @@ const routes = [
     path: '/exchange',
     name: 'exchange',
     component: ExchangeCenter,
+  },
+  {
+    path: '/exchange/vouchers',
+    name: 'exchange-vouchers',
+    component: MyVouchers,
   },
   {
     path: '/academy',
@@ -307,6 +360,10 @@ const routes = [
   },
 ]
 
+/**
+ * 创建路由实例
+ * 使用 history 模式，加载定义好的路由配置
+ */
 const router = createRouter({
   history: createWebHistory(),
   routes,

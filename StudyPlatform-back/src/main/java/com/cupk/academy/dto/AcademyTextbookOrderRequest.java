@@ -6,6 +6,8 @@ public record AcademyTextbookOrderRequest(
         Long userId,
         String textbookId,
         Integer quantity,
-        List<Long> cartItemIds
+        List<Long> cartItemIds,
+        Boolean useVoucher,
+        String voucherKey
 ) {
 }

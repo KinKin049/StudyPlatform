@@ -17,12 +17,17 @@ import org.springframework.web.bind.annotation.RestController;
 public class WellLogTemplateController {
     private final WellLogTemplateService templateService;
 
+    /**
+     * 构造函数。
+     * @param templateService 测井模板服务
+     */
     public WellLogTemplateController(WellLogTemplateService templateService) {
         this.templateService = templateService;
     }
 
     /**
      * 查询全部测井模板，供前端模板选择列表使用。
+     * @return 测井模板列表
      */
     @GetMapping("/list")
     public List<WellLogTemplate> listTemplates() {
@@ -31,6 +36,8 @@ public class WellLogTemplateController {
 
     /**
      * 根据模板主键查询模板详情。
+     * @param id 模板ID
+     * @return 模板详情
      */
     @GetMapping("/{id}")
     public WellLogTemplate getTemplate(@PathVariable Long id) {

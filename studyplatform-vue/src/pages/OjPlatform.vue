@@ -1,4 +1,8 @@
 <script setup>
+/**
+ * OJ在线判题平台页面组件
+ * 提供题库浏览、代码提交、测试点判题和提交结果追踪功能
+ */
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useLearningTimeTracker } from '../composables/useLearningTimeTracker'
@@ -10,46 +14,67 @@ import {
   listSubmissionCases,
 } from '../oj/api'
 
+// 初始化学习时长追踪器
 useLearningTimeTracker({
   moduleType: 'oj',
   targetCode: 'lab-oj',
   targetTitle: 'OJ 在线判题',
 })
 
+// 题目列表数据
 const problems = ref([])
+// 当前选中的题目
 const selectedProblem = ref(null)
+// 提交记录列表
 const submissions = ref([])
+// 当前选中的提交测试用例详情
 const selectedSubmissionCases = ref([])
+// 加载状态
 const loading = ref(false)
+// 提交状态
 const submitting = ref(false)
+// 错误提示信息
 const errorMessage = ref('')
+// 当前激活的标签页：statement-题面 submit-提交 result-结果
 const activeTab = ref('statement')
+// 源代码内容
 const sourceCode = ref('')
+// 选择的编程语言
 const language = ref('cpp')
+// 搜索关键词
 const searchKeyword = ref('')
+// 筛选面板展开状态
 const filterPanelOpen = ref(false)
+// 选中的算法分类
 const selectedAlgorithmCategories = ref([])
+// 选中的难度分类
 const selectedDifficultyCategories = ref([])
+// 选中的题面语言
 const selectedStatementLanguages = ref([])
+// 搜索防抖定时器
 let searchTimer = 0
 
+// 难度标签映射
 const difficultyLabel = {
   EASY: '简单 Easy',
   MEDIUM: '中等 Medium',
   HARD: '困难 Hard',
 }
 
+// 难度选项列表
 const difficultyOptions = [
   { value: 'EASY', label: '简单', labelEn: 'Easy' },
   { value: 'MEDIUM', label: '中等', labelEn: 'Medium' },
   { value: 'HARD', label: '困难', labelEn: 'Hard' },
 ]
 
+// 题面语言选项列表
 const statementLanguageOptions = [
   { value: 'zh', label: '中文题面', labelEn: 'Chinese' },
   { value: 'en', label: '英文题面', labelEn: 'English' },
 ]
 
+// 算法分类选项列表
 const algorithmCategoryOptions = [
   { value: 'beginner', label: '入门', labelEn: 'Beginner' },
   { value: 'math', label: '数学', labelEn: 'Math' },
@@ -69,8 +94,10 @@ const algorithmCategoryOptions = [
   { value: 'prefix', label: '前缀', labelEn: 'Prefix' },
 ]
 
+// 快捷算法分类
 const quickAlgorithmCategories = ['beginner', 'array', 'string', 'dp', 'graph', 'bfs']
 
+// 判题状态标签映射
 const statusLabel = {
   PENDING: '等待中',
   JUDGING: '判题中',
@@ -83,6 +110,10 @@ const statusLabel = {
   SYSTEM_ERROR: '系统错误',
 }
 
+/**
+ * 解析题目样例数据
+ * @returns {Array} 样例输入输出数组
+ */
 const parsedSamples = computed(() => {
   if (!selectedProblem.value?.samples) return []
   try {
@@ -92,6 +123,10 @@ const parsedSamples = computed(() => {
   }
 })
 
+/**
+ * 解析题目标签数据
+ * @returns {Array} 标签数组
+ */
 const parsedTags = computed(() => {
   if (!selectedProblem.value?.tags) return []
   try {
@@ -101,21 +136,37 @@ const parsedTags = computed(() => {
   }
 })
 
+/**
+ * 获取最新提交记录
+ * @returns {Object|null} 最新提交记录
+ */
 const latestSubmission = computed(() => submissions.value[0] || null)
+
+/**
+ * 计算当前选中筛选条件数量
+ * @returns {number} 筛选条件数量
+ */
 const activeFilterCount = computed(
   () =>
     selectedAlgorithmCategories.value.length +
     selectedDifficultyCategories.value.length +
     selectedStatementLanguages.value.length,
 )
+
+/**
+ * 获取快捷分类选项
+ * @returns {Array} 快捷分类选项数组
+ */
 const quickCategoryOptions = computed(() =>
   algorithmCategoryOptions.filter((item) => quickAlgorithmCategories.includes(item.value)),
 )
 
+// 监听语言变化，更新默认代码模板
 watch(language, () => {
   sourceCode.value = defaultSourceFor(selectedProblem.value?.slug, language.value)
 })
 
+// 监听搜索条件变化，执行防抖搜索
 watch(
   [
     searchKeyword,
@@ -131,6 +182,9 @@ watch(
   },
 )
 
+/**
+ * 加载题目列表
+ */
 async function loadProblems() {
   loading.value = true
   errorMessage.value = ''
@@ -153,6 +207,10 @@ async function loadProblems() {
   }
 }
 
+/**
+ * 选择题目
+ * @param {Object} problem 题目对象
+ */
 async function selectProblem(problem) {
   errorMessage.value = ''
   activeTab.value = 'statement'
@@ -161,6 +219,9 @@ async function selectProblem(problem) {
   sourceCode.value = defaultSourceFor(selectedProblem.value.slug, language.value)
 }
 
+/**
+ * 提交代码答案
+ */
 async function submitAnswer() {
   if (!selectedProblem.value) return
   submitting.value = true
@@ -183,6 +244,10 @@ async function submitAnswer() {
   }
 }
 
+/**
+ * 轮询提交结果
+ * @param {number} id 提交记录ID
+ */
 async function pollSubmission(id) {
   for (let index = 0; index < 10; index += 1) {
     const submission = await getSubmission(id)
@@ -195,11 +260,21 @@ async function pollSubmission(id) {
   }
 }
 
+/**
+ * 显示提交测试用例详情
+ * @param {Object} submission 提交记录对象
+ */
 async function showSubmissionCases(submission) {
   selectedSubmissionCases.value = await listSubmissionCases(submission.id)
   activeTab.value = 'result'
 }
 
+/**
+ * 根据题目和语言获取默认代码模板
+ * @param {string} slug 题目标识
+ * @param {string} selectedLanguage 选中的语言
+ * @returns {string} 默认代码内容
+ */
 function defaultSourceFor(slug, selectedLanguage) {
   if (selectedLanguage === 'answer') {
     return defaultAnswerFor(slug)
@@ -210,6 +285,11 @@ function defaultSourceFor(slug, selectedLanguage) {
   return ''
 }
 
+/**
+ * 获取答案模式的默认答案
+ * @param {string} slug 题目标识
+ * @returns {string} 默认答案内容
+ */
 function defaultAnswerFor(slug) {
   if (slug === 'a-plus-b') return '3\n---\n6\n'
   if (slug === 'maximum-number') return '9\n---\n-3\n'
@@ -217,6 +297,11 @@ function defaultAnswerFor(slug) {
   return ''
 }
 
+/**
+ * 获取C++语言的默认代码模板
+ * @param {string} slug 题目标识
+ * @returns {string} 默认代码内容
+ */
 function defaultCppFor(slug) {
   if (slug === 'maximum-number') {
     return `#include <bits/stdc++.h>
@@ -235,7 +320,7 @@ int main() {
         cin >> x;
         ans = max(ans, x);
     }
-    cout << ans << '\\n';
+    cout << ans << '\n';
     return 0;
 }
 `
@@ -257,7 +342,7 @@ int main() {
         a = b;
         b = c;
     }
-    cout << a << '\\n';
+    cout << a << '\n';
     return 0;
 }
 `
@@ -276,45 +361,88 @@ int main() {
 `
 }
 
+/**
+ * 清空搜索关键词
+ */
 function clearSearch() {
   searchKeyword.value = ''
 }
 
+/**
+ * 清空所有筛选条件
+ */
 function clearFilters() {
   selectedAlgorithmCategories.value = []
   selectedDifficultyCategories.value = []
   selectedStatementLanguages.value = []
 }
 
+/**
+ * 获取标签显示文本
+ * @param {string} tag 标签值
+ * @returns {string} 标签显示文本
+ */
 function tagLabel(tag) {
   const option = algorithmCategoryOptions.find((item) => item.value === tag)
   return option ? `${option.label} ${option.labelEn}` : tag
 }
 
+/**
+ * 切换算法分类选中状态
+ * @param {string} value 分类值
+ */
 function toggleAlgorithmCategory(value) {
   toggleValue(selectedAlgorithmCategories, value)
 }
 
+/**
+ * 切换难度分类选中状态
+ * @param {string} value 难度值
+ */
 function toggleDifficultyCategory(value) {
   toggleValue(selectedDifficultyCategories, value)
 }
 
+/**
+ * 切换题面语言选中状态
+ * @param {string} value 语言值
+ */
 function toggleStatementLanguage(value) {
   toggleValue(selectedStatementLanguages, value)
 }
 
+/**
+ * 判断算法分类是否选中
+ * @param {string} value 分类值
+ * @returns {boolean} 是否选中
+ */
 function isAlgorithmSelected(value) {
   return selectedAlgorithmCategories.value.includes(value)
 }
 
+/**
+ * 判断难度分类是否选中
+ * @param {string} value 难度值
+ * @returns {boolean} 是否选中
+ */
 function isDifficultySelected(value) {
   return selectedDifficultyCategories.value.includes(value)
 }
 
+/**
+ * 判断题面语言是否选中
+ * @param {string} value 语言值
+ * @returns {boolean} 是否选中
+ */
 function isStatementLanguageSelected(value) {
   return selectedStatementLanguages.value.includes(value)
 }
 
+/**
+ * 获取题目标签数组
+ * @param {Object} problem 题目对象
+ * @returns {Array} 标签数组
+ */
 function problemTags(problem) {
   try {
     return JSON.parse(problem.tags || '[]')
@@ -323,6 +451,11 @@ function problemTags(problem) {
   }
 }
 
+/**
+ * 切换数组中值的存在状态
+ * @param {Ref} targetRef 目标数组引用
+ * @param {*} value 要切换的值
+ */
 function toggleValue(targetRef, value) {
   if (targetRef.value.includes(value)) {
     targetRef.value = targetRef.value.filter((item) => item !== value)
@@ -331,19 +464,32 @@ function toggleValue(targetRef, value) {
   }
 }
 
+/**
+ * 延迟函数
+ * @param {number} ms 延迟毫秒数
+ * @returns {Promise} 延迟Promise
+ */
 function delay(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms))
 }
 
+/**
+ * 格式化错误信息
+ * @param {Error|string} error 错误对象或信息
+ * @returns {string} 格式化后的错误信息
+ */
 function formatError(error) {
   return error instanceof Error ? error.message : '请求失败'
 }
 
+// 页面挂载时加载题目列表
 onMounted(loadProblems)
 </script>
 
 <template>
+  <!-- OJ在线判题平台主容器 -->
   <div class="oj-shell">
+    <!-- 页面头部 -->
     <header class="oj-header">
       <div>
         <p class="oj-kicker">StudyPlatform OJ</p>
@@ -352,13 +498,17 @@ onMounted(loadProblems)
       <RouterLink class="home-link" to="/lab">返回实验平台</RouterLink>
     </header>
 
+    <!-- 主布局区域 -->
     <main class="oj-layout">
+      <!-- 左侧题库列表 -->
       <aside class="problem-list" aria-label="题库">
+        <!-- 列表标题 -->
         <div class="list-header">
           <h2>题库</h2>
           <span>{{ problems.length }} 题</span>
         </div>
 
+        <!-- 搜索区域 -->
         <div class="problem-search">
           <input
             v-model="searchKeyword"
@@ -377,6 +527,7 @@ onMounted(loadProblems)
           <button v-if="searchKeyword" type="button" @click="clearSearch">清空</button>
         </div>
 
+        <!-- 快捷筛选按钮 -->
         <div class="quick-filter-row" aria-label="快捷分类筛选">
           <button
             v-for="item in quickCategoryOptions"
@@ -407,7 +558,9 @@ onMounted(loadProblems)
           </button>
         </div>
 
+        <!-- 展开式筛选面板 -->
         <div v-if="filterPanelOpen" class="filter-dropdown">
+          <!-- 算法分类 -->
           <section>
             <div class="filter-title">
               <strong>算法分类</strong>
@@ -420,6 +573,7 @@ onMounted(loadProblems)
             </label>
           </section>
 
+          <!-- 难度分类 -->
           <section>
             <div class="filter-title">
               <strong>难度分类</strong>
@@ -432,6 +586,7 @@ onMounted(loadProblems)
             </label>
           </section>
 
+          <!-- 中英文分类 -->
           <section>
             <div class="filter-title">
               <strong>中英文分类</strong>
@@ -444,11 +599,13 @@ onMounted(loadProblems)
             </label>
           </section>
 
+          <!-- 清除筛选按钮 -->
           <button v-if="activeFilterCount" class="filter-clear" type="button" @click="clearFilters">
             清除分类筛选
           </button>
         </div>
 
+        <!-- 题目列表 -->
         <div class="problem-results">
           <p v-if="loading" class="muted-text">正在加载题库...</p>
           <p v-else-if="problems.length === 0" class="muted-text">未找到匹配题目。</p>
@@ -474,7 +631,9 @@ onMounted(loadProblems)
         </div>
       </aside>
 
+      <!-- 右侧题目工作区 -->
       <section v-if="selectedProblem" class="problem-workspace">
+        <!-- 工具栏 -->
         <div class="workspace-toolbar">
           <div>
             <h2>{{ selectedProblem.title }}</h2>
@@ -490,6 +649,7 @@ onMounted(loadProblems)
           </div>
         </div>
 
+        <!-- 标签切换 -->
         <div class="tab-strip">
           <button :class="{ active: activeTab === 'statement' }" type="button" @click="activeTab = 'statement'">
             题面
@@ -502,6 +662,7 @@ onMounted(loadProblems)
           </button>
         </div>
 
+        <!-- 题面面板 -->
         <section v-if="activeTab === 'statement'" class="statement-panel">
           <p class="statement-text">{{ selectedProblem.description }}</p>
           <h3>输入说明</h3>
@@ -521,6 +682,7 @@ onMounted(loadProblems)
           </div>
         </section>
 
+        <!-- 提交面板 -->
         <section v-if="activeTab === 'submit'" class="submit-panel">
           <div class="submit-toolbar">
             <label>
@@ -542,7 +704,9 @@ onMounted(loadProblems)
           </p>
         </section>
 
+        <!-- 结果面板 -->
         <section v-if="activeTab === 'result'" class="result-panel">
+          <!-- 最新提交结果摘要 -->
           <div v-if="latestSubmission" class="result-summary">
             <span :class="['status-badge', latestSubmission.status?.toLowerCase()]">
               {{ statusLabel[latestSubmission.status] || latestSubmission.status }}
@@ -551,6 +715,7 @@ onMounted(loadProblems)
             <span v-if="latestSubmission.message">{{ latestSubmission.message }}</span>
           </div>
 
+          <!-- 提交历史列表 -->
           <div class="case-list">
             <button
               v-for="submission in submissions"
@@ -568,6 +733,7 @@ onMounted(loadProblems)
             </button>
           </div>
 
+          <!-- 测试点详情 -->
           <div v-if="selectedSubmissionCases.length" class="case-detail">
             <h3>测试点详情</h3>
             <div v-for="item in selectedSubmissionCases" :key="item.id" class="case-row">
@@ -582,11 +748,13 @@ onMounted(loadProblems)
         </section>
       </section>
 
+      <!-- 空状态 -->
       <section v-else class="empty-state">
         <p>暂无题目。</p>
       </section>
     </main>
 
+    <!-- 错误提示 -->
     <p v-if="errorMessage" class="error-toast">{{ errorMessage }}</p>
   </div>
 </template>

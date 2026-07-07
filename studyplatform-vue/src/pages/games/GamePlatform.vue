@@ -1,4 +1,8 @@
 <script setup>
+/**
+ * 游戏平台主页面
+ * 负责展示游戏选择界面，支持两个游戏的切换和过渡动画
+ */
 import { computed, onBeforeUnmount, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import LadderJumpGame from './LadderJumpGame.vue'
@@ -7,6 +11,7 @@ import TypeWarriorGame from './TypeWarriorGame.vue'
 const route = useRoute()
 const router = useRouter()
 
+/** 游戏列表配置 */
 const games = [
   {
     id: 'type-warrior',
@@ -28,19 +33,32 @@ const games = [
   },
 ]
 
+/** 当前悬停的游戏ID */
 const hoveredGame = ref(null)
+/** 过渡动画阶段：idle/cover/reveal */
 const transitionPhase = ref('idle')
+/** 当前过渡的游戏对象 */
 const transitionGame = ref(games[0])
+/** 过渡类型：team/archive */
 const transitionKind = ref('team')
+/** 覆盖动画计时器 */
 let coverTimer = 0
+/** 揭示动画计时器 */
 let revealTimer = 0
 
+/** 根据路由参数获取当前游戏 */
 const currentGame = computed(() => games.find((game) => game.id === route.params.gameId) || null)
+/** 是否处于游戏详情页面 */
 const isDetailPage = computed(() => Boolean(currentGame.value))
+/** 是否正在进行过渡动画 */
 const isTransitioning = computed(() => transitionPhase.value !== 'idle')
+/** 过渡文字数组，用于逐字显示动画 */
 const transitionWords = computed(() => `正在进入 ${transitionGame.value.name}`.split(' '))
+/** Archive类型过渡的覆盖时长（毫秒） */
 const archiveCoverDuration = 1680
+/** Archive类型过渡的揭示时长（毫秒） */
 const archiveRevealDuration = 980
+/** 分割面板的样式，根据悬停状态调整上下比例 */
 const splitStyle = computed(() => {
   if (hoveredGame.value === 'type-warrior') {
     return { '--split-top': '68%', '--split-bottom': '58%' }
@@ -51,6 +69,10 @@ const splitStyle = computed(() => {
   return { '--split-top': '56%', '--split-bottom': '44%' }
 })
 
+/**
+ * 打开指定游戏
+ * @param {Object} game - 游戏对象
+ */
 function openGame(game) {
   if (isTransitioning.value) return
 
@@ -73,11 +95,13 @@ function openGame(game) {
   }, coverDuration + revealDuration)
 }
 
+/** 返回游戏选择页面 */
 function returnToSelector() {
   hoveredGame.value = null
   router.push('/games')
 }
 
+/** 组件卸载前清理计时器 */
 onBeforeUnmount(() => {
   window.clearTimeout(coverTimer)
   window.clearTimeout(revealTimer)
@@ -85,8 +109,11 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+  <!-- 游戏平台主容器 -->
   <main class="game-page" aria-label="游戏模块">
+    <!-- 游戏选择分割面板 -->
     <section v-if="!isDetailPage" class="game-split-stage" :style="splitStyle">
+      <!-- Type Warrior 游戏入口 -->
       <button
         class="game-split-panel game-split-left"
         type="button"
@@ -107,6 +134,7 @@ onBeforeUnmount(() => {
         </span>
       </button>
 
+      <!-- 万题天梯跳游戏入口 -->
       <button
         class="game-split-panel game-split-right"
         type="button"
@@ -127,17 +155,21 @@ onBeforeUnmount(() => {
         </span>
       </button>
 
+      <!-- 分割线装饰 -->
       <div class="game-split-line" aria-hidden="true"></div>
     </section>
 
+    <!-- Type Warrior 游戏详情页 -->
     <section v-else-if="currentGame.id === 'type-warrior'" class="game-type-warrior-detail-stage">
       <TypeWarriorGame @back="returnToSelector" />
     </section>
 
+    <!-- 万题天梯跳游戏详情页 -->
     <section v-else-if="currentGame.id === 'ladder-jump'" class="game-ladder-detail-stage">
       <LadderJumpGame @back="returnToSelector" />
     </section>
 
+    <!-- 通用游戏详情页占位 -->
     <section
       v-else
       class="game-detail-stage"
@@ -161,6 +193,7 @@ onBeforeUnmount(() => {
       </section>
     </section>
 
+    <!-- Team类型过渡遮罩 -->
     <div
       class="team-transition-overlay"
       :class="{
@@ -181,6 +214,7 @@ onBeforeUnmount(() => {
       </h2>
     </div>
 
+    <!-- Archive类型过渡遮罩（含SVG动画） -->
     <div
       class="archive-transition-overlay"
       :class="{

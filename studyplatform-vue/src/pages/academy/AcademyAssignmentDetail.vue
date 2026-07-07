@@ -1,4 +1,9 @@
 <script setup>
+/**
+ * 课程作业详情页面组件
+ * 展示作业题目列表，支持多种题型答题、草稿保存和作业提交
+ * 内置多个示例作业数据作为兜底
+ */
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import {
@@ -7,6 +12,9 @@ import {
   submitAcademyAssignment,
 } from '../../api/academy'
 
+/**
+ * 组件属性定义
+ */
 const props = defineProps({
   assignmentId: {
     type: String,
@@ -14,6 +22,9 @@ const props = defineProps({
   },
 })
 
+/**
+ * 作业示例数据目录，作为远程数据加载失败时的兜底
+ */
 const assignmentCatalog = {
   'c-function-practice': {
     id: 'c-function-practice',
@@ -146,6 +157,9 @@ const assignmentCatalog = {
   },
 }
 
+/**
+ * 响应式状态定义
+ */
 const fallbackAssignment = assignmentCatalog['c-function-practice']
 const remoteAssignment = ref(null)
 const loading = ref(true)
@@ -158,10 +172,16 @@ const feedbackMessage = ref('')
 const feedbackVisible = ref(false)
 let feedbackTimer = null
 
+/**
+ * 计算作业总分
+ */
 const totalScore = computed(() =>
   assignment.value.questions.reduce((sum, question) => sum + question.score, 0),
 )
 
+/**
+ * 计算已作答题目数量
+ */
 const answeredCount = computed(() =>
   assignment.value.questions.filter((question) => {
     const answer = answers.value[question.id]
@@ -170,12 +190,21 @@ const answeredCount = computed(() =>
   }).length,
 )
 
+/**
+ * 计算答题进度百分比
+ */
 const progressPercent = computed(() =>
   Math.round((answeredCount.value / assignment.value.questions.length) * 100),
 )
 
+/**
+ * 判断作业是否已锁定（已结束且无剩余提交次数）
+ */
 const isSubmittedLocked = computed(() => assignment.value.status === '已结束' && assignment.value.attemptsLeft <= 0)
 
+/**
+ * 题目类型与结果标签的映射关系
+ */
 const resultLabelMap = {
   single: '单选题得分',
   multiple: '多选题得分',
@@ -184,15 +213,24 @@ const resultLabelMap = {
   code: '编程题判题',
 }
 
+/**
+ * 根据结果获取对应的题目信息
+ */
 const getResultQuestion = (result) =>
   assignment.value.questions.find((question) => String(question.id) === String(result.questionId))
 
+/**
+ * 根据题目类型获取结果标签
+ */
 const getResultLabel = (result) => {
   const question = getResultQuestion(result)
   if (!question) return '题目得分'
   return resultLabelMap[question.type] || `${question.label || '题目'}得分`
 }
 
+/**
+ * 更新多选题答案
+ */
 const updateMultipleAnswer = (questionId, option, checked) => {
   const currentAnswer = Array.isArray(answers.value[questionId]) ? answers.value[questionId] : []
   answers.value = {
@@ -203,6 +241,9 @@ const updateMultipleAnswer = (questionId, option, checked) => {
   }
 }
 
+/**
+ * 显示操作反馈提示
+ */
 const showFeedback = (message) => {
   feedbackMessage.value = message
   feedbackVisible.value = true
@@ -212,6 +253,9 @@ const showFeedback = (message) => {
   }, 1800)
 }
 
+/**
+ * 加载作业详情数据
+ */
 const loadAssignment = async () => {
   loading.value = true
   error.value = ''
@@ -230,6 +274,9 @@ const loadAssignment = async () => {
   }
 }
 
+/**
+ * 保存作业草稿
+ */
 const saveDraft = async () => {
   try {
     const result = await saveAcademyAssignmentDraft(assignment.value.id, answers.value, 1)
@@ -239,15 +286,24 @@ const saveDraft = async () => {
   }
 }
 
+/**
+ * 打开提交确认对话框
+ */
 const openSubmitDialog = () => {
   if (isSubmittedLocked.value) return
   submitDialogVisible.value = true
 }
 
+/**
+ * 关闭提交确认对话框
+ */
 const closeSubmitDialog = () => {
   submitDialogVisible.value = false
 }
 
+/**
+ * 提交作业
+ */
 const submitAssignment = async () => {
   try {
     const result = await submitAcademyAssignment(assignment.value.id, answers.value, 1)
@@ -259,9 +315,19 @@ const submitAssignment = async () => {
   }
 }
 
+/**
+ * 组件挂载时加载作业信息
+ */
 onMounted(loadAssignment)
+
+/**
+ * 监听作业ID变化，重新加载作业信息
+ */
 watch(() => props.assignmentId, loadAssignment)
 
+/**
+ * 组件卸载时清理定时器
+ */
 onBeforeUnmount(() => {
   window.clearTimeout(feedbackTimer)
 })
@@ -269,6 +335,7 @@ onBeforeUnmount(() => {
 
 <template>
   <main class="academy-main academy-assignment-detail-main">
+    <!-- 提交确认对话框 -->
     <Transition name="academy-assignment-dialog">
       <div
         v-if="submitDialogVisible"
@@ -287,25 +354,31 @@ onBeforeUnmount(() => {
       </div>
     </Transition>
 
+    <!-- 操作反馈提示 -->
     <Transition name="academy-assignment-feedback">
       <div v-if="feedbackVisible" class="academy-assignment-feedback-toast" role="status">
         {{ feedbackMessage }}
       </div>
     </Transition>
 
+    <!-- 加载状态 -->
     <div v-if="loading" class="academy-aggregate-state">正在加载作业详情...</div>
+    <!-- 错误状态 -->
     <div v-else-if="error" class="academy-aggregate-state academy-aggregate-state-error">
       <span>{{ error }}</span>
       <button type="button" @click="loadAssignment">重试</button>
     </div>
 
+    <!-- 作业详情主体内容 -->
     <template v-else>
+      <!-- 面包屑导航 -->
       <nav class="academy-assignment-breadcrumb" aria-label="作业面包屑">
         <RouterLink to="/academy/assignments">课程作业</RouterLink>
         <span>/</span>
         <strong>{{ assignment.title }}</strong>
       </nav>
 
+      <!-- 作业头部信息 -->
       <section class="academy-assignment-hero">
         <div>
           <span>{{ assignment.course }}</span>
@@ -318,114 +391,127 @@ onBeforeUnmount(() => {
         </aside>
       </section>
 
+      <!-- 作业布局区域 -->
       <section class="academy-assignment-layout">
-      <div class="academy-assignment-question-list">
-        <article
-          v-for="(question, index) in assignment.questions"
-          :key="question.id"
-          class="academy-assignment-question-card"
-        >
-          <header>
-            <div>
-              <span>{{ question.label }}</span>
-              <h2>{{ index + 1 }}. {{ question.title }}</h2>
-            </div>
-            <strong>{{ question.score }} 分</strong>
-          </header>
-
-          <div v-if="question.type === 'single'" class="academy-assignment-options">
-            <label v-for="option in question.options" :key="option">
-              <input v-model="answers[question.id]" type="radio" :name="question.id" :value="option" />
-              <span>{{ option }}</span>
-            </label>
-          </div>
-
-          <div v-else-if="question.type === 'multiple'" class="academy-assignment-options">
-            <label v-for="option in question.options" :key="option">
-              <input
-                type="checkbox"
-                :checked="Array.isArray(answers[question.id]) && answers[question.id].includes(option)"
-                @change="updateMultipleAnswer(question.id, option, $event.target.checked)"
-              />
-              <span>{{ option }}</span>
-            </label>
-          </div>
-
-          <input
-            v-else-if="question.type === 'blank'"
-            v-model="answers[question.id]"
-            class="academy-assignment-blank"
-            type="text"
-            :placeholder="question.placeholder"
-          />
-
-          <textarea
-            v-else
-            v-model="answers[question.id]"
-            :class="['academy-assignment-textarea', { 'is-code': question.type === 'code' }]"
-            :placeholder="question.placeholder"
-            :rows="question.type === 'code' ? 8 : 5"
-          ></textarea>
-        </article>
-
-        <section v-if="submitResult" class="academy-assignment-result-card">
-          <h2>提交结果</h2>
-          <p>{{ submitResult.message }}，当前自动得分 {{ submitResult.autoScore }} 分，待批改 {{ submitResult.pendingScore }} 分。</p>
-          <ul>
-            <li v-for="result in submitResult.questionResults" :key="result.questionId">
-              <span>{{ getResultLabel(result) }}</span>
-              <strong>{{ result.score }}/{{ result.maxScore }} 分</strong>
-              <em>{{ result.message }}</em>
-            </li>
-          </ul>
-        </section>
-      </div>
-
-      <aside class="academy-assignment-side">
-        <section>
-          <h2>作业信息</h2>
-          <dl>
-            <div>
-              <dt>授课教师</dt>
-              <dd>{{ assignment.teacher }}</dd>
-            </div>
-            <div>
-              <dt>截止时间</dt>
-              <dd>{{ assignment.deadline }}</dd>
-            </div>
-            <div>
-              <dt>剩余次数</dt>
-              <dd>{{ assignment.attemptsLeft }} 次</dd>
-            </div>
-            <div>
-              <dt>总分</dt>
-              <dd>{{ totalScore }} 分</dd>
-            </div>
-          </dl>
-        </section>
-
-        <section>
-          <h2>答题进度</h2>
-          <div class="academy-assignment-progress">
-            <span :style="{ width: `${progressPercent}%` }"></span>
-          </div>
-          <p>{{ isSubmittedLocked ? '作业已结束，仅可查看历史内容。' : '可先保存草稿，确认无误后提交。' }}</p>
-        </section>
-
-        <div class="academy-assignment-actions">
-          <button type="button" class="assignment-ghost-button" @click="saveDraft">保存草稿</button>
-          <button
-            type="button"
-            class="assignment-primary-button"
-            :disabled="isSubmittedLocked"
-            @click="openSubmitDialog"
+        <!-- 题目列表区域 -->
+        <div class="academy-assignment-question-list">
+          <!-- 题目卡片 -->
+          <article
+            v-for="(question, index) in assignment.questions"
+            :key="question.id"
+            class="academy-assignment-question-card"
           >
-            提交作业
-          </button>
+            <header>
+              <div>
+                <span>{{ question.label }}</span>
+                <h2>{{ index + 1 }}. {{ question.title }}</h2>
+              </div>
+              <strong>{{ question.score }} 分</strong>
+            </header>
+
+            <!-- 单选题选项 -->
+            <div v-if="question.type === 'single'" class="academy-assignment-options">
+              <label v-for="option in question.options" :key="option">
+                <input v-model="answers[question.id]" type="radio" :name="question.id" :value="option" />
+                <span>{{ option }}</span>
+              </label>
+            </div>
+
+            <!-- 多选题选项 -->
+            <div v-else-if="question.type === 'multiple'" class="academy-assignment-options">
+              <label v-for="option in question.options" :key="option">
+                <input
+                  type="checkbox"
+                  :checked="Array.isArray(answers[question.id]) && answers[question.id].includes(option)"
+                  @change="updateMultipleAnswer(question.id, option, $event.target.checked)"
+                />
+                <span>{{ option }}</span>
+              </label>
+            </div>
+
+            <!-- 填空题输入框 -->
+            <input
+              v-else-if="question.type === 'blank'"
+              v-model="answers[question.id]"
+              class="academy-assignment-blank"
+              type="text"
+              :placeholder="question.placeholder"
+            />
+
+            <!-- 简答题/编程题输入框 -->
+            <textarea
+              v-else
+              v-model="answers[question.id]"
+              :class="['academy-assignment-textarea', { 'is-code': question.type === 'code' }]"
+              :placeholder="question.placeholder"
+              :rows="question.type === 'code' ? 8 : 5"
+            ></textarea>
+          </article>
+
+          <!-- 提交结果展示 -->
+          <section v-if="submitResult" class="academy-assignment-result-card">
+            <h2>提交结果</h2>
+            <p>{{ submitResult.message }}，当前自动得分 {{ submitResult.autoScore }} 分，待批改 {{ submitResult.pendingScore }} 分。</p>
+            <ul>
+              <li v-for="result in submitResult.questionResults" :key="result.questionId">
+                <span>{{ getResultLabel(result) }}</span>
+                <strong>{{ result.score }}/{{ result.maxScore }} 分</strong>
+                <em>{{ result.message }}</em>
+              </li>
+            </ul>
+          </section>
         </div>
 
-        <RouterLink class="academy-assignment-return" to="/academy/assignments">返回作业列表</RouterLink>
-      </aside>
+        <!-- 右侧侧边栏 -->
+        <aside class="academy-assignment-side">
+          <!-- 作业信息 -->
+          <section>
+            <h2>作业信息</h2>
+            <dl>
+              <div>
+                <dt>授课教师</dt>
+                <dd>{{ assignment.teacher }}</dd>
+              </div>
+              <div>
+                <dt>截止时间</dt>
+                <dd>{{ assignment.deadline }}</dd>
+              </div>
+              <div>
+                <dt>剩余次数</dt>
+                <dd>{{ assignment.attemptsLeft }} 次</dd>
+              </div>
+              <div>
+                <dt>总分</dt>
+                <dd>{{ totalScore }} 分</dd>
+              </div>
+            </dl>
+          </section>
+
+          <!-- 答题进度 -->
+          <section>
+            <h2>答题进度</h2>
+            <div class="academy-assignment-progress">
+              <span :style="{ width: `${progressPercent}%` }"></span>
+            </div>
+            <p>{{ isSubmittedLocked ? '作业已结束，仅可查看历史内容。' : '可先保存草稿，确认无误后提交。' }}</p>
+          </section>
+
+          <!-- 操作按钮 -->
+          <div class="academy-assignment-actions">
+            <button type="button" class="assignment-ghost-button" @click="saveDraft">保存草稿</button>
+            <button
+              type="button"
+              class="assignment-primary-button"
+              :disabled="isSubmittedLocked"
+              @click="openSubmitDialog"
+            >
+              提交作业
+            </button>
+          </div>
+
+          <!-- 返回作业列表 -->
+          <RouterLink class="academy-assignment-return" to="/academy/assignments">返回作业列表</RouterLink>
+        </aside>
       </section>
     </template>
   </main>
