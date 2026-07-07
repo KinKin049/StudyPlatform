@@ -17,12 +17,29 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public class ProfileRepository {
+
+    /**
+     * 用户学习档案数据访问层，提供学习事件记录、学习时长统计、用户资料管理和学习数据分析功能。
+     */
+
     private final JdbcTemplate jdbcTemplate;
 
+    /**
+     * 构造函数
+     *
+     * @param jdbcTemplate JDBC模板
+     */
     public ProfileRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    /**
+     * 插入学习事件记录
+     *
+     * @param userId 用户ID
+     * @param request 学习事件请求
+     * @return 记录ID
+     */
     public long insertLearningEvent(long userId, ProfileLearningEventRequest request) {
         String sql = """
                 INSERT INTO profile_learning_events
@@ -52,6 +69,16 @@ public class ProfileRepository {
         return key == null ? 0L : key.longValue();
     }
 
+    /**
+     * 插入学习时长记录
+     *
+     * @param userId 用户ID
+     * @param moduleType 模块类型
+     * @param targetCode 目标代码
+     * @param targetTitle 目标标题
+     * @param durationSeconds 时长（秒）
+     * @return 记录ID
+     */
     public long insertLearningTimeRecord(
             long userId,
             String moduleType,
@@ -78,6 +105,12 @@ public class ProfileRepository {
         return key == null ? 0L : key.longValue();
     }
 
+    /**
+     * 查询用户档案信息
+     *
+     * @param userId 用户ID
+     * @return 用户档案信息
+     */
     public ProfileUserResponse findUserProfile(long userId) {
         ensureUserProfile(userId);
         String sql = """
@@ -93,6 +126,13 @@ public class ProfileRepository {
         return jdbcTemplate.queryForObject(sql, this::mapUserProfile, userId);
     }
 
+    /**
+     * 更新用户档案信息
+     *
+     * @param userId 用户ID
+     * @param name 显示名称
+     * @param bio 个人简介
+     */
     public void updateUserProfile(long userId, String name, String bio) {
         ensureUserProfile(userId);
         String sql = """
@@ -103,6 +143,12 @@ public class ProfileRepository {
         jdbcTemplate.update(sql, name, bio, userId);
     }
 
+    /**
+     * 更新用户头像路径
+     *
+     * @param userId 用户ID
+     * @param avatarPath 头像路径
+     */
     public void updateAvatarPath(long userId, String avatarPath) {
         ensureUserProfile(userId);
         String sql = """
@@ -113,10 +159,22 @@ public class ProfileRepository {
         jdbcTemplate.update(sql, avatarPath, userId);
     }
 
+    /**
+     * 统计用户学习事件总数
+     *
+     * @param userId 用户ID
+     * @return 事件总数
+     */
     public long countEvents(long userId) {
         return queryLong("SELECT COUNT(*) FROM profile_learning_events WHERE user_id = ?", userId);
     }
 
+    /**
+     * 统计用户正确答题数（按题目去重，取最新一次作答）
+     *
+     * @param userId 用户ID
+     * @return 正确答题数
+     */
     public long countCorrectAnswers(long userId) {
         return queryLong(
                 """
@@ -134,6 +192,12 @@ public class ProfileRepository {
         );
     }
 
+    /**
+     * 统计用户已知词汇数（按题目去重，取最新一次学习）
+     *
+     * @param userId 用户ID
+     * @return 已知词汇数
+     */
     public long countKnownVocabulary(long userId) {
         return queryLong(
                 """
@@ -151,6 +215,12 @@ public class ProfileRepository {
         );
     }
 
+    /**
+     * 统计用户词汇学习事件数
+     *
+     * @param userId 用户ID
+     * @return 词汇事件数
+     */
     public long countVocabularyEvents(long userId) {
         return queryLong(
                 """
@@ -162,6 +232,12 @@ public class ProfileRepository {
         );
     }
 
+    /**
+     * 统计用户练习过的不同题目数
+     *
+     * @param userId 用户ID
+     * @return 练习题目数
+     */
     public long countDistinctPracticedQuestions(long userId) {
         return queryLong(
                 """
@@ -173,10 +249,22 @@ public class ProfileRepository {
         );
     }
 
+    /**
+     * 统计题库中题目总数
+     *
+     * @return 题目总数
+     */
     public long countTotalQuestions() {
         return queryLong("SELECT COUNT(*) FROM course_question_bank_questions");
     }
 
+    /**
+     * 统计用户指定模块的学习时长（秒）
+     *
+     * @param userId 用户ID
+     * @param moduleType 模块类型
+     * @return 学习时长（秒）
+     */
     public long sumLearningTimeSeconds(long userId, String moduleType) {
         Long value = jdbcTemplate.queryForObject(
                 """
@@ -191,6 +279,12 @@ public class ProfileRepository {
         return value == null ? 0 : value;
     }
 
+    /**
+     * 统计用户所有模块的学习时长（秒）
+     *
+     * @param userId 用户ID
+     * @return 学习时长（秒）
+     */
     public long sumAllLearningTimeSeconds(long userId) {
         Long value = jdbcTemplate.queryForObject(
                 """
@@ -204,6 +298,14 @@ public class ProfileRepository {
         return value == null ? 0 : value;
     }
 
+    /**
+     * 统计用户指定时间范围内的学习时长（秒）
+     *
+     * @param userId 用户ID
+     * @param startAt 开始时间
+     * @param endAt 结束时间
+     * @return 学习时长（秒）
+     */
     public long sumLearningTimeSecondsBetween(long userId, LocalDateTime startAt, LocalDateTime endAt) {
         Long value = jdbcTemplate.queryForObject(
                 """
@@ -219,6 +321,12 @@ public class ProfileRepository {
         return value == null ? 0 : value;
     }
 
+    /**
+     * 查询用户管理员金币调整值
+     *
+     * @param userId 用户ID
+     * @return 金币调整值
+     */
     public long findAdminCoinAdjustment(long userId) {
         ensureUserProfile(userId);
         return queryLong(
@@ -227,6 +335,12 @@ public class ProfileRepository {
         );
     }
 
+    /**
+     * 查询用户编程题难度分布统计
+     *
+     * @param userId 用户ID
+     * @return 难度分布列表
+     */
     public List<CodingDifficultyRow> findCodingDifficultyRows(long userId) {
         String sql = """
                 SELECT levels.difficulty,
@@ -256,6 +370,12 @@ public class ProfileRepository {
         ), userId, userId);
     }
 
+    /**
+     * 查询用户题目类型分布统计（选择题、词汇卡片、主观题）
+     *
+     * @param userId 用户ID
+     * @return 类型分布列表
+     */
     public List<DistributionRow> findDistributionRows(long userId) {
         String sql = """
                 SELECT '选择题' AS label, '#2dd4bf' AS color,
@@ -285,6 +405,12 @@ public class ProfileRepository {
         return jdbcTemplate.query(sql, this::mapDistributionRow, userId, userId, userId);
     }
 
+    /**
+     * 查询用户学习路径统计（按分类）
+     *
+     * @param userId 用户ID
+     * @return 学习路径列表
+     */
     public List<TrackRow> findTrackRows(long userId) {
         String sql = """
                 SELECT c.category_code, c.category_name,
@@ -300,6 +426,14 @@ public class ProfileRepository {
         return jdbcTemplate.query(sql, this::mapTrackRow, userId);
     }
 
+    /**
+     * 统计用户指定日期范围内的每日活动数
+     *
+     * @param userId 用户ID
+     * @param startDate 开始日期
+     * @param endDate 结束日期
+     * @return 日期到活动数的映射
+     */
     public Map<LocalDate, Integer> countEventsByDate(long userId, LocalDate startDate, LocalDate endDate) {
         String sql = """
                 SELECT activity_date, COUNT(*) AS event_count
@@ -333,6 +467,13 @@ public class ProfileRepository {
         return counts;
     }
 
+    /**
+     * 查询用户活跃日期列表（从指定日期开始）
+     *
+     * @param userId 用户ID
+     * @param startDate 开始日期
+     * @return 活跃日期列表
+     */
     public List<LocalDate> findActiveDates(long userId, LocalDate startDate) {
         String sql = """
                 SELECT DISTINCT activity_date
@@ -357,6 +498,13 @@ public class ProfileRepository {
         );
     }
 
+    /**
+     * 查询用户最近学习事件列表
+     *
+     * @param userId 用户ID
+     * @param limit 返回条数限制
+     * @return 最近事件列表
+     */
     public List<RecentEventRow> findRecentEvents(long userId, int limit) {
         String sql = """
                 SELECT e.event_type, e.set_code, e.question_id, e.question_type, e.selected_answer,
@@ -374,11 +522,26 @@ public class ProfileRepository {
         return jdbcTemplate.query(sql, this::mapRecentEventRow, userId, limit);
     }
 
+    /**
+     * 查询长整型值（结果为空时返回0）
+     *
+     * @param sql SQL语句
+     * @param args 参数
+     * @return 长整型值
+     */
     private long queryLong(String sql, Object... args) {
         Long value = jdbcTemplate.queryForObject(sql, Long.class, args);
         return value == null ? 0 : value;
     }
 
+    /**
+     * 将结果集映射为类型分布行
+     *
+     * @param rs 结果集
+     * @param rowNum 行号
+     * @return 类型分布行
+     * @throws SQLException SQL异常
+     */
     private DistributionRow mapDistributionRow(ResultSet rs, int rowNum) throws SQLException {
         return new DistributionRow(
                 rs.getString("label"),
@@ -388,6 +551,14 @@ public class ProfileRepository {
         );
     }
 
+    /**
+     * 将结果集映射为学习路径行
+     *
+     * @param rs 结果集
+     * @param rowNum 行号
+     * @return 学习路径行
+     * @throws SQLException SQL异常
+     */
     private TrackRow mapTrackRow(ResultSet rs, int rowNum) throws SQLException {
         return new TrackRow(
                 rs.getString("category_code"),
@@ -397,6 +568,14 @@ public class ProfileRepository {
         );
     }
 
+    /**
+     * 将结果集映射为最近事件行
+     *
+     * @param rs 结果集
+     * @param rowNum 行号
+     * @return 最近事件行
+     * @throws SQLException SQL异常
+     */
     private RecentEventRow mapRecentEventRow(ResultSet rs, int rowNum) throws SQLException {
         return new RecentEventRow(
                 rs.getString("event_type"),
@@ -413,6 +592,14 @@ public class ProfileRepository {
         );
     }
 
+    /**
+     * 将结果集映射为用户档案响应对象
+     *
+     * @param rs 结果集
+     * @param rowNum 行号
+     * @return 用户档案响应对象
+     * @throws SQLException SQL异常
+     */
     private ProfileUserResponse mapUserProfile(ResultSet rs, int rowNum) throws SQLException {
         String avatarPath = rs.getString("avatar_path");
         String avatarUrl = avatarPath == null || avatarPath.isBlank()
@@ -432,6 +619,11 @@ public class ProfileRepository {
         );
     }
 
+    /**
+     * 确保用户档案存在（不存在则创建）
+     *
+     * @param userId 用户ID
+     */
     private void ensureUserProfile(long userId) {
         if (queryLong("SELECT COUNT(*) FROM profile_user_profiles WHERE user_id = ?", userId) > 0) {
             return;
@@ -474,6 +666,14 @@ public class ProfileRepository {
         jdbcTemplate.update(sql, userId);
     }
 
+    /**
+     * 安全获取布尔值（支持多种数据类型）
+     *
+     * @param rs 结果集
+     * @param columnLabel 列名
+     * @return 布尔值，空则返回null
+     * @throws SQLException SQL异常
+     */
     private Boolean getBoolean(ResultSet rs, String columnLabel) throws SQLException {
         Object value = rs.getObject(columnLabel);
         if (value == null) {

@@ -20,13 +20,20 @@ public class WellLogRecordService {
     private final WellLogRecordRepository recordRepository;
     private final ObjectMapper objectMapper;
 
+    /**
+     * 构造函数。
+     * @param recordRepository 测井记录数据访问层
+     * @param objectMapper JSON对象映射器
+     */
     public WellLogRecordService(WellLogRecordRepository recordRepository, ObjectMapper objectMapper) {
         this.recordRepository = recordRepository;
         this.objectMapper = objectMapper;
     }
 
     /**
-     * 校验报告 JSON 后保存记录，并返回数据库中的完整记录。
+     * 校验报告JSON后保存记录，并返回数据库中的完整记录。
+     * @param request 保存请求
+     * @return 保存后的记录
      */
     @Transactional
     public WellLogRecord saveRecord(SaveWellLogRecordRequest request) {
@@ -50,7 +57,9 @@ public class WellLogRecordService {
     }
 
     /**
-     * 查询单条记录；不存在时返回 404。
+     * 查询单条记录；不存在时返回404。
+     * @param id 记录ID
+     * @return 记录详情
      */
     public WellLogRecord getRecord(Long id) {
         return recordRepository.findById(id)
@@ -69,7 +78,8 @@ public class WellLogRecordService {
     }
 
     /**
-     * 确保前端提交的解释报告是合法 JSON，便于后续检索和展示。
+     * 确保前端提交的解释报告是合法JSON，便于后续检索和展示。
+     * @param reportJson 报告JSON字符串
      */
     private void validateReportJson(String reportJson) {
         try {

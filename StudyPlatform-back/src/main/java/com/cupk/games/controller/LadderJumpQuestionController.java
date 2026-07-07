@@ -11,7 +11,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 万题天梯跳题源接口。
+ * 天梯跳题目控制器
+ * 提供天梯跳游戏题库列表和题目列表相关接口
  */
 @RestController
 @RequestMapping("/api/games/ladder-jump")
@@ -24,11 +25,21 @@ public class LadderJumpQuestionController {
         this.questionService = questionService;
     }
 
+    /**
+     * 获取天梯跳题库列表
+     * @return 题库列表响应
+     */
     @GetMapping("/question-banks")
     public List<LadderJumpQuestionBankResponse> listQuestionBanks() {
         return questionService.listQuestionBanks();
     }
 
+    /**
+     * 获取天梯跳题目列表
+     * @param setCode 题库编码，可选
+     * @param userId 用户ID，从请求头获取，可选
+     * @return 题目列表响应
+     */
     @GetMapping("/questions")
     public List<LadderJumpQuestionResponse> listQuestions(
             @RequestParam(value = "setCode", required = false) String setCode,

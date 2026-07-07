@@ -9,16 +9,28 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 /**
- * Stores per-run game records and exposes aggregate views for profile pages.
+ * 游戏记录数据访问层，存储每次游戏运行记录并提供个人主页的聚合视图。
  */
 @Repository
 public class GameRecordRepository {
     private final JdbcTemplate jdbcTemplate;
 
+    /**
+     * 构造函数
+     *
+     * @param jdbcTemplate JDBC模板
+     */
     public GameRecordRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    /**
+     * 插入阶梯跳跃游戏记录
+     *
+     * @param userId 用户ID
+     * @param request 记录保存请求
+     * @return 记录ID
+     */
     public long insertLadderJumpRecord(long userId, LadderJumpRecordSaveRequest request) {
         String sql = """
                 INSERT INTO game_ladder_jump_records
@@ -40,6 +52,13 @@ public class GameRecordRepository {
         return key == null ? 0L : key.longValue();
     }
 
+    /**
+     * 插入打字勇士游戏记录
+     *
+     * @param userId 用户ID
+     * @param request 记录保存请求
+     * @return 记录ID
+     */
     public long insertTypeWarriorRecord(long userId, TypeWarriorRecordSaveRequest request) {
         String sql = """
                 INSERT INTO game_type_warrior_records
@@ -66,6 +85,12 @@ public class GameRecordRepository {
         return key == null ? 0L : key.longValue();
     }
 
+    /**
+     * 查询阶梯跳跃游戏聚合统计
+     *
+     * @param userId 用户ID
+     * @return 聚合统计数据
+     */
     public LadderJumpAggregateRow findLadderJumpAggregate(long userId) {
         String sql = """
                 SELECT COUNT(*) AS session_count,
@@ -95,6 +120,12 @@ public class GameRecordRepository {
         ), userId);
     }
 
+    /**
+     * 查询打字勇士游戏聚合统计
+     *
+     * @param userId 用户ID
+     * @return 聚合统计数据
+     */
     public TypeWarriorAggregateRow findTypeWarriorAggregate(long userId) {
         String sql = """
                 SELECT COUNT(*) AS session_count,
@@ -136,6 +167,12 @@ public class GameRecordRepository {
         ), userId);
     }
 
+    /**
+     * 查询所有游戏的合并时长聚合统计
+     *
+     * @param userId 用户ID
+     * @return 合并时长聚合统计数据
+     */
     public CombinedDurationAggregateRow findCombinedDurationAggregate(long userId) {
         String sql = """
                 SELECT COUNT(*) AS session_count,
@@ -160,6 +197,12 @@ public class GameRecordRepository {
         ), userId, userId);
     }
 
+    /**
+     * 将空白字符串转换为null
+     *
+     * @param value 字符串值
+     * @return 去除首尾空格后的字符串，为空则返回null
+     */
     private String blankToNull(String value) {
         if (value == null) {
             return null;
@@ -168,18 +211,39 @@ public class GameRecordRepository {
         return trimmed.isEmpty() ? null : trimmed;
     }
 
+    /**
+     * 安全获取整数值（空值或负值时返回0）
+     *
+     * @param value 整数值
+     * @return 非负整数值
+     */
     private int safeInt(Integer value) {
         return Math.max(0, value == null ? 0 : value);
     }
 
+    /**
+     * 安全获取长整型值（空值或负值时返回0）
+     *
+     * @param value 长整型值
+     * @return 非负长整型值
+     */
     private long safeLong(Long value) {
         return Math.max(0L, value == null ? 0L : value);
     }
 
+    /**
+     * 安全获取双精度浮点值（空值或负值时返回0）
+     *
+     * @param value 双精度浮点值
+     * @return 非负双精度浮点值
+     */
     private double safeDouble(Double value) {
         return Math.max(0D, value == null ? 0D : value);
     }
 
+    /**
+     * 阶梯跳跃游戏聚合统计行
+     */
     public record LadderJumpAggregateRow(
             long sessionCount,
             long totalCoins,
@@ -194,6 +258,9 @@ public class GameRecordRepository {
     ) {
     }
 
+    /**
+     * 打字勇士游戏聚合统计行
+     */
     public record TypeWarriorAggregateRow(
             long sessionCount,
             long totalScore,
@@ -214,6 +281,9 @@ public class GameRecordRepository {
     ) {
     }
 
+    /**
+     * 所有游戏合并时长聚合统计行
+     */
     public record CombinedDurationAggregateRow(
             long sessionCount,
             double totalDurationSeconds,

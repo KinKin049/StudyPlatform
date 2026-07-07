@@ -25,7 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * Handles account registration, credential checks, onboarding choices, and password recovery.
+ * 认证服务，处理用户注册、登录验证、入职引导和密码恢复等业务逻辑。
  */
 @Service
 public class AuthService {
@@ -41,6 +41,15 @@ public class AuthService {
     private final JavaMailSender mailSender;
     private final String mailUsername;
 
+    /**
+     * 构造函数，注入依赖组件。
+     *
+     * @param authUserRepository 用户仓库，用于用户数据访问
+     * @param passwordResetCodeRepository 密码重置码仓库，用于验证码管理
+     * @param passwordEncoder 密码编码器，用于密码加密
+     * @param mailSender 邮件发送器，用于发送验证码邮件
+     * @param mailUsername 邮件发送账号
+     */
     public AuthService(
             AuthUserRepository authUserRepository,
             PasswordResetCodeRepository passwordResetCodeRepository,
@@ -55,6 +64,12 @@ public class AuthService {
         this.mailUsername = mailUsername == null ? "" : mailUsername.trim();
     }
 
+    /**
+     * 用户注册。验证用户名、邮箱和密码，创建新用户并同步用户资料。
+     *
+     * @param request 注册请求
+     * @return 用户响应
+     */
     public AuthUserResponse register(AuthRegisterRequest request) {
         String username = clean(request.username());
         String email = clean(request.email()).toLowerCase();
@@ -74,6 +89,12 @@ public class AuthService {
         return authUserRepository.findResponseById(userId);
     }
 
+    /**
+     * 用户登录。验证邮箱和密码，返回用户信息。
+     *
+     * @param request 登录请求
+     * @return 用户响应
+     */
     public AuthUserResponse login(AuthLoginRequest request) {
         String email = clean(request.account()).toLowerCase();
         AuthUserRow user = authUserRepository.findByEmail(email);
@@ -83,6 +104,11 @@ public class AuthService {
         return user.toResponse();
     }
 
+    /**
+     * 发送密码重置验证码。验证邮箱存在性和发送频率限制，生成验证码并发送邮件。
+     *
+     * @param request 验证码请求，包含邮箱地址
+     */
     public void sendPasswordResetCode(PasswordResetCodeRequest request) {
         String email = clean(request.email()).toLowerCase();
         AuthUserRow user = authUserRepository.findByEmail(email);
@@ -105,6 +131,11 @@ public class AuthService {
         passwordResetCodeRepository.insert(email, passwordEncoder.encode(code), now.plus(RESET_CODE_TTL));
     }
 
+    /**
+     * 重置密码。验证验证码有效性和新密码一致性，更新密码并标记验证码已使用。
+     *
+     * @param request 密码重置请求，包含邮箱、验证码和新密码
+     */
     public void resetPassword(PasswordResetConfirmRequest request) {
         String email = clean(request.email()).toLowerCase();
         String code = clean(request.code());
@@ -136,6 +167,12 @@ public class AuthService {
         passwordResetCodeRepository.markUsed(resetCode.id());
     }
 
+    /**
+     * 保存入职引导信息。验证角色类型和必填字段，更新用户入职状态并同步用户资料。
+     *
+     * @param request 入职请求
+     * @return 用户响应
+     */
     public AuthUserResponse saveOnboarding(AuthOnboardingRequest request) {
         if (request == null || request.userId() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少用户信息");
@@ -158,10 +195,21 @@ public class AuthService {
         return authUserRepository.findResponseById(request.userId());
     }
 
+    /**
+     * 生成6位数字的密码重置验证码。
+     *
+     * @return 6位数字验证码
+     */
     private String generateResetCode() {
         return String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
     }
 
+    /**
+     * 发送密码重置验证码邮件。
+     *
+     * @param email 收件人邮箱地址
+     * @param code 验证码
+     */
     private void sendResetCodeEmail(String email, String code) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(mailUsername);
@@ -181,10 +229,22 @@ public class AuthService {
         }
     }
 
+    /**
+     * 清理字符串，去除首尾空格。
+     *
+     * @param value 待清理的字符串
+     * @return 清理后的字符串，空值返回空字符串
+     */
     private String clean(String value) {
         return value == null ? "" : value.trim();
     }
 
+    /**
+     * 将字符串列表转换为JSON数组格式。
+     *
+     * @param values 字符串列表
+     * @return JSON数组字符串
+     */
     private String toJsonArray(List<String> values) {
         if (values == null || values.isEmpty()) {
             return "[]";
@@ -196,6 +256,12 @@ public class AuthService {
                 + "]";
     }
 
+    /**
+     * 转义JSON字符串中的特殊字符。
+     *
+     * @param value 待转义的字符串
+     * @return 转义后的字符串
+     */
     private String escapeJson(String value) {
         return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }

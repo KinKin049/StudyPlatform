@@ -15,14 +15,31 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public class AcademyAssignmentRepository {
+
+    /**
+     * 作业数据访问层，提供作业查询、题目管理、答题提交和成绩记录等功能。
+     */
+
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
 
+    /**
+     * 构造函数
+     *
+     * @param jdbcTemplate JDBC模板
+     * @param objectMapper JSON序列化器
+     */
     public AcademyAssignmentRepository(JdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * 查询作业列表（含用户最新提交状态）
+     *
+     * @param userId 用户ID
+     * @return 作业列表
+     */
     public List<AssignmentSummaryRow> findAssignments(Long userId) {
         String sql = """
                 SELECT a.assignment_code, a.course_title, a.assignment_title, a.teacher_name,
@@ -50,6 +67,12 @@ public class AcademyAssignmentRepository {
         return jdbcTemplate.query(sql, assignmentSummaryMapper(), userId);
     }
 
+    /**
+     * 根据代码查询作业详情
+     *
+     * @param assignmentCode 作业代码
+     * @return 作业详情，不存在则返回空
+     */
     public Optional<AssignmentDetailRow> findAssignmentByCode(String assignmentCode) {
         String sql = """
                 SELECT id, assignment_code, course_title, assignment_title, teacher_name,
@@ -66,6 +89,12 @@ public class AcademyAssignmentRepository {
         }
     }
 
+    /**
+     * 查询作业题目列表
+     *
+     * @param assignmentId 作业ID
+     * @return 题目列表
+     */
     public List<AssignmentQuestionRow> findQuestions(Long assignmentId) {
         String sql = """
                 SELECT id, question_type, question_label, question_title, question_options,
@@ -78,6 +107,13 @@ public class AcademyAssignmentRepository {
         return jdbcTemplate.query(sql, assignmentQuestionMapper(), assignmentId);
     }
 
+    /**
+     * 查询用户最新作业草稿答案
+     *
+     * @param assignmentId 作业ID
+     * @param userId 用户ID
+     * @return 草稿答案（JSON反序列化后的Map）
+     */
     public Map<String, Object> findLatestDraftAnswers(Long assignmentId, Long userId) {
         String sql = """
                 SELECT answer_payload
@@ -94,6 +130,13 @@ public class AcademyAssignmentRepository {
         }
     }
 
+    /**
+     * 查询用户最新作业提交状态
+     *
+     * @param assignmentId 作业ID
+     * @param userId 用户ID
+     * @return 提交状态，不存在则返回空
+     */
     public Optional<SubmissionStatusRow> findLatestSubmissionStatus(Long assignmentId, Long userId) {
         String sql = """
                 SELECT submission_status, score
@@ -114,6 +157,13 @@ public class AcademyAssignmentRepository {
         }
     }
 
+    /**
+     * 保存作业草稿
+     *
+     * @param assignmentId 作业ID
+     * @param userId 用户ID
+     * @param answers 答案Map
+     */
     public void saveDraft(Long assignmentId, Long userId, Map<String, Object> answers) {
         String sql = """
                 INSERT INTO academy_assignment_submissions
@@ -123,6 +173,15 @@ public class AcademyAssignmentRepository {
         jdbcTemplate.update(sql, assignmentId, userId, writeJson(answers));
     }
 
+    /**
+     * 提交作业答案
+     *
+     * @param assignmentId 作业ID
+     * @param userId 用户ID
+     * @param answers 答案Map
+     * @param score 分数
+     * @param pendingTeacherReview 是否待教师审核
+     */
     public void saveSubmission(Long assignmentId, Long userId, Map<String, Object> answers, Integer score, boolean pendingTeacherReview) {
         String sql = """
                 INSERT INTO academy_assignment_submissions
@@ -140,6 +199,11 @@ public class AcademyAssignmentRepository {
         );
     }
 
+    /**
+     * 创建作业汇总行映射器
+     *
+     * @return RowMapper
+     */
     private RowMapper<AssignmentSummaryRow> assignmentSummaryMapper() {
         return (rs, rowNum) -> new AssignmentSummaryRow(
                 rs.getString("assignment_code"),
@@ -159,6 +223,11 @@ public class AcademyAssignmentRepository {
         );
     }
 
+    /**
+     * 创建作业详情行映射器
+     *
+     * @return RowMapper
+     */
     private RowMapper<AssignmentDetailRow> assignmentDetailMapper() {
         return (rs, rowNum) -> new AssignmentDetailRow(
                 rs.getLong("id"),
@@ -175,6 +244,11 @@ public class AcademyAssignmentRepository {
         );
     }
 
+    /**
+     * 创建作业题目行映射器
+     *
+     * @return RowMapper
+     */
     private RowMapper<AssignmentQuestionRow> assignmentQuestionMapper() {
         return (rs, rowNum) -> new AssignmentQuestionRow(
                 rs.getLong("id"),
@@ -192,11 +266,25 @@ public class AcademyAssignmentRepository {
         );
     }
 
+    /**
+     * 从结果集读取LocalDateTime
+     *
+     * @param rs 结果集
+     * @param column 列名
+     * @return LocalDateTime，为空则返回null
+     * @throws SQLException SQL异常
+     */
     private LocalDateTime readDateTime(ResultSet rs, String column) throws SQLException {
         var timestamp = rs.getTimestamp(column);
         return timestamp == null ? null : timestamp.toLocalDateTime();
     }
 
+    /**
+     * 将JSON字符串解析为字符串列表
+     *
+     * @param json JSON字符串
+     * @return 字符串列表
+     */
     private List<String> readStringList(String json) {
         if (json == null || json.isBlank()) {
             return List.of();
@@ -208,6 +296,12 @@ public class AcademyAssignmentRepository {
         }
     }
 
+    /**
+     * 将JSON字符串解析为对象
+     *
+     * @param json JSON字符串
+     * @return 对象，为空则返回null
+     */
     private Object readJsonValue(String json) {
         if (json == null || json.isBlank()) {
             return null;
@@ -219,6 +313,12 @@ public class AcademyAssignmentRepository {
         }
     }
 
+    /**
+     * 将JSON字符串解析为Map
+     *
+     * @param json JSON字符串
+     * @return Map，为空则返回空Map
+     */
     private Map<String, Object> readObjectMap(String json) {
         if (json == null || json.isBlank()) {
             return Map.of();
@@ -230,6 +330,12 @@ public class AcademyAssignmentRepository {
         }
     }
 
+    /**
+     * 将对象转换为JSON字符串
+     *
+     * @param value 对象
+     * @return JSON字符串
+     */
     private String writeJson(Object value) {
         try {
             return objectMapper.writeValueAsString(value == null ? Map.of() : value);

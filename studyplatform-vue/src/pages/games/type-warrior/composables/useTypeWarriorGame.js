@@ -912,6 +912,18 @@ export function useTypeWarriorGame() {
     banner.value = `第 ${nextWave} 关即将开始，请先选择一项技能。`
   }
 
+  function refreshSkillChoices() {
+    if (!isChoosingSkill.value) return false
+    const nextChoices = buildSkillChoices()
+    if (nextChoices.length === 0) {
+      banner.value = '当前没有可刷新的技能候选。'
+      return false
+    }
+    skillChoices.value = nextChoices
+    banner.value = '技能候选已刷新，请重新选择。'
+    return true
+  }
+
   function togglePause() {
     if (!hasGameStarted.value || isGameOver.value || isVictory.value || isChoosingSkill.value) return
     isPaused.value = !isPaused.value
@@ -1150,6 +1162,22 @@ export function useTypeWarriorGame() {
     banner.value = '直接输入屏幕内可见敌人的英文单词即可自动锁定目标。'
     syncDerivedStats()
     startWave(1)
+  }
+
+  function reviveGame() {
+    if (!isGameOver.value || isVictory.value) return false
+    isGameOver.value = false
+    isPaused.value = false
+    health.value = maxHealth.value
+    typedBuffer.value = ''
+    selectedMatchLength.value = 0
+    targetEnemyId.value = null
+    matchedEnemyIds.value = new Set()
+    damageCooldown.value = 2
+    playerHitFeedback.value = 0
+    resetPurgeWordState()
+    banner.value = '已使用复活券，生命恢复并继续战斗。'
+    return true
   }
 
   function getBossEnemy() {
@@ -2464,6 +2492,8 @@ export function useTypeWarriorGame() {
     applySkillChoice,
     debugSelectWave,
     grantSkillById,
+    refreshSkillChoices,
+    reviveGame,
     hudStageHint,
     hudStageLabel,
     playerRingStyle,

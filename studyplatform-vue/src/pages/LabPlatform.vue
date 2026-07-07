@@ -1,19 +1,32 @@
 <script setup>
+/**
+ * 实验平台页面组件
+ * 提供课程实践、工程训练和虚拟仿真的统一入口页面
+ */
 import { useRouter } from 'vue-router'
 
+// 路由实例
 const router = useRouter()
 
+/**
+ * 跳转到在线编程平台
+ */
 const openOjPlatform = () => {
   router.push('/lab/oj')
 }
 
+/**
+ * 跳转到石油气仿真平台
+ */
 const openPetroleumSimulation = () => {
   router.push('/lab/petroleum')
 }
 </script>
 
 <template>
+  <!-- 实验平台主页面 -->
   <main class="lab-page" aria-labelledby="lab-title">
+    <!-- 页面标题区域 -->
     <section class="lab-hero">
       <h1 id="lab-title">实验平台</h1>
       <p>
@@ -21,7 +34,9 @@ const openPetroleumSimulation = () => {
       </p>
     </section>
 
+    <!-- 实验平台入口列表 -->
     <section class="lab-columns" aria-label="实验平台入口">
+      <!-- 在线编程平台卡片 -->
       <article class="lab-panel lab-panel-primary">
         <div class="lab-panel-header">
           <span class="lab-panel-index">01</span>
@@ -34,6 +49,7 @@ const openPetroleumSimulation = () => {
           支持题库浏览、代码提交、测试点判题和提交结果追踪，适合算法训练、程序设计实验和课程作业验收。
         </p>
 
+        <!-- 在线编程平台功能介绍 -->
         <div class="lab-feature-grid">
           <section>
             <h3>题库训练</h3>
@@ -54,6 +70,7 @@ const openPetroleumSimulation = () => {
         </button>
       </article>
 
+      <!-- 石油气仿真平台卡片 -->
       <article class="lab-panel lab-panel-secondary">
         <div class="lab-panel-header">
           <span class="lab-panel-index">02</span>
@@ -66,6 +83,7 @@ const openPetroleumSimulation = () => {
           面向测井解释、抽油机功图、油藏动态和注水开发的虚拟仿真模块，支持参数调节、实时曲线和实验报告。
         </p>
 
+        <!-- 石油气仿真平台功能介绍 -->
         <div class="lab-feature-grid">
           <section>
             <h3>测井解释</h3>

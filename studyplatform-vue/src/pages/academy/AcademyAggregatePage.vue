@@ -1,4 +1,9 @@
 <script setup>
+/**
+ * 课程聚合页面组件
+ * 统一管理课程、作业与考试进度，支持分类切换和状态筛选
+ * 包含用户信息、学习时长统计和操作提醒等功能
+ */
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import {
@@ -10,6 +15,9 @@ import {
 import { fetchProfileOverview } from '../../api/profile'
 import { resolveResourceUrl } from '../../api/request'
 
+/**
+ * 组件属性定义
+ */
 const props = defineProps({
   variant: {
     type: String,
@@ -17,22 +25,37 @@ const props = defineProps({
   },
 })
 
+/**
+ * 路由实例
+ */
 const router = useRouter()
 
+/**
+ * 用户信息
+ */
 const userInfo = {
   accountId: 'STU-2026-0001',
   role: '学生',
   initial: 'K',
 }
 
+/**
+ * 状态筛选选项
+ */
 const statusFilters = ['全部', '正在进行', '即将开始', '已结束']
 
+/**
+ * 页面标题映射
+ */
 const pageTitles = {
   courses: '我的课程',
   assignments: '课程作业',
   exams: '我的考试',
 }
 
+/**
+ * 侧边栏内容配置
+ */
 const pageSidebars = {
   courses: [
     { title: '快捷操作', items: ['输入课程 UID 添加课程', '查看最近学习记录', '进入课程分类页'] },
@@ -51,6 +74,9 @@ const pageSidebars = {
   ],
 }
 
+/**
+ * 响应式状态定义
+ */
 const activeCategory = ref(props.variant)
 const activeStatus = ref('全部')
 const myCourses = ref([])
@@ -70,12 +96,18 @@ const pendingDropCourse = ref(null)
 const dropFeedbackVisible = ref(false)
 let dropFeedbackTimer = null
 
+/**
+ * 资源类型与详情页路径的映射
+ */
 const resourceDetailPath = {
   'online-open-courses': '/academy/open-courses',
   'general-courses': '/academy/general-courses',
   'micro-major-courses': '/academy/micro-majors',
 }
 
+/**
+ * 监听variant变化，更新当前分类和状态筛选
+ */
 watch(
   () => props.variant,
   (variant) => {
@@ -84,7 +116,14 @@ watch(
   },
 )
 
+/**
+ * 获取当前页面标题
+ */
 const pageTitle = computed(() => pageTitles[props.variant] || pageTitles.courses)
+
+/**
+ * 获取真实学习时长
+ */
 const realStudyTime = computed(() => {
   if (studyTimeLoading.value) return '加载中'
   const learningTime = profileOverview.value?.learningTimes?.find((item) => item.label === '学习时长')
@@ -92,6 +131,9 @@ const realStudyTime = computed(() => {
   return learningTime?.value || '0m'
 })
 
+/**
+ * 将课程数据转换为卡片格式
+ */
 const myCourseCards = computed(() =>
   myCourses.value.map((course) => {
     const detailBasePath = resourceDetailPath[course.resourceType] || '/academy/open-courses'
@@ -117,18 +159,27 @@ const myCourseCards = computed(() =>
   }),
 )
 
+/**
+ * 判断截止时间是否已过
+ */
 const isDeadlinePassed = (deadline) => {
   if (!deadline) return false
   const deadlineTime = new Date(deadline).getTime()
   return Number.isFinite(deadlineTime) && deadlineTime < Date.now()
 }
 
+/**
+ * 判断是否在开始时间之前
+ */
 const isBeforeStart = (startsAt) => {
   if (!startsAt) return false
   const startTime = new Date(startsAt).getTime()
   return Number.isFinite(startTime) && startTime > Date.now()
 }
 
+/**
+ * 格式化日期时间为MM-DD HH:mm格式
+ */
 const formatDateTime = (value) => {
   if (!value) return ''
   const date = new Date(value)
@@ -140,6 +191,9 @@ const formatDateTime = (value) => {
   return `${month}-${day} ${hours}:${minutes}`
 }
 
+/**
+ * 获取作业状态徽章配置
+ */
 const getAssignmentStatusBadge = (assignment) => {
   if (assignment.submissionStatus === 'graded') {
     return { label: '已完成', tone: 'done', animated: false }
@@ -153,6 +207,9 @@ const getAssignmentStatusBadge = (assignment) => {
   return { label: '待完成', tone: 'todo', animated: true }
 }
 
+/**
+ * 获取考试状态徽章配置
+ */
 const getExamStatusBadge = (exam) => {
   if (exam.submissionStatus === 'graded') {
     return { label: '已完成', tone: 'done', animated: false }
@@ -169,6 +226,9 @@ const getExamStatusBadge = (exam) => {
   return { label: '正在进行', tone: 'todo', animated: true }
 }
 
+/**
+ * 获取考试进度文本
+ */
 const getExamProgress = (exam) => {
   if (exam.submissionStatus === 'graded') return `已批改 · ${exam.score ?? 0} 分`
   if (exam.submissionStatus === 'pending_review') return `待教师批阅 · 当前 ${exam.score ?? 0} 分`
@@ -179,8 +239,14 @@ const getExamProgress = (exam) => {
   return '可进入考试'
 }
 
+/**
+ * 将状态文本转换为字符数组，用于动画效果
+ */
 const getStatusLetters = (status) => Array.from(status || '')
 
+/**
+ * 将作业数据转换为卡片格式
+ */
 const assignmentCards = computed(() =>
   assignments.value.map((assignment, index) => {
     const deadline = assignment.deadline ? assignment.deadline.replace('T', ' ').slice(0, 16) : '截止时间待定'
@@ -217,6 +283,9 @@ const assignmentCards = computed(() =>
   }),
 )
 
+/**
+ * 将考试数据转换为卡片格式
+ */
 const examCards = computed(() =>
   exams.value.map((exam, index) => {
     const statusBadge = getExamStatusBadge(exam)
@@ -246,14 +315,23 @@ const examCards = computed(() =>
   }),
 )
 
+/**
+ * 生成分类标签数据
+ */
 const categoryTabs = computed(() => [
   { key: 'courses', label: '课程', count: myCourseCards.value.length, path: '/academy/my-courses' },
   { key: 'assignments', label: '作业', count: assignmentCards.value.length, path: '/academy/assignments' },
   { key: 'exams', label: '考试', count: examCards.value.length, path: '/academy/exams' },
 ])
 
+/**
+ * 获取所有卡片数据
+ */
 const allCards = computed(() => [...myCourseCards.value, ...assignmentCards.value, ...examCards.value])
 
+/**
+ * 根据分类和状态筛选可见卡片
+ */
 const visibleCards = computed(() =>
   allCards.value.filter((card) => {
     const matchesCategory = activeCategory.value === 'all' || card.type === activeCategory.value
@@ -263,8 +341,14 @@ const visibleCards = computed(() =>
   }),
 )
 
+/**
+ * 获取当前页面的侧边栏内容
+ */
 const sidebarSections = computed(() => pageSidebars[props.variant] || pageSidebars.courses)
 
+/**
+ * 获取空状态提示文本
+ */
 const emptyStateText = computed(() => {
   if (props.variant === 'courses') return '暂无匹配内容，去课程详情页点击“立即参加”后会出现在这里。'
   if (props.variant === 'assignments') return '暂无匹配作业，后续教师发布后会出现在这里。'
@@ -272,6 +356,9 @@ const emptyStateText = computed(() => {
   return '暂无匹配内容。'
 })
 
+/**
+ * 选择分类并跳转路由
+ */
 const selectCategory = (tab) => {
   activeCategory.value = tab.key
 
@@ -280,6 +367,9 @@ const selectCategory = (tab) => {
   }
 }
 
+/**
+ * 加载我的课程列表
+ */
 const loadMyCourses = async () => {
   myCoursesLoading.value = true
   myCoursesError.value = ''
@@ -294,6 +384,9 @@ const loadMyCourses = async () => {
   }
 }
 
+/**
+ * 加载课程作业列表
+ */
 const loadAssignments = async () => {
   assignmentsLoading.value = true
   assignmentsError.value = ''
@@ -308,6 +401,9 @@ const loadAssignments = async () => {
   }
 }
 
+/**
+ * 加载我的考试列表
+ */
 const loadExams = async () => {
   examsLoading.value = true
   examsError.value = ''
@@ -322,6 +418,9 @@ const loadExams = async () => {
   }
 }
 
+/**
+ * 加载用户学习时长
+ */
 const loadProfileStudyTime = async () => {
   studyTimeLoading.value = true
   studyTimeError.value = ''
@@ -336,16 +435,25 @@ const loadProfileStudyTime = async () => {
   }
 }
 
+/**
+ * 打开退课确认对话框
+ */
 const openDropCourseDialog = (card) => {
   if (!card.canDrop || droppingCourseKey.value) return
   pendingDropCourse.value = card
 }
 
+/**
+ * 关闭退课确认对话框
+ */
 const closeDropCourseDialog = () => {
   if (droppingCourseKey.value) return
   pendingDropCourse.value = null
 }
 
+/**
+ * 确认退课
+ */
 const confirmDropCourse = async () => {
   const card = pendingDropCourse.value
   if (!card || droppingCourseKey.value) return
@@ -370,12 +478,19 @@ const confirmDropCourse = async () => {
   }
 }
 
+/**
+ * 组件挂载时加载所有数据
+ */
 onMounted(() => {
   loadProfileStudyTime()
   loadMyCourses()
   loadAssignments()
   loadExams()
 })
+
+/**
+ * 组件卸载时清理定时器
+ */
 onBeforeUnmount(() => {
   window.clearTimeout(dropFeedbackTimer)
 })
@@ -383,6 +498,7 @@ onBeforeUnmount(() => {
 
 <template>
   <main class="academy-main academy-aggregate-main">
+    <!-- 退课确认对话框 -->
     <Transition name="academy-drop-confirm">
       <div
         v-if="pendingDropCourse"
@@ -408,12 +524,14 @@ onBeforeUnmount(() => {
       </div>
     </Transition>
 
+    <!-- 退课成功反馈提示 -->
     <Transition name="academy-drop-feedback">
       <div v-if="dropFeedbackVisible" class="academy-drop-feedback-toast" role="status">
         已成功退出课程
       </div>
     </Transition>
 
+    <!-- 用户信息栏 -->
     <section class="academy-aggregate-userbar" aria-label="用户信息">
       <div class="academy-aggregate-user">
         <div class="academy-aggregate-avatar" aria-hidden="true">{{ userInfo.initial }}</div>
@@ -430,8 +548,11 @@ onBeforeUnmount(() => {
       </div>
     </section>
 
+    <!-- 主布局区域 -->
     <section class="academy-aggregate-layout">
+      <!-- 主体内容区 -->
       <section class="academy-aggregate-body">
+        <!-- 页面标题 -->
         <div class="academy-aggregate-heading">
           <div>
             <h1>{{ pageTitle }}</h1>
@@ -439,7 +560,9 @@ onBeforeUnmount(() => {
           <span>统一管理课程、作业与考试进度</span>
         </div>
 
+        <!-- 筛选工具区域 -->
         <section class="academy-aggregate-tools" aria-label="课程管理筛选">
+          <!-- 分类标签栏 -->
           <div class="academy-aggregate-tabs" aria-label="分类标签栏">
             <button
               v-for="tab in categoryTabs"
@@ -452,6 +575,7 @@ onBeforeUnmount(() => {
             </button>
           </div>
 
+          <!-- 状态筛选 -->
           <div class="academy-aggregate-status" aria-label="状态筛选">
             <button
               v-for="status in statusFilters"
@@ -465,31 +589,39 @@ onBeforeUnmount(() => {
           </div>
         </section>
 
+        <!-- 加载状态 -->
         <div v-if="props.variant === 'courses' && myCoursesLoading" class="academy-aggregate-state">
           正在加载我的课程...
         </div>
+        <!-- 课程错误状态 -->
         <div v-else-if="props.variant === 'courses' && myCoursesError" class="academy-aggregate-state academy-aggregate-state-error">
           <span>{{ myCoursesError }}</span>
           <button type="button" @click="loadMyCourses">重试</button>
         </div>
+        <!-- 作业加载状态 -->
         <div v-else-if="props.variant === 'assignments' && assignmentsLoading" class="academy-aggregate-state">
           正在加载课程作业...
         </div>
+        <!-- 作业错误状态 -->
         <div v-else-if="props.variant === 'assignments' && assignmentsError" class="academy-aggregate-state academy-aggregate-state-error">
           <span>{{ assignmentsError }}</span>
           <button type="button" @click="loadAssignments">重试</button>
         </div>
+        <!-- 考试加载状态 -->
         <div v-else-if="props.variant === 'exams' && examsLoading" class="academy-aggregate-state">
           正在加载我的考试...
         </div>
+        <!-- 考试错误状态 -->
         <div v-else-if="props.variant === 'exams' && examsError" class="academy-aggregate-state academy-aggregate-state-error">
           <span>{{ examsError }}</span>
           <button type="button" @click="loadExams">重试</button>
         </div>
+        <!-- 空状态 -->
         <div v-else-if="visibleCards.length === 0" class="academy-aggregate-state">
           {{ emptyStateText }}
         </div>
 
+        <!-- 卡片网格展示区 -->
         <section v-else class="academy-aggregate-grid" aria-label="课程卡片展示区">
           <article
             v-for="card in visibleCards"
@@ -497,12 +629,15 @@ onBeforeUnmount(() => {
             :class="['online-course-card', { 'academy-assignment-card': card.type === 'assignments' || card.type === 'exams' }]"
           >
             <RouterLink :to="card.link">
+              <!-- 卡片封面 -->
               <div class="academy-aggregate-cover" :style="{ background: card.cover }">
                 <img v-if="card.coverImage" :src="card.coverImage" :alt="card.title" />
               </div>
+              <!-- 卡片内容 -->
               <div class="online-course-card-body">
                 <div class="online-course-card-meta">
                   <span>{{ card.category }}</span>
+                  <!-- 状态徽章 -->
                   <strong
                     :class="[
                       'academy-assignment-status-badge',
@@ -537,6 +672,7 @@ onBeforeUnmount(() => {
                 <p>{{ card.meta }}</p>
               </div>
             </RouterLink>
+            <!-- 退课按钮 -->
             <button
               v-if="card.canDrop"
               class="academy-drop-course-button"
@@ -550,6 +686,7 @@ onBeforeUnmount(() => {
         </section>
       </section>
 
+      <!-- 右侧侧边栏 -->
       <aside class="academy-aggregate-sidebar" aria-label="右侧功能分区">
         <section v-for="section in sidebarSections" :key="section.title">
           <h2>{{ section.title }}</h2>

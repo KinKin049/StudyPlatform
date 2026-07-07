@@ -33,11 +33,21 @@ public class ProductionRecordService {
     private final ProductionRecordRepository recordRepository;
     private final ObjectMapper objectMapper;
 
+    /**
+     * 构造函数。
+     * @param recordRepository 生产记录数据访问层
+     * @param objectMapper JSON对象映射器
+     */
     public ProductionRecordService(ProductionRecordRepository recordRepository, ObjectMapper objectMapper) {
         this.recordRepository = recordRepository;
         this.objectMapper = objectMapper;
     }
 
+    /**
+     * 保存抽油机仿真记录。
+     * @param request 保存请求
+     * @return 保存后的记录
+     */
     @Transactional
     public ProductionPumpRecord savePumpRecord(SavePumpRecordRequest request) {
         validateJson(request.indicatorChartData(), "indicatorChartData");
@@ -51,6 +61,11 @@ public class ProductionRecordService {
         return getReservoirRecord(id);
     }
 
+    /**
+     * 保存注水开发仿真记录。
+     * @param request 保存请求
+     * @return 保存后的记录
+     */
     @Transactional
     public ProductionWaterfloodRecord saveWaterfloodRecord(SaveWaterfloodRecordRequest request) {
         validateJson(request.productionCurve(), "productionCurve");
@@ -58,6 +73,11 @@ public class ProductionRecordService {
         return getWaterfloodRecord(id);
     }
 
+    /**
+     * 保存增产措施仿真记录。
+     * @param request 保存请求
+     * @return 保存后的记录
+     */
     @Transactional
     public ProductionStimulationRecord saveStimulationRecord(SaveStimulationRecordRequest request) {
         if (!STIMULATION_TYPES.contains(request.type())) {
@@ -78,6 +98,13 @@ public class ProductionRecordService {
         );
     }
 
+    /**
+     * 分页查询油藏仿真记录。
+     * @param userId 用户ID（可选）
+     * @param page 页码
+     * @param size 每页数量
+     * @return 分页结果
+     */
     public ProductionPage<ProductionReservoirRecord> pageReservoirRecords(Long userId, int page, int size) {
         int safePage = safePage(page);
         int safeSize = safeSize(size);
@@ -100,6 +127,13 @@ public class ProductionRecordService {
         );
     }
 
+    /**
+     * 分页查询增产措施仿真记录。
+     * @param userId 用户ID（可选）
+     * @param page 页码
+     * @param size 每页数量
+     * @return 分页结果
+     */
     public ProductionPage<ProductionStimulationRecord> pageStimulationRecords(Long userId, int page, int size) {
         int safePage = safePage(page);
         int safeSize = safeSize(size);
@@ -131,21 +165,37 @@ public class ProductionRecordService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Stimulation record not found"));
     }
 
+    /**
+     * 删除抽油机仿真记录。
+     * @param id 记录ID
+     */
     @Transactional
     public void deletePumpRecord(Long id) {
         deleteRecord(PUMP_TABLE, id, "Pump record not found");
     }
 
+    /**
+     * 删除油藏仿真记录。
+     * @param id 记录ID
+     */
     @Transactional
     public void deleteReservoirRecord(Long id) {
         deleteRecord(RESERVOIR_TABLE, id, "Reservoir record not found");
     }
 
+    /**
+     * 删除注水开发仿真记录。
+     * @param id 记录ID
+     */
     @Transactional
     public void deleteWaterfloodRecord(Long id) {
         deleteRecord(WATERFLOOD_TABLE, id, "Waterflood record not found");
     }
 
+    /**
+     * 删除增产措施仿真记录。
+     * @param id 记录ID
+     */
     @Transactional
     public void deleteStimulationRecord(Long id) {
         deleteRecord(STIMULATION_TABLE, id, "Stimulation record not found");
@@ -162,6 +212,11 @@ public class ProductionRecordService {
         return Math.max(page, 1);
     }
 
+    /**
+     * 安全每页数量，确保数量在1到100之间。
+     * @param size 原始每页数量
+     * @return 安全每页数量
+     */
     private int safeSize(int size) {
         return Math.min(Math.max(size, 1), 100);
     }

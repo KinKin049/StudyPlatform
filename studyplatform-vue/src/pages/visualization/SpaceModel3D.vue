@@ -1,4 +1,9 @@
 <script setup>
+/**
+ * 空间模型三维可视化页面
+ * 使用 Three.js 实现高等数学、大学物理和概率论的三维知识点可视化
+ * 支持参数交互、视角控制和动画效果
+ */
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import * as THREE from 'three'
@@ -6,16 +11,26 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { useLearningTimeTracker } from '../../composables/useLearningTimeTracker'
 import { calculusModelOptions, physicsModelOptions, probabilityModelOptions, subjectOptions } from './spaceModelCatalog'
 
+/** Canvas 容器引用 */
 const canvasHost = ref(null)
 const route = useRoute()
 const router = useRouter()
 
+/**
+ * 根据学科ID获取对应模型列表
+ * @param {string} subjectId - 学科标识（physics/probability/calculus）
+ * @returns {Array} 模型配置列表
+ */
 const getModelsBySubject = (subjectId) => {
   if (subjectId === 'physics') return physicsModelOptions
   if (subjectId === 'probability') return probabilityModelOptions
   return calculusModelOptions
 }
 
+/**
+ * 解析路由参数，确定初始选中的学科和模型
+ * @returns {Object} { subjectId, modelId }
+ */
 const resolveRouteSelection = () => {
   const requestedSubject = typeof route.query.subject === 'string' ? route.query.subject : ''
   const subjectId = subjectOptions.some((subject) => subject.id === requestedSubject)
@@ -29,6 +44,10 @@ const resolveRouteSelection = () => {
 
 const initialSelection = resolveRouteSelection()
 
+/**
+ * 组件状态对象
+ * 包含学科选择、模型参数、显示选项和问答状态
+ */
 const state = reactive({
   subject: initialSelection.subjectId,
   modelId: initialSelection.modelId,
@@ -54,9 +73,16 @@ useLearningTimeTracker({
   targetTitle: () => activeModel.value?.name || '三维空间模型',
 })
 
+/** 当前选中的学科配置 */
 const activeSubject = computed(() => subjectOptions.find((item) => item.id === state.subject) ?? subjectOptions[0])
+/** 当前学科下的模型选项列表 */
 const modelOptions = computed(() => getModelsBySubject(state.subject))
+/** 当前选中的模型配置 */
 const activeModel = computed(() => modelOptions.value.find((item) => item.id === state.modelId) ?? modelOptions.value[0])
+/**
+ * 当前模型的讲解说明
+ * 根据学科类型拼接不同的交互提示
+ */
 const activeExplanation = computed(() => {
   const shared = state.subject === 'physics'
     ? '你可以拖拽左侧三维视图改变观察角度，用滚轮缩放，并通过右侧滑块调节尺度、范围和模型精度。'
@@ -66,6 +92,10 @@ const activeExplanation = computed(() => {
   return `${activeModel.value.detail}${shared}`
 })
 
+/**
+ * 双曲线截线预览计算
+ * 根据切面高度生成 SVG 路径数据，用于马鞍面切线实验的实时预览
+ */
 const hyperbolaPreview = computed(() => {
   const width = 260
   const height = 220
@@ -113,17 +143,31 @@ const hyperbolaPreview = computed(() => {
   }
 })
 
+/** Three.js 渲染器实例 */
 let renderer
+/** Three.js 场景实例 */
 let scene
+/** Three.js 相机实例 */
 let camera
+/** 轨道控制器 */
 let controls
+/** 当前模型组 */
 let modelGroup
+/** 坐标轴辅助对象 */
 let axesHelper
+/** 网格辅助对象 */
 let gridHelper
+/** 动画帧ID */
 let frameId = 0
+/** 窗口大小变化观察器 */
 let resizeObserver
+/** 时钟对象，用于动画计时 */
 let clock
 
+/**
+ * 释放 Three.js 对象资源
+ * @param {THREE.Object3D} object - 要释放的对象
+ */
 const disposeObject = (object) => {
   if (!object) return
   object.traverse?.((child) => {
@@ -136,14 +180,37 @@ const disposeObject = (object) => {
   })
 }
 
+/**
+ * 转换坐标点到场景坐标系
+ * 将 (x, z, y) 转换为 THREE.Vector3(x, z, y)
+ * @param {number} x - x 坐标
+ * @param {number} z - z 坐标（映射到场景的 y 轴）
+ * @param {number} y - y 坐标（映射到场景的 z 轴）
+ * @returns {THREE.Vector3} 场景中的三维点
+ */
 const toScenePoint = (x, z, y) => new THREE.Vector3(x, z, y)
 
+/**
+ * 计算函数曲面在指定点的值
+ * @param {string} modelId - 模型ID（paraboloid/saddle）
+ * @param {number} x - x 坐标
+ * @param {number} y - y 坐标
+ * @returns {number} 曲面高度值
+ */
 const valueForFunctionSurface = (modelId, x, y) => {
   const a = Number(state.amplitude)
   if (modelId === 'paraboloid') return (a * (x * x + y * y)) / 10
   return (a * (x * x - y * y)) / 10
 }
 
+/**
+ * 构建索引化曲面几何体
+ * 根据采样函数生成顶点、颜色和索引数据，创建 BufferGeometry
+ * @param {Function} pointAt - 采样函数，接收 (u, v) 返回 THREE.Vector3
+ * @param {number} rows - 行数
+ * @param {number} cols - 列数
+ * @returns {THREE.BufferGeometry} 曲面几何体
+ */
 const buildIndexedSurface = (pointAt, rows, cols) => {
   const vertices = []
   const colors = []
@@ -188,6 +255,12 @@ const buildIndexedSurface = (pointAt, rows, cols) => {
   return geometry
 }
 
+/**
+ * 创建曲面网格（包含实体和线框）
+ * @param {THREE.BufferGeometry} geometry - 几何体
+ * @param {number} opacity - 透明度（默认1）
+ * @returns {Array<THREE.Mesh>} [实体网格, 线框网格]
+ */
 const createSurfaceMesh = (geometry, opacity = 1) => {
   const surface = new THREE.Mesh(
     geometry,
@@ -213,6 +286,11 @@ const createSurfaceMesh = (geometry, opacity = 1) => {
   return [surface, wire]
 }
 
+/**
+ * 创建函数曲面几何体（抛物面/马鞍面）
+ * @param {string} modelId - 模型ID
+ * @returns {THREE.BufferGeometry} 曲面几何体
+ */
 const createFunctionSurfaceGeometry = (modelId) => {
   const size = Number(state.domain)
   const segments = Number(state.resolution)
@@ -223,6 +301,11 @@ const createFunctionSurfaceGeometry = (modelId) => {
   }, segments, segments)
 }
 
+/**
+ * 创建参数化曲面几何体（球面/圆锥/双曲面/椭球面）
+ * @param {string} modelId - 模型ID
+ * @returns {THREE.BufferGeometry} 曲面几何体
+ */
 const createParametricSurfaceGeometry = (modelId) => {
   const segments = Number(state.resolution)
   if (modelId === 'sphere') {
@@ -260,6 +343,14 @@ const createParametricSurfaceGeometry = (modelId) => {
   }, segments, segments)
 }
 
+/**
+ * 根据点数组创建管状几何体
+ * 使用 CatmullRomCurve3 平滑曲线并生成管道
+ * @param {Array<THREE.Vector3>} points - 点数组
+ * @param {number} color - 颜色（默认粉红色）
+ * @param {number} radius - 管道半径（默认0.06）
+ * @returns {THREE.Mesh} 管状网格
+ */
 const createTubeFromPoints = (points, color = 0xec6ead, radius = 0.06) => {
   const curve = new THREE.CatmullRomCurve3(points)
   return new THREE.Mesh(
@@ -268,6 +359,15 @@ const createTubeFromPoints = (points, color = 0xec6ead, radius = 0.06) => {
   )
 }
 
+/**
+ * 在两点之间创建圆柱体
+ * @param {THREE.Vector3} start - 起点
+ * @param {THREE.Vector3} end - 终点
+ * @param {number} radius - 半径
+ * @param {number} color - 颜色
+ * @param {number} opacity - 透明度（默认1）
+ * @returns {THREE.Mesh} 圆柱网格
+ */
 const createCylinderBetween = (start, end, radius, color, opacity = 1) => {
   const direction = end.clone().sub(start)
   const length = direction.length()
@@ -285,6 +385,13 @@ const createCylinderBetween = (start, end, radius, color, opacity = 1) => {
   return mesh
 }
 
+/**
+ * 创建物理球体（用于表示粒子、电荷等）
+ * @param {number} radius - 半径
+ * @param {number} color - 颜色
+ * @param {number} opacity - 透明度（默认1）
+ * @returns {THREE.Mesh} 球体网格
+ */
 const createPhysicsSphere = (radius, color, opacity = 1) => new THREE.Mesh(
   new THREE.SphereGeometry(radius, 32, 24),
   new THREE.MeshStandardMaterial({
@@ -297,6 +404,14 @@ const createPhysicsSphere = (radius, color, opacity = 1) => new THREE.Mesh(
   }),
 )
 
+/**
+ * 创建纹理平面（用于表示底面或参考平面）
+ * @param {number} width - 宽度
+ * @param {number} depth - 深度
+ * @param {number} color - 颜色（默认浅蓝色）
+ * @param {number} opacity - 透明度（默认0.2）
+ * @returns {THREE.Mesh} 平面网格
+ */
 const createTexturedPlane = (width, depth, color = 0x9fd6ff, opacity = 0.2) => {
   const mesh = new THREE.Mesh(
     new THREE.PlaneGeometry(width, depth, 1, 1),
@@ -306,12 +421,26 @@ const createTexturedPlane = (width, depth, color = 0x9fd6ff, opacity = 0.2) => {
   return mesh
 }
 
+/**
+ * 向场景中添加箭头辅助对象
+ * @param {THREE.Group} group - 目标组
+ * @param {THREE.Vector3} origin - 起点
+ * @param {THREE.Vector3} direction - 方向向量
+ * @param {number} length - 长度
+ * @param {number} color - 颜色（默认粉红色）
+ */
 const addArrow = (group, origin, direction, length, color = 0xec6ead) => {
   const dir = direction.clone().normalize()
   const arrow = new THREE.ArrowHelper(dir, origin, length, color, length * 0.28, length * 0.16)
   group.add(arrow)
 }
 
+/**
+ * 二维正态分布密度函数
+ * @param {number} x - x 坐标
+ * @param {number} y - y 坐标
+ * @returns {number} 概率密度值
+ */
 const normalDensity2D = (x, y) => {
   const sigma = Math.max(0.35, Number(state.variance))
   const rho = Math.max(-0.92, Math.min(0.92, Number(state.rho)))
@@ -322,6 +451,12 @@ const normalDensity2D = (x, y) => {
   return Math.exp(exponent) / denom
 }
 
+/**
+ * 创建概率分布曲面几何体
+ * @param {Function} densityFn - 密度函数
+ * @param {number} heightScale - 高度缩放系数（默认18）
+ * @returns {THREE.BufferGeometry} 曲面几何体
+ */
 const createProbabilitySurfaceGeometry = (densityFn, heightScale = 18) => {
   const size = Number(state.domain)
   const segments = Number(state.resolution)
@@ -332,6 +467,13 @@ const createProbabilitySurfaceGeometry = (densityFn, heightScale = 18) => {
   }, segments, segments)
 }
 
+/**
+ * 构建概率等值线（等高线）
+ * @param {THREE.Group} group - 目标组
+ * @param {Array<number>} levels - 等值线高度级别数组
+ * @param {Function} densityFn - 密度函数
+ * @param {number} color - 颜色（默认深蓝色）
+ */
 const buildProbabilityContourLines = (group, levels, densityFn, color = 0x1b1a55) => {
   const size = Number(state.domain)
   const samples = 240
@@ -356,6 +498,10 @@ const buildProbabilityContourLines = (group, levels, densityFn, color = 0x1b1a55
   })
 }
 
+/**
+ * 构建氢原子轨道模型（s、p、d 轨道）
+ * @param {THREE.Group} group - 目标组
+ */
 const buildHydrogenOrbitals = (group) => {
   const nucleus = createPhysicsSphere(0.24, 0xffd166)
   group.add(nucleus)
@@ -392,6 +538,10 @@ const buildHydrogenOrbitals = (group) => {
   group.add(ring)
 }
 
+/**
+ * 构建电偶极子模型（正负极电荷和电场线）
+ * @param {THREE.Group} group - 目标组
+ */
 const buildElectricDipole = (group) => {
   const positive = createPhysicsSphere(0.36, 0xff4d6d)
   const negative = createPhysicsSphere(0.36, 0x3494e6)
@@ -420,6 +570,10 @@ const buildElectricDipole = (group) => {
   }
 }
 
+/**
+ * 构建螺线管磁场模型
+ * @param {THREE.Group} group - 目标组
+ */
 const buildSolenoidField = (group) => {
   const coilPoints = []
   const turns = 10
@@ -450,6 +604,10 @@ const buildSolenoidField = (group) => {
   })
 }
 
+/**
+ * 构建带电粒子在磁场中螺旋运动模型
+ * @param {THREE.Group} group - 目标组
+ */
 const buildChargedParticleHelix = (group) => {
   const points = []
   const turns = 5.5
@@ -468,6 +626,10 @@ const buildChargedParticleHelix = (group) => {
   addArrow(group, new THREE.Vector3(-4.8, 2.8, 2.6), new THREE.Vector3(1, 0, 0), 1.8, 0xec6ead)
 }
 
+/**
+ * 构建陀螺仪进动模型
+ * @param {THREE.Group} group - 目标组
+ */
 const buildGyroscope = (group) => {
   const precession = new THREE.Group()
   group.add(precession)
@@ -501,6 +663,10 @@ const buildGyroscope = (group) => {
   addArrow(axle, new THREE.Vector3(0, 3.6, 0), new THREE.Vector3(0, 1, 0), 1.2, 0x3494e6)
 }
 
+/**
+ * 构建电磁波模型（电场 E、磁场 B 和传播方向）
+ * @param {THREE.Group} group - 目标组
+ */
 const buildElectromagneticWave = (group) => {
   const ePoints = []
   const bPoints = []
@@ -521,6 +687,10 @@ const buildElectromagneticWave = (group) => {
   }
 }
 
+/**
+ * 构建气体分子热运动模型（理想气体）
+ * @param {THREE.Group} group - 目标组
+ */
 const buildGasMotion = (group) => {
   const box = new THREE.LineSegments(
     new THREE.EdgesGeometry(new THREE.BoxGeometry(7.2, 4.6, 4.6)),
@@ -556,6 +726,10 @@ const buildGasMotion = (group) => {
   }
 }
 
+/**
+ * 构建刚体旋转模型（欧拉角旋转）
+ * @param {THREE.Group} group - 目标组
+ */
 const buildRigidBodyRotation = (group) => {
   const body = new THREE.Mesh(
     new THREE.BoxGeometry(2.5, 1.2, 1.7),
@@ -573,6 +747,10 @@ const buildRigidBodyRotation = (group) => {
   }
 }
 
+/**
+ * 构建三维李萨如图形
+ * @param {THREE.Group} group - 目标组
+ */
 const buildLissajous3D = (group) => {
   const points = []
   for (let i = 0; i <= 900; i += 1) {
@@ -587,6 +765,10 @@ const buildLissajous3D = (group) => {
   }
 }
 
+/**
+ * 构建点电荷等势面模型
+ * @param {THREE.Group} group - 目标组
+ */
 const buildPointChargeShells = (group) => {
   group.add(createPhysicsSphere(0.28, 0xff4d6d))
   ;[1.2, 2.1, 3.1, 4.2].forEach((radius, index) => {
@@ -599,6 +781,10 @@ const buildPointChargeShells = (group) => {
   }
 }
 
+/**
+ * 构建二维正态分布模型
+ * @param {THREE.Group} group - 目标组
+ */
 const buildBivariateNormal = (group) => {
   const geometry = createProbabilitySurfaceGeometry(normalDensity2D, 18 * Number(state.amplitude))
   createSurfaceMesh(geometry, 0.92).forEach((mesh) => group.add(mesh))
@@ -608,6 +794,10 @@ const buildBivariateNormal = (group) => {
   group.add(meanMarker)
 }
 
+/**
+ * 构建均匀分布平台模型
+ * @param {THREE.Group} group - 目标组
+ */
 const buildUniformPlateau = (group) => {
   const width = Number(state.domain) * 1.25
   const depth = Number(state.domain)
@@ -623,6 +813,10 @@ const buildUniformPlateau = (group) => {
   group.add(createTexturedPlane(width, depth, 0xec6ead, 0.14))
 }
 
+/**
+ * 构建联合分布函数模型（使用 Sigmoid 函数近似）
+ * @param {THREE.Group} group - 目标组
+ */
 const buildJointCdf = (group) => {
   const size = Number(state.domain)
   const geometry = buildIndexedSurface((u, v) => {
@@ -635,6 +829,10 @@ const buildJointCdf = (group) => {
   createSurfaceMesh(geometry, 0.9).forEach((mesh) => group.add(mesh))
 }
 
+/**
+ * 构建概率实体模型（柱状图 + 连续分布曲面）
+ * @param {THREE.Group} group - 目标组
+ */
 const buildProbabilitySolid = (group) => {
   buildBivariateNormal(group)
   const size = Number(state.domain)
@@ -656,6 +854,10 @@ const buildProbabilitySolid = (group) => {
   group.add(region)
 }
 
+/**
+ * 构建相关系数等值线模型
+ * @param {THREE.Group} group - 目标组
+ */
 const buildRhoContour = (group) => {
   const plane = createTexturedPlane(Number(state.domain) * 2, Number(state.domain) * 2, 0xeff6ff, 0.46)
   group.add(plane)
@@ -664,6 +866,10 @@ const buildRhoContour = (group) => {
   createSurfaceMesh(ridge, 0.3).forEach((mesh) => group.add(mesh))
 }
 
+/**
+ * 构建正态分布收敛模型（大数定律演示）
+ * @param {THREE.Group} group - 目标组
+ */
 const buildNormalConvergence = (group) => {
   const n = Number(state.sampleSize)
   const bins = Math.min(15, Math.max(5, Math.round(n / 8)))
@@ -685,6 +891,10 @@ const buildNormalConvergence = (group) => {
   createSurfaceMesh(target, 0.32).forEach((mesh) => group.add(mesh))
 }
 
+/**
+ * 构建正态分布椭球模型（展示协方差矩阵特征）
+ * @param {THREE.Group} group - 目标组
+ */
 const buildNormalEllipsoids = (group) => {
   ;[
     { radius: 1.2, opacity: 0.34, color: 0xec6ead },
@@ -701,6 +911,11 @@ const buildNormalEllipsoids = (group) => {
   addArrow(group, new THREE.Vector3(0, 0, 0), new THREE.Vector3(-0.25, 1.1, 0.5), 1.7, 0x3494e6)
 }
 
+/**
+ * 构建曲线模型（螺旋线/弹簧）
+ * @param {THREE.Group} group - 目标组
+ * @param {boolean} spring - 是否为弹簧模式（默认false）
+ */
 const buildCurveModel = (group, spring = false) => {
   const turns = spring ? 7.5 : 3.8
   const radius = spring ? 2.1 : 2.6
@@ -722,6 +937,10 @@ const buildCurveModel = (group, spring = false) => {
   }
 }
 
+/**
+ * 构建二重积分实体模型
+ * @param {THREE.Group} group - 目标组
+ */
 const buildIntegralSolid = (group) => {
   const size = 4.8
   const topGeometry = buildIndexedSurface((u, v) => {
@@ -745,6 +964,10 @@ const buildIntegralSolid = (group) => {
   }
 }
 
+/**
+ * 构建梯度场与等高线模型
+ * @param {THREE.Group} group - 目标组
+ */
 const buildGradientContour = (group) => {
   const size = Number(state.domain)
   const surfaceGeometry = createFunctionSurfaceGeometry('saddle')
@@ -775,6 +998,10 @@ const buildGradientContour = (group) => {
   }
 }
 
+/**
+ * 构建马鞍面切平面模型
+ * @param {THREE.Group} group - 目标组
+ */
 const buildSaddleTangent = (group) => {
   createSurfaceMesh(createFunctionSurfaceGeometry('saddle'), 0.86).forEach((mesh) => group.add(mesh))
   const domain = Number(state.domain)
@@ -821,6 +1048,11 @@ const buildSaddleTangent = (group) => {
   }
 }
 
+/**
+ * 根据类型构建物理模型
+ * @param {THREE.Group} group - 目标组
+ * @param {string} kind - 模型类型
+ */
 const buildPhysicsModel = (group, kind) => {
   if (kind === 'hydrogenOrbitals') buildHydrogenOrbitals(group)
   else if (kind === 'electricDipole') buildElectricDipole(group)
@@ -834,6 +1066,11 @@ const buildPhysicsModel = (group, kind) => {
   else if (kind === 'pointChargeShells') buildPointChargeShells(group)
 }
 
+/**
+ * 根据类型构建概率模型
+ * @param {THREE.Group} group - 目标组
+ * @param {string} kind - 模型类型
+ */
 const buildProbabilityModel = (group, kind) => {
   if (kind === 'bivariateNormal') buildBivariateNormal(group)
   else if (kind === 'uniformPlateau') buildUniformPlateau(group)
@@ -844,6 +1081,10 @@ const buildProbabilityModel = (group, kind) => {
   else if (kind === 'normalEllipsoids') buildNormalEllipsoids(group)
 }
 
+/**
+ * 重新构建当前模型
+ * 根据学科和模型类型选择对应的构建函数
+ */
 const rebuildModel = () => {
   if (!scene) return
   if (modelGroup) {
@@ -878,6 +1119,10 @@ const rebuildModel = () => {
   updateHelpers()
 }
 
+/**
+ * 更新辅助对象显示状态
+ * 控制坐标轴、网格线和线框的可见性
+ */
 const updateHelpers = () => {
   if (!scene) return
   if (axesHelper) axesHelper.visible = state.axes
@@ -887,6 +1132,10 @@ const updateHelpers = () => {
   })
 }
 
+/**
+ * 调整渲染器尺寸
+ * 响应容器大小变化
+ */
 const resizeRenderer = () => {
   if (!canvasHost.value || !renderer || !camera) return
   const { width, height } = canvasHost.value.getBoundingClientRect()
@@ -897,6 +1146,10 @@ const resizeRenderer = () => {
   camera.updateProjectionMatrix()
 }
 
+/**
+ * 动画循环函数
+ * 更新控制器和模型动画状态，渲染场景
+ */
 const animate = () => {
   frameId = requestAnimationFrame(animate)
   const delta = clock?.getDelta() ?? 0
@@ -909,6 +1162,10 @@ const animate = () => {
   renderer?.render(scene, camera)
 }
 
+/**
+ * 初始化 Three.js 场景
+ * 创建渲染器、相机、光源、控制器和辅助对象
+ */
 const initScene = async () => {
   await nextTick()
   if (!canvasHost.value) return
@@ -951,6 +1208,10 @@ const initScene = async () => {
   animate()
 }
 
+/**
+ * 切换学科
+ * @param {string} subjectId - 学科标识
+ */
 const setSubject = (subjectId) => {
   if (state.subject === subjectId) return
   const nextOptions = getModelsBySubject(subjectId)
@@ -960,6 +1221,10 @@ const setSubject = (subjectId) => {
   state.lastQuestion = ''
 }
 
+/**
+ * 提交问答问题
+ * 暂存问题内容，预留后端接口
+ */
 const submitQuestion = () => {
   const content = state.question.trim()
   if (!content) return
@@ -1024,6 +1289,7 @@ onBeforeUnmount(() => {
 
 <template>
   <main class="visual-page space-model-page">
+    <!-- 面包屑导航 -->
     <nav class="algorithm-viewer-breadcrumb visual-page-breadcrumb" aria-label="当前位置">
       <RouterLink to="/visualization">可视化</RouterLink>
       <span>&gt;</span>
@@ -1036,10 +1302,12 @@ onBeforeUnmount(() => {
       <strong>{{ activeModel.name }}</strong>
     </nav>
 
+    <!-- 页面标题和学科切换区域 -->
     <section class="visual-hero compact space-hero">
       <p class="visual-kicker">{{ activeSubject.kicker }}</p>
       <h1>{{ activeSubject.title }}</h1>
       <p>{{ activeSubject.intro }}</p>
+      <!-- 学科切换按钮 -->
       <div class="space-subject-switch" aria-label="三维模型学科切换">
         <button
           v-for="subject in subjectOptions"
@@ -1053,7 +1321,9 @@ onBeforeUnmount(() => {
       </div>
     </section>
 
+    <!-- 三维实验台主区域 -->
     <section class="calculus-3d-workbench" :aria-label="`${activeSubject.title}实验台`">
+      <!-- 三维场景渲染区域 -->
       <div class="calculus-scene-stage">
         <div ref="canvasHost" class="calculus-canvas-host" aria-label="三维函数曲面"></div>
         <div class="calculus-scene-badge">
@@ -1062,6 +1332,7 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
+      <!-- 参数控制面板 -->
       <aside class="calculus-control-panel" aria-label="三维曲面控制面板">
         <div class="calculus-panel-head">
           <p>{{ state.subject === 'physics' ? 'Physics Control' : 'Surface Control' }}</p>
@@ -1069,6 +1340,7 @@ onBeforeUnmount(() => {
           <span>{{ activeModel.description }}</span>
         </div>
 
+        <!-- 模型选择 -->
         <label>
           <span>模型分类</span>
           <select v-model="state.modelId">
@@ -1078,6 +1350,7 @@ onBeforeUnmount(() => {
           </select>
         </label>
 
+        <!-- 通用参数 -->
         <label>
           <span>振幅 / 高度系数：{{ state.amplitude.toFixed(1) }}</span>
           <input v-model.number="state.amplitude" type="range" min="0.4" max="2.8" step="0.1">
@@ -1093,6 +1366,7 @@ onBeforeUnmount(() => {
           <input v-model.number="state.resolution" type="range" min="32" max="96" step="8">
         </label>
 
+        <!-- 概率论专属参数 -->
         <template v-if="state.subject === 'probability'">
           <label v-if="['bivariate-normal', 'rho-contour', 'normal-ellipsoids'].includes(activeModel.id)">
             <span>相关系数 ρ：{{ state.rho.toFixed(2) }}</span>
@@ -1121,11 +1395,13 @@ onBeforeUnmount(() => {
           </label>
         </template>
 
+        <!-- 马鞍面切面参数 -->
         <label v-if="activeModel.id === 'saddle-tangent'">
           <span>切面高度 c：{{ state.sliceLevel.toFixed(1) }}</span>
           <input v-model.number="state.sliceLevel" type="range" min="-8" max="8" step="0.2">
         </label>
 
+        <!-- 双曲线截线实时预览 -->
         <div v-if="activeModel.id === 'saddle-tangent'" class="calculus-hyperbola-preview">
           <div>
             <strong>实时截线图</strong>
@@ -1147,6 +1423,7 @@ onBeforeUnmount(() => {
           </svg>
         </div>
 
+        <!-- 显示选项切换 -->
         <div class="calculus-toggle-row">
           <label>
             <input v-model="state.wireframe" type="checkbox">
@@ -1162,6 +1439,7 @@ onBeforeUnmount(() => {
           </label>
         </div>
 
+        <!-- 教学提示 -->
         <div class="calculus-note">
           <strong>教学提示</strong>
           <p>{{ activeModel.detail }}</p>
@@ -1169,7 +1447,9 @@ onBeforeUnmount(() => {
       </aside>
     </section>
 
+    <!-- 学习讲解和问答区域 -->
     <section class="calculus-learning-zone" aria-label="三维图像讲解和问答">
+      <!-- 详细讲解卡片 -->
       <article class="calculus-explanation-card">
         <p>Detailed Explanation</p>
         <h2>{{ activeModel.name }}讲解</h2>
@@ -1187,6 +1467,7 @@ onBeforeUnmount(() => {
         </div>
       </article>
 
+      <!-- 问答区卡片 -->
       <article class="calculus-qa-card">
         <p>Q&A Interface</p>
         <h2>问答区</h2>

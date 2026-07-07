@@ -17,6 +17,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * OJ提交控制器
+ * 提供代码提交、提交查询、测试用例结果查询等相关接口
+ */
 @RestController
 @RequestMapping("/api/oj/submissions")
 public class OjSubmissionController {
@@ -26,6 +30,12 @@ public class OjSubmissionController {
         this.submissionService = submissionService;
     }
 
+    /**
+     * 创建代码提交
+     * @param userId 用户ID，从请求头获取，可选
+     * @param request 提交请求，包含题目ID、用户ID、语言和源代码
+     * @return 提交记录
+     */
     @PostMapping
     @ResponseStatus(HttpStatus.ACCEPTED)
     public OjSubmission createSubmission(
@@ -41,16 +51,31 @@ public class OjSubmissionController {
         return submissionService.createSubmission(scopedRequest);
     }
 
+    /**
+     * 获取提交详情
+     * @param id 提交ID
+     * @return 提交记录详情
+     */
     @GetMapping("/{id}")
     public OjSubmission getSubmission(@PathVariable Long id) {
         return submissionService.getSubmission(id);
     }
 
+    /**
+     * 查询题目提交列表
+     * @param problemId 题目ID
+     * @return 提交记录列表
+     */
     @GetMapping
     public List<OjSubmission> listSubmissions(@RequestParam Long problemId) {
         return submissionService.listSubmissions(problemId);
     }
 
+    /**
+     * 查询提交的测试用例结果
+     * @param id 提交ID
+     * @return 测试用例结果列表
+     */
     @GetMapping("/{id}/cases")
     public List<OjSubmissionCase> listSubmissionCases(@PathVariable Long id) {
         return submissionService.listSubmissionCases(id);

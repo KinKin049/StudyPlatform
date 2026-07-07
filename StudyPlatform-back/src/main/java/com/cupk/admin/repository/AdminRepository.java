@@ -6,13 +6,16 @@ import com.cupk.admin.dto.AdminCourseReviewResponse;
 import com.cupk.admin.dto.AdminQuestionBankSetRequest;
 import com.cupk.admin.dto.AdminQuestionRequest;
 import com.cupk.admin.dto.AdminUserResponse;
+import com.cupk.admin.dto.AdminVoucherItemRequest;
 import com.cupk.academy.dto.CourseQuestionBankQuestionResponse;
 import com.cupk.academy.dto.CourseQuestionBankSetResponse;
+import com.cupk.rewards.dto.VoucherItemResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -74,7 +77,7 @@ public class AdminRepository {
                               ELSE 'student' END
                        ) AS role_type,
                        u.learning_goal, u.school, u.teacher_name, u.onboarding_completed,
-                       COALESCE(r.reward_total, 0) + COALESCE(p.admin_coin_adjustment, 0) AS coin_total,
+                       COALESCE(r.reward_total, 0) - COALESCE(s.spend_total, 0) + COALESCE(p.admin_coin_adjustment, 0) AS coin_total,
                        COALESCE(p.admin_coin_adjustment, 0) AS admin_coin_adjustment,
                        COALESCE(p.admin_data_note, '') AS admin_data_note
                 FROM users u
@@ -84,6 +87,11 @@ public class AdminRepository {
                   FROM coin_reward_records
                   GROUP BY user_id
                 ) r ON r.user_id = u.id
+                LEFT JOIN (
+                  SELECT user_id, SUM(amount) AS spend_total
+                  FROM coin_spend_records
+                  GROUP BY user_id
+                ) s ON s.user_id = u.id
                 ORDER BY CASE WHEN u.email = 'admin@admin.com' THEN 0 ELSE 1 END, u.id ASC
                 """,
                 this::mapUser
@@ -103,7 +111,7 @@ public class AdminRepository {
                                   ELSE 'student' END
                            ) AS role_type,
                            u.learning_goal, u.school, u.teacher_name, u.onboarding_completed,
-                           COALESCE(r.reward_total, 0) + COALESCE(p.admin_coin_adjustment, 0) AS coin_total,
+                           COALESCE(r.reward_total, 0) - COALESCE(s.spend_total, 0) + COALESCE(p.admin_coin_adjustment, 0) AS coin_total,
                            COALESCE(p.admin_coin_adjustment, 0) AS admin_coin_adjustment,
                            COALESCE(p.admin_data_note, '') AS admin_data_note
                     FROM users u
@@ -113,6 +121,11 @@ public class AdminRepository {
                       FROM coin_reward_records
                       GROUP BY user_id
                     ) r ON r.user_id = u.id
+                    LEFT JOIN (
+                      SELECT user_id, SUM(amount) AS spend_total
+                      FROM coin_spend_records
+                      GROUP BY user_id
+                    ) s ON s.user_id = u.id
                     WHERE u.id = ?
                     LIMIT 1
                     """,
@@ -222,6 +235,8 @@ public class AdminRepository {
         jdbcTemplate.update("DELETE FROM profile_learning_time_records WHERE user_id = ?", userId);
         jdbcTemplate.update("DELETE FROM game_ladder_jump_records WHERE user_id = ?", userId);
         jdbcTemplate.update("DELETE FROM game_type_warrior_records WHERE user_id = ?", userId);
+        jdbcTemplate.update("DELETE FROM user_vouchers WHERE user_id = ?", userId);
+        jdbcTemplate.update("DELETE FROM coin_spend_records WHERE user_id = ?", userId);
         jdbcTemplate.update("DELETE FROM coin_reward_records WHERE user_id = ?", userId);
         jdbcTemplate.update("DELETE FROM teacher_published_courses WHERE publisher_user_id = ?", userId);
         jdbcTemplate.update("DELETE FROM profile_user_profiles WHERE user_id = ?", userId);
@@ -523,6 +538,86 @@ public class AdminRepository {
         return jdbcTemplate.update("DELETE FROM course_question_bank_questions WHERE id = ?", questionId);
     }
 
+    public List<VoucherItemResponse> findVoucherItems() {
+        return jdbcTemplate.query(
+                """
+                SELECT id, voucher_key, voucher_type, name, description, price, stock_quantity, unlimited_stock,
+                       discount_type, threshold_amount, discount_amount, discount_rate, max_discount_amount,
+                       valid_from, valid_until, enabled, sort_order
+                FROM voucher_items
+                ORDER BY enabled DESC, voucher_type ASC, sort_order ASC, id ASC
+                """,
+                this::mapVoucherItem
+        );
+    }
+
+    public Optional<VoucherItemResponse> findVoucherItem(String voucherKey) {
+        try {
+            return Optional.ofNullable(jdbcTemplate.queryForObject(
+                    """
+                    SELECT id, voucher_key, voucher_type, name, description, price, stock_quantity, unlimited_stock,
+                           discount_type, threshold_amount, discount_amount, discount_rate, max_discount_amount,
+                           valid_from, valid_until, enabled, sort_order
+                    FROM voucher_items
+                    WHERE voucher_key = ?
+                    LIMIT 1
+                    """,
+                    this::mapVoucherItem,
+                    voucherKey
+            ));
+        } catch (EmptyResultDataAccessException ex) {
+            return Optional.empty();
+        }
+    }
+
+    public void upsertVoucherItem(AdminVoucherItemRequest request) {
+        jdbcTemplate.update(
+                """
+                INSERT INTO voucher_items
+                  (voucher_key, voucher_type, name, description, price, stock_quantity, unlimited_stock,
+                   discount_type, threshold_amount, discount_amount, discount_rate, max_discount_amount,
+                   valid_from, valid_until, enabled, sort_order)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE
+                  voucher_type = VALUES(voucher_type),
+                  name = VALUES(name),
+                  description = VALUES(description),
+                  price = VALUES(price),
+                  stock_quantity = VALUES(stock_quantity),
+                  unlimited_stock = VALUES(unlimited_stock),
+                  discount_type = VALUES(discount_type),
+                  threshold_amount = VALUES(threshold_amount),
+                  discount_amount = VALUES(discount_amount),
+                  discount_rate = VALUES(discount_rate),
+                  max_discount_amount = VALUES(max_discount_amount),
+                  valid_from = VALUES(valid_from),
+                  valid_until = VALUES(valid_until),
+                  enabled = VALUES(enabled),
+                  sort_order = VALUES(sort_order)
+                """,
+                request.voucherKey(),
+                request.voucherType(),
+                request.name(),
+                request.description(),
+                request.price(),
+                request.stockQuantity(),
+                Boolean.TRUE.equals(request.unlimitedStock()) ? 1 : 0,
+                request.discountType(),
+                request.thresholdAmount(),
+                request.discountAmount(),
+                request.discountRate(),
+                request.maxDiscountAmount(),
+                request.validFrom(),
+                request.validUntil(),
+                Boolean.TRUE.equals(request.enabled()) ? 1 : 0,
+                request.sortOrder()
+        );
+    }
+
+    public int disableVoucherItem(String voucherKey) {
+        return jdbcTemplate.update("UPDATE voucher_items SET enabled = 0 WHERE voucher_key = ?", voucherKey);
+    }
+
     private AdminUserResponse mapUser(ResultSet rs, int rowNum) throws SQLException {
         return new AdminUserResponse(
                 rs.getLong("id"),
@@ -595,6 +690,32 @@ public class AdminRepository {
                 rs.getString("source_url"),
                 rs.getBoolean("favorite")
         );
+    }
+
+    private VoucherItemResponse mapVoucherItem(ResultSet rs, int rowNum) throws SQLException {
+        return new VoucherItemResponse(
+                rs.getLong("id"),
+                rs.getString("voucher_key"),
+                rs.getString("voucher_type"),
+                rs.getString("name"),
+                rs.getString("description"),
+                rs.getInt("price"),
+                (Integer) rs.getObject("stock_quantity"),
+                rs.getBoolean("unlimited_stock"),
+                rs.getString("discount_type"),
+                rs.getBigDecimal("threshold_amount"),
+                rs.getBigDecimal("discount_amount"),
+                rs.getBigDecimal("discount_rate"),
+                rs.getBigDecimal("max_discount_amount"),
+                toLocalDateTime(rs.getTimestamp("valid_from")),
+                toLocalDateTime(rs.getTimestamp("valid_until")),
+                rs.getBoolean("enabled"),
+                rs.getInt("sort_order")
+        );
+    }
+
+    private java.time.LocalDateTime toLocalDateTime(Timestamp timestamp) {
+        return timestamp == null ? null : timestamp.toLocalDateTime();
     }
 
     private String courseSelectSql(String resourceType, boolean single) {

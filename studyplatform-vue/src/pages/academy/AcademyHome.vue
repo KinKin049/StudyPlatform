@@ -1,3 +1,4 @@
+<!-- 在线学堂首页组件，展示学习概览、课程动态和课程卡片入口 -->
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { Search } from '@element-plus/icons-vue'
@@ -13,6 +14,7 @@ import {
 
 const router = useRouter()
 
+// 首页内容区块的默认数据（用于 API 失败时的降级展示）
 const fallbackSections = [
   {
     key: 'my-courses',
@@ -43,36 +45,50 @@ const fallbackSections = [
   },
 ]
 
+// 首页内容区块数据
 const sections = ref(fallbackSections)
+// 首页数据加载状态
 const loading = ref(false)
 const loadError = ref('')
+// 添加课程的 UID 输入值
 const courseUid = ref('')
+// 侧边栏数据加载状态
 const sidebarLoading = ref(false)
 const sidebarError = ref('')
+// 添加课程操作状态
 const addCourseLoading = ref(false)
+// 课程目录加载状态
 const courseCatalogLoading = ref(false)
+// 课程搜索框焦点状态
 const courseSearchFocused = ref(false)
+// 反馈提示消息
 const feedbackMessage = ref('')
 const feedbackVisible = ref(false)
+// 用户课程、作业、考试数据
 const myCourses = ref([])
 const assignments = ref([])
 const exams = ref([])
+// 课程目录缓存
 const courseCatalogCache = ref({})
+// 定时器引用
 let feedbackTimer = null
 let courseSearchBlurTimer = null
 
+// 资源类型对应的详情页路径映射
 const resourceDetailPath = {
   'online-open-courses': '/academy/open-courses',
   'general-courses': '/academy/general-courses',
   'micro-major-courses': '/academy/micro-majors',
 }
 
+// 资源类型配置，包含别名用于 UID 解析
 const resourceOptions = [
   { type: 'online-open-courses', label: '在线开放课', aliases: ['online-open-courses', 'open', 'online', '在线开放课程', '在线开放课', '开放课'] },
   { type: 'general-courses', label: '通识课程', aliases: ['general-courses', 'general', '通识课程', '通识课'] },
   { type: 'micro-major-courses', label: '微专业课', aliases: ['micro-major-courses', 'micro', '微专业课程', '微专业课', '微专业'] },
 ]
 
+// 默认学习概览数据
 const overviewStats = [
   { label: '已加入课程', value: '12' },
   { label: '进行中', value: '5' },
@@ -80,18 +96,24 @@ const overviewStats = [
   { label: '即将考试', value: '2' },
 ]
 
+// 默认最近学习课程数据
 const recentCourses = [
   { title: 'C语言程序设计（下）', meta: '上次学习到：指针与数组', path: '/academy/open-courses' },
   { title: '劳动通论', meta: '专题讨论已完成 60%', path: '/academy/general-courses' },
   { title: '数据分析微专业', meta: '项目报告等待反馈', path: '/academy/micro-majors' },
 ]
 
+// 默认课程动态数据
 const courseFeeds = [
   '程序设计单元测试已开放，7 月 8 日前完成',
   '劳动通论发布了新的专题讨论',
   '数据分析微专业新增项目案例资料',
 ]
 
+/**
+ * 计算属性：待完成作业列表
+ * 过滤掉已批阅和已结束的作业，只保留待提交的作业
+ */
 const pendingAssignments = computed(() =>
   assignments.value.filter((assignment) => {
     if (assignment.submissionStatus === 'graded' || assignment.submissionStatus === 'pending_review') {
@@ -101,6 +123,10 @@ const pendingAssignments = computed(() =>
   }),
 )
 
+/**
+ * 计算属性：即将到来的考试列表
+ * 过滤掉已结束的考试，只保留即将开始、正在进行的考试
+ */
 const upcomingExams = computed(() =>
   exams.value.filter((exam) => {
     if (exam.status === '已结束' || isDeadlinePassed(exam.deadline)) {
@@ -110,6 +136,10 @@ const upcomingExams = computed(() =>
   }),
 )
 
+/**
+ * 计算属性：实时学习概览统计数据
+ * 基于用户实际数据计算课程数量、作业数量和考试数量
+ */
 const realOverviewStats = computed(() => [
   { label: '已加入课程', value: String(myCourses.value.length) },
   { label: '进行中', value: String(myCourses.value.length) },
@@ -117,6 +147,10 @@ const realOverviewStats = computed(() => [
   { label: '即将考试', value: String(upcomingExams.value.length) },
 ])
 
+/**
+ * 计算属性：最近学习课程列表
+ * 按加入时间倒序排列，取前 3 条
+ */
 const realRecentCourses = computed(() =>
   [...myCourses.value]
     .sort((left, right) => getTimeValue(right.enrolledAt) - getTimeValue(left.enrolledAt))
@@ -128,6 +162,10 @@ const realRecentCourses = computed(() =>
     })),
 )
 
+/**
+ * 计算属性：课程动态消息列表
+ * 整合待完成作业和即将考试的提醒消息
+ */
 const realCourseFeeds = computed(() => {
   const feeds = []
   pendingAssignments.value.slice(0, 2).forEach((assignment) => {
@@ -145,6 +183,10 @@ const realCourseFeeds = computed(() => {
   return feeds.slice(0, 4)
 })
 
+/**
+ * 计算属性：课程搜索建议列表
+ * 根据输入的关键词匹配课程，按匹配度排序
+ */
 const courseSearchSuggestions = computed(() => {
   const rawKeyword = courseUid.value.trim()
   if (!rawKeyword) {
@@ -177,11 +219,18 @@ const courseSearchSuggestions = computed(() => {
     .slice(0, 6)
 })
 
+/**
+ * 计算属性：是否显示课程搜索建议
+ */
 const showCourseSuggestions = computed(() =>
   courseSearchFocused.value
   && courseUid.value.trim().length > 0,
 )
 
+/**
+ * 加载首页内容区块数据
+ * 如果 API 请求失败，使用默认的 fallback 数据
+ */
 const loadAcademyHome = async () => {
   loading.value = true
   loadError.value = ''
@@ -198,6 +247,10 @@ const loadAcademyHome = async () => {
   }
 }
 
+/**
+ * 加载侧边栏数据（用户课程、作业、考试）
+ * 通过 Promise.all 并行获取三类数据
+ */
 const loadSidebarData = async () => {
   sidebarLoading.value = true
   sidebarError.value = ''
@@ -218,12 +271,17 @@ const loadSidebarData = async () => {
   }
 }
 
+// 区块 key 到路由路径的映射
 const aggregateRoutes = {
   'my-courses': '/academy/my-courses',
   'course-assignments': '/academy/assignments',
   'my-exams': '/academy/exams',
 }
 
+/**
+ * 处理区块"查看更多"按钮点击
+ * 根据区块 key 跳转到对应列表页面
+ */
 const handleSectionAction = (section) => {
   const routePath = aggregateRoutes[section.key]
 
@@ -235,6 +293,10 @@ const handleSectionAction = (section) => {
   console.info('academy section action reserved:', section.key)
 }
 
+/**
+ * 处理添加课程操作
+ * 解析课程 UID，查找课程并完成报名
+ */
 const handleAddCourse = async () => {
   const normalizedUid = courseUid.value.trim()
 
@@ -258,6 +320,10 @@ const handleAddCourse = async () => {
   }
 }
 
+/**
+ * 处理课程搜索框获得焦点事件
+ * 如果课程目录缓存为空，触发加载所有课程目录
+ */
 const handleCourseSearchFocus = () => {
   courseSearchFocused.value = true
   window.clearTimeout(courseSearchBlurTimer)
@@ -266,6 +332,10 @@ const handleCourseSearchFocus = () => {
   }
 }
 
+/**
+ * 处理课程搜索框输入事件
+ * 在有输入内容且缓存为空时加载课程目录
+ */
 const handleCourseSearchInput = () => {
   courseSearchFocused.value = true
   if (courseUid.value.trim() && !Object.keys(courseCatalogCache.value).length) {
@@ -273,6 +343,10 @@ const handleCourseSearchInput = () => {
   }
 }
 
+/**
+ * 处理课程搜索框失去焦点事件
+ * 延迟 140ms 后隐藏搜索建议
+ */
 const handleCourseSearchBlur = () => {
   window.clearTimeout(courseSearchBlurTimer)
   courseSearchBlurTimer = window.setTimeout(() => {
@@ -280,11 +354,19 @@ const handleCourseSearchBlur = () => {
   }, 140)
 }
 
+/**
+ * 选择课程搜索建议
+ * 将选中课程的 UID 填入输入框并隐藏建议列表
+ */
 const selectCourseSuggestion = (course) => {
   courseUid.value = course.uid
   courseSearchFocused.value = false
 }
 
+/**
+ * 处理课程卡片点击事件
+ * 根据区块类型跳转到对应页面
+ */
 const handleCardClick = (section, item) => {
   if (section.key === 'course-assignments' || section.key === 'my-exams') {
     router.push(aggregateRoutes[section.key])
@@ -299,10 +381,17 @@ const handleCardClick = (section, item) => {
   console.info('academy card action reserved:', section.key, item.title)
 }
 
+/**
+ * 打开最近学习的课程详情页
+ */
 const openRecentCourse = (course) => {
   router.push(course.path)
 }
 
+/**
+ * 显示操作反馈提示
+ * 1800ms 后自动隐藏
+ */
 const showFeedback = (message) => {
   feedbackMessage.value = message
   feedbackVisible.value = true
@@ -312,6 +401,10 @@ const showFeedback = (message) => {
   }, 1800)
 }
 
+/**
+ * 解析课程 UID
+ * 支持格式：课程类型:课程ID 或 仅课程ID
+ */
 const parseCourseUid = (value) => {
   const normalized = value.trim()
   const separatorMatch = normalized.match(/^([^:/：]+)[:/：](.+)$/)
@@ -328,11 +421,19 @@ const parseCourseUid = (value) => {
   }
 }
 
+/**
+ * 根据输入值解析资源类型
+ * 通过别名匹配对应的资源类型
+ */
 const resolveResourceType = (value) => {
   const normalized = value.trim().toLowerCase()
   return resourceOptions.find((option) => option.aliases.some((alias) => alias.toLowerCase() === normalized))?.type || ''
 }
 
+/**
+ * 根据课程 UID 解析目标课程信息
+ * 如果指定了资源类型则在该类型中查找，否则遍历所有类型
+ */
 const resolveCourseTarget = async (uid) => {
   const parsed = parseCourseUid(uid)
   if (!parsed.courseId) {
@@ -362,11 +463,19 @@ const resolveCourseTarget = async (uid) => {
   throw new Error('没有找到对应课程，请尝试输入“课程类型:课程ID”')
 }
 
+/**
+ * 在指定资源类型中查找课程
+ * 支持按 ID 或名称匹配
+ */
 const findCourseInResource = async (resourceType, courseId) => {
   const courses = await getCourseCatalog(resourceType)
   return courses.find((course) => String(course.id) === String(courseId) || course.name === courseId)
 }
 
+/**
+ * 获取指定资源类型的课程目录
+ * 使用缓存避免重复请求
+ */
 const getCourseCatalog = async (resourceType) => {
   if (!courseCatalogCache.value[resourceType]) {
     courseCatalogCache.value = {
@@ -377,6 +486,10 @@ const getCourseCatalog = async (resourceType) => {
   return Array.isArray(courseCatalogCache.value[resourceType]) ? courseCatalogCache.value[resourceType] : []
 }
 
+/**
+ * 加载所有资源类型的课程目录
+ * 并行获取在线开放课程、通识课程和微专业课程的目录
+ */
 const loadAllCourseCatalogs = async () => {
   if (courseCatalogLoading.value) {
     return
@@ -398,6 +511,10 @@ const loadAllCourseCatalogs = async () => {
   }
 }
 
+/**
+ * 计算课程与关键词的匹配得分
+ * 根据匹配字段和匹配方式给出不同权重的分数
+ */
 const getCourseMatchScore = (course, keyword) => {
   const idText = normalizeSearchText(course.id)
   const nameText = normalizeSearchText(course.name)
@@ -417,29 +534,45 @@ const getCourseMatchScore = (course, keyword) => {
   return 0
 }
 
+/**
+ * 标准化搜索文本
+ * 转小写并移除空格
+ */
 const normalizeSearchText = (value) =>
   String(value || '')
     .toLowerCase()
     .replace(/\s+/g, '')
     .replace(/\s+/g, '')
 
+/**
+ * 判断截止时间是否已过
+ */
 const isDeadlinePassed = (deadline) => {
   if (!deadline) return false
   const deadlineTime = new Date(deadline).getTime()
   return Number.isFinite(deadlineTime) && deadlineTime < Date.now()
 }
 
+/**
+ * 判断开始时间是否在未来
+ */
 const isBeforeStart = (startsAt) => {
   if (!startsAt) return false
   const startTime = new Date(startsAt).getTime()
   return Number.isFinite(startTime) && startTime > Date.now()
 }
 
+/**
+ * 获取时间戳数值
+ */
 const getTimeValue = (value) => {
   const time = new Date(value || 0).getTime()
   return Number.isFinite(time) ? time : 0
 }
 
+/**
+ * 格式化日期时间为 MM-DD HH:mm 格式
+ */
 const formatDateTime = (value) => {
   if (!value) return ''
   const date = new Date(value)
@@ -464,18 +597,22 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+  <!-- 在线学堂首页主容器 -->
   <main class="academy-main">
+    <!-- 操作反馈提示 -->
     <Transition name="academy-drop-feedback">
       <div v-if="feedbackVisible" class="academy-drop-feedback-toast" role="status">
         {{ feedbackMessage }}
       </div>
     </Transition>
 
+    <!-- 页面顶部标题区域 -->
     <section class="academy-hero" aria-labelledby="academy-title">
       <div class="academy-hero-copy">
         <h1 id="academy-title">在线学堂</h1>
       </div>
 
+      <!-- 全局搜索框 -->
       <div class="academy-search" role="search">
         <input type="search" placeholder="搜索课程、教材或专题" aria-label="搜索课程、教材或专题" />
         <button type="button" aria-label="搜索">
@@ -484,6 +621,7 @@ onBeforeUnmount(() => {
       </div>
     </section>
 
+    <!-- 加载状态提示 -->
     <p v-if="loading" class="academy-home-hint">正在加载学堂首页...</p>
     <p v-else-if="loadError" class="academy-home-hint academy-home-warning">{{ loadError }}</p>
     <p v-if="sidebarLoading" class="academy-home-hint">正在同步你的课程、作业和考试...</p>
@@ -491,8 +629,11 @@ onBeforeUnmount(() => {
 
     <div class="academy-home-divider" aria-hidden="true"></div>
 
+    <!-- 首页布局区域：侧边栏 + 内容区 -->
     <section class="academy-home-layout" aria-label="学堂控制台">
+      <!-- 侧边栏 -->
       <aside class="academy-sidebar" aria-label="学习侧边栏">
+        <!-- 学习概览卡片 -->
         <section class="academy-side-card">
           <div class="academy-side-heading">
             <span>学习概览</span>
@@ -506,6 +647,7 @@ onBeforeUnmount(() => {
           </div>
         </section>
 
+        <!-- 添加课程卡片 -->
         <section class="academy-side-card">
           <div class="academy-side-heading">
             <span>添加课程</span>
@@ -524,6 +666,7 @@ onBeforeUnmount(() => {
             />
             <button type="submit" :disabled="addCourseLoading">{{ addCourseLoading ? '添加中' : '添加' }}</button>
           </form>
+          <!-- 课程搜索建议列表 -->
           <div v-if="showCourseSuggestions" class="academy-course-suggestions" role="listbox">
             <p v-if="courseCatalogLoading" class="academy-course-suggestion-state">正在匹配课程...</p>
             <template v-else-if="courseSearchSuggestions.length">
@@ -544,12 +687,14 @@ onBeforeUnmount(() => {
           <p class="academy-side-note">支持“课程类型:课程ID”，也可以只输入课程 ID 自动查找。</p>
         </section>
 
+        <!-- 我的班级入口 -->
         <button class="academy-class-card" type="button" @click="router.push('/academy/my-class')">
           <span>我的班级</span>
           <strong>软件工程 2401 班</strong>
           <em>成员 42 人 · 本周活跃 36 人</em>
         </button>
 
+        <!-- 最近学习课程列表 -->
         <section class="academy-side-card">
           <div class="academy-side-heading">
             <span>最近学习</span>
@@ -569,6 +714,7 @@ onBeforeUnmount(() => {
           </div>
         </section>
 
+        <!-- 课程动态消息 -->
         <section class="academy-side-card">
           <div class="academy-side-heading">
             <span>课程动态</span>
@@ -580,6 +726,7 @@ onBeforeUnmount(() => {
         </section>
       </aside>
 
+      <!-- 主内容区：课程卡片展示 -->
       <section class="academy-dashboard" aria-label="学堂内容">
         <section v-for="section in sections" :key="section.key" class="academy-content">
           <div class="academy-section-heading">
@@ -587,6 +734,7 @@ onBeforeUnmount(() => {
             <button type="button" @click="handleSectionAction(section)">查看更多</button>
           </div>
 
+          <!-- 课程卡片网格 -->
           <div class="course-grid">
             <button
               v-for="item in section.items"

@@ -13,20 +13,39 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 /**
- * Persists account credentials and first-run onboarding choices.
+ * 用户认证数据访问层，持久化账户凭证和首次入职引导信息。
  */
 @Repository
 public class AuthUserRepository {
     private final JdbcTemplate jdbcTemplate;
 
+    /**
+     * 构造函数，注入JdbcTemplate。
+     *
+     * @param jdbcTemplate 数据库操作模板
+     */
     public AuthUserRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    /**
+     * 检查邮箱是否已被注册。
+     *
+     * @param email 邮箱地址
+     * @return 邮箱已存在返回true，否则返回false
+     */
     public boolean existsByEmail(String email) {
         return count("SELECT COUNT(*) FROM users WHERE email = ?", email) > 0;
     }
 
+    /**
+     * 插入新用户记录。创建用户后同步更新用户名格式和用户资料。
+     *
+     * @param username 用户名
+     * @param email 邮箱地址
+     * @param passwordHash 密码哈希值
+     * @return 新创建用户的ID
+     */
     public long insertUser(String username, String email, String passwordHash) {
         String sql = """
                 INSERT INTO users
@@ -52,6 +71,12 @@ public class AuthUserRepository {
         return userId;
     }
 
+    /**
+     * 根据邮箱查询用户记录。
+     *
+     * @param email 邮箱地址
+     * @return 用户行记录，不存在返回null
+     */
     public AuthUserRow findByEmail(String email) {
         List<AuthUserRow> rows = jdbcTemplate.query(
                 """
@@ -74,6 +99,12 @@ public class AuthUserRepository {
         return rows.isEmpty() ? null : rows.get(0);
     }
 
+    /**
+     * 根据用户ID查询用户响应对象。
+     *
+     * @param userId 用户ID
+     * @return 用户响应对象
+     */
     public AuthUserResponse findResponseById(long userId) {
         return jdbcTemplate.queryForObject(
                 """
@@ -95,6 +126,12 @@ public class AuthUserRepository {
         );
     }
 
+    /**
+     * 更新用户密码。
+     *
+     * @param userId 用户ID
+     * @param passwordHash 新密码哈希值
+     */
     public void updatePassword(long userId, String passwordHash) {
         jdbcTemplate.update(
                 """
@@ -107,6 +144,12 @@ public class AuthUserRepository {
         );
     }
 
+    /**
+     * 更新用户入职引导信息。更新角色类型、学习目标、兴趣等字段，并标记入职完成。
+     *
+     * @param request 入职请求
+     * @param interestsJson 兴趣列表的JSON字符串
+     */
     public void updateOnboarding(AuthOnboardingRequest request, String interestsJson) {
         String sql = """
                 UPDATE users
@@ -135,6 +178,12 @@ public class AuthUserRepository {
         syncProfileAfterOnboarding(request);
     }
 
+    /**
+     * 用户注册后同步用户资料。创建或更新用户资料记录。
+     *
+     * @param userId 用户ID
+     * @param username 用户名
+     */
     private void syncProfileAfterRegistration(long userId, String username) {
         if (userId <= 0) {
             return;
@@ -154,6 +203,11 @@ public class AuthUserRepository {
         );
     }
 
+    /**
+     * 入职引导完成后同步用户资料。更新角色标签、个人简介和学校信息。
+     *
+     * @param request 入职请求
+     */
     private void syncProfileAfterOnboarding(AuthOnboardingRequest request) {
         String roleLabel = "teacher".equals(request.roleType()) ? "教师" : "学生";
         String school = clean(request.school(), "StudyPlatform");
@@ -173,11 +227,25 @@ public class AuthUserRepository {
         );
     }
 
+    /**
+     * 执行计数查询。
+     *
+     * @param sql SQL查询语句
+     * @param value 查询参数值
+     * @return 计数结果，空值返回0
+     */
     private long count(String sql, String value) {
         Long count = jdbcTemplate.queryForObject(sql, Long.class, value);
         return count == null ? 0 : count;
     }
 
+    /**
+     * 清理字符串，空值返回默认值。
+     *
+     * @param value 待清理的字符串
+     * @param fallback 默认值
+     * @return 清理后的字符串
+     */
     private String clean(String value, String fallback) {
         if (value == null || value.isBlank()) {
             return fallback;
@@ -185,6 +253,14 @@ public class AuthUserRepository {
         return value.trim();
     }
 
+    /**
+     * 将ResultSet映射为AuthUserRow对象。
+     *
+     * @param rs 结果集
+     * @param rowNum 行号
+     * @return AuthUserRow对象
+     * @throws SQLException SQL异常
+     */
     private AuthUserRow mapUserRow(ResultSet rs, int rowNum) throws SQLException {
         return new AuthUserRow(
                 rs.getLong("id"),
@@ -201,6 +277,12 @@ public class AuthUserRepository {
         );
     }
 
+    /**
+     * 解析JSON数组字符串为字符串列表。
+     *
+     * @param json JSON数组字符串
+     * @return 字符串列表
+     */
     private List<String> parseJsonArray(String json) {
         if (json == null || json.isBlank() || "null".equalsIgnoreCase(json)) {
             return List.of();
@@ -227,6 +309,21 @@ public class AuthUserRepository {
         return values;
     }
 
+    /**
+     * 用户行记录，映射数据库users表的查询结果。
+     *
+     * @param id 用户ID
+     * @param username 用户名
+     * @param email 邮箱地址
+     * @param passwordHash 密码哈希值
+     * @param roleType 角色类型
+     * @param learningGoal 学习目标
+     * @param interests 兴趣列表
+     * @param school 学校
+     * @param teacherName 教师姓名
+     * @param petKey 宠物标识
+     * @param onboardingCompleted 是否完成入职引导
+     */
     public record AuthUserRow(
             Long id,
             String username,
@@ -240,6 +337,11 @@ public class AuthUserRepository {
             String petKey,
             Boolean onboardingCompleted
     ) {
+        /**
+         * 转换为AuthUserResponse对象。
+         *
+         * @return 用户响应对象
+         */
         public AuthUserResponse toResponse() {
             return new AuthUserResponse(
                     id,

@@ -1,4 +1,5 @@
-﻿<script setup>
+<script setup>
+// 个人主页组件，展示用户学习数据、成就统计和课程管理功能
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import {
   deletePublishedOnlineOpenCourse,
@@ -13,6 +14,7 @@ import {
 } from '../api/profile'
 import { resolveResourceUrl } from '../api/request'
 
+// 用户信息兜底数据
 const fallbackUser = {
   name: 'Kinkin',
   handle: '@study-platform',
@@ -25,6 +27,7 @@ const fallbackUser = {
   avatarUrl: '',
 }
 
+// 学习概览数据兜底
 const fallbackOverview = {
   stats: [
     { label: '学习时长', value: '0m', hint: '真实累计时长' },
@@ -86,6 +89,7 @@ const fallbackOverview = {
   ],
 }
 
+// 数据状态
 const overview = ref(null)
 const profileUser = ref(null)
 const profileLoading = ref(false)
@@ -130,6 +134,7 @@ const profileForm = ref({
   bio: fallbackUser.bio,
 })
 
+// 卡片倾斜效果选择器
 const profileTiltSelector = [
   '.profile-card',
   '.profile-summary',
@@ -143,33 +148,47 @@ const profileTiltSelector = [
   '.profile-activity-list > div',
 ].join(',')
 
+// 获取当前用户信息（带兜底）
 const user = computed(() => profileUser.value || fallbackUser)
+// 判断是否为教师用户
 const isTeacherProfile = computed(() => user.value.roleType === 'teacher')
+// 教师课程数量
 const teacherCourseCount = computed(() => teacherCourses.value.length)
+// 学习概览数据（带兜底）
 const dashboard = computed(() => overview.value || fallbackOverview)
+// 学习统计数据
 const stats = computed(() => dashboard.value.stats?.length ? dashboard.value.stats : fallbackOverview.stats)
+// 难度统计数据
 const difficultyStats = computed(() =>
   dashboard.value.difficultyStats?.length ? dashboard.value.difficultyStats : fallbackOverview.difficultyStats,
 )
+// 技能轨道数据
 const skillTracks = computed(() =>
   dashboard.value.skillTracks?.length ? dashboard.value.skillTracks : fallbackOverview.skillTracks,
 )
+// 最近活动记录
 const recentActivities = computed(() =>
   dashboard.value.recentActivities?.length ? dashboard.value.recentActivities : fallbackOverview.recentActivities,
 )
+// 成就徽章
 const badges = computed(() => dashboard.value.badges?.length ? dashboard.value.badges : fallbackOverview.badges)
+// 活动热力图数据
 const activityDays = computed(() =>
   dashboard.value.activityDays?.length ? dashboard.value.activityDays : fallbackOverview.activityDays,
 )
+// 学习时长数据
 const learningTimes = computed(() =>
   dashboard.value.learningTimes?.length ? dashboard.value.learningTimes : fallbackOverview.learningTimes,
 )
+// 编程难度数据
 const codingDifficulties = computed(() =>
   dashboard.value.codingDifficulties?.length ? dashboard.value.codingDifficulties : fallbackOverview.codingDifficulties,
 )
+// 游戏数据
 const gameMetrics = computed(() =>
   dashboard.value.gameMetrics?.length ? dashboard.value.gameMetrics : fallbackOverview.gameMetrics,
 )
+// 获取金币数量
 const profileCoinValue = computed(() => {
   const explicitCoins = dashboard.value.coinTotal ?? dashboard.value.coins ?? dashboard.value.goldCoins
   if (explicitCoins !== undefined && explicitCoins !== null) return String(explicitCoins)
@@ -181,49 +200,63 @@ const profileCoinValue = computed(() => {
 
   return coinMetric?.value || '0'
 })
+// 错题本数据
 const mistakeMetrics = computed(() =>
   dashboard.value.mistakeMetrics?.length ? dashboard.value.mistakeMetrics : fallbackOverview.mistakeMetrics,
 )
+// 排名数据
 const rankingMetrics = computed(() =>
   dashboard.value.rankingMetrics?.length ? dashboard.value.rankingMetrics : fallbackOverview.rankingMetrics,
 )
+// 成就数据
 const achievementMetrics = computed(() =>
   dashboard.value.achievementMetrics?.length ? dashboard.value.achievementMetrics : fallbackOverview.achievementMetrics,
 )
+// 教材订单数据
 const textbookOrders = computed(() =>
   dashboard.value.textbookOrders?.length ? dashboard.value.textbookOrders : fallbackOverview.textbookOrders,
 )
+// 游戏数据预览区域
 const gamePreviewSection = computed(() => ({
   key: 'games',
   eyebrow: 'Games',
-  title: '\u6e38\u620f\u6570\u636e',
+  title: '游戏数据',
   items: gameMetrics.value,
 }))
+// 扩展数据预览区域列表
 const previewSections = computed(() => [
-  { key: 'mistakes', eyebrow: 'Mistakes', title: '\u9519\u9898\u672c', items: mistakeMetrics.value },
-  { key: 'ranking', eyebrow: 'Ranking', title: '\u6392\u540d', items: rankingMetrics.value },
-  { key: 'achievements', eyebrow: 'Achievements', title: '\u6210\u5c31', items: achievementMetrics.value },
-  { key: 'orders', eyebrow: 'Orders', title: '\u6559\u6750\u8d2d\u7269\u8ba2\u5355', items: textbookOrders.value },
+  { key: 'mistakes', eyebrow: 'Mistakes', title: '错题本', items: mistakeMetrics.value },
+  { key: 'ranking', eyebrow: 'Ranking', title: '排名', items: rankingMetrics.value },
+  { key: 'achievements', eyebrow: 'Achievements', title: '成就', items: achievementMetrics.value },
+  { key: 'orders', eyebrow: 'Orders', title: '教材购书订单', items: textbookOrders.value },
 ])
+// 整体进度百分比
 const overallProgress = computed(() => {
   const progress = Number(dashboard.value.overallProgress ?? 0)
   return Math.min(Math.max(Number.isFinite(progress) ? Math.round(progress) : 0, 0), 100)
 })
+// 进度环样式
 const progressRingStyle = computed(() => ({
   '--profile-progress': `${overallProgress.value}%`,
 }))
+// 用户名称首字母
 const userInitial = computed(() => (user.value.name || 'K').trim().slice(0, 1).toUpperCase())
+// 用户头像 URL
 const avatarSrc = computed(() => resolveResourceUrl(user.value.avatarUrl))
+// 编程题目已完成总数
 const codingSolvedTotal = computed(() =>
   codingDifficulties.value.reduce((sum, item) => sum + Number(item.solved || 0), 0),
 )
+// 编程题目总数
 const codingQuestionTotal = computed(() =>
   codingDifficulties.value.reduce((sum, item) => sum + Number(item.total || 0), 0),
 )
+// 编程完成度百分比
 const codingCompletion = computed(() => {
   if (!codingQuestionTotal.value) return 0
   return Math.round((codingSolvedTotal.value / codingQuestionTotal.value) * 100)
 })
+// 编程难度环形进度样式
 const codingRingStyle = computed(() => {
   const safeSolved = Math.max(codingSolvedTotal.value, 1)
   const easy = Number(codingDifficulties.value[0]?.solved || 0) / safeSolved * 180
@@ -235,6 +268,7 @@ const codingRingStyle = computed(() => {
     '--coding-hard-end': `${easy + medium + hard}deg`,
   }
 })
+// 头像裁剪图片样式
 const avatarCropImageStyle = computed(() => ({
   width: `${avatarCropBaseSize.value.width}px`,
   height: `${avatarCropBaseSize.value.height}px`,
@@ -243,6 +277,7 @@ const avatarCropImageStyle = computed(() => ({
   transform: `translate(-50%, -50%) scale(${avatarCropZoom.value})`,
 }))
 
+// 显示操作反馈提示
 const showFeedback = (message) => {
   feedbackMessage.value = message
   feedbackVisible.value = true
@@ -255,6 +290,7 @@ const showFeedback = (message) => {
   }, 1800)
 }
 
+// 重置单个元素的倾斜效果
 const resetTiltElement = (element) => {
   if (!element) return
   element.classList.remove('is-tilting')
@@ -262,11 +298,13 @@ const resetTiltElement = (element) => {
   element.style.removeProperty('--profile-tilt-y')
 }
 
+// 重置所有元素的倾斜效果
 const resetProfileTilt = () => {
   activeTiltElements.forEach(resetTiltElement)
   activeTiltElements = new Set()
 }
 
+// 收集需要应用倾斜效果的元素
 const collectProfileTiltElements = (target, container) => {
   const tiltElements = []
   let current = target?.closest?.(profileTiltSelector)
@@ -281,6 +319,7 @@ const collectProfileTiltElements = (target, container) => {
   return tiltElements
 }
 
+// 应用元素倾斜效果
 const applyProfileTilt = (element, event) => {
   const rect = element.getBoundingClientRect()
   const x = (event.clientX - rect.left) / rect.width
@@ -293,6 +332,7 @@ const applyProfileTilt = (element, event) => {
   element.style.setProperty('--profile-tilt-y', `${rotateY.toFixed(2)}deg`)
 }
 
+// 处理页面鼠标移动时的倾斜效果
 const handleProfileTilt = (event) => {
   const tiltElements = collectProfileTiltElements(event.target, event.currentTarget)
 
@@ -312,6 +352,7 @@ const handleProfileTilt = (event) => {
   activeTiltElements = nextTiltElements
 }
 
+// 加载学习概览数据
 const loadProfileOverview = async () => {
   profileLoading.value = true
   profileError.value = ''
@@ -325,6 +366,7 @@ const loadProfileOverview = async () => {
   }
 }
 
+// 加载教师课程列表
 const loadTeacherCourses = async () => {
   teacherCoursesLoading.value = true
   teacherCoursesError.value = ''
@@ -338,6 +380,7 @@ const loadTeacherCourses = async () => {
   }
 }
 
+// 为课程分配班级
 const assignCourseClass = (course) => {
   const value = classAssignments.value[course.id]?.trim()
   if (!value) {
@@ -347,29 +390,35 @@ const assignCourseClass = (course) => {
   showFeedback(`已为《${course.name}》分配班级：${value}`)
 }
 
+// 打开布置作业入口
 const openAssignmentEntry = (course) => {
   showFeedback(`《${course.name}》布置作业入口待实现`)
 }
 
+// 打开发布课程对话框
 const openPublishCourseDialog = () => {
   publishCourseDialogOpen.value = true
   publishCourseError.value = ''
 }
 
+// 关闭发布课程对话框
 const closePublishCourseDialog = () => {
   if (publishingCourse.value) return
   publishCourseDialogOpen.value = false
   publishCourseError.value = ''
 }
 
+// 处理课程封面选择
 const handlePublishCourseCoverSelected = (event) => {
   publishCourseCoverFile.value = event.target.files?.[0] || null
 }
 
+// 处理课程视频选择
 const handlePublishCourseVideoSelected = (event) => {
   publishCourseVideoFile.value = event.target.files?.[0] || null
 }
 
+// 重置发布课程表单
 const resetPublishCourseForm = () => {
   publishCourseForm.value = {
     courseName: '',
@@ -382,6 +431,7 @@ const resetPublishCourseForm = () => {
   publishCourseVideoFile.value = null
 }
 
+// 提交发布课程表单
 const submitPublishCourseFromProfile = async () => {
   publishCourseError.value = ''
   if (!publishCourseCoverFile.value || !publishCourseVideoFile.value) {
@@ -409,6 +459,7 @@ const submitPublishCourseFromProfile = async () => {
   }
 }
 
+// 删除教师课程
 const removeTeacherCourse = async (course) => {
   const confirmed = window.confirm(`确认删除课程《${course.name}》吗？`)
   if (!confirmed) return
@@ -426,6 +477,7 @@ const removeTeacherCourse = async (course) => {
   }
 }
 
+// 应用用户信息更新
 const applyProfileUser = (nextUser) => {
   profileUser.value = nextUser
   profileForm.value = {
@@ -441,6 +493,7 @@ const applyProfileUser = (nextUser) => {
   }
 }
 
+// 加载用户资料
 const loadProfileUser = async () => {
   userError.value = ''
   try {
@@ -451,6 +504,7 @@ const loadProfileUser = async () => {
   }
 }
 
+// 开始编辑个人资料
 const startProfileEdit = () => {
   profileForm.value = {
     name: user.value.name,
@@ -460,11 +514,13 @@ const startProfileEdit = () => {
   userError.value = ''
 }
 
+// 取消编辑个人资料
 const cancelProfileEdit = () => {
   editingProfile.value = false
   userError.value = ''
 }
 
+// 保存个人资料编辑
 const saveProfileEdit = async () => {
   const name = profileForm.value.name.trim()
   if (!name) {
@@ -493,10 +549,12 @@ const saveProfileEdit = async () => {
   }
 }
 
+// 打开头像选择器
 const openAvatarPicker = () => {
   avatarInputRef.value?.click()
 }
 
+// 重置头像裁剪状态
 const resetAvatarCrop = () => {
   const frame = avatarCropFrameRef.value
   const image = avatarCropImageRef.value
@@ -511,6 +569,7 @@ const resetAvatarCrop = () => {
   avatarCropOffset.value = { x: 0, y: 0 }
 }
 
+// 限制头像裁剪偏移量在有效范围内
 const limitAvatarCropOffset = (offset, zoom = avatarCropZoom.value) => {
   const frame = avatarCropFrameRef.value
   if (!frame) return offset
@@ -525,10 +584,12 @@ const limitAvatarCropOffset = (offset, zoom = avatarCropZoom.value) => {
   }
 }
 
+// 规范化头像裁剪偏移量
 const normalizeAvatarCropOffset = () => {
   avatarCropOffset.value = limitAvatarCropOffset(avatarCropOffset.value)
 }
 
+// 开始拖动头像裁剪图片
 const startAvatarCropDrag = (event) => {
   if (avatarUploading.value) return
   avatarCropDragging.value = true
@@ -541,6 +602,7 @@ const startAvatarCropDrag = (event) => {
   event.currentTarget.setPointerCapture?.(event.pointerId)
 }
 
+// 移动头像裁剪图片
 const moveAvatarCropDrag = (event) => {
   if (!avatarCropDragging.value) return
   avatarCropOffset.value = limitAvatarCropOffset({
@@ -549,11 +611,13 @@ const moveAvatarCropDrag = (event) => {
   })
 }
 
+// 停止拖动头像裁剪图片
 const stopAvatarCropDrag = (event) => {
   avatarCropDragging.value = false
   event.currentTarget.releasePointerCapture?.(event.pointerId)
 }
 
+// 关闭头像裁剪器
 const closeAvatarCropper = (force = false) => {
   if (avatarUploading.value && !force) return
   if (avatarCropImageUrl.value) {
@@ -567,6 +631,7 @@ const closeAvatarCropper = (force = false) => {
   avatarCropDragging.value = false
 }
 
+// 处理头像文件选择
 const handleAvatarSelected = async (event) => {
   const file = event.target.files?.[0]
   event.target.value = ''
@@ -585,6 +650,7 @@ const handleAvatarSelected = async (event) => {
   userError.value = ''
 }
 
+// 创建裁剪后的头像文件
 const createCroppedAvatarFile = async () => {
   const frame = avatarCropFrameRef.value
   const image = avatarCropImageRef.value
@@ -624,6 +690,7 @@ const createCroppedAvatarFile = async () => {
   return new File([blob], 'avatar-cropped.png', { type: 'image/png' })
 }
 
+// 确认头像裁剪并上传
 const confirmAvatarCrop = async () => {
   avatarUploading.value = true
   userError.value = ''
@@ -663,13 +730,18 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+  <!-- 个人主页主容器 -->
   <main class="profile-main" @pointermove="handleProfileTilt" @pointerleave="resetProfileTilt">
+    <!-- 用户信息区域 -->
     <section class="profile-hero">
+      <!-- 用户卡片 -->
       <div class="profile-card">
+        <!-- 金币数量（学生用户显示） -->
         <div v-if="!isTeacherProfile" class="profile-coin-pill" aria-label="金币数量">
           <span>金币</span>
           <strong>{{ profileCoinValue }}</strong>
         </div>
+        <!-- 头像上传按钮 -->
         <button
           class="profile-avatar"
           type="button"
@@ -681,6 +753,7 @@ onBeforeUnmount(() => {
           <span v-else>{{ userInitial }}</span>
           <small>{{ avatarUploading ? '上传中' : '换头像' }}</small>
         </button>
+        <!-- 隐藏的头像文件输入 -->
         <input
           ref="avatarInputRef"
           class="profile-avatar-input"
@@ -688,14 +761,19 @@ onBeforeUnmount(() => {
           accept="image/png,image/jpeg,image/webp"
           @change="handleAvatarSelected"
         />
+        <!-- 用户身份信息 -->
         <div class="profile-identity">
           <p class="profile-role">{{ user.role }}</p>
           <h1>{{ user.name }}</h1>
           <span>{{ user.handle }}</span>
         </div>
+        <!-- 用户简介 -->
         <p class="profile-bio">{{ user.bio }}</p>
+        <!-- 编辑资料按钮 -->
         <button class="profile-edit-button" type="button" @click="startProfileEdit">编辑资料</button>
+        <!-- 错误提示 -->
         <p v-if="userError && !editingProfile" class="profile-user-message">{{ userError }}</p>
+        <!-- 用户元信息 -->
         <div class="profile-meta">
           <span v-if="isTeacherProfile">教师姓名：{{ user.teacherName || user.name }}</span>
           <span>{{ isTeacherProfile ? `所属学校：${user.school}` : user.school }}</span>
@@ -704,6 +782,7 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
+      <!-- 教师课程管理面板 -->
       <section v-if="isTeacherProfile" class="profile-panel profile-teacher-course-panel">
         <div class="profile-panel-head">
           <div>
@@ -716,15 +795,19 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
+        <!-- 加载状态 -->
         <div v-if="teacherCoursesLoading" class="profile-teacher-state">正在加载课程...</div>
+        <!-- 错误状态 -->
         <div v-else-if="teacherCoursesError" class="profile-teacher-state is-error">
           <span>{{ teacherCoursesError }}</span>
           <button type="button" @click="loadTeacherCourses">重试</button>
         </div>
+        <!-- 空状态 -->
         <div v-else-if="teacherCourses.length === 0" class="profile-teacher-state">
           <span>暂无自己发布的课程</span>
           <button type="button" @click="openPublishCourseDialog">添加课程</button>
         </div>
+        <!-- 课程列表 -->
         <div v-else class="profile-teacher-course-list">
           <article v-for="course in teacherCourses" :key="course.id" class="profile-teacher-course-card">
             <img :src="resolveResourceUrl(course.cover || course.coverUrl)" :alt="course.name" />
@@ -734,6 +817,7 @@ onBeforeUnmount(() => {
                 <h3>{{ course.name }}</h3>
                 <p>{{ course.school }} · {{ course.startTime || '开课时间待定' }}</p>
               </div>
+              <!-- 班级分配 -->
               <div class="profile-teacher-course-class">
                 <label>
                   分配班级
@@ -745,6 +829,7 @@ onBeforeUnmount(() => {
                 </label>
                 <button type="button" @click="assignCourseClass(course)">确认分配</button>
               </div>
+              <!-- 课程操作 -->
               <div class="profile-teacher-course-actions">
                 <RouterLink :to="`/academy/open-courses/${encodeURIComponent(course.id)}`">查看课程</RouterLink>
                 <button type="button" @click="openAssignmentEntry(course)">布置作业</button>
@@ -762,10 +847,12 @@ onBeforeUnmount(() => {
         </div>
       </section>
 
+      <!-- 学生学习概览面板 -->
       <div v-else class="profile-summary">
         <p>{{ profileLoading ? 'Syncing Data' : 'Learning Dashboard' }}</p>
         <h2>今天也有一点进步，被系统悄悄记下来了。</h2>
         <span v-if="profileError" class="profile-data-note">暂时使用兜底数据：{{ profileError }}</span>
+        <!-- 学习统计数据 -->
         <div class="profile-stats">
           <article v-for="item in stats" :key="item.label">
             <strong>{{ item.value }}</strong>

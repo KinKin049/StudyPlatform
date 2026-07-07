@@ -27,6 +27,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 题库控制器
+ * 提供科目列表、题目查询、错题管理、收藏管理、课程题库等相关接口
+ */
 @RestController
 @RequestMapping("/api/academy/question-bank")
 public class QuestionBankController {
@@ -38,11 +42,24 @@ public class QuestionBankController {
         this.questionBankService = questionBankService;
     }
 
+    /**
+     * 获取科目列表
+     * @return 科目列表响应
+     */
     @GetMapping("/subjects")
     public List<QuestionBankSubjectResponse> listSubjects() {
         return questionBankService.listSubjects();
     }
 
+    /**
+     * 分页查询题目列表
+     * @param subject 科目编码，可选
+     * @param keyword 关键词，可选
+     * @param difficulty 难度等级，可选
+     * @param page 页码，默认0
+     * @param size 每页数量，默认12
+     * @return 题目分页响应
+     */
     @GetMapping("/problems")
     public QuestionBankProblemPageResponse listProblems(
             @RequestParam(required = false) String subject,
@@ -54,16 +71,30 @@ public class QuestionBankController {
         return questionBankService.listProblems(subject, keyword, difficulty, page, size);
     }
 
+    /**
+     * 获取题目详情
+     * @param id 题目ID
+     * @return 题目详情响应
+     */
     @GetMapping("/problems/{id}")
     public QuestionBankProblemResponse getProblem(@PathVariable long id) {
         return questionBankService.getProblem(id);
     }
 
+    /**
+     * 获取课程题库目录
+     * @return 课程题库分类列表
+     */
     @GetMapping("/course-catalog")
     public List<CourseQuestionBankCategoryResponse> listCourseCatalog() {
         return questionBankService.listCourseQuestionBankCatalog();
     }
 
+    /**
+     * 获取错题统计摘要
+     * @param userId 用户ID，从请求头获取，可选
+     * @return 错题统计摘要响应
+     */
     @GetMapping("/mistakes/summary")
     public QuestionBankMistakeSummaryResponse getMistakeSummary(
             @RequestHeader(value = "X-Auth-User-Id", required = false) Long userId
@@ -71,6 +102,16 @@ public class QuestionBankController {
         return questionBankService.getMistakeSummary(resolveUserId(userId));
     }
 
+    /**
+     * 分页查询错题列表
+     * @param setCode 题库编码，可选
+     * @param status 状态，默认active
+     * @param keyword 关键词，可选
+     * @param page 页码，默认0
+     * @param size 每页数量，默认20
+     * @param userId 用户ID，从请求头获取，可选
+     * @return 错题分页响应
+     */
     @GetMapping("/mistakes")
     public QuestionBankMistakePageResponse listMistakes(
             @RequestParam(required = false) String setCode,
@@ -83,6 +124,12 @@ public class QuestionBankController {
         return questionBankService.listMistakes(resolveUserId(userId), setCode, status, keyword, page, size);
     }
 
+    /**
+     * 记录错题作答
+     * @param request 错题作答请求
+     * @param userId 用户ID，从请求头获取，可选
+     * @return 错题作答响应
+     */
     @PostMapping("/mistakes/answers")
     public QuestionBankMistakeAnswerResponse recordMistakeAnswer(
             @RequestBody QuestionBankMistakeAnswerRequest request,
@@ -91,6 +138,11 @@ public class QuestionBankController {
         return questionBankService.recordMistakeAnswer(resolveUserId(userId), request);
     }
 
+    /**
+     * 获取收藏统计摘要
+     * @param userId 用户ID，从请求头获取，可选
+     * @return 收藏统计摘要响应
+     */
     @GetMapping("/favorites/summary")
     public QuestionBankFavoriteSummaryResponse getFavoriteSummary(
             @RequestHeader(value = "X-Auth-User-Id", required = false) Long userId
@@ -98,6 +150,15 @@ public class QuestionBankController {
         return questionBankService.getFavoriteSummary(resolveUserId(userId));
     }
 
+    /**
+     * 分页查询收藏列表
+     * @param setCode 题库编码，可选
+     * @param keyword 关键词，可选
+     * @param page 页码，默认0
+     * @param size 每页数量，默认20
+     * @param userId 用户ID，从请求头获取，可选
+     * @return 收藏分页响应
+     */
     @GetMapping("/favorites")
     public QuestionBankFavoritePageResponse listFavorites(
             @RequestParam(required = false) String setCode,
@@ -109,6 +170,12 @@ public class QuestionBankController {
         return questionBankService.listFavorites(resolveUserId(userId), setCode, keyword, page, size);
     }
 
+    /**
+     * 添加收藏
+     * @param request 收藏请求
+     * @param userId 用户ID，从请求头获取，可选
+     * @return 收藏状态响应
+     */
     @PostMapping("/favorites")
     public QuestionBankFavoriteToggleResponse addFavorite(
             @RequestBody QuestionBankFavoriteRequest request,
@@ -117,6 +184,12 @@ public class QuestionBankController {
         return questionBankService.addFavorite(resolveUserId(userId), request);
     }
 
+    /**
+     * 取消收藏
+     * @param questionId 题目ID
+     * @param userId 用户ID，从请求头获取，可选
+     * @return 收藏状态响应
+     */
     @DeleteMapping("/favorites/{questionId}")
     public QuestionBankFavoriteToggleResponse removeFavorite(
             @PathVariable long questionId,
@@ -125,6 +198,15 @@ public class QuestionBankController {
         return questionBankService.removeFavorite(resolveUserId(userId), questionId);
     }
 
+    /**
+     * 获取课程题库详情
+     * @param code 课程编码
+     * @param page 页码，默认0
+     * @param size 每页数量，默认30
+     * @param keyword 关键词，可选
+     * @param userId 用户ID，从请求头获取，可选
+     * @return 课程题库详情响应
+     */
     @GetMapping("/courses/{code}")
     public CourseQuestionBankDetailResponse getCourseQuestionBank(
             @PathVariable String code,
@@ -136,6 +218,11 @@ public class QuestionBankController {
         return questionBankService.getCourseQuestionBank(code, page, size, keyword, resolveUserId(userId));
     }
 
+    /**
+     * 获取打字勇士词库
+     * @param userId 用户ID，从请求头获取，可选
+     * @return 词库响应
+     */
     @GetMapping("/type-warrior/words")
     public TypeWarriorWordPoolResponse getTypeWarriorWordPool(
             @RequestHeader(value = "X-Auth-User-Id", required = false) Long userId
@@ -143,6 +230,12 @@ public class QuestionBankController {
         return questionBankService.getTypeWarriorWordPool(resolveUserId(userId));
     }
 
+    /**
+     * 从洛谷导入题目
+     * @param pages 导入页数，默认1
+     * @param limit 每页数量，默认20
+     * @return 导入结果响应
+     */
     @PostMapping("/import/luogu")
     public QuestionBankImportResponse importLuoguProblems(
             @RequestParam(defaultValue = "1") int pages,

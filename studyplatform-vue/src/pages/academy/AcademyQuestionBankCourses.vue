@@ -1,31 +1,49 @@
 <script setup>
+/**
+ * 课程题库目录组件
+ * 展示按大类组织的课程题库列表，支持分类切换和封面图显示
+ */
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { fetchQuestionBankCourseCatalog } from '../../api/academy'
 import { resolveResourceUrl } from '../../api/request'
 
+/** 路由实例 */
 const router = useRouter()
+
+/** 当前路由信息 */
 const route = useRoute()
 
+/** 题库分类列表 */
 const categories = ref([])
+
+/** 当前激活的分类编码 */
 const activeCategoryCode = ref('')
+
+/** 加载状态 */
 const loading = ref(false)
+
+/** 错误提示信息 */
 const errorMessage = ref('')
 
+/** 当前激活的分类对象 */
 const activeCategory = computed(() => {
   return categories.value.find((category) => category.code === activeCategoryCode.value) || categories.value[0]
 })
 
+/** 总题库数量 */
 const totalSets = computed(() => {
   return categories.value.reduce((sum, category) => sum + (category.sets?.length || 0), 0)
 })
 
+/** 已接入题库数量 */
 const readySets = computed(() => {
   return categories.value
     .flatMap((category) => category.sets || [])
     .filter((item) => item.routePath && item.questionCount > 0).length
 })
 
+/** 从路由参数同步激活分类 */
 const syncActiveCategoryFromRoute = () => {
   const categoryCode = String(route.query.category || '')
   activeCategoryCode.value = categories.value.some((category) => category.code === categoryCode)
@@ -33,6 +51,7 @@ const syncActiveCategoryFromRoute = () => {
     : categories.value[0]?.code || ''
 }
 
+/** 加载课程题库目录数据 */
 const loadCatalog = async () => {
   loading.value = true
   errorMessage.value = ''
@@ -47,6 +66,7 @@ const loadCatalog = async () => {
   }
 }
 
+/** 设置激活分类并更新路由参数 */
 const setActiveCategory = (categoryCode) => {
   activeCategoryCode.value = categoryCode
   router.replace({
@@ -57,10 +77,12 @@ const setActiveCategory = (categoryCode) => {
   })
 }
 
+/** 获取题库封面图 URL */
 const coverSrc = (set) => {
   return resolveResourceUrl(set.coverUrl || set.fallbackCoverUrl || '')
 }
 
+/** 处理封面图加载失败，切换备用封面 */
 const handleCoverError = (event, set) => {
   if (!set.fallbackCoverUrl || event.currentTarget.dataset.fallbackApplied === 'true') {
     return
@@ -69,6 +91,7 @@ const handleCoverError = (event, set) => {
   event.currentTarget.src = set.fallbackCoverUrl
 }
 
+/** 打开题库详情页 */
 const openSet = (set) => {
   if (set.routePath) {
     router.push(set.routePath)
@@ -78,6 +101,7 @@ const openSet = (set) => {
   console.info('course question bank action reserved:', set.code)
 }
 
+/** 监听路由参数变化，同步分类状态 */
 watch(
   () => route.query.category,
   () => {
@@ -87,11 +111,13 @@ watch(
   },
 )
 
+/** 组件挂载时加载目录数据 */
 onMounted(loadCatalog)
 </script>
 
 <template>
   <main class="academy-main question-course-main question-catalog-main">
+    <!-- 面包屑导航 -->
     <nav class="question-course-breadcrumb" aria-label="题库面包屑">
       <RouterLink to="/academy/home">在线学堂</RouterLink>
       <span>&gt;</span>
@@ -100,12 +126,13 @@ onMounted(loadCatalog)
       <strong>课程题库</strong>
     </nav>
 
+    <!-- 头部区域：标题和统计数据 -->
     <section class="question-catalog-hero">
       <div>
-        <p>Course Question Bank</p>
         <h1>课程题库首页</h1>
         <span>按课程和考试方向整理题库入口，前端通过后端 API 读取 MySQL 目录与题目数据。</span>
       </div>
+      <!-- 目录统计数据 -->
       <div class="question-catalog-stats" aria-label="题库目录状态">
         <div>
           <strong>{{ categories.length }}</strong>
@@ -122,9 +149,12 @@ onMounted(loadCatalog)
       </div>
     </section>
 
+    <!-- 错误提示 -->
     <p v-if="errorMessage" class="question-course-message is-error">{{ errorMessage }}</p>
 
+    <!-- 题库目录主体区域 -->
     <section class="question-catalog-shell" aria-label="课程题库目录">
+      <!-- 分类标签页 -->
       <div class="question-catalog-tabs">
         <button
           v-for="category in categories"
@@ -138,8 +168,13 @@ onMounted(loadCatalog)
         </button>
       </div>
 
+      <!-- 加载状态 -->
       <div v-if="loading" class="question-course-empty">正在加载课程题库...</div>
+
+      <!-- 空状态 -->
       <div v-else-if="!activeCategory" class="question-course-empty">暂无课程题库目录。</div>
+
+      <!-- 题库列表 -->
       <section v-else class="question-catalog-section">
         <header>
           <div>
@@ -149,6 +184,7 @@ onMounted(loadCatalog)
           <span>{{ activeCategory.sets?.length || 0 }} 个小类</span>
         </header>
 
+        <!-- 题库卡片网格 -->
         <div class="question-catalog-grid">
           <button
             v-for="set in activeCategory.sets"

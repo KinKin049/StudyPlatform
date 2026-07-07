@@ -1,8 +1,29 @@
 <script setup>
+/**
+ * 万题天梯跳游戏主页面
+ * 整合游戏世界、HUD界面、题库选择面板和游戏覆盖层，管理游戏核心逻辑
+ */
+import { watch } from 'vue'
+import LadderGameOverlay from './components/LadderGameOverlay.vue'
+import LadderHud from './components/LadderHud.vue'
+import LadderQuestionBankPanel from './components/LadderQuestionBankPanel.vue'
+import LadderJumpWorld from './components/LadderJumpWorld.vue'
 import { useLadderJumpGame } from './composables/useLadderJumpGame'
+import { useUserVouchers } from '../../../composables/useUserVouchers'
+import { VOUCHER_KEYS } from '../../../api/vouchers'
+import './styles/ladderJump.css'
 
+/** 定义返回事件 */
 const emit = defineEmits(['back'])
 
+/** 用户券相关操作 */
+const {
+  errorMessage: voucherErrorMessage,
+  getQuantity,
+  consumeVoucher,
+} = useUserVouchers()
+
+/** 游戏核心逻辑组合式函数 */
 const {
   assetBase,
   worldStyle,
@@ -44,165 +65,134 @@ const {
   resumeGame,
   restartGame,
   finishGame,
+  reviveGame,
+  persistLadderJumpRecord,
 } = useLadderJumpGame()
+
+/**
+ * 设置题库面板引用
+ * @param {HTMLElement|VueComponent} element - 题库面板元素或组件
+ */
+function setQuestionBankPanelRef(element) {
+  questionBankPanelRef.value = element?.$el || element
+}
+
+/**
+ * 处理复活游戏
+ * 消耗复活券后调用游戏复活逻辑
+ */
+async function handleReviveGame() {
+  if (getQuantity(VOUCHER_KEYS.GAME_REVIVE) <= 0) {
+    return
+  }
+  const consumed = await consumeVoucher(VOUCHER_KEYS.GAME_REVIVE)
+  if (consumed) {
+    reviveGame()
+  }
+}
+
+/**
+ * 处理重新开始游戏
+ * 游戏结束时先保存记录再重新开始
+ */
+function handleRestartGame() {
+  if (isGameOver.value) {
+    persistLadderJumpRecord()
+  }
+  restartGame()
+}
+
+/**
+ * 处理结束游戏
+ * 结束当前局并保存游戏记录
+ */
+function handleFinishGame() {
+  finishGame('本局结束')
+  persistLadderJumpRecord()
+}
+
+/** 监听游戏结束状态，无复活券时自动保存记录 */
+watch(
+  () => isGameOver.value,
+  (gameOver) => {
+    if (!gameOver || getQuantity(VOUCHER_KEYS.GAME_REVIVE) > 0) {
+      return
+    }
+    persistLadderJumpRecord()
+  },
+)
 </script>
 
 <template>
+  <!-- 游戏页面主容器 -->
   <section class="ladder-game-page">
+    <!-- 游戏舞台区域 -->
     <main class="ladder-stage" aria-label="万题天梯跳游戏区域" tabindex="0">
-      <div class="ladder-world" :style="worldStyle">
-        <div
-          v-for="layer in sceneLayers"
-          :key="layer.key"
-          :class="layer.className"
-        ></div>
+      <!-- 游戏世界渲染组件 -->
+      <LadderJumpWorld
+        :asset-base="assetBase"
+        :world-style="worldStyle"
+        :scene-layers="sceneLayers"
+        :question-cards="questionCards"
+        :feedback="feedback"
+        :active-platforms="activePlatforms"
+        :selected-platform="selectedPlatform"
+        :option-letter="optionLetter"
+        :coins="coins"
+        :travel-coins="travelCoins"
+        :current-question-key="currentQuestionKey"
+        :answered-question-ids="answeredQuestionIds"
+        :confirm-offset="confirmOffset"
+        :cars="cars"
+        :damage-flash="damageFlash"
+        :player-style="playerStyle"
+        :player-sprite="playerSprite"
+      />
 
-        <section
-          v-for="card in questionCards"
-          :key="card.id"
-          class="ladder-question-card"
-          :class="{ 'is-next-question': !card.isCurrent }"
-          :style="{ left: `${card.x}px` }"
-        >
-          <span>第 {{ card.index + 1 }} 题</span>
-          <h2>{{ card.question.question }}</h2>
-          <p>{{ card.isCurrent ? feedback : '继续向右前进，下一题会随着你的移动进入画面。' }}</p>
-        </section>
-
-        <div
-          v-for="platform in activePlatforms.filter((item) => item.id !== 'ground')"
-          :key="platform.id"
-          class="ladder-platform"
-          :class="{
-            'is-option': platform.questionId,
-            'is-selected-option': selectedPlatform && selectedPlatform.id === platform.id,
-            'is-correct-option': platform.questionId && platform.isCorrect,
-          }"
-          :style="{ left: `${platform.x}px`, top: `${platform.y}px`, width: `${platform.width}px`, height: `${platform.height}px` }"
-        >
-          <template v-if="platform.questionId">
-            <span>{{ optionLetter(platform.index) }}</span>
-            <strong>{{ platform.option }}</strong>
-          </template>
-        </div>
-
-        <div
-          v-for="coin in coins"
-          v-show="!coin.collected"
-          :key="coin.id"
-          class="ladder-coin"
-          :style="{ left: `${coin.x}px`, top: `${coin.y}px` }"
-        >
-          金
-        </div>
-
-        <div
-          v-for="coin in travelCoins"
-          v-show="!coin.collected"
-          :key="coin.id"
-          class="ladder-coin is-travel-coin"
-          :style="{ left: `${coin.x}px`, top: `${coin.y}px` }"
-        >
-          金
-        </div>
-
-        <div
-          v-if="selectedPlatform && selectedPlatform.questionId === currentQuestionKey && !answeredQuestionIds.includes(currentQuestionKey)"
-          class="ladder-confirm-line"
-          :style="{ left: `${selectedPlatform.x + confirmOffset}px`, top: `${selectedPlatform.y - 106}px`, height: '152px' }"
-        >
-          <span>确认线</span>
-        </div>
-
-        <div class="ladder-ground"></div>
-
-        <img
-          v-for="car in cars"
-          :key="car.id"
-          class="ladder-car"
-          :src="`${assetBase}/cars/${car.file}`"
-          alt=""
-          :style="{ left: `${car.x}px`, bottom: `${car.bottom}px`, transform: `scaleX(${car.direction})` }"
-        />
-
-        <div class="ladder-player" :class="{ 'is-damaged': damageFlash }" :style="playerStyle">
-          <img :src="playerSprite" alt="玩家角色" />
-        </div>
-      </div>
-
+      <!-- 返回按钮 -->
       <button type="button" class="ladder-back-button ladder-floating-back" @click="emit('back')">Back</button>
 
-      <section ref="questionBankPanelRef" class="ladder-bank-panel" aria-label="题库选择">
-        <span class="ladder-bank-panel__label">题库</span>
-        <button
-          type="button"
-          class="ladder-bank-panel__trigger"
-          :disabled="questionBankLoading"
-          @click="toggleQuestionDropdown"
-        >
-          <span class="ladder-bank-panel__trigger-title">{{ questionBankButtonTitle }}</span>
-          <span class="ladder-bank-panel__trigger-meta">{{ questionBankButtonSubtitle }}</span>
-        </button>
+      <!-- 题库选择面板 -->
+      <LadderQuestionBankPanel
+        :ref="setQuestionBankPanelRef"
+        :question-bank-loading="questionBankLoading"
+        :question-bank-button-title="questionBankButtonTitle"
+        :question-bank-button-subtitle="questionBankButtonSubtitle"
+        :question-dropdown-open="questionDropdownOpen"
+        :selected-question-bank-code="selectedQuestionBankCode"
+        :question-banks="questionBanks"
+        :question-bank-summary="questionBankSummary"
+        @toggle="toggleQuestionDropdown"
+        @select="selectQuestionBank"
+      />
 
-        <div v-if="questionDropdownOpen" class="ladder-bank-panel__menu">
-          <button
-            type="button"
-            class="ladder-bank-panel__option"
-            :class="{ 'is-active': !selectedQuestionBankCode }"
-            @click="selectQuestionBank('')"
-          >
-            <span>全部单选题库</span>
-            <small>随机混合题池</small>
-          </button>
-          <button
-            v-for="bank in questionBanks"
-            :key="bank.code"
-            type="button"
-            class="ladder-bank-panel__option"
-            :class="{ 'is-active': bank.code === selectedQuestionBankCode }"
-            @click="selectQuestionBank(bank.code)"
-          >
-            <span>{{ bank.title }}</span>
-            <small>{{ bank.categoryName }} · {{ bank.questionCount }} 题</small>
-          </button>
-        </div>
+      <!-- 游戏状态HUD -->
+      <LadderHud
+        :score="score"
+        :combo="combo"
+        :game-time-text="gameTimeText"
+        :heart-text="heartText"
+        @pause="pauseGame"
+      />
 
-        <p class="ladder-bank-panel__summary">{{ questionBankSummary }}</p>
-      </section>
+      <!-- 游戏覆盖层（暂停/结束界面） -->
+      <LadderGameOverlay
+        :is-paused="isPaused"
+        :is-game-over="isGameOver"
+        :overlay-title="overlayTitle"
+        :score="score"
+        :overlay-subtitle="overlaySubtitle"
+        :overlay-stats="overlayStats"
+        :revive-available="getQuantity(VOUCHER_KEYS.GAME_REVIVE) > 0"
+        :revive-count="getQuantity(VOUCHER_KEYS.GAME_REVIVE)"
+        @resume="resumeGame"
+        @revive="handleReviveGame"
+        @restart="handleRestartGame"
+        @finish="handleFinishGame"
+      />
 
-      <div class="ladder-stats ladder-floating-stats">
-        <span>金币 {{ score }}</span>
-        <span>Combo {{ combo }}</span>
-        <span>Time {{ gameTimeText }}</span>
-        <span class="ladder-hearts">{{ heartText }}</span>
-        <button type="button" class="ladder-pause-button" @click="pauseGame">暂停</button>
-      </div>
-
-      <aside class="ladder-control-hint">
-        <span>A/D 或方向键左右移动</span>
-        <span>W / 空格 / 上方向键三级跳</span>
-        <span>S / 下方向键下落</span>
-        <span>Esc 暂停</span>
-      </aside>
-
-      <div v-if="isPaused || isGameOver" class="ladder-game-over">
-        <p>{{ overlayTitle }}</p>
-        <h2>{{ score }} 金币</h2>
-        <span class="ladder-overlay-subtitle">{{ overlaySubtitle }}</span>
-
-        <section class="ladder-overlay-stats" aria-label="本局统计">
-          <article v-for="item in overlayStats" :key="item.label">
-            <span>{{ item.label }}</span>
-            <strong>{{ item.value }}</strong>
-          </article>
-        </section>
-
-        <div class="ladder-overlay-actions">
-          <button v-if="isPaused" type="button" @click="resumeGame">继续游戏</button>
-          <button type="button" @click="restartGame">重新开始</button>
-          <button v-if="isPaused" type="button" class="is-danger" @click="finishGame('本局结束')">立即结束</button>
-        </div>
-      </div>
+      <!-- 券操作错误提示 -->
+      <p v-if="voucherErrorMessage" class="ladder-voucher-error">{{ voucherErrorMessage }}</p>
     </main>
   </section>
 </template>

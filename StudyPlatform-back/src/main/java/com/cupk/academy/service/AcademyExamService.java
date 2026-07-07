@@ -22,6 +22,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * 考试服务，提供考试列表查询、详情查看、开始考试、保存草稿、提交批改等功能。
+ */
 @Service
 public class AcademyExamService {
     private static final long DEFAULT_USER_ID = 1L;
@@ -29,6 +32,12 @@ public class AcademyExamService {
     private final AcademyExamRepository examRepository;
     private final OjSubmissionService ojSubmissionService;
 
+    /**
+     * 构造函数，注入依赖的仓库和服务。
+     *
+     * @param examRepository       考试数据访问层
+     * @param ojSubmissionService  OJ提交服务
+     */
     public AcademyExamService(
             AcademyExamRepository examRepository,
             OjSubmissionService ojSubmissionService
@@ -37,6 +46,12 @@ public class AcademyExamService {
         this.ojSubmissionService = ojSubmissionService;
     }
 
+    /**
+     * 查询用户考试列表。
+     *
+     * @param userId 用户ID
+     * @return 考试摘要响应列表
+     */
     public List<AcademyExamSummaryResponse> listExams(Long userId) {
         Long normalizedUserId = normalizeUserId(userId);
         return examRepository.findExams(normalizedUserId).stream()
@@ -62,6 +77,13 @@ public class AcademyExamService {
                 .toList();
     }
 
+    /**
+     * 获取考试详情，包含题目列表和用户答案。
+     *
+     * @param examCode 考试代码
+     * @param userId   用户ID
+     * @return 考试详情响应对象
+     */
     public AcademyExamDetailResponse getExam(String examCode, Long userId) {
         Long normalizedUserId = normalizeUserId(userId);
         ExamDetailRow exam = findExam(examCode);
@@ -91,6 +113,13 @@ public class AcademyExamService {
         );
     }
 
+    /**
+     * 开始考试，记录开始时间。
+     *
+     * @param examCode 考试代码
+     * @param userId   用户ID
+     * @return 考试详情响应对象
+     */
     public AcademyExamDetailResponse startExam(String examCode, Long userId) {
         Long normalizedUserId = normalizeUserId(userId);
         ExamDetailRow exam = findExam(examCode);
@@ -104,6 +133,13 @@ public class AcademyExamService {
         return getExam(examCode, normalizedUserId);
     }
 
+    /**
+     * 保存考试草稿。
+     *
+     * @param examCode 考试代码
+     * @param request  答题请求对象
+     * @return 提交响应对象
+     */
     public AcademyExamSubmitResponse saveDraft(String examCode, AcademyExamAnswerRequest request) {
         ExamDetailRow exam = findExam(examCode);
         Long normalizedUserId = normalizeUserId(request == null ? null : request.userId());
@@ -128,6 +164,13 @@ public class AcademyExamService {
         );
     }
 
+    /**
+     * 提交考试并进行自动批改。
+     *
+     * @param examCode 考试代码
+     * @param request  答题请求对象
+     * @return 提交响应对象，包含批改结果
+     */
     public AcademyExamSubmitResponse submitExam(String examCode, AcademyExamAnswerRequest request) {
         ExamDetailRow exam = findExam(examCode);
         Long normalizedUserId = normalizeUserId(request == null ? null : request.userId());
@@ -185,6 +228,14 @@ public class AcademyExamService {
         );
     }
 
+    /**
+     * 创建待教师审核的题目结果。
+     *
+     * @param question       题目信息
+     * @param submittedAnswer 用户答案
+     * @param userId         用户ID
+     * @return 题目结果响应对象
+     */
     private AcademyExamQuestionResultResponse createPendingReviewResult(
             ExamQuestionRow question,
             Object submittedAnswer,
@@ -240,11 +291,23 @@ public class AcademyExamService {
         }
     }
 
+    /**
+     * 根据考试代码查找考试详情。
+     *
+     * @param examCode 考试代码
+     * @return 考试详情行数据
+     */
     private ExamDetailRow findExam(String examCode) {
         return examRepository.findExamByCode(examCode)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "考试不存在"));
     }
 
+    /**
+     * 将题目行数据转换为响应对象。
+     *
+     * @param question 题目行数据
+     * @return 题目响应对象
+     */
     private AcademyExamQuestionResponse toQuestionResponse(ExamQuestionRow question) {
         return new AcademyExamQuestionResponse(
                 question.id(),
@@ -261,10 +324,21 @@ public class AcademyExamService {
         );
     }
 
+    /**
+     * 获取安全的答案映射，处理空值情况。
+     *
+     * @param request 答题请求对象
+     * @return 答案映射
+     */
     private Map<String, Object> safeAnswers(AcademyExamAnswerRequest request) {
         return request == null || request.answers() == null ? Map.of() : request.answers();
     }
 
+    /**
+     * 确保考试可以开始，检查考试状态和时间。
+     *
+     * @param exam 考试详情
+     */
     private void ensureExamCanStart(ExamDetailRow exam) {
         LocalDateTime now = LocalDateTime.now();
         if ("已结束".equals(exam.status()) || (exam.deadline() != null && exam.deadline().isBefore(now))) {
@@ -275,22 +349,44 @@ public class AcademyExamService {
         }
     }
 
+    /**
+     * 确保考试可以接收答案。
+     *
+     * @param exam 考试详情
+     */
     private void ensureExamCanAcceptAnswers(ExamDetailRow exam) {
         ensureExamCanStart(exam);
     }
 
+    /**
+     * 确保考试已开始。
+     *
+     * @param status 当前状态
+     */
     private void ensureExamStarted(String status) {
         if (!"in_progress".equals(status) && !"draft".equals(status)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请先开始考试");
         }
     }
 
+    /**
+     * 确保考试未提交。
+     *
+     * @param status 当前状态
+     */
     private void ensureExamNotSubmitted(String status) {
         if ("graded".equals(status) || "pending_review".equals(status)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "考试已提交，不能重复提交");
         }
     }
 
+    /**
+     * 判断答案是否正确。
+     *
+     * @param question       题目信息
+     * @param submittedAnswer 用户答案
+     * @return 是否正确
+     */
     private boolean isAnswerAccepted(ExamQuestionRow question, Object submittedAnswer) {
         if (submittedAnswer == null || question.correctAnswer() == null) {
             return false;
@@ -303,6 +399,12 @@ public class AcademyExamService {
         };
     }
 
+    /**
+     * 获取默认的答错提示信息。
+     *
+     * @param question 题目信息
+     * @return 提示信息
+     */
     private String defaultWrongMessage(ExamQuestionRow question) {
         if (question.explanation() == null || question.explanation().isBlank()) {
             return "自动批改未通过";
@@ -310,10 +412,22 @@ public class AcademyExamService {
         return question.explanation();
     }
 
+    /**
+     * 规范化文本，去除多余空格并转为小写。
+     *
+     * @param value 原始值
+     * @return 规范化后的文本
+     */
     private String normalizeText(Object value) {
         return String.valueOf(value == null ? "" : value).trim().replaceAll("\\s+", " ").toLowerCase();
     }
 
+    /**
+     * 规范化列表，去除空值并排序。
+     *
+     * @param value 原始值
+     * @return 规范化后的列表
+     */
     private List<String> normalizeList(Object value) {
         if (value instanceof List<?> values) {
             return values.stream()
@@ -325,6 +439,13 @@ public class AcademyExamService {
         return List.of(normalizeText(value));
     }
 
+    /**
+     * 构建 OJ 提交的源代码。
+     *
+     * @param question       题目信息
+     * @param submittedAnswer 用户答案
+     * @return 源代码
+     */
     private String buildOjSource(ExamQuestionRow question, Object submittedAnswer) {
         String sourceCode = extractSourceCode(submittedAnswer).trim();
         if (sourceCode.isBlank() || sourceCode.contains(" main(") || sourceCode.contains("\nmain(")) {
@@ -350,6 +471,12 @@ public class AcademyExamService {
         return sourceCode;
     }
 
+    /**
+     * 从答案中提取源代码。
+     *
+     * @param submittedAnswer 用户答案
+     * @return 源代码
+     */
     private String extractSourceCode(Object submittedAnswer) {
         if (submittedAnswer instanceof Map<?, ?> answerMap) {
             Object sourceCode = answerMap.get("sourceCode");
@@ -361,6 +488,12 @@ public class AcademyExamService {
         return submittedAnswer == null ? "" : String.valueOf(submittedAnswer);
     }
 
+    /**
+     * 解析编程语言。
+     *
+     * @param submittedAnswer 用户答案
+     * @return 编程语言
+     */
     private String resolveLanguage(Object submittedAnswer) {
         if (submittedAnswer instanceof Map<?, ?> answerMap) {
             Object language = answerMap.get("language");
@@ -371,10 +504,22 @@ public class AcademyExamService {
         return "cpp";
     }
 
+    /**
+     * 获取题目的分数。
+     *
+     * @param question 题目信息
+     * @return 分数
+     */
     private int scoreOf(ExamQuestionRow question) {
         return question.score() == null ? 0 : question.score();
     }
 
+    /**
+     * 规范化用户ID，空值或无效值时返回默认用户ID。
+     *
+     * @param userId 用户ID
+     * @return 规范化后的用户ID
+     */
     private Long normalizeUserId(Long userId) {
         return userId == null || userId <= 0 ? DEFAULT_USER_ID : userId;
     }

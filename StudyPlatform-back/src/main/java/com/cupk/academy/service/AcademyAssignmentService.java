@@ -21,6 +21,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * 作业服务，提供作业列表查询、详情查看、保存草稿、提交批改等功能。
+ */
 @Service
 public class AcademyAssignmentService {
     private static final long DEFAULT_USER_ID = 1L;
@@ -28,6 +31,12 @@ public class AcademyAssignmentService {
     private final AcademyAssignmentRepository assignmentRepository;
     private final OjSubmissionService ojSubmissionService;
 
+    /**
+     * 构造函数，注入依赖的仓库和服务。
+     *
+     * @param assignmentRepository 作业数据访问层
+     * @param ojSubmissionService  OJ提交服务
+     */
     public AcademyAssignmentService(
             AcademyAssignmentRepository assignmentRepository,
             OjSubmissionService ojSubmissionService
@@ -36,6 +45,12 @@ public class AcademyAssignmentService {
         this.ojSubmissionService = ojSubmissionService;
     }
 
+    /**
+     * 查询用户作业列表。
+     *
+     * @param userId 用户ID
+     * @return 作业摘要响应列表
+     */
     public List<AcademyAssignmentSummaryResponse> listAssignments(Long userId) {
         Long normalizedUserId = normalizeUserId(userId);
         return assignmentRepository.findAssignments(normalizedUserId).stream()
@@ -58,6 +73,13 @@ public class AcademyAssignmentService {
                 .toList();
     }
 
+    /**
+     * 获取作业详情，包含题目列表和用户答案。
+     *
+     * @param assignmentCode 作业代码
+     * @param userId         用户ID
+     * @return 作业详情响应对象
+     */
     public AcademyAssignmentDetailResponse getAssignment(String assignmentCode, Long userId) {
         Long normalizedUserId = normalizeUserId(userId);
         AssignmentDetailRow assignment = findAssignment(assignmentCode);
@@ -84,6 +106,13 @@ public class AcademyAssignmentService {
         );
     }
 
+    /**
+     * 保存作业草稿。
+     *
+     * @param assignmentCode 作业代码
+     * @param request        答题请求对象
+     * @return 提交响应对象
+     */
     public AcademyAssignmentSubmitResponse saveDraft(String assignmentCode, AcademyAssignmentAnswerRequest request) {
         AssignmentDetailRow assignment = findAssignment(assignmentCode);
         assignmentRepository.saveDraft(assignment.id(), normalizeUserId(request == null ? null : request.userId()), safeAnswers(request));
@@ -98,6 +127,13 @@ public class AcademyAssignmentService {
         );
     }
 
+    /**
+     * 提交作业并进行自动批改。
+     *
+     * @param assignmentCode 作业代码
+     * @param request        答题请求对象
+     * @return 提交响应对象，包含批改结果
+     */
     public AcademyAssignmentSubmitResponse submitAssignment(String assignmentCode, AcademyAssignmentAnswerRequest request) {
         AssignmentDetailRow assignment = findAssignment(assignmentCode);
         List<AssignmentQuestionRow> questions = assignmentRepository.findQuestions(assignment.id());
@@ -162,6 +198,14 @@ public class AcademyAssignmentService {
         );
     }
 
+    /**
+     * 创建待教师审核的题目结果。
+     *
+     * @param question       题目信息
+     * @param submittedAnswer 用户答案
+     * @param userId         用户ID
+     * @return 题目结果响应对象
+     */
     private AcademyAssignmentQuestionResultResponse createPendingReviewResult(
             AssignmentQuestionRow question,
             Object submittedAnswer,
@@ -217,11 +261,23 @@ public class AcademyAssignmentService {
         }
     }
 
+    /**
+     * 根据作业代码查找作业详情。
+     *
+     * @param assignmentCode 作业代码
+     * @return 作业详情行数据
+     */
     private AssignmentDetailRow findAssignment(String assignmentCode) {
         return assignmentRepository.findAssignmentByCode(assignmentCode)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "作业不存在"));
     }
 
+    /**
+     * 将题目行数据转换为响应对象。
+     *
+     * @param question 题目行数据
+     * @return 题目响应对象
+     */
     private AcademyAssignmentQuestionResponse toQuestionResponse(AssignmentQuestionRow question) {
         return new AcademyAssignmentQuestionResponse(
                 question.id(),
@@ -238,10 +294,23 @@ public class AcademyAssignmentService {
         );
     }
 
+    /**
+     * 获取安全的答案映射，处理空值情况。
+     *
+     * @param request 答题请求对象
+     * @return 答案映射
+     */
     private Map<String, Object> safeAnswers(AcademyAssignmentAnswerRequest request) {
         return request == null || request.answers() == null ? Map.of() : request.answers();
     }
 
+    /**
+     * 判断答案是否正确。
+     *
+     * @param question       题目信息
+     * @param submittedAnswer 用户答案
+     * @return 是否正确
+     */
     private boolean isAnswerAccepted(AssignmentQuestionRow question, Object submittedAnswer) {
         if (submittedAnswer == null || question.correctAnswer() == null) {
             return false;
@@ -254,6 +323,12 @@ public class AcademyAssignmentService {
         };
     }
 
+    /**
+     * 获取默认的答错提示信息。
+     *
+     * @param question 题目信息
+     * @return 提示信息
+     */
     private String defaultWrongMessage(AssignmentQuestionRow question) {
         if (question.explanation() == null || question.explanation().isBlank()) {
             return "自动批改未通过";
@@ -261,10 +336,22 @@ public class AcademyAssignmentService {
         return question.explanation();
     }
 
+    /**
+     * 规范化文本，去除多余空格并转为小写。
+     *
+     * @param value 原始值
+     * @return 规范化后的文本
+     */
     private String normalizeText(Object value) {
         return String.valueOf(value == null ? "" : value).trim().replaceAll("\\s+", " ").toLowerCase();
     }
 
+    /**
+     * 规范化列表，去除空值并排序。
+     *
+     * @param value 原始值
+     * @return 规范化后的列表
+     */
     private List<String> normalizeList(Object value) {
         if (value instanceof List<?> values) {
             return values.stream()
@@ -276,6 +363,13 @@ public class AcademyAssignmentService {
         return List.of(normalizeText(value));
     }
 
+    /**
+     * 构建 OJ 提交的源代码。
+     *
+     * @param question       题目信息
+     * @param submittedAnswer 用户答案
+     * @return 源代码
+     */
     private String buildOjSource(AssignmentQuestionRow question, Object submittedAnswer) {
         String sourceCode = extractSourceCode(submittedAnswer).trim();
         if (sourceCode.isBlank() || sourceCode.contains(" main(") || sourceCode.contains("\nmain(")) {
@@ -301,6 +395,12 @@ public class AcademyAssignmentService {
         return sourceCode;
     }
 
+    /**
+     * 从答案中提取源代码。
+     *
+     * @param submittedAnswer 用户答案
+     * @return 源代码
+     */
     private String extractSourceCode(Object submittedAnswer) {
         if (submittedAnswer instanceof Map<?, ?> answerMap) {
             Object sourceCode = answerMap.get("sourceCode");
@@ -312,6 +412,12 @@ public class AcademyAssignmentService {
         return submittedAnswer == null ? "" : String.valueOf(submittedAnswer);
     }
 
+    /**
+     * 解析编程语言。
+     *
+     * @param submittedAnswer 用户答案
+     * @return 编程语言
+     */
     private String resolveLanguage(Object submittedAnswer) {
         if (submittedAnswer instanceof Map<?, ?> answerMap) {
             Object language = answerMap.get("language");
@@ -322,6 +428,12 @@ public class AcademyAssignmentService {
         return "cpp";
     }
 
+    /**
+     * 规范化用户ID，空值或无效值时返回默认用户ID。
+     *
+     * @param userId 用户ID
+     * @return 规范化后的用户ID
+     */
     private Long normalizeUserId(Long userId) {
         return userId == null || userId <= 0 ? DEFAULT_USER_ID : userId;
     }

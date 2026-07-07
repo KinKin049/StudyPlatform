@@ -1,3 +1,4 @@
+<!-- 在线学堂主页面框架组件，负责渲染学堂二级导航栏和内容区域 -->
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ArrowDown } from '@element-plus/icons-vue'
@@ -6,6 +7,8 @@ import { fetchAcademyCategories } from '../api/academy'
 
 const route = useRoute()
 const router = useRouter()
+
+// 课程分类映射，存储各资源类型的分类列表
 const categoryMap = ref({
   'online-open-courses': [],
   'general-courses': [],
@@ -13,6 +16,7 @@ const categoryMap = ref({
   textbooks: [],
 })
 
+// 导航菜单项配置
 const academyNavItems = [
   {
     label: '首页',
@@ -56,6 +60,7 @@ const academyNavItems = [
   },
 ]
 
+// 计算属性：为导航项添加分类子菜单
 const navItemsWithCategories = computed(() =>
   academyNavItems.map((item) => ({
     ...item,
@@ -69,24 +74,37 @@ const navItemsWithCategories = computed(() =>
   })),
 )
 
+// 需要折叠二级导航的页面路径列表
 const collapsedSubnavPaths = ['/academy/my-courses', '/academy/assignments', '/academy/exams']
+// 题库练习模式导航状态
 const questionPracticeSubnavActive = ref(false)
 const questionPracticeSubnavCollapsed = ref(false)
 
+// 计算属性：判断二级导航是否需要折叠
 const isSubnavCollapsed = computed(() =>
   collapsedSubnavPaths.some((path) => route.path === path || route.path.startsWith(`${path}/`)) ||
   questionPracticeSubnavCollapsed.value,
 )
 
+// 计算属性：判断当前是否在题库课程详情页
 const isQuestionBankCourseDetail = computed(() =>
   route.path.startsWith('/academy/question-bank/courses/'),
 )
 
+/**
+ * 导航跳转处理函数
+ * @param {Object|string} target - 目标路由
+ * @param {Event} event - 点击事件
+ */
 const navigateTo = (target, event) => {
   event?.currentTarget?.blur()
   router.push(target)
 }
 
+/**
+ * 加载导航分类数据
+ * 通过 API 批量获取各资源类型的分类列表
+ */
 const loadNavCategories = async () => {
   const resources = ['online-open-courses', 'general-courses', 'micro-major-courses', 'textbooks']
   const results = await Promise.all(
@@ -102,6 +120,10 @@ const loadNavCategories = async () => {
   categoryMap.value = Object.fromEntries(results)
 }
 
+/**
+ * 更新题库练习模式的导航折叠状态
+ * 根据滚动位置判断是否折叠导航
+ */
 const updateQuestionPracticeSubnav = () => {
   if (!questionPracticeSubnavActive.value || !isQuestionBankCourseDetail.value) {
     questionPracticeSubnavCollapsed.value = false
@@ -110,12 +132,17 @@ const updateQuestionPracticeSubnav = () => {
   questionPracticeSubnavCollapsed.value = window.scrollY > 80
 }
 
+/**
+ * 处理题库练习开始事件
+ * 进入练习模式时激活导航折叠功能
+ */
 const handleQuestionPracticeStart = () => {
   if (!isQuestionBankCourseDetail.value) return
   questionPracticeSubnavActive.value = true
   questionPracticeSubnavCollapsed.value = true
 }
 
+// 监听路由变化，重置题库练习导航状态
 watch(
   () => route.path,
   () => {
@@ -141,6 +168,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+  <!-- 在线学堂主容器，包含导航栏和内容区域 -->
   <div
     :class="[
       'academy-page',
@@ -150,6 +178,7 @@ onBeforeUnmount(() => {
       },
     ]"
   >
+    <!-- 导航折叠展开按钮 -->
     <button
       v-if="isSubnavCollapsed"
       class="academy-subnav-trigger"
@@ -159,6 +188,7 @@ onBeforeUnmount(() => {
       <el-icon><ArrowDown /></el-icon>
     </button>
 
+    <!-- 在线学堂二级导航栏 -->
     <nav class="academy-subnav" aria-label="在线学堂导航">
       <div v-for="item in navItemsWithCategories" :key="item.path" class="academy-nav-item">
         <button class="academy-nav-button" type="button" @click="navigateTo(item.path, $event)">
@@ -166,6 +196,7 @@ onBeforeUnmount(() => {
           <span v-if="item.dropdown" class="nav-arrow" aria-hidden="true">▾</span>
         </button>
 
+        <!-- 下拉菜单 -->
         <div v-if="item.dropdown" class="academy-dropdown-menu" role="menu">
           <a
             v-for="child in item.children"
@@ -182,6 +213,7 @@ onBeforeUnmount(() => {
       </div>
     </nav>
 
+    <!-- 子页面内容渲染区域 -->
     <RouterView />
   </div>
 </template>

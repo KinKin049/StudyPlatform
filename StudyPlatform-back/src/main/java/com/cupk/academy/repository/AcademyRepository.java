@@ -20,12 +20,27 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public class AcademyRepository {
+
+    /**
+     * 课程与教材数据访问层，提供在线公开课、普通课程、微专业课程和精品教材的查询、发布、报名、评论及购物车等功能。
+     */
+
     private final JdbcTemplate jdbcTemplate;
 
+    /**
+     * 构造函数
+     *
+     * @param jdbcTemplate JDBC模板
+     */
     public AcademyRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    /**
+     * 查询所有在线公开课列表
+     *
+     * @return 在线公开课列表
+     */
     public List<AcademyCourseResponse> findOnlineOpenCourses() {
         String sql = """
                 SELECT external_course_id, course_name, teacher_name, category, school_name,
@@ -41,6 +56,22 @@ public class AcademyRepository {
         return jdbcTemplate.query(sql, (rs, rowNum) -> mapAcademyCourse(rs));
     }
 
+    /**
+     * 发布在线公开课
+     *
+     * @param publisherUserId 发布者用户ID
+     * @param courseName 课程名称
+     * @param teacherName 教师名称
+     * @param schoolName 学校名称
+     * @param category 课程分类
+     * @param startTime 开课时间
+     * @param semesterPlan 学期计划
+     * @param courseDetail 课程详情
+     * @param courseOverview 课程概述
+     * @param coverFilePath 封面文件路径
+     * @param videoFilePath 视频文件路径
+     * @return 课程ID
+     */
     public String publishOnlineOpenCourse(
             long publisherUserId,
             String courseName,
@@ -91,6 +122,13 @@ public class AcademyRepository {
         return courseId;
     }
 
+    /**
+     * 将数据库结果集映射为课程响应对象
+     *
+     * @param rs 结果集
+     * @return 课程响应对象
+     * @throws java.sql.SQLException SQL异常
+     */
     private AcademyCourseResponse mapAcademyCourse(java.sql.ResultSet rs) throws java.sql.SQLException {
         return new AcademyCourseResponse(
                 rs.getString("external_course_id"),
@@ -114,6 +152,12 @@ public class AcademyRepository {
         );
     }
 
+    /**
+     * 根据ID查询在线公开课详情
+     *
+     * @param id 课程ID
+     * @return 课程详情，不存在则返回空
+     */
     public Optional<AcademyCourseResponse> findOnlineOpenCourseById(String id) {
         String sql = """
                 SELECT c.external_course_id, c.course_name, c.teacher_name, c.category, c.school_name,
@@ -134,6 +178,12 @@ public class AcademyRepository {
         }
     }
 
+    /**
+     * 查询指定用户发布的在线公开课列表
+     *
+     * @param publisherUserId 发布者用户ID
+     * @return 发布的课程列表
+     */
     public List<AcademyCourseResponse> findPublishedOnlineOpenCourses(long publisherUserId) {
         String sql = """
                 SELECT c.external_course_id, c.course_name, c.teacher_name, c.category, c.school_name,
@@ -150,6 +200,13 @@ public class AcademyRepository {
         return jdbcTemplate.query(sql, (rs, rowNum) -> mapAcademyCourse(rs), publisherUserId);
     }
 
+    /**
+     * 判断用户是否为课程所有者
+     *
+     * @param publisherUserId 用户ID
+     * @param courseId 课程ID
+     * @return 是否为所有者
+     */
     public boolean isPublishedOnlineOpenCourseOwner(long publisherUserId, String courseId) {
         Long count = jdbcTemplate.queryForObject(
                 """
@@ -164,6 +221,13 @@ public class AcademyRepository {
         return count != null && count > 0;
     }
 
+    /**
+     * 删除发布的在线公开课（级联删除关联数据）
+     *
+     * @param publisherUserId 发布者用户ID
+     * @param courseId 课程ID
+     * @return 删除的行数
+     */
     public int deletePublishedOnlineOpenCourse(long publisherUserId, String courseId) {
         if (!isPublishedOnlineOpenCourseOwner(publisherUserId, courseId)) {
             return 0;
@@ -187,22 +251,49 @@ public class AcademyRepository {
         );
     }
 
+    /**
+     * 查询普通课程列表
+     *
+     * @return 普通课程列表
+     */
     public List<AcademyCourseResponse> findGeneralCourses() {
         return findLearningCourses("general_courses");
     }
 
+    /**
+     * 根据ID查询普通课程详情
+     *
+     * @param id 课程ID
+     * @return 课程详情，不存在则返回空
+     */
     public Optional<AcademyCourseResponse> findGeneralCourseById(String id) {
         return findLearningCourseById("general_courses", false, id);
     }
 
+    /**
+     * 查询微专业课程列表
+     *
+     * @return 微专业课程列表
+     */
     public List<AcademyCourseResponse> findMicroMajorCourses() {
         return findLearningCourses("micro_major_courses");
     }
 
+    /**
+     * 根据ID查询微专业课程详情
+     *
+     * @param id 课程ID
+     * @return 课程详情，不存在则返回空
+     */
     public Optional<AcademyCourseResponse> findMicroMajorCourseById(String id) {
         return findLearningCourseById("micro_major_courses", false, id);
     }
 
+    /**
+     * 查询精品教材列表
+     *
+     * @return 教材列表
+     */
     public List<AcademyTextbookResponse> findTextbooks() {
         String sql = """
                 SELECT external_textbook_id, textbook_name, chief_editor, category, publisher,
@@ -226,6 +317,12 @@ public class AcademyRepository {
         ));
     }
 
+    /**
+     * 根据ID查询教材详情
+     *
+     * @param id 教材ID
+     * @return 教材详情，不存在则返回空
+     */
     public Optional<AcademyTextbookDetailResponse> findTextbookById(String id) {
         String sql = """
                 SELECT t.external_textbook_id, t.textbook_name, t.chief_editor, t.category, t.publisher,
@@ -265,6 +362,13 @@ public class AcademyRepository {
         }
     }
 
+    /**
+     * 判断用户是否已购买教材
+     *
+     * @param userId 用户ID
+     * @param textbookId 教材ID
+     * @return 是否已购买
+     */
     public boolean hasPurchasedTextbook(Long userId, String textbookId) {
         Long count = jdbcTemplate.queryForObject(
                 """
@@ -282,6 +386,12 @@ public class AcademyRepository {
         return count != null && count > 0;
     }
 
+    /**
+     * 查询教材评论列表
+     *
+     * @param textbookId 教材ID
+     * @return 评论列表
+     */
     public List<AcademyTextbookCommentResponse> findTextbookReviews(String textbookId) {
         String sql = """
                 SELECT user_name, rating, content
@@ -296,6 +406,16 @@ public class AcademyRepository {
         ), textbookId);
     }
 
+    /**
+     * 保存教材评论
+     *
+     * @param userId 用户ID
+     * @param textbookId 教材ID
+     * @param userName 用户名
+     * @param rating 评分
+     * @param content 评论内容
+     * @return 保存后的评论
+     */
     public AcademyTextbookCommentResponse saveTextbookReview(
             Long userId,
             String textbookId,
@@ -332,6 +452,12 @@ public class AcademyRepository {
         );
     }
 
+    /**
+     * 查询用户教材购物车列表
+     *
+     * @param userId 用户ID
+     * @return 购物车商品列表
+     */
     public List<AcademyTextbookCartItemResponse> findTextbookCartItems(Long userId) {
         String sql = """
                 SELECT c.id, c.textbook_id, t.textbook_name, t.chief_editor, t.publisher,
@@ -358,6 +484,13 @@ public class AcademyRepository {
         ), userId);
     }
 
+    /**
+     * 添加教材到购物车（已存在则更新数量）
+     *
+     * @param userId 用户ID
+     * @param textbookId 教材ID
+     * @param quantity 数量
+     */
     public void addTextbookCartItem(Long userId, String textbookId, Integer quantity) {
         String sql = """
                 INSERT INTO academy_textbook_cart_items (user_id, textbook_id, quantity)
@@ -369,6 +502,13 @@ public class AcademyRepository {
         jdbcTemplate.update(sql, userId, textbookId, quantity);
     }
 
+    /**
+     * 删除购物车中的教材商品
+     *
+     * @param userId 用户ID
+     * @param itemId 商品ID
+     * @return 删除的行数
+     */
     public int deleteTextbookCartItem(Long userId, Long itemId) {
         return jdbcTemplate.update(
                 "DELETE FROM academy_textbook_cart_items WHERE user_id = ? AND id = ?",
@@ -377,6 +517,14 @@ public class AcademyRepository {
         );
     }
 
+    /**
+     * 更新购物车中教材商品的数量
+     *
+     * @param userId 用户ID
+     * @param itemId 商品ID
+     * @param quantity 数量
+     * @return 更新的行数
+     */
     public int updateTextbookCartItem(Long userId, Long itemId, Integer quantity) {
         return jdbcTemplate.update(
                 """
@@ -390,22 +538,43 @@ public class AcademyRepository {
         );
     }
 
+    /**
+     * 创建教材订单
+     *
+     * @param userId 用户ID
+     * @param textbook 教材详情
+     * @param quantity 数量
+     * @param voucherKey 优惠券Key
+     * @param voucherName 优惠券名称
+     * @param voucherDiscountAmount 优惠券折扣金额
+     * @return 订单信息
+     */
     public AcademyTextbookOrderResponseData createTextbookOrder(
             Long userId,
             AcademyTextbookDetailResponse textbook,
-            Integer quantity
+            Integer quantity,
+            String voucherKey,
+            String voucherName,
+            BigDecimal voucherDiscountAmount
     ) {
         String orderNo = "TB" + System.currentTimeMillis() + userId;
         BigDecimal unitPrice = textbook.discountPrice() == null ? BigDecimal.ZERO : textbook.discountPrice();
-        BigDecimal totalAmount = unitPrice.multiply(BigDecimal.valueOf(quantity));
+        BigDecimal originalAmount = unitPrice.multiply(BigDecimal.valueOf(quantity));
+        TextbookVoucherDiscount voucherDiscount = resolveTextbookVoucherDiscount(voucherKey, voucherName, voucherDiscountAmount);
+        BigDecimal totalAmount = originalAmount.subtract(voucherDiscount.discountAmount()).max(BigDecimal.ZERO);
         jdbcTemplate.update(
                 """
-                INSERT INTO academy_textbook_orders (user_id, order_no, total_amount, order_status)
-                VALUES (?, ?, ?, '待支付')
+                INSERT INTO academy_textbook_orders
+                  (user_id, order_no, total_amount, original_amount, discount_amount, voucher_key, voucher_name, order_status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, '待支付')
                 """,
                 userId,
                 orderNo,
-                totalAmount
+                totalAmount,
+                originalAmount,
+                voucherDiscount.discountAmount(),
+                voucherDiscount.voucherKey(),
+                voucherDiscount.voucherName()
         );
         Long orderId = jdbcTemplate.queryForObject(
                 "SELECT id FROM academy_textbook_orders WHERE order_no = ?",
@@ -423,12 +592,33 @@ public class AcademyRepository {
                 unitPrice,
                 quantity
         );
-        return new AcademyTextbookOrderResponseData(orderNo, totalAmount);
+        return new AcademyTextbookOrderResponseData(
+                orderNo,
+                totalAmount,
+                originalAmount,
+                voucherDiscount.discountAmount(),
+                voucherDiscount.voucherKey(),
+                voucherDiscount.voucherName(),
+                false
+        );
     }
 
+    /**
+     * 从购物车创建教材订单（创建后删除购物车商品）
+     *
+     * @param userId 用户ID
+     * @param cartItemIds 购物车商品ID列表
+     * @param voucherKey 优惠券Key
+     * @param voucherName 优惠券名称
+     * @param voucherDiscountAmount 优惠券折扣金额
+     * @return 订单信息
+     */
     public AcademyTextbookOrderResponseData createTextbookOrderFromCart(
             Long userId,
-            List<Long> cartItemIds
+            List<Long> cartItemIds,
+            String voucherKey,
+            String voucherName,
+            BigDecimal voucherDiscountAmount
     ) {
         String placeholders = String.join(", ", Collections.nCopies(cartItemIds.size(), "?"));
         Object[] queryParams = new Object[cartItemIds.size() + 1];
@@ -455,21 +645,29 @@ public class AcademyRepository {
                 rs.getInt("quantity")
         ), queryParams);
         if (items.isEmpty()) {
-            return new AcademyTextbookOrderResponseData("", BigDecimal.ZERO);
+            return new AcademyTextbookOrderResponseData("", BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, null, null, false);
         }
 
         BigDecimal totalAmount = items.stream()
                 .map(item -> item.unitPrice().multiply(BigDecimal.valueOf(item.quantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal originalAmount = totalAmount;
+        TextbookVoucherDiscount voucherDiscount = resolveTextbookVoucherDiscount(voucherKey, voucherName, voucherDiscountAmount);
+        totalAmount = originalAmount.subtract(voucherDiscount.discountAmount()).max(BigDecimal.ZERO);
         String orderNo = "TB" + System.currentTimeMillis() + userId;
         jdbcTemplate.update(
                 """
-                INSERT INTO academy_textbook_orders (user_id, order_no, total_amount, order_status)
-                VALUES (?, ?, ?, '待支付')
+                INSERT INTO academy_textbook_orders
+                  (user_id, order_no, total_amount, original_amount, discount_amount, voucher_key, voucher_name, order_status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, '待支付')
                 """,
                 userId,
                 orderNo,
-                totalAmount
+                totalAmount,
+                originalAmount,
+                voucherDiscount.discountAmount(),
+                voucherDiscount.voucherKey(),
+                voucherDiscount.voucherName()
         );
         Long orderId = jdbcTemplate.queryForObject(
                 "SELECT id FROM academy_textbook_orders WHERE order_no = ?",
@@ -499,9 +697,55 @@ public class AcademyRepository {
                 "DELETE FROM academy_textbook_cart_items WHERE user_id = ? AND id IN (%s)".formatted(placeholders),
                 deleteParams
         );
-        return new AcademyTextbookOrderResponseData(orderNo, totalAmount);
+        return new AcademyTextbookOrderResponseData(
+                orderNo,
+                totalAmount,
+                originalAmount,
+                voucherDiscount.discountAmount(),
+                voucherDiscount.voucherKey(),
+                voucherDiscount.voucherName(),
+                false
+        );
     }
 
+    /**
+     * 计算购物车商品总金额
+     *
+     * @param userId 用户ID
+     * @param cartItemIds 购物车商品ID列表
+     * @return 总金额
+     */
+    public BigDecimal sumTextbookCartItems(Long userId, List<Long> cartItemIds) {
+        if (cartItemIds == null || cartItemIds.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        String placeholders = String.join(", ", Collections.nCopies(cartItemIds.size(), "?"));
+        Object[] queryParams = new Object[cartItemIds.size() + 1];
+        queryParams[0] = userId;
+        for (int index = 0; index < cartItemIds.size(); index += 1) {
+            queryParams[index + 1] = cartItemIds.get(index);
+        }
+        BigDecimal value = jdbcTemplate.queryForObject(
+                """
+                SELECT COALESCE(SUM(COALESCE(d.discount_price, 49.00) * c.quantity), 0)
+                FROM academy_textbook_cart_items c
+                JOIN excellent_textbooks t ON t.external_textbook_id = c.textbook_id
+                LEFT JOIN academy_textbook_details d ON d.textbook_id = t.external_textbook_id
+                WHERE c.user_id = ? AND c.id IN (%s)
+                """.formatted(placeholders),
+                BigDecimal.class,
+                queryParams
+        );
+        return value == null ? BigDecimal.ZERO : value;
+    }
+
+    /**
+     * 支付教材订单
+     *
+     * @param userId 用户ID
+     * @param orderNo 订单号
+     * @return 订单信息，支付失败或订单不存在则返回空
+     */
     public Optional<AcademyTextbookOrderResponseData> payTextbookOrder(Long userId, String orderNo) {
         int updated = jdbcTemplate.update(
                 """
@@ -529,25 +773,62 @@ public class AcademyRepository {
         }
         return Optional.ofNullable(jdbcTemplate.queryForObject(
                 """
-                SELECT order_no, total_amount
+                SELECT order_no, total_amount, original_amount, discount_amount, voucher_key, voucher_name, voucher_consumed
                 FROM academy_textbook_orders
                 WHERE user_id = ? AND order_no = ?
                 LIMIT 1
                 """,
                 (rs, rowNum) -> new AcademyTextbookOrderResponseData(
                         rs.getString("order_no"),
-                        rs.getBigDecimal("total_amount")
+                        rs.getBigDecimal("total_amount"),
+                        rs.getBigDecimal("original_amount"),
+                        rs.getBigDecimal("discount_amount"),
+                        rs.getString("voucher_key"),
+                        rs.getString("voucher_name"),
+                        rs.getBoolean("voucher_consumed")
                 ),
                 userId,
                 orderNo
         ));
     }
 
+    /**
+     * 标记订单优惠券已使用
+     *
+     * @param userId 用户ID
+     * @param orderNo 订单号
+     * @return 更新的行数
+     */
+    public int markTextbookOrderVoucherConsumed(Long userId, String orderNo) {
+        return jdbcTemplate.update(
+                """
+                UPDATE academy_textbook_orders
+                SET voucher_consumed = 1
+                WHERE user_id = ? AND order_no = ? AND voucher_key IS NOT NULL
+                """,
+                userId,
+                orderNo
+        );
+    }
+
+    /**
+     * 查询指定表的分类列表
+     *
+     * @param tableName 表名
+     * @return 分类列表
+     */
     public List<AcademyCategoryResponse> findCategories(String tableName) {
         String sql = "SELECT DISTINCT category FROM " + tableName + " WHERE category IS NOT NULL AND category <> '' ORDER BY category";
         return jdbcTemplate.query(sql, (rs, rowNum) -> new AcademyCategoryResponse(rs.getString("category")));
     }
 
+    /**
+     * 报名课程（已报名则更新报名时间）
+     *
+     * @param resourceType 资源类型
+     * @param courseId 课程ID
+     * @param userId 用户ID
+     */
     public void enrollCourse(String resourceType, String courseId, Long userId) {
         String sql = """
                 INSERT INTO academy_course_enrollments (resource_type, course_id, user_id)
@@ -557,6 +838,14 @@ public class AcademyRepository {
         jdbcTemplate.update(sql, resourceType, courseId, userId);
     }
 
+    /**
+     * 取消课程报名
+     *
+     * @param resourceType 资源类型
+     * @param courseId 课程ID
+     * @param userId 用户ID
+     * @return 删除的行数
+     */
     public int unenrollCourse(String resourceType, String courseId, Long userId) {
         String sql = """
                 DELETE FROM academy_course_enrollments
@@ -565,6 +854,12 @@ public class AcademyRepository {
         return jdbcTemplate.update(sql, resourceType, courseId, userId);
     }
 
+    /**
+     * 查询用户已报名的课程列表
+     *
+     * @param userId 用户ID
+     * @return 已报名课程列表
+     */
     public List<AcademyEnrolledCourseResponse> findEnrolledCourses(Long userId) {
         String sql = """
                 SELECT enrolled.resource_type, enrolled.external_course_id, enrolled.course_name,
@@ -628,6 +923,13 @@ public class AcademyRepository {
         ), userId, userId, userId);
     }
 
+    /**
+     * 查询课程评论列表
+     *
+     * @param resourceType 资源类型
+     * @param courseId 课程ID
+     * @return 评论列表
+     */
     public List<AcademyCourseReviewResponse> findCourseReviews(String resourceType, String courseId) {
         String sql = """
                 SELECT id, user_name, rating, content, created_at
@@ -644,6 +946,16 @@ public class AcademyRepository {
         ), resourceType, courseId);
     }
 
+    /**
+     * 保存课程评论
+     *
+     * @param resourceType 资源类型
+     * @param courseId 课程ID
+     * @param userName 用户名
+     * @param rating 评分
+     * @param content 评论内容
+     * @return 保存后的评论
+     */
     public AcademyCourseReviewResponse saveCourseReview(
             String resourceType,
             String courseId,
@@ -673,6 +985,12 @@ public class AcademyRepository {
         ), resourceType, courseId);
     }
 
+    /**
+     * 查询学习课程列表（通用方法）
+     *
+     * @param tableName 表名
+     * @return 课程列表
+     */
     private List<AcademyCourseResponse> findLearningCourses(String tableName) {
         String sql = """
                 SELECT external_course_id, course_name, teacher_name, category, school_name,
@@ -703,6 +1021,14 @@ public class AcademyRepository {
         ));
     }
 
+    /**
+     * 根据ID查询学习课程详情（通用方法）
+     *
+     * @param tableName 表名
+     * @param emptyDescription 是否清空描述
+     * @param id 课程ID
+     * @return 课程详情，不存在则返回空
+     */
     private Optional<AcademyCourseResponse> findLearningCourseById(
             String tableName,
             boolean emptyDescription,
@@ -744,6 +1070,13 @@ public class AcademyRepository {
         }
     }
 
+    /**
+     * 安全获取字符串值（异常时返回null）
+     *
+     * @param rs 结果集
+     * @param columnLabel 列名
+     * @return 字符串值，异常则返回null
+     */
     private String getOptionalString(java.sql.ResultSet rs, String columnLabel) {
         try {
             return rs.getString(columnLabel);
@@ -752,6 +1085,13 @@ public class AcademyRepository {
         }
     }
 
+    /**
+     * 安全获取布尔值（异常时返回false）
+     *
+     * @param rs 结果集
+     * @param columnLabel 列名
+     * @return 布尔值，异常则返回false
+     */
     private boolean getOptionalBoolean(java.sql.ResultSet rs, String columnLabel) {
         try {
             return rs.getBoolean(columnLabel);
@@ -760,6 +1100,14 @@ public class AcademyRepository {
         }
     }
 
+    /**
+     * 安全获取BigDecimal值（异常时返回默认值）
+     *
+     * @param rs 结果集
+     * @param columnLabel 列名
+     * @param fallback 默认值
+     * @return BigDecimal值，异常则返回默认值
+     */
     private BigDecimal getOptionalBigDecimal(java.sql.ResultSet rs, String columnLabel, BigDecimal fallback) {
         try {
             BigDecimal value = rs.getBigDecimal(columnLabel);
@@ -769,6 +1117,14 @@ public class AcademyRepository {
         }
     }
 
+    /**
+     * 安全获取整数（异常时返回默认值）
+     *
+     * @param rs 结果集
+     * @param columnLabel 列名
+     * @param fallback 默认值
+     * @return 整数值，异常则返回默认值
+     */
     private Integer getOptionalInt(java.sql.ResultSet rs, String columnLabel, Integer fallback) {
         try {
             int value = rs.getInt(columnLabel);
@@ -778,6 +1134,12 @@ public class AcademyRepository {
         }
     }
 
+    /**
+     * 解析目录文本为字符串列表
+     *
+     * @param value 目录文本
+     * @return 目录列表
+     */
     private List<String> parseCatalog(String value) {
         if (value == null || value.isBlank()) {
             return List.of();
@@ -788,6 +1150,12 @@ public class AcademyRepository {
                 .toList();
     }
 
+    /**
+     * 解析评论文本为评论列表
+     *
+     * @param value 评论文本
+     * @return 评论列表
+     */
     private List<AcademyTextbookCommentResponse> parseComments(String value) {
         if (value == null || value.isBlank()) {
             return List.of();
@@ -814,7 +1182,42 @@ public class AcademyRepository {
 
     public record AcademyTextbookOrderResponseData(
             String orderNo,
-            BigDecimal totalAmount
+            BigDecimal totalAmount,
+            BigDecimal originalAmount,
+            BigDecimal discountAmount,
+            String voucherKey,
+            String voucherName,
+            boolean voucherConsumed
+    ) {
+    }
+
+    /**
+     * 解析教材优惠券折扣
+     *
+     * @param voucherKey 优惠券Key
+     * @param voucherName 优惠券名称
+     * @param voucherDiscountAmount 折扣金额
+     * @return 优惠券折扣信息
+     */
+    private TextbookVoucherDiscount resolveTextbookVoucherDiscount(
+            String voucherKey,
+            String voucherName,
+            BigDecimal voucherDiscountAmount
+    ) {
+        if (voucherKey == null || voucherKey.isBlank()) {
+            return new TextbookVoucherDiscount(BigDecimal.ZERO, null, null);
+        }
+        BigDecimal discountAmount = voucherDiscountAmount == null ? BigDecimal.ZERO : voucherDiscountAmount.max(BigDecimal.ZERO);
+        if (discountAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            return new TextbookVoucherDiscount(BigDecimal.ZERO, null, null);
+        }
+        return new TextbookVoucherDiscount(discountAmount, voucherKey, voucherName);
+    }
+
+    private record TextbookVoucherDiscount(
+            BigDecimal discountAmount,
+            String voucherKey,
+            String voucherName
     ) {
     }
 
@@ -827,6 +1230,12 @@ public class AcademyRepository {
     ) {
     }
 
+    /**
+     * 将文件路径转换为访问URL
+     *
+     * @param filePath 文件路径
+     * @return 访问URL
+     */
     private String fileUrl(String filePath) {
         if (filePath == null || filePath.isBlank()) {
             return "";
