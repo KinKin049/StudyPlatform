@@ -2,13 +2,19 @@ package com.cupk.admin.controller;
 
 import com.cupk.admin.dto.AdminCourseRequest;
 import com.cupk.admin.dto.AdminCourseResponse;
+import com.cupk.admin.dto.AdminCourseCategoryRequest;
 import com.cupk.admin.dto.AdminCourseReviewResponse;
+import com.cupk.admin.dto.AdminReviewReplyRequest;
+import com.cupk.admin.dto.AdminOjCheckResponse;
+import com.cupk.admin.dto.AdminOjProblemRequest;
+import com.cupk.admin.dto.AdminOjProblemResponse;
 import com.cupk.admin.dto.AdminQuestionBankSetRequest;
 import com.cupk.admin.dto.AdminQuestionRequest;
 import com.cupk.admin.dto.AdminUserResponse;
 import com.cupk.admin.dto.AdminUserUpdateRequest;
 import com.cupk.admin.dto.AdminVoucherItemRequest;
 import com.cupk.admin.service.AdminService;
+import com.cupk.academy.dto.AcademyCategoryResponse;
 import com.cupk.academy.dto.CourseQuestionBankQuestionResponse;
 import com.cupk.academy.dto.CourseQuestionBankSetResponse;
 import com.cupk.rewards.dto.VoucherItemResponse;
@@ -118,6 +124,54 @@ public class AdminController {
         return adminService.saveCourse(currentUserId, request);
     }
 
+    @GetMapping("/course-categories")
+    public List<AcademyCategoryResponse> listCourseCategories(
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long currentUserId,
+            @RequestParam(defaultValue = "online-open-courses") String resourceType
+    ) {
+        return adminService.listCourseCategories(currentUserId, resourceType);
+    }
+
+    @PostMapping("/course-categories")
+    public List<AcademyCategoryResponse> saveCourseCategory(
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long currentUserId,
+            @RequestBody AdminCourseCategoryRequest request
+    ) {
+        return adminService.saveCourseCategory(currentUserId, request.resourceType(), request.name());
+    }
+
+
+    @GetMapping("/oj/categories")
+    public List<AcademyCategoryResponse> listOjCategories(
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long currentUserId
+    ) {
+        return adminService.listOjCategories(currentUserId);
+    }
+
+    @PostMapping("/oj/categories")
+    public List<AcademyCategoryResponse> saveOjCategory(
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long currentUserId,
+            @RequestBody AdminCourseCategoryRequest request
+    ) {
+        return adminService.saveOjCategory(currentUserId, request.name());
+    }
+
+    @DeleteMapping("/oj/categories/{name}")
+    public List<AcademyCategoryResponse> deleteOjCategory(
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long currentUserId,
+            @PathVariable String name
+    ) {
+        return adminService.deleteOjCategory(currentUserId, name);
+    }
+    @DeleteMapping("/course-categories/{resourceType}/{name}")
+    public List<AcademyCategoryResponse> deleteCourseCategory(
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long currentUserId,
+            @PathVariable String resourceType,
+            @PathVariable String name
+    ) {
+        return adminService.deleteCourseCategory(currentUserId, resourceType, name);
+    }
+
     /**
      * 删除课程。
      *
@@ -156,13 +210,33 @@ public class AdminController {
      * @param reviewId 评论ID
      * @return 删除结果
      */
-    @DeleteMapping("/reviews/{reviewId}")
+    @DeleteMapping("/reviews/{reviewType}/{reviewId}")
     public Map<String, Boolean> deleteReview(
             @RequestHeader(value = "X-Auth-User-Id", required = false) Long currentUserId,
+            @PathVariable String reviewType,
             @PathVariable long reviewId
     ) {
-        adminService.deleteReview(currentUserId, reviewId);
+        adminService.deleteReview(currentUserId, reviewType, reviewId);
         return Map.of("deleted", true);
+    }
+
+    @PostMapping("/reviews/{reviewType}/{reviewId}/reply")
+    public AdminCourseReviewResponse replyReview(
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long currentUserId,
+            @PathVariable String reviewType,
+            @PathVariable long reviewId,
+            @RequestBody AdminReviewReplyRequest request
+    ) {
+        return adminService.replyReview(currentUserId, reviewType, reviewId, request == null ? null : request.content());
+    }
+
+    @DeleteMapping("/reviews/{reviewType}/{reviewId}/reply")
+    public AdminCourseReviewResponse clearReviewReply(
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long currentUserId,
+            @PathVariable String reviewType,
+            @PathVariable long reviewId
+    ) {
+        return adminService.clearReviewReply(currentUserId, reviewType, reviewId);
     }
 
     /**
@@ -278,6 +352,55 @@ public class AdminController {
      * @param currentUserId 当前登录管理员ID
      * @return 卡券列表
      */
+    @GetMapping("/oj/problems")
+    public List<AdminOjProblemResponse> listOjProblems(
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long currentUserId
+    ) {
+        return adminService.listOjProblems(currentUserId);
+    }
+
+    @GetMapping("/oj/problems/{problemId}")
+    public AdminOjProblemResponse getOjProblem(
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long currentUserId,
+            @PathVariable long problemId
+    ) {
+        return adminService.getOjProblem(currentUserId, problemId);
+    }
+
+    @PostMapping("/oj/problems")
+    public AdminOjProblemResponse createOjProblem(
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long currentUserId,
+            @RequestBody AdminOjProblemRequest request
+    ) {
+        return adminService.saveOjProblem(currentUserId, null, request);
+    }
+
+    @PutMapping("/oj/problems/{problemId}")
+    public AdminOjProblemResponse updateOjProblem(
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long currentUserId,
+            @PathVariable long problemId,
+            @RequestBody AdminOjProblemRequest request
+    ) {
+        return adminService.saveOjProblem(currentUserId, problemId, request);
+    }
+
+    @DeleteMapping("/oj/problems/{problemId}")
+    public Map<String, Boolean> deleteOjProblem(
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long currentUserId,
+            @PathVariable long problemId
+    ) {
+        adminService.deleteOjProblem(currentUserId, problemId);
+        return Map.of("deleted", true);
+    }
+
+    @PostMapping("/oj/problems/check")
+    public AdminOjCheckResponse checkOjProblem(
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long currentUserId,
+            @RequestBody AdminOjProblemRequest request
+    ) {
+        return adminService.checkOjProblem(currentUserId, request);
+    }
+
     @GetMapping("/vouchers")
     public List<VoucherItemResponse> listVouchers(
             @RequestHeader(value = "X-Auth-User-Id", required = false) Long currentUserId

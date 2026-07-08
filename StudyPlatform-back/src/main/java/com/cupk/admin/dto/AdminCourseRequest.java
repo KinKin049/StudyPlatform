@@ -17,6 +17,7 @@ public record AdminCourseRequest(
         String overview,
         String videoFilePath,
         String link,
-        Boolean certified
+        Boolean certified,
+        String certificationLabel
 ) {
 }

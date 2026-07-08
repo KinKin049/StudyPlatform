@@ -39,6 +39,7 @@ const videoFile = ref(null)
 const publishForm = ref({
   courseName: '',
   startTime: '',
+  category: '',
   semesterPlan: '',
   courseDetail: '',
   courseOverview: '',
@@ -102,6 +103,7 @@ const resetPublishForm = () => {
   publishForm.value = {
     courseName: '',
     startTime: '',
+    category: '',
     semesterPlan: '',
     courseDetail: '',
     courseOverview: '',
@@ -119,6 +121,10 @@ const submitPublishCourse = async () => {
   publishSuccess.value = ''
   if (!coverFile.value || !videoFile.value) {
     publishError.value = '请上传课程封面和视频'
+    return
+  }
+  if (!publishForm.value.category) {
+    publishError.value = '请选择课程分类'
     return
   }
   const formData = new FormData()
@@ -292,6 +298,15 @@ watch(
           <label>
             开课时间
             <input v-model="publishForm.startTime" type="text" maxlength="64" placeholder="例如：2026-09-01" required />
+          </label>
+          <label>
+            课程分类
+            <select v-model="publishForm.category" required>
+              <option value="" disabled>请选择分类</option>
+              <option v-for="category in categories.filter((item) => item !== '全部')" :key="category" :value="category">
+                {{ category }}
+              </option>
+            </select>
           </label>
           <label>
             学期安排

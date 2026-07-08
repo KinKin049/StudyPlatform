@@ -1,5 +1,6 @@
 package com.cupk.oj.service;
 
+import com.cupk.academy.dto.AcademyCategoryResponse;
 import com.cupk.oj.dto.CreateProblemRequest;
 import com.cupk.oj.dto.ProblemSummary;
 import com.cupk.oj.dto.UpdateProblemRequest;
@@ -46,6 +47,10 @@ public class OjProblemService {
             String languages
     ) {
         return problemRepository.findAll(status, keyword, tags, difficulties, languages);
+    }
+
+    public List<AcademyCategoryResponse> listCategories() {
+        return problemRepository.findCategories();
     }
 
     /**

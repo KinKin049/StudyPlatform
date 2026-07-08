@@ -17,6 +17,7 @@ public record AdminCourseResponse(
         String overview,
         String videoFilePath,
         String link,
-        boolean certified
+        boolean certified,
+        String certificationLabel
 ) {
 }

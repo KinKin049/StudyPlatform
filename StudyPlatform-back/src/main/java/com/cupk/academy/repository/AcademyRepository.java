@@ -11,8 +11,13 @@ import com.cupk.academy.dto.AcademyTextbookResponse;
 import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -48,7 +53,7 @@ public class AcademyRepository {
                        COALESCE(p.course_overview, course_comment) AS course_comment,
                        COALESCE(p.course_detail, '') AS course_description,
                        p.semester_plan, p.course_overview, p.video_file_path,
-                       source_url, c.certified
+                       source_url, c.certified, c.certification_label
                 FROM online_open_courses c
                 LEFT JOIN teacher_published_courses p ON p.course_id = c.external_course_id
                 ORDER BY c.id ASC
@@ -148,7 +153,8 @@ public class AcademyRepository {
                 fileUrl(getOptionalString(rs, "video_file_path")),
                 getOptionalString(rs, "video_file_path"),
                 rs.getString("source_url"),
-                getOptionalBoolean(rs, "certified")
+                getOptionalBoolean(rs, "certified"),
+                getOptionalString(rs, "certification_label")
         );
     }
 
@@ -165,7 +171,7 @@ public class AcademyRepository {
                        COALESCE(p.course_overview, c.course_comment) AS course_comment,
                        COALESCE(p.course_detail, '') AS course_description,
                        p.semester_plan, p.course_overview, p.video_file_path,
-                       c.source_url, c.certified
+                       c.source_url, c.certified, c.certification_label
                 FROM online_open_courses c
                 LEFT JOIN teacher_published_courses p ON p.course_id = c.external_course_id
                 WHERE c.external_course_id = ?
@@ -191,7 +197,7 @@ public class AcademyRepository {
                        COALESCE(p.course_overview, c.course_comment) AS course_comment,
                        COALESCE(p.course_detail, '') AS course_description,
                        p.semester_plan, p.course_overview, p.video_file_path,
-                       c.source_url, c.certified
+                       c.source_url, c.certified, c.certification_label
                 FROM teacher_published_courses p
                 JOIN online_open_courses c ON c.external_course_id = p.course_id
                 WHERE p.publisher_user_id = ?
@@ -394,7 +400,7 @@ public class AcademyRepository {
      */
     public List<AcademyTextbookCommentResponse> findTextbookReviews(String textbookId) {
         String sql = """
-                SELECT user_name, rating, content
+                SELECT user_name, rating, content, reply_content, reply_user_name, reply_user_role_type
                 FROM academy_textbook_reviews
                 WHERE textbook_id = ?
                 ORDER BY created_at DESC, id DESC
@@ -402,7 +408,10 @@ public class AcademyRepository {
         return jdbcTemplate.query(sql, (rs, rowNum) -> new AcademyTextbookCommentResponse(
                 rs.getString("user_name"),
                 rs.getInt("rating"),
-                rs.getString("content")
+                rs.getString("content"),
+                rs.getString("reply_content"),
+                rs.getString("reply_user_name"),
+                rs.getString("reply_user_role_type")
         ), textbookId);
     }
 
@@ -436,7 +445,7 @@ public class AcademyRepository {
         );
         return jdbcTemplate.queryForObject(
                 """
-                SELECT user_name, rating, content
+                SELECT user_name, rating, content, reply_content, reply_user_name, reply_user_role_type
                 FROM academy_textbook_reviews
                 WHERE user_id = ? AND textbook_id = ?
                 ORDER BY id DESC
@@ -445,7 +454,10 @@ public class AcademyRepository {
                 (rs, rowNum) -> new AcademyTextbookCommentResponse(
                         rs.getString("user_name"),
                         rs.getInt("rating"),
-                        rs.getString("content")
+                        rs.getString("content"),
+                        rs.getString("reply_content"),
+                        rs.getString("reply_user_name"),
+                        rs.getString("reply_user_role_type")
                 ),
                 userId,
                 textbookId
@@ -822,6 +834,33 @@ public class AcademyRepository {
         return jdbcTemplate.query(sql, (rs, rowNum) -> new AcademyCategoryResponse(rs.getString("category")));
     }
 
+    public List<AcademyCategoryResponse> findManagedCourseCategories(String resourceType) {
+        return jdbcTemplate.query(
+                """
+                SELECT name
+                FROM admin_course_categories
+                WHERE resource_type = ?
+                ORDER BY sort_order ASC, name ASC
+                """,
+                (rs, rowNum) -> new AcademyCategoryResponse(rs.getString("name")),
+                resourceType
+        );
+    }
+
+    public boolean managedCourseCategoryExists(String resourceType, String name) {
+        Long count = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM admin_course_categories
+                WHERE resource_type = ? AND name = ?
+                """,
+                Long.class,
+                resourceType,
+                name
+        );
+        return count != null && count > 0;
+    }
+
     /**
      * 报名课程（已报名则更新报名时间）
      *
@@ -932,18 +971,29 @@ public class AcademyRepository {
      */
     public List<AcademyCourseReviewResponse> findCourseReviews(String resourceType, String courseId) {
         String sql = """
-                SELECT id, user_name, rating, content, created_at
+                SELECT r.id, r.parent_review_id, r.user_id, r.user_name, u.role_type AS user_role_type,
+                       r.rating, r.content, r.created_at,
+                       r.reply_content, r.reply_user_name, r.reply_user_role_type, r.replied_at
                 FROM academy_course_reviews
-                WHERE resource_type = ? AND course_id = ?
-                ORDER BY created_at DESC, id DESC
+                r LEFT JOIN users u ON u.id = r.user_id
+                WHERE r.resource_type = ? AND r.course_id = ?
+                ORDER BY r.created_at ASC, r.id ASC
                 """;
-        return jdbcTemplate.query(sql, (rs, rowNum) -> new AcademyCourseReviewResponse(
+        List<CourseReviewRow> rows = jdbcTemplate.query(sql, (rs, rowNum) -> new CourseReviewRow(
                 rs.getLong("id"),
+                getNullableLong(rs, "parent_review_id"),
+                getNullableLong(rs, "user_id"),
                 rs.getString("user_name"),
+                rs.getString("user_role_type"),
                 rs.getInt("rating"),
                 rs.getString("content"),
-                rs.getTimestamp("created_at").toLocalDateTime()
+                rs.getTimestamp("created_at").toLocalDateTime(),
+                rs.getString("reply_content"),
+                rs.getString("reply_user_name"),
+                rs.getString("reply_user_role_type"),
+                toLocalDateTime(rs.getTimestamp("replied_at"))
         ), resourceType, courseId);
+        return buildCourseReviewTree(rows);
     }
 
     /**
@@ -959,18 +1009,22 @@ public class AcademyRepository {
     public AcademyCourseReviewResponse saveCourseReview(
             String resourceType,
             String courseId,
+            Long userId,
             String userName,
+            String userRoleType,
             int rating,
-            String content
+            String content,
+            Long parentReviewId
     ) {
         String insertSql = """
-                INSERT INTO academy_course_reviews (resource_type, course_id, user_name, rating, content)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO academy_course_reviews (resource_type, course_id, user_id, user_name, parent_review_id, rating, content)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """;
-        jdbcTemplate.update(insertSql, resourceType, courseId, userName, rating, content);
+        jdbcTemplate.update(insertSql, resourceType, courseId, userId, userName, parentReviewId, rating, content);
 
         String selectSql = """
-                SELECT id, user_name, rating, content, created_at
+                SELECT id, parent_review_id, user_id, user_name, rating, content, created_at,
+                       reply_content, reply_user_name, reply_user_role_type, replied_at
                 FROM academy_course_reviews
                 WHERE resource_type = ? AND course_id = ?
                 ORDER BY id DESC
@@ -978,11 +1032,88 @@ public class AcademyRepository {
                 """;
         return jdbcTemplate.queryForObject(selectSql, (rs, rowNum) -> new AcademyCourseReviewResponse(
                 rs.getLong("id"),
+                getNullableLong(rs, "parent_review_id"),
+                getNullableLong(rs, "user_id"),
                 rs.getString("user_name"),
+                userRoleType,
                 rs.getInt("rating"),
                 rs.getString("content"),
-                rs.getTimestamp("created_at").toLocalDateTime()
+                rs.getTimestamp("created_at").toLocalDateTime(),
+                rs.getString("reply_content"),
+                rs.getString("reply_user_name"),
+                rs.getString("reply_user_role_type"),
+                toLocalDateTime(rs.getTimestamp("replied_at")),
+                List.of()
         ), resourceType, courseId);
+    }
+
+    public boolean courseReviewExists(String resourceType, String courseId, Long reviewId) {
+        Long count = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(1)
+                FROM academy_course_reviews
+                WHERE resource_type = ? AND course_id = ? AND id = ?
+                """,
+                Long.class,
+                resourceType,
+                courseId,
+                reviewId
+        );
+        return count != null && count > 0;
+    }
+
+    public Optional<AcademyCourseReviewResponse> findCourseReviewById(Long reviewId) {
+        String sql = """
+                SELECT r.id, r.parent_review_id, r.user_id, r.user_name, u.role_type AS user_role_type,
+                       r.rating, r.content, r.created_at,
+                       r.reply_content, r.reply_user_name, r.reply_user_role_type, r.replied_at
+                FROM academy_course_reviews r
+                LEFT JOIN users u ON u.id = r.user_id
+                WHERE r.id = ?
+                LIMIT 1
+                """;
+        try {
+            return Optional.ofNullable(jdbcTemplate.queryForObject(sql, (rs, rowNum) -> new AcademyCourseReviewResponse(
+                    rs.getLong("id"),
+                    getNullableLong(rs, "parent_review_id"),
+                    getNullableLong(rs, "user_id"),
+                    rs.getString("user_name"),
+                    rs.getString("user_role_type"),
+                    rs.getInt("rating"),
+                    rs.getString("content"),
+                    rs.getTimestamp("created_at").toLocalDateTime(),
+                    rs.getString("reply_content"),
+                    rs.getString("reply_user_name"),
+                    rs.getString("reply_user_role_type"),
+                    toLocalDateTime(rs.getTimestamp("replied_at")),
+                    List.of()
+            ), reviewId));
+        } catch (EmptyResultDataAccessException ex) {
+            return Optional.empty();
+        }
+    }
+
+    public AcademyCourseReviewResponse saveCourseReviewReply(Long parentReviewId, Long userId, String userName, String userRoleType, String content) {
+        String insertSql = """
+                INSERT INTO academy_course_reviews
+                  (resource_type, course_id, user_id, user_name, parent_review_id, rating, content)
+                SELECT resource_type, course_id, ?, ?, id, rating, ?
+                FROM academy_course_reviews
+                WHERE id = ?
+                """;
+        int inserted = jdbcTemplate.update(insertSql, userId, userName, content, parentReviewId);
+        if (inserted <= 0) {
+            throw new EmptyResultDataAccessException(1);
+        }
+        String selectSql = """
+                SELECT id
+                FROM academy_course_reviews
+                WHERE parent_review_id = ?
+                ORDER BY id DESC
+                LIMIT 1
+                """;
+        Long replyId = jdbcTemplate.queryForObject(selectSql, Long.class, parentReviewId);
+        return findCourseReviewById(replyId).orElseThrow(() -> new EmptyResultDataAccessException(1));
     }
 
     /**
@@ -995,7 +1126,7 @@ public class AcademyRepository {
         String sql = """
                 SELECT external_course_id, course_name, teacher_name, category, school_name,
                        cover_url, cover_file_path, start_time, participant_count,
-                       course_comment, course_description, source_url, certified
+                       course_comment, course_description, source_url, certified, certification_label
                 FROM %s
                 ORDER BY id ASC
                 """.formatted(tableName);
@@ -1017,7 +1148,8 @@ public class AcademyRepository {
                 "",
                 null,
                 rs.getString("source_url"),
-                getOptionalBoolean(rs, "certified")
+                getOptionalBoolean(rs, "certified"),
+                getOptionalString(rs, "certification_label")
         ));
     }
 
@@ -1038,7 +1170,7 @@ public class AcademyRepository {
         String sql = """
                 SELECT external_course_id, course_name, teacher_name, category, school_name,
                        cover_url, cover_file_path, start_time, participant_count,
-                       course_comment, %s, source_url, certified
+                       course_comment, %s, source_url, certified, certification_label
                 FROM %s
                 WHERE external_course_id = ?
                 LIMIT 1
@@ -1063,7 +1195,8 @@ public class AcademyRepository {
                     "",
                     null,
                     rs.getString("source_url"),
-                    getOptionalBoolean(rs, "certified")
+                    getOptionalBoolean(rs, "certified"),
+                    getOptionalString(rs, "certification_label")
             ), id));
         } catch (EmptyResultDataAccessException ex) {
             return Optional.empty();
@@ -1134,6 +1267,50 @@ public class AcademyRepository {
         }
     }
 
+    private Long getNullableLong(java.sql.ResultSet rs, String columnLabel) throws java.sql.SQLException {
+        long value = rs.getLong(columnLabel);
+        return rs.wasNull() ? null : value;
+    }
+
+    private List<AcademyCourseReviewResponse> buildCourseReviewTree(List<CourseReviewRow> rows) {
+        Map<Long, List<CourseReviewRow>> childrenByParent = new LinkedHashMap<>();
+        for (CourseReviewRow row : rows) {
+            childrenByParent.computeIfAbsent(row.parentReviewId(), ignored -> new ArrayList<>()).add(row);
+        }
+        List<CourseReviewRow> roots = childrenByParent.getOrDefault(null, List.of());
+        List<AcademyCourseReviewResponse> result = new ArrayList<>();
+        for (int index = roots.size() - 1; index >= 0; index--) {
+            result.add(toCourseReviewResponse(roots.get(index), childrenByParent));
+        }
+        return result;
+    }
+
+    private AcademyCourseReviewResponse toCourseReviewResponse(
+            CourseReviewRow row,
+            Map<Long, List<CourseReviewRow>> childrenByParent
+    ) {
+        List<CourseReviewRow> children = childrenByParent.getOrDefault(row.id(), List.of());
+        List<AcademyCourseReviewResponse> replies = new ArrayList<>();
+        for (CourseReviewRow child : children) {
+            replies.add(toCourseReviewResponse(child, childrenByParent));
+        }
+        return new AcademyCourseReviewResponse(
+                row.id(),
+                row.parentReviewId(),
+                row.userId(),
+                row.userName(),
+                row.userRoleType(),
+                row.rating(),
+                row.content(),
+                row.createdAt(),
+                row.replyContent(),
+                row.replyUserName(),
+                row.replyUserRoleType(),
+                row.repliedAt(),
+                replies
+        );
+    }
+
     /**
      * 解析目录文本为字符串列表
      *
@@ -1175,7 +1352,7 @@ public class AcademyRepository {
                         }
                     }
                     String content = parts.length > 2 ? parts[2] : line;
-                    return new AcademyTextbookCommentResponse(user, rating, content);
+                    return new AcademyTextbookCommentResponse(user, rating, content, null, null, null);
                 })
                 .toList();
     }
@@ -1228,6 +1405,26 @@ public class AcademyRepository {
             BigDecimal unitPrice,
             Integer quantity
     ) {
+    }
+
+    private record CourseReviewRow(
+            Long id,
+            Long parentReviewId,
+            Long userId,
+            String userName,
+            String userRoleType,
+            int rating,
+            String content,
+            LocalDateTime createdAt,
+            String replyContent,
+            String replyUserName,
+            String replyUserRoleType,
+            LocalDateTime repliedAt
+    ) {
+    }
+
+    private LocalDateTime toLocalDateTime(Timestamp timestamp) {
+        return timestamp == null ? null : timestamp.toLocalDateTime();
     }
 
     /**

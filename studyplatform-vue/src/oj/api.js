@@ -17,6 +17,10 @@ export function listProblems(keyword = '', filters = {}) {
   return request(`/api/oj/problems?${params.toString()}`)
 }
 
+export function listCategories() {
+  return request('/api/oj/problems/categories')
+}
+
 export function getProblem(id) {
   return request(`/api/oj/problems/${id}`)
 }

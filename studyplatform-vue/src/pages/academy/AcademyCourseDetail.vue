@@ -8,8 +8,11 @@ import {
   fetchAcademyCourse,
   fetchAcademyCourseReviews,
   fetchMyAcademyCourses,
+  replyAcademyCourseReview,
 } from '../../api/academy'
+import { getStoredAuthUser } from '../../api/auth'
 import { resolveResourceUrl } from '../../api/request'
+import CourseReviewThread from '../../components/CourseReviewThread.vue'
 import { useVideoLearningTimeTracker } from '../../composables/useLearningTimeTracker'
 
 // 组件属性定义
@@ -47,13 +50,16 @@ let enrollmentToastTimer = null
 const reviews = ref([])
 const reviewsLoading = ref(false)
 const reviewError = ref('')
+const authUser = ref(getStoredAuthUser())
 // 评价表单数据
 const reviewForm = ref({
-  userName: '游客',
   rating: 5,
   content: '',
 })
 const submittingReview = ref(false)
+const activeReplyId = ref(null)
+const replyDraft = ref('')
+const submittingReply = ref(false)
 // 课程视频引用
 const courseVideoRef = ref(null)
 
@@ -147,7 +153,9 @@ const teacherList = computed(() => {
 /**
  * 计算属性：评价数量
  */
-const reviewCount = computed(() => reviews.value.length)
+const countReviews = (items) => items.reduce((total, item) => total + 1 + countReviews(item.replies || []), 0)
+const reviewCount = computed(() => countReviews(reviews.value))
+const currentUserName = computed(() => authUser.value?.username || '未登录')
 
 /**
  * 计算属性：分类路由
@@ -242,6 +250,11 @@ const handleEnroll = async () => {
  * 提交课程评价
  */
 const submitReview = async () => {
+  authUser.value = getStoredAuthUser()
+  if (!authUser.value?.id) {
+    reviewError.value = '请先登录后再发表评论'
+    return
+  }
   if (!reviewForm.value.content.trim()) {
     reviewError.value = '请先填写评价内容'
     return
@@ -251,17 +264,55 @@ const submitReview = async () => {
   reviewError.value = ''
 
   try {
-    const savedReview = await createAcademyCourseReview(props.resource, props.courseId, {
-      userName: reviewForm.value.userName.trim() || '游客',
+    await createAcademyCourseReview(props.resource, props.courseId, {
       rating: Number(reviewForm.value.rating),
       content: reviewForm.value.content.trim(),
     })
-    reviews.value = [savedReview, ...reviews.value]
     reviewForm.value.content = ''
+    await loadReviews()
   } catch (err) {
     reviewError.value = err instanceof Error ? err.message : '评价提交失败'
   } finally {
     submittingReview.value = false
+  }
+}
+
+const startReply = (review) => {
+  authUser.value = getStoredAuthUser()
+  activeReplyId.value = review.id
+  replyDraft.value = ''
+  reviewError.value = ''
+}
+
+const cancelReply = () => {
+  activeReplyId.value = null
+  replyDraft.value = ''
+}
+
+const submitReply = async (review) => {
+  authUser.value = getStoredAuthUser()
+  if (!authUser.value?.id) {
+    reviewError.value = '请先登录后再回复评论'
+    return
+  }
+  if (!replyDraft.value.trim()) {
+    reviewError.value = '请先填写回复内容'
+    return
+  }
+
+  submittingReply.value = true
+  reviewError.value = ''
+  try {
+    await replyAcademyCourseReview(review.id, {
+      rating: 5,
+      content: replyDraft.value.trim(),
+    })
+    cancelReply()
+    await loadReviews()
+  } catch (err) {
+    reviewError.value = err instanceof Error ? err.message : '回复提交失败'
+  } finally {
+    submittingReply.value = false
   }
 }
 
@@ -285,10 +336,18 @@ const useCoverFallback = (event) => {
 }
 
 onMounted(loadCourse)
+onMounted(() => {
+  window.addEventListener('study-platform:auth-updated', handleAuthUpdated)
+})
 
 onBeforeUnmount(() => {
   window.clearTimeout(enrollmentToastTimer)
+  window.removeEventListener('study-platform:auth-updated', handleAuthUpdated)
 })
+
+const handleAuthUpdated = () => {
+  authUser.value = getStoredAuthUser()
+}
 
 // 监听资源类型和课程 ID 变化，重新加载课程数据
 watch(() => [props.resource, props.courseId], loadCourse)
@@ -456,10 +515,10 @@ watch(() => [props.resource, props.courseId], loadCourse)
             <!-- 评价提交表单 -->
             <form class="course-review-form" @submit.prevent="submitReview">
               <div class="review-form-row">
-                <label>
-                  <span>昵称</span>
-                  <input v-model="reviewForm.userName" type="text" maxlength="32" />
-                </label>
+                <div class="review-user-display">
+                  <span>当前用户</span>
+                  <strong>{{ currentUserName }}</strong>
+                </div>
                 <label>
                   <span>评分</span>
                   <select v-model="reviewForm.rating">
@@ -489,17 +548,16 @@ watch(() => [props.resource, props.courseId], loadCourse)
             <div v-if="reviewsLoading" class="course-review-state">正在加载评价...</div>
             <div v-else-if="reviews.length === 0" class="course-review-state">暂无评价，欢迎发布第一条评价。</div>
             <div v-else class="course-review-list">
-              <article v-for="review in reviews" :key="review.id" class="course-review-item">
-                <div class="review-avatar">{{ review.userName.slice(0, 1) }}</div>
-                <div>
-                  <header>
-                    <strong>{{ review.userName }}</strong>
-                    <span>{{ '★'.repeat(review.rating) }}{{ '☆'.repeat(5 - review.rating) }}</span>
-                  </header>
-                  <p>{{ review.content }}</p>
-                  <time>{{ review.createdAt?.replace('T', ' ') }}</time>
-                </div>
-              </article>
+              <CourseReviewThread
+                :reviews="reviews"
+                :active-reply-id="activeReplyId"
+                :reply-draft="replyDraft"
+                :submitting-reply="submittingReply"
+                @start-reply="startReply"
+                @cancel-reply="cancelReply"
+                @update:reply-draft="replyDraft = $event"
+                @submit-reply="submitReply"
+              />
             </div>
           </section>
         </section>
@@ -536,3 +594,195 @@ watch(() => [props.resource, props.courseId], loadCourse)
     </article>
   </main>
 </template>
+
+<style scoped>
+.review-user-display {
+  display: grid;
+  gap: 6px;
+  min-width: 180px;
+}
+
+.review-user-display span {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.review-user-display strong {
+  color: #0f172a;
+}
+
+:deep(.course-review-thread) {
+  display: grid;
+  gap: 14px;
+}
+
+:deep(.course-review-item) {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 12px;
+}
+
+:deep(.review-avatar) {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-weight: 800;
+}
+
+:deep(.review-avatar-small) {
+  width: 34px;
+  height: 34px;
+  font-size: 13px;
+}
+
+:deep(.review-body) {
+  min-width: 0;
+}
+
+:deep(.review-body header) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+:deep(.review-author) {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+:deep(.review-body p) {
+  margin: 8px 0;
+  color: #334155;
+  line-height: 1.7;
+}
+
+:deep(.review-stars) {
+  color: #f59e0b;
+  font-size: 13px;
+}
+
+:deep(.review-reply-target) {
+  color: #64748b;
+  font-size: 13px;
+}
+
+:deep(.review-role-badge) {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+:deep(.review-body footer) {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+:deep(.review-body footer button),
+:deep(.course-reply-form button) {
+  border: 0;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #0369a1;
+  cursor: pointer;
+  font-weight: 700;
+  padding: 6px 12px;
+}
+
+:deep(.course-review-replies) {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #f8fbff;
+  border: 1px solid #e0f2fe;
+}
+
+:deep(.course-reply-item) {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 10px;
+}
+
+:deep(.course-reply-item + .course-reply-item) {
+  padding-top: 10px;
+  border-top: 1px solid #e2e8f0;
+}
+
+:deep(.course-review-reply) {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #eef6ff;
+  color: #1e3a8a;
+}
+
+:deep(.course-review-reply strong) {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+:deep(.course-review-reply span) {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 12px;
+}
+
+:deep(.course-review-reply p) {
+  margin: 0;
+}
+
+:deep(.course-reply-form) {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+:deep(.course-reply-form textarea) {
+  min-height: 86px;
+  resize: vertical;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 10px 12px;
+  color: #0f172a;
+}
+
+:deep(.course-reply-form textarea:focus) {
+  background: #ffffff;
+  color: #0f172a;
+}
+
+:deep(.course-reply-form div) {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+:deep(.course-reply-form button[type='submit']) {
+  background: #2563eb;
+  color: #fff;
+}
+
+:deep(.course-reply-form button:disabled) {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+</style>

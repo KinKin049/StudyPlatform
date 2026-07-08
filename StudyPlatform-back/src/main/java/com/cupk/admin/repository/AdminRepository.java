@@ -3,10 +3,15 @@ package com.cupk.admin.repository;
 import com.cupk.admin.dto.AdminCourseRequest;
 import com.cupk.admin.dto.AdminCourseResponse;
 import com.cupk.admin.dto.AdminCourseReviewResponse;
+import com.cupk.admin.dto.AdminOjProblemRequest;
+import com.cupk.admin.dto.AdminOjProblemResponse;
+import com.cupk.admin.dto.AdminOjTestCaseRequest;
+import com.cupk.admin.dto.AdminOjTestCaseResponse;
 import com.cupk.admin.dto.AdminQuestionBankSetRequest;
 import com.cupk.admin.dto.AdminQuestionRequest;
 import com.cupk.admin.dto.AdminUserResponse;
 import com.cupk.admin.dto.AdminVoucherItemRequest;
+import com.cupk.academy.dto.AcademyCategoryResponse;
 import com.cupk.academy.dto.CourseQuestionBankQuestionResponse;
 import com.cupk.academy.dto.CourseQuestionBankSetResponse;
 import com.cupk.rewards.dto.VoucherItemResponse;
@@ -15,12 +20,17 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -227,6 +237,14 @@ public class AdminRepository {
         );
     }
 
+    public void updateUserPassword(long userId, String passwordHash) {
+        jdbcTemplate.update(
+                "UPDATE users SET password_hash = ? WHERE id = ?",
+                passwordHash,
+                userId
+        );
+    }
+
     public int deleteUser(long userId) {
         jdbcTemplate.update("DELETE FROM academy_course_enrollments WHERE user_id = ?", userId);
         jdbcTemplate.update("DELETE FROM course_question_bank_mistakes WHERE user_id = ?", userId);
@@ -267,8 +285,8 @@ public class AdminRepository {
                     INSERT INTO online_open_courses
                       (external_course_id, course_name, teacher_name, category, school_name,
                        cover_url, cover_file_path, start_time, participant_count, course_comment,
-                       source_url, certified)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                       source_url, certified, certification_label)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON DUPLICATE KEY UPDATE
                       course_name = VALUES(course_name),
                       teacher_name = VALUES(teacher_name),
@@ -280,7 +298,8 @@ public class AdminRepository {
                       participant_count = VALUES(participant_count),
                       course_comment = VALUES(course_comment),
                       source_url = VALUES(source_url),
-                      certified = VALUES(certified)
+                      certified = VALUES(certified),
+                      certification_label = VALUES(certification_label)
                     """,
                     request.id(),
                     request.name(),
@@ -293,7 +312,8 @@ public class AdminRepository {
                     request.participants() == null ? 0 : request.participants(),
                     request.comment(),
                     request.link(),
-                    Boolean.TRUE.equals(request.certified()) ? 1 : 0
+                    Boolean.TRUE.equals(request.certified()) ? 1 : 0,
+                    request.certificationLabel()
             );
             jdbcTemplate.update(
                     """
@@ -320,8 +340,8 @@ public class AdminRepository {
                 INSERT INTO %s
                   (external_course_id, course_name, teacher_name, category, school_name,
                    cover_url, cover_file_path, start_time, participant_count, course_comment,
-                   course_description, source_url, certified)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                   course_description, source_url, certified, certification_label)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE
                   course_name = VALUES(course_name),
                   teacher_name = VALUES(teacher_name),
@@ -334,7 +354,8 @@ public class AdminRepository {
                   course_comment = VALUES(course_comment),
                   course_description = VALUES(course_description),
                   source_url = VALUES(source_url),
-                  certified = VALUES(certified)
+                  certified = VALUES(certified),
+                  certification_label = VALUES(certification_label)
                 """.formatted(courseTable(resourceType)),
                 request.id(),
                 request.name(),
@@ -348,8 +369,102 @@ public class AdminRepository {
                 request.comment(),
                 request.description(),
                 request.link(),
-                Boolean.TRUE.equals(request.certified()) ? 1 : 0
+                Boolean.TRUE.equals(request.certified()) ? 1 : 0,
+                request.certificationLabel()
         );
+    }
+
+    public List<AcademyCategoryResponse> findCourseCategories(String resourceType) {
+        return jdbcTemplate.query(
+                """
+                SELECT name
+                FROM admin_course_categories
+                WHERE resource_type = ?
+                ORDER BY sort_order ASC, name ASC
+                """,
+                (rs, rowNum) -> new AcademyCategoryResponse(rs.getString("name")),
+                resourceType
+        );
+    }
+
+    public boolean courseCategoryExists(String resourceType, String name) {
+        Long count = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM admin_course_categories
+                WHERE resource_type = ? AND name = ?
+                """,
+                Long.class,
+                resourceType,
+                name
+        );
+        return count != null && count > 0;
+    }
+
+    public void upsertCourseCategory(String resourceType, String name) {
+        Integer maxSort = jdbcTemplate.queryForObject(
+                "SELECT COALESCE(MAX(sort_order), 0) FROM admin_course_categories WHERE resource_type = ?",
+                Integer.class,
+                resourceType
+        );
+        jdbcTemplate.update(
+                """
+                INSERT INTO admin_course_categories (resource_type, name, sort_order)
+                VALUES (?, ?, ?)
+                ON DUPLICATE KEY UPDATE name = VALUES(name)
+                """,
+                resourceType,
+                name,
+                (maxSort == null ? 0 : maxSort) + 1
+        );
+    }
+
+    public int deleteCourseCategory(String resourceType, String name) {
+        return jdbcTemplate.update(
+                "DELETE FROM admin_course_categories WHERE resource_type = ? AND name = ?",
+                resourceType,
+                name
+        );
+    }
+
+    public List<AcademyCategoryResponse> findOjCategories() {
+        return jdbcTemplate.query(
+                """
+                SELECT name
+                FROM oj_categories
+                ORDER BY sort_order ASC, name ASC
+                """,
+                (rs, rowNum) -> new AcademyCategoryResponse(rs.getString("name"))
+        );
+    }
+
+    public boolean ojCategoryExists(String name) {
+        Long count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM oj_categories WHERE name = ?",
+                Long.class,
+                name
+        );
+        return count != null && count > 0;
+    }
+
+    public void upsertOjCategory(String name) {
+        Integer maxSort = jdbcTemplate.queryForObject(
+                "SELECT COALESCE(MAX(sort_order), 0) FROM oj_categories",
+                Integer.class
+        );
+        jdbcTemplate.update(
+                """
+                INSERT INTO oj_categories (name, sort_order)
+                VALUES (?, ?)
+                ON DUPLICATE KEY UPDATE name = VALUES(name)
+                """,
+                name,
+                (maxSort == null ? 0 : maxSort) + 1
+        );
+    }
+
+    public int deleteOjCategory(String name) {
+        return jdbcTemplate.update("DELETE FROM oj_categories WHERE name = ?", name);
     }
 
     public int deleteCourse(String resourceType, String courseId) {
@@ -363,27 +478,76 @@ public class AdminRepository {
     }
 
     public List<AdminCourseReviewResponse> findReviews() {
-        return jdbcTemplate.query(
+        List<AdminCourseReviewResponse> reviews = new ArrayList<>();
+        reviews.addAll(jdbcTemplate.query(
                 """
-                SELECT id, resource_type, course_id, user_name, rating, content, created_at
-                FROM academy_course_reviews
-                ORDER BY created_at DESC, id DESC
+                SELECT r.id, r.resource_type, r.course_id AS target_id,
+                       r.parent_review_id,
+                       COALESCE(NULLIF(pu.nickname, ''), NULLIF(pu.username, ''), pr.user_name) AS parent_user_name,
+                       r.user_id,
+                       COALESCE(NULLIF(u.nickname, ''), NULLIF(u.username, ''), r.user_name) AS user_name,
+                       u.email AS user_email,
+                       COALESCE(NULLIF(u.role_type, ''), CASE WHEN u.role = 'TEACHER' THEN 'teacher' WHEN u.role = 'ADMIN' THEN 'admin' ELSE 'student' END, 'student') AS user_role_type,
+                       r.rating, r.content, r.created_at,
+                       r.reply_content, r.reply_user_id, r.reply_user_name, r.reply_user_role_type, r.replied_at
+                FROM academy_course_reviews r
+                LEFT JOIN users u ON u.id = r.user_id
+                LEFT JOIN academy_course_reviews pr ON pr.id = r.parent_review_id
+                LEFT JOIN users pu ON pu.id = pr.user_id
+                ORDER BY r.created_at DESC, r.id DESC
                 LIMIT 300
                 """,
-                (rs, rowNum) -> new AdminCourseReviewResponse(
-                        rs.getLong("id"),
-                        rs.getString("resource_type"),
-                        rs.getString("course_id"),
-                        rs.getString("user_name"),
-                        rs.getInt("rating"),
-                        rs.getString("content"),
-                        rs.getTimestamp("created_at").toLocalDateTime()
-                )
+                (rs, rowNum) -> mapAdminReview(rs, "course")
+        ));
+        reviews.addAll(jdbcTemplate.query(
+                """
+                SELECT r.id, 'textbook' AS resource_type, r.textbook_id AS target_id,
+                       NULL AS parent_review_id, NULL AS parent_user_name, r.user_id,
+                       COALESCE(NULLIF(u.nickname, ''), NULLIF(u.username, ''), r.user_name) AS user_name,
+                       u.email AS user_email,
+                       COALESCE(NULLIF(u.role_type, ''), CASE WHEN u.role = 'TEACHER' THEN 'teacher' WHEN u.role = 'ADMIN' THEN 'admin' ELSE 'student' END, 'student') AS user_role_type,
+                       r.rating, r.content, r.created_at,
+                       r.reply_content, r.reply_user_id, r.reply_user_name, r.reply_user_role_type, r.replied_at
+                FROM academy_textbook_reviews r
+                LEFT JOIN users u ON u.id = r.user_id
+                ORDER BY r.created_at DESC, r.id DESC
+                LIMIT 300
+                """,
+                (rs, rowNum) -> mapAdminReview(rs, "textbook")
+        ));
+        reviews.sort((left, right) -> {
+            if (left.createdAt() == null && right.createdAt() == null) {
+                return Long.compare(right.id(), left.id());
+            }
+            if (left.createdAt() == null) {
+                return 1;
+            }
+            if (right.createdAt() == null) {
+                return -1;
+            }
+            int compared = right.createdAt().compareTo(left.createdAt());
+            return compared != 0 ? compared : Long.compare(right.id(), left.id());
+        });
+        return reviews.size() > 600 ? reviews.subList(0, 600) : reviews;
+    }
+
+    public int deleteReview(String reviewType, long reviewId) {
+        return jdbcTemplate.update(reviewTable(reviewType).deleteSql(), reviewId);
+    }
+
+    public int replyReview(String reviewType, long reviewId, AdminAuthRow replier, String content) {
+        return jdbcTemplate.update(
+                reviewTable(reviewType).replySql(),
+                content,
+                replier.id(),
+                replier.username(),
+                replier.roleType(),
+                reviewId
         );
     }
 
-    public int deleteReview(long reviewId) {
-        return jdbcTemplate.update("DELETE FROM academy_course_reviews WHERE id = ?", reviewId);
+    public int clearReviewReply(String reviewType, long reviewId) {
+        return jdbcTemplate.update(reviewTable(reviewType).clearReplySql(), reviewId);
     }
 
     public List<CourseQuestionBankSetResponse> findQuestionBankSets() {
@@ -538,6 +702,186 @@ public class AdminRepository {
         return jdbcTemplate.update("DELETE FROM course_question_bank_questions WHERE id = ?", questionId);
     }
 
+    public List<AdminOjProblemResponse> findOjProblems() {
+        return jdbcTemplate.query(
+                """
+                SELECT id, title, slug, category, description, input_description, output_description,
+                       standard_code, difficulty, time_limit_ms, memory_limit_kb,
+                       CAST(tags AS CHAR) AS tags, status
+                FROM oj_problems
+                ORDER BY id DESC
+                LIMIT 500
+                """,
+                (rs, rowNum) -> mapOjProblem(rs, List.of())
+        );
+    }
+
+    public Optional<AdminOjProblemResponse> findOjProblem(long problemId) {
+        try {
+            return Optional.ofNullable(jdbcTemplate.queryForObject(
+                    """
+                    SELECT id, title, slug, category, description, input_description, output_description,
+                           standard_code, difficulty, time_limit_ms, memory_limit_kb,
+                           CAST(tags AS CHAR) AS tags, status
+                    FROM oj_problems
+                    WHERE id = ?
+                    LIMIT 1
+                    """,
+                    (rs, rowNum) -> mapOjProblem(rs, findOjTestCases(problemId)),
+                    problemId
+            ));
+        } catch (EmptyResultDataAccessException ex) {
+            return Optional.empty();
+        }
+    }
+
+    public long upsertOjProblem(Long problemId, AdminOjProblemRequest request) {
+        Long savedId = problemId;
+        if (savedId == null) {
+            String sql = """
+                    INSERT INTO oj_problems
+                      (title, slug, category, description, input_description, output_description, standard_code,
+                       samples, difficulty, time_limit_ms, memory_limit_kb, tags, status, created_by)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, CAST(? AS JSON), ?, NULL)
+                    """;
+            KeyHolder keyHolder = new GeneratedKeyHolder();
+            jdbcTemplate.update(connection -> {
+                var ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+                ps.setString(1, request.title());
+                ps.setString(2, request.slug());
+                ps.setString(3, request.category());
+                ps.setString(4, request.description());
+                ps.setString(5, request.inputDescription());
+                ps.setString(6, request.outputDescription());
+                ps.setString(7, request.standardCode());
+                ps.setString(8, request.difficulty());
+                ps.setInt(9, request.timeLimitMs());
+                ps.setInt(10, request.memoryLimitKb());
+                ps.setString(11, tagsToJson(request.tags()));
+                ps.setString(12, request.status());
+                return ps;
+            }, keyHolder);
+            Number key = keyHolder.getKey();
+            savedId = key == null ? 0L : key.longValue();
+        } else {
+            jdbcTemplate.update(
+                    """
+                    UPDATE oj_problems
+                    SET title = ?, slug = ?, description = ?, input_description = ?, output_description = ?,
+                        category = ?, standard_code = ?, difficulty = ?, time_limit_ms = ?, memory_limit_kb = ?,
+                        tags = CAST(? AS JSON), status = ?
+                    WHERE id = ?
+                    """,
+                    request.title(),
+                    request.slug(),
+                    request.description(),
+                    request.inputDescription(),
+                    request.outputDescription(),
+                    request.category(),
+                    request.standardCode(),
+                    request.difficulty(),
+                    request.timeLimitMs(),
+                    request.memoryLimitKb(),
+                    tagsToJson(request.tags()),
+                    request.status(),
+                    savedId
+            );
+        }
+        replaceOjTestCases(savedId, request.testCases());
+        return savedId;
+    }
+
+    public int deleteOjProblem(long problemId) {
+        return jdbcTemplate.update("DELETE FROM oj_problems WHERE id = ?", problemId);
+    }
+
+    public List<AdminOjTestCaseResponse> findOjTestCases(long problemId) {
+        return jdbcTemplate.query(
+                """
+                SELECT id, problem_id, input_data, expected_output, sample, weight, sort_order
+                FROM oj_test_cases
+                WHERE problem_id = ?
+                ORDER BY sort_order ASC, id ASC
+                """,
+                (rs, rowNum) -> new AdminOjTestCaseResponse(
+                        rs.getLong("id"),
+                        rs.getLong("problem_id"),
+                        rs.getString("input_data"),
+                        rs.getString("expected_output"),
+                        rs.getBoolean("sample"),
+                        rs.getInt("weight"),
+                        rs.getInt("sort_order")
+                ),
+                problemId
+        );
+    }
+
+    private void replaceOjTestCases(long problemId, List<AdminOjTestCaseRequest> testCases) {
+        if (testCases == null || testCases.isEmpty()) {
+            return;
+        }
+        List<Long> existingIds = jdbcTemplate.queryForList(
+                "SELECT id FROM oj_test_cases WHERE problem_id = ?",
+                Long.class,
+                problemId
+        );
+        Set<Long> existingIdSet = new HashSet<>(existingIds);
+        Set<Long> keptExistingIds = new HashSet<>();
+        for (AdminOjTestCaseRequest testCase : testCases) {
+            Long testCaseId = testCase.id();
+            if (testCaseId != null && existingIdSet.contains(testCaseId)) {
+                jdbcTemplate.update(
+                        """
+                        UPDATE oj_test_cases
+                        SET input_data = ?, expected_output = ?, sample = ?, weight = ?, sort_order = ?
+                        WHERE id = ? AND problem_id = ?
+                        """,
+                        testCase.inputData(),
+                        testCase.expectedOutput(),
+                        Boolean.TRUE.equals(testCase.sample()),
+                        testCase.weight() == null ? 1 : testCase.weight(),
+                        testCase.sortOrder() == null ? 0 : testCase.sortOrder(),
+                        testCaseId,
+                        problemId
+                );
+                keptExistingIds.add(testCaseId);
+            } else {
+                insertOjTestCase(problemId, testCase);
+            }
+        }
+        for (Long existingId : existingIds) {
+            if (!keptExistingIds.contains(existingId)) {
+                jdbcTemplate.update(
+                        """
+                        DELETE FROM oj_test_cases
+                        WHERE id = ? AND problem_id = ?
+                          AND NOT EXISTS (
+                            SELECT 1 FROM oj_submission_cases WHERE test_case_id = ?
+                          )
+                        """,
+                        existingId,
+                        problemId,
+                        existingId
+                );
+            }
+        }
+    }
+
+    private void insertOjTestCase(long problemId, AdminOjTestCaseRequest testCase) {
+        jdbcTemplate.update(
+                """
+                INSERT INTO oj_test_cases (problem_id, input_data, expected_output, sample, weight, sort_order)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                problemId,
+                testCase.inputData(),
+                testCase.expectedOutput(),
+                Boolean.TRUE.equals(testCase.sample()),
+                testCase.weight() == null ? 1 : testCase.weight(),
+                testCase.sortOrder() == null ? 0 : testCase.sortOrder()
+        );
+    }
+
     public List<VoucherItemResponse> findVoucherItems() {
         return jdbcTemplate.query(
                 """
@@ -652,7 +996,8 @@ public class AdminRepository {
                 getOptionalString(rs, "course_overview"),
                 getOptionalString(rs, "video_file_path"),
                 rs.getString("source_url"),
-                rs.getBoolean("certified")
+                rs.getBoolean("certified"),
+                getOptionalString(rs, "certification_label")
         );
     }
 
@@ -714,8 +1059,55 @@ public class AdminRepository {
         );
     }
 
+    private AdminOjProblemResponse mapOjProblem(ResultSet rs, List<AdminOjTestCaseResponse> testCases) throws SQLException {
+        return new AdminOjProblemResponse(
+                rs.getLong("id"),
+                rs.getString("title"),
+                rs.getString("slug"),
+                getOptionalString(rs, "category"),
+                rs.getString("description"),
+                rs.getString("input_description"),
+                rs.getString("output_description"),
+                getOptionalString(rs, "standard_code"),
+                rs.getString("difficulty"),
+                rs.getInt("time_limit_ms"),
+                rs.getInt("memory_limit_kb"),
+                tagsFromJson(rs.getString("tags")),
+                rs.getString("status"),
+                testCases
+        );
+    }
+
+    private AdminCourseReviewResponse mapAdminReview(ResultSet rs, String reviewType) throws SQLException {
+        return new AdminCourseReviewResponse(
+                rs.getLong("id"),
+                reviewType,
+                rs.getString("resource_type"),
+                rs.getString("target_id"),
+                getNullableLong(rs, "parent_review_id"),
+                getOptionalString(rs, "parent_user_name"),
+                getNullableLong(rs, "user_id"),
+                rs.getString("user_name"),
+                getOptionalString(rs, "user_email"),
+                getOptionalString(rs, "user_role_type"),
+                rs.getInt("rating"),
+                rs.getString("content"),
+                toLocalDateTime(rs.getTimestamp("created_at")),
+                getOptionalString(rs, "reply_content"),
+                getNullableLong(rs, "reply_user_id"),
+                getOptionalString(rs, "reply_user_name"),
+                getOptionalString(rs, "reply_user_role_type"),
+                toLocalDateTime(rs.getTimestamp("replied_at"))
+        );
+    }
+
     private java.time.LocalDateTime toLocalDateTime(Timestamp timestamp) {
         return timestamp == null ? null : timestamp.toLocalDateTime();
+    }
+
+    private Long getNullableLong(ResultSet rs, String column) throws SQLException {
+        long value = rs.getLong(column);
+        return rs.wasNull() ? null : value;
     }
 
     private String courseSelectSql(String resourceType, boolean single) {
@@ -732,7 +1124,8 @@ public class AdminRepository {
         return """
                 SELECT '%s' AS resource_type, c.external_course_id, c.course_name, c.teacher_name,
                        c.category, c.school_name, c.cover_url, c.cover_file_path, c.start_time,
-                       c.participant_count, c.course_comment, %s, c.source_url, c.certified
+                       c.participant_count, c.course_comment, %s, c.source_url, c.certified,
+                       c.certification_label
                 FROM %s c
                 %s
                 %s
@@ -746,6 +1139,38 @@ public class AdminRepository {
             case "general-courses" -> "general_courses";
             case "micro-major-courses" -> "micro_major_courses";
             default -> throw new IllegalArgumentException("Unsupported resource type: " + resourceType);
+        };
+    }
+
+    private ReviewTable reviewTable(String reviewType) {
+        return switch (reviewType == null ? "" : reviewType) {
+            case "course" -> new ReviewTable(
+                    "DELETE FROM academy_course_reviews WHERE id = ?",
+                    """
+                    UPDATE academy_course_reviews
+                    SET reply_content = ?, reply_user_id = ?, reply_user_name = ?, reply_user_role_type = ?, replied_at = NOW()
+                    WHERE id = ?
+                    """,
+                    """
+                    UPDATE academy_course_reviews
+                    SET reply_content = NULL, reply_user_id = NULL, reply_user_name = NULL, reply_user_role_type = NULL, replied_at = NULL
+                    WHERE id = ?
+                    """
+            );
+            case "textbook" -> new ReviewTable(
+                    "DELETE FROM academy_textbook_reviews WHERE id = ?",
+                    """
+                    UPDATE academy_textbook_reviews
+                    SET reply_content = ?, reply_user_id = ?, reply_user_name = ?, reply_user_role_type = ?, replied_at = NOW()
+                    WHERE id = ?
+                    """,
+                    """
+                    UPDATE academy_textbook_reviews
+                    SET reply_content = NULL, reply_user_id = NULL, reply_user_name = NULL, reply_user_role_type = NULL, replied_at = NULL
+                    WHERE id = ?
+                    """
+            );
+            default -> throw new IllegalArgumentException("Unsupported review type: " + reviewType);
         };
     }
 
@@ -797,6 +1222,24 @@ public class AdminRepository {
         }
     }
 
+    private String tagsToJson(String tags) {
+        if (tags == null || tags.isBlank()) {
+            return "[]";
+        }
+        List<String> items = java.util.Arrays.stream(tags.split(","))
+                .map(String::trim)
+                .filter(item -> !item.isBlank())
+                .toList();
+        return toJson(items);
+    }
+
+    private String tagsFromJson(String json) {
+        return String.join(", ", parseStringList(json));
+    }
+
     public record AdminAuthRow(long id, String username, String email, String roleType) {
+    }
+
+    private record ReviewTable(String deleteSql, String replySql, String clearReplySql) {
     }
 }

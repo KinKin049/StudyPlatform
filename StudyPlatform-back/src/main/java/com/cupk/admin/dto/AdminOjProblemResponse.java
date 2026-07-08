@@ -1,8 +1,8 @@
-package com.cupk.oj.model;
+package com.cupk.admin.dto;
 
-import java.time.LocalDateTime;
+import java.util.List;
 
-public record OjProblem(
+public record AdminOjProblemResponse(
         Long id,
         String title,
         String slug,
@@ -11,14 +11,11 @@ public record OjProblem(
         String inputDescription,
         String outputDescription,
         String standardCode,
-        String samples,
-        ProblemDifficulty difficulty,
+        String difficulty,
         Integer timeLimitMs,
         Integer memoryLimitKb,
         String tags,
-        ProblemStatus status,
-        Long createdBy,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        String status,
+        List<AdminOjTestCaseResponse> testCases
 ) {
 }

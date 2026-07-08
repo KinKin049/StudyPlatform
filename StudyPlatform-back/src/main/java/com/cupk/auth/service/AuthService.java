@@ -214,9 +214,9 @@ public class AuthService {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(mailUsername);
         message.setTo(email);
-        message.setSubject("StudyPlatform 找回密码验证码");
+        message.setSubject("EpistemeHub 找回密码验证码");
         message.setText("""
-                你正在找回 StudyPlatform 账号密码。
+                你正在找回 EpistemeHub 账号密码。
 
                 验证码：%s
 

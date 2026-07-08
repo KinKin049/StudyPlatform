@@ -13,6 +13,7 @@ public record ProblemSummary(
         /** 题目标题。 */
         String title,
         /** 题目别名。 */
+        String category,
         String slug,
         /** 题目难度。 */
         ProblemDifficulty difficulty,

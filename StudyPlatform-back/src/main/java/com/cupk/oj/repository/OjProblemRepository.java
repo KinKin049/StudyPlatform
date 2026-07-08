@@ -1,5 +1,6 @@
 package com.cupk.oj.repository;
 
+import com.cupk.academy.dto.AcademyCategoryResponse;
 import com.cupk.oj.dto.CreateProblemRequest;
 import com.cupk.oj.dto.ProblemSummary;
 import com.cupk.oj.dto.UpdateProblemRequest;
@@ -37,6 +38,17 @@ public class OjProblemRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    public List<AcademyCategoryResponse> findCategories() {
+        return jdbcTemplate.query(
+                """
+                SELECT name
+                FROM oj_categories
+                ORDER BY sort_order ASC, name ASC
+                """,
+                (rs, rowNum) -> new AcademyCategoryResponse(rs.getString("name"))
+        );
+    }
+
     /**
      * 创建新题目
      *
@@ -46,28 +58,29 @@ public class OjProblemRepository {
     public Long create(CreateProblemRequest request) {
         String sql = """
                 INSERT INTO oj_problems
-                (title, slug, description, input_description, output_description, samples, difficulty,
+                (title, slug, category, description, input_description, output_description, standard_code, samples, difficulty,
                  time_limit_ms, memory_limit_kb, tags, status, created_by)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?)
                 """;
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
             var ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, request.title());
             ps.setString(2, request.slug());
-            ps.setString(3, request.description());
-            ps.setString(4, request.inputDescription());
-            ps.setString(5, request.outputDescription());
-            ps.setString(6, request.samples());
-            ps.setString(7, request.difficulty().name());
-            ps.setInt(8, request.timeLimitMs());
-            ps.setInt(9, request.memoryLimitKb());
-            ps.setString(10, request.tags());
-            ps.setString(11, request.status().name());
+            ps.setString(3, request.category());
+            ps.setString(4, request.description());
+            ps.setString(5, request.inputDescription());
+            ps.setString(6, request.outputDescription());
+            ps.setString(7, request.samples());
+            ps.setString(8, request.difficulty().name());
+            ps.setInt(9, request.timeLimitMs());
+            ps.setInt(10, request.memoryLimitKb());
+            ps.setString(11, request.tags());
+            ps.setString(12, request.status().name());
             if (request.createdBy() == null) {
-                ps.setObject(12, null);
+                ps.setObject(13, null);
             } else {
-                ps.setLong(12, request.createdBy());
+                ps.setLong(13, request.createdBy());
             }
             return ps;
         }, keyHolder);
@@ -84,13 +97,14 @@ public class OjProblemRepository {
     public int update(Long id, UpdateProblemRequest request) {
         String sql = """
                 UPDATE oj_problems
-                SET title = ?, description = ?, input_description = ?, output_description = ?,
+                SET title = ?, category = ?, description = ?, input_description = ?, output_description = ?,
                     samples = ?, difficulty = ?, time_limit_ms = ?, memory_limit_kb = ?,
                     tags = ?, status = ?
                 WHERE id = ?
                 """;
         return jdbcTemplate.update(sql,
                 request.title(),
+                request.category(),
                 request.description(),
                 request.inputDescription(),
                 request.outputDescription(),
@@ -135,7 +149,7 @@ public class OjProblemRepository {
         List<Object> args = new ArrayList<>();
 
         StringBuilder sql = new StringBuilder("""
-                SELECT id, title, slug, difficulty, time_limit_ms, memory_limit_kb,
+                SELECT id, title, slug, category, difficulty, time_limit_ms, memory_limit_kb,
                        CAST(tags AS CHAR) AS tags, status, created_at, updated_at
                 FROM oj_problems
                 WHERE 1 = 1
@@ -211,8 +225,8 @@ public class OjProblemRepository {
      */
     public Optional<OjProblem> findById(Long id) {
         String sql = """
-                SELECT id, title, slug, description, input_description, output_description,
-                       CAST(samples AS CHAR) AS samples, difficulty, time_limit_ms, memory_limit_kb,
+                SELECT id, title, slug, category, description, input_description, output_description,
+                       standard_code, CAST(samples AS CHAR) AS samples, difficulty, time_limit_ms, memory_limit_kb,
                        CAST(tags AS CHAR) AS tags, status, created_by, created_at, updated_at
                 FROM oj_problems
                 WHERE id = ?
@@ -241,9 +255,11 @@ public class OjProblemRepository {
                 rs.getLong("id"),
                 rs.getString("title"),
                 rs.getString("slug"),
+                rs.getString("category"),
                 rs.getString("description"),
                 rs.getString("input_description"),
                 rs.getString("output_description"),
+                rs.getString("standard_code"),
                 rs.getString("samples"),
                 ProblemDifficulty.valueOf(rs.getString("difficulty")),
                 rs.getInt("time_limit_ms"),
@@ -266,6 +282,7 @@ public class OjProblemRepository {
                 rs.getLong("id"),
                 rs.getString("title"),
                 rs.getString("slug"),
+                rs.getString("category"),
                 ProblemDifficulty.valueOf(rs.getString("difficulty")),
                 rs.getInt("time_limit_ms"),
                 rs.getInt("memory_limit_kb"),

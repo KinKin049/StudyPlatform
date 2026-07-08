@@ -41,6 +41,36 @@ export const fetchAdminCourses = (resourceType) =>
   request(`/api/admin/courses?resourceType=${encodeURIComponent(resourceType)}`)
 
 /**
+ * 获取管理员维护的课程分类
+ * @param {string} resourceType - 资源类型
+ * @returns {Promise<any>} 分类列表
+ */
+export const fetchAdminCourseCategories = (resourceType) =>
+  request(`/api/admin/course-categories?resourceType=${encodeURIComponent(resourceType)}`)
+
+/**
+ * 保存课程分类
+ * @param {Object} payload - 分类信息
+ * @returns {Promise<any>} 分类列表
+ */
+export const saveAdminCourseCategory = (payload) =>
+  request('/api/admin/course-categories', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+
+/**
+ * 删除课程分类
+ * @param {string} resourceType - 资源类型
+ * @param {string} name - 分类名称
+ * @returns {Promise<any>} 分类列表
+ */
+export const deleteAdminCourseCategory = (resourceType, name) =>
+  request(`/api/admin/course-categories/${encodeURIComponent(resourceType)}/${encodeURIComponent(name)}`, {
+    method: 'DELETE',
+  })
+
+/**
  * 保存课程信息
  * @param {Object} payload - 课程信息
  * @returns {Promise<any>} 保存结果
@@ -73,8 +103,24 @@ export const fetchAdminReviews = () => request('/api/admin/reviews')
  * @param {string|number} reviewId - 评价 ID
  * @returns {Promise<any>} 删除结果
  */
-export const deleteAdminReview = (reviewId) =>
-  request(`/api/admin/reviews/${reviewId}`, {
+export const deleteAdminReview = (reviewType, reviewId) =>
+  request(`/api/admin/reviews/${encodeURIComponent(reviewType)}/${reviewId}`, {
+    method: 'DELETE',
+  })
+
+export const replyAdminReview = (reviewType, reviewId, payload) =>
+  request(
+    reviewType === 'course'
+      ? `/api/academy/reviews/${reviewId}/reply`
+      : `/api/admin/reviews/${encodeURIComponent(reviewType)}/${reviewId}/reply`,
+    {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    },
+  )
+
+export const deleteAdminReviewReply = (reviewType, reviewId) =>
+  request(`/api/admin/reviews/${encodeURIComponent(reviewType)}/${reviewId}/reply`, {
     method: 'DELETE',
   })
 
@@ -150,6 +196,47 @@ export const deleteAdminQuestion = (questionId) =>
  * 获取优惠券列表
  * @returns {Promise<any>} 优惠券列表
  */
+export const fetchAdminOjProblems = () => request('/api/admin/oj/problems')
+
+export const fetchAdminOjCategories = () => request('/api/admin/oj/categories')
+
+export const saveAdminOjCategory = (payload) =>
+  request('/api/admin/oj/categories', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+
+export const deleteAdminOjCategory = (name) =>
+  request(`/api/admin/oj/categories/${encodeURIComponent(name)}`, {
+    method: 'DELETE',
+  })
+
+export const fetchAdminOjProblem = (problemId) =>
+  request(`/api/admin/oj/problems/${problemId}?_=${Date.now()}`)
+
+export const createAdminOjProblem = (payload) =>
+  request('/api/admin/oj/problems', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+
+export const updateAdminOjProblem = (problemId, payload) =>
+  request(`/api/admin/oj/problems/${problemId}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
+
+export const deleteAdminOjProblem = (problemId) =>
+  request(`/api/admin/oj/problems/${problemId}`, {
+    method: 'DELETE',
+  })
+
+export const checkAdminOjProblem = (payload) =>
+  request('/api/admin/oj/problems/check', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+
 export const fetchAdminVouchers = () => request('/api/admin/vouchers')
 
 /**

@@ -19,6 +19,7 @@ public record CreateProblemRequest(
         /**
          * 题目短标识
          */
+        @Size(max = 80) String category,
         @NotBlank @Size(max = 128) String slug,
         /**
          * 题目描述

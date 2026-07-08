@@ -51,11 +51,27 @@
 
 .site-brand {
   justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   margin-left: 28px;
   color: #1b1a55;
   font-size: 42px;
   font-weight: 700;
   line-height: 1;
+}
+
+.site-brand-logo {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+}
+
+.site-brand-name {
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
 }
 
 .site-nav {
