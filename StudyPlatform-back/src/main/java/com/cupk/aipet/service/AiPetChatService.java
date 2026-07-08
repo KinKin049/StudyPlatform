@@ -36,7 +36,7 @@ public class AiPetChatService {
     /**
      * 页面上下文最大长度
      */
-    private static final int MAX_CONTEXT_LENGTH = 1800;
+    private static final int MAX_CONTEXT_LENGTH = 5200;
 
     /**
      * HTTP 客户端实例
@@ -152,6 +152,7 @@ public class AiPetChatService {
                 你是 StudyPlatform 的 AI 宠物“星云学习猫”。
                 你的语气温暖、简洁、可爱，但不要过度卖萌。
                 你要优先结合当前页面内容回答学习问题，可以解释页面、总结重点、给出下一步操作建议。
+                当前页面上下文来自前端实时读取的可见文本、标题、选中文本和安全表单摘要；用户问“本页”“这里”“这个按钮/内容”时，必须优先依据这些上下文回答。
                 前端已经能真实执行这些动作：打开页面、搜索课程、创建待办、启动番茄专注。
                 如果用户要求你执行动作，但你没有收到工具执行结果，不要说“已完成”“已创建”“已启动”。
                 不能真实执行的动作，请明确说需要用户确认或手动操作，并给出下一步。
@@ -191,15 +192,28 @@ public class AiPetChatService {
         String headings = context.headings() == null || context.headings().isEmpty()
                 ? "暂无标题"
                 : String.join(" / ", context.headings());
+        String formSnapshot = context.formSnapshot() == null || context.formSnapshot().isEmpty()
+                ? "暂无表单状态"
+                : String.join("；", context.formSnapshot());
+        String selectedText = clean(context.selectedText()).isBlank() ? "暂无选中文本" : context.selectedText();
+        String contentLength = context.contentLength() == null ? "未知" : context.contentLength().toString();
         return """
                 路径：%s
+                路由：%s
                 标题：%s
                 页面标题摘要：%s
+                页面可见文本长度：约 %s 字
+                用户选中文本：%s
+                表单/输入状态：%s
                 页面可见内容摘录：%s
                 """.formatted(
-                limit(clean(context.path()), 180),
+                limit(clean(context.path()), 220),
+                limit(clean(context.routeName()), 120),
                 limit(clean(context.title()), 180),
-                limit(clean(headings), 500),
+                limit(clean(headings), 700),
+                contentLength,
+                limit(clean(selectedText), 900),
+                limit(clean(formSnapshot), 1200),
                 limit(clean(context.textSnippet()), MAX_CONTEXT_LENGTH)
         );
     }

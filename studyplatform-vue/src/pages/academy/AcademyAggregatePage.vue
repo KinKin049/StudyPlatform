@@ -54,27 +54,6 @@ const pageTitles = {
 }
 
 /**
- * 侧边栏内容配置
- */
-const pageSidebars = {
-  courses: [
-    { title: '快捷操作', items: ['输入课程 UID 添加课程', '查看最近学习记录', '进入课程分类页'] },
-    { title: '推荐下一步', items: ['继续学习 C语言程序设计（下）', '补齐数据分析微专业项目资料'] },
-    { title: '课程提醒', items: ['2 门课程本周更新章节', '1 门课程即将开课'] },
-  ],
-  assignments: [
-    { title: '快捷操作', items: ['筛选待提交作业', '查看已批阅反馈', '进入错题复盘'] },
-    { title: '推荐下一步', items: ['完成第 3 章函数练习', '提交劳动通论专题讨论'] },
-    { title: '作业提醒', items: ['2 项作业 3 天内截止', '1 项报告等待教师批阅'] },
-  ],
-  exams: [
-    { title: '快捷操作', items: ['查看可进入考试', '检查考试设备', '查看历史成绩'] },
-    { title: '推荐下一步', items: ['完成程序设计单元测试', '预约通识课程结课考试'] },
-    { title: '考试提醒', items: ['1 场考试正在开放', '1 场考试即将开始'] },
-  ],
-}
-
-/**
  * 响应式状态定义
  */
 const activeCategory = ref(props.variant)
@@ -88,6 +67,8 @@ const assignmentsError = ref('')
 const exams = ref([])
 const examsLoading = ref(false)
 const examsError = ref('')
+const courseSearchKeyword = ref('')
+const sidebarFeedback = ref('')
 const profileOverview = ref(null)
 const studyTimeLoading = ref(false)
 const studyTimeError = ref('')
@@ -95,6 +76,7 @@ const droppingCourseKey = ref('')
 const pendingDropCourse = ref(null)
 const dropFeedbackVisible = ref(false)
 let dropFeedbackTimer = null
+let sidebarFeedbackTimer = null
 
 /**
  * 资源类型与详情页路径的映射
@@ -189,6 +171,18 @@ const formatDateTime = (value) => {
   const hours = String(date.getHours()).padStart(2, '0')
   const minutes = String(date.getMinutes()).padStart(2, '0')
   return `${month}-${day} ${hours}:${minutes}`
+}
+
+const getTimeValue = (value) => {
+  const time = new Date(value || 0).getTime()
+  return Number.isFinite(time) ? time : 0
+}
+
+const getExamSidebarTime = (exam) => {
+  if (exam.status === '即将开始' || isBeforeStart(exam.startsAt)) {
+    return `开始 ${formatDateTime(exam.startsAt) || '时间待定'}`
+  }
+  return `截止 ${formatDateTime(exam.deadline) || '时间待定'}`
 }
 
 /**
@@ -341,10 +335,153 @@ const visibleCards = computed(() =>
   }),
 )
 
-/**
- * 获取当前页面的侧边栏内容
- */
-const sidebarSections = computed(() => pageSidebars[props.variant] || pageSidebars.courses)
+const pendingAssignments = computed(() =>
+  assignments.value
+    .filter((assignment) => {
+      if (assignment.submissionStatus === 'graded' || assignment.submissionStatus === 'pending_review') {
+        return false
+      }
+      return assignment.status !== '已结束' && !isDeadlinePassed(assignment.deadline)
+    })
+    .sort((left, right) => getTimeValue(left.deadline) - getTimeValue(right.deadline)),
+)
+
+const reviewedAssignments = computed(() =>
+  assignments.value.filter((assignment) =>
+    assignment.submissionStatus === 'graded' || assignment.submissionStatus === 'pending_review',
+  ),
+)
+
+const upcomingExams = computed(() =>
+  exams.value
+    .filter((exam) => {
+      if (exam.status === '已结束' || isDeadlinePassed(exam.deadline)) {
+        return false
+      }
+      return exam.status === '即将开始' || isBeforeStart(exam.startsAt) || exam.status === '正在进行'
+    })
+    .sort((left, right) =>
+      getTimeValue(left.startsAt || left.deadline) - getTimeValue(right.startsAt || right.deadline),
+    ),
+)
+
+const recentCourseActions = computed(() =>
+  [...myCourses.value]
+    .sort((left, right) => getTimeValue(right.enrolledAt) - getTimeValue(left.enrolledAt))
+    .slice(0, 3)
+    .map((course) => ({
+      key: `recent-${course.resourceType}-${course.id}`,
+      label: `继续学习 ${course.name}`,
+      meta: `${course.teacher || '授课教师待定'} · ${course.startTime || '开课时间待定'}`,
+      path: `${resourceDetailPath[course.resourceType] || '/academy/open-courses'}/${encodeURIComponent(course.id)}`,
+    })),
+)
+
+const courseReminderActions = computed(() => [
+  ...pendingAssignments.value.slice(0, 2).map((assignment) => ({
+    key: `assignment-reminder-${assignment.id}`,
+    label: assignment.title || '未命名作业',
+    meta: `${assignment.course || '课程作业'} · 截止 ${formatDateTime(assignment.deadline) || '时间待定'}`,
+    path: `/academy/assignments/${encodeURIComponent(assignment.id)}`,
+  })),
+  ...upcomingExams.value.slice(0, 2).map((exam) => ({
+    key: `exam-reminder-${exam.id}`,
+    label: exam.title || '未命名考试',
+    meta: `${exam.course || '课程考试'} · ${getExamSidebarTime(exam)}`,
+    path: `/academy/exams/${encodeURIComponent(exam.id)}`,
+  })),
+])
+
+const assignmentReminderActions = computed(() =>
+  pendingAssignments.value.slice(0, 4).map((assignment) => ({
+    key: `assignment-${assignment.id}`,
+    label: assignment.title || '未命名作业',
+    meta: `${assignment.course || '课程作业'} · 截止 ${formatDateTime(assignment.deadline) || '时间待定'}`,
+    path: `/academy/assignments/${encodeURIComponent(assignment.id)}`,
+  })),
+)
+
+const examReminderActions = computed(() =>
+  upcomingExams.value.slice(0, 4).map((exam) => ({
+    key: `exam-${exam.id}`,
+    label: exam.title || '未命名考试',
+    meta: `${exam.course || '课程考试'} · ${getExamSidebarTime(exam)}`,
+    path: `/academy/exams/${encodeURIComponent(exam.id)}`,
+  })),
+)
+
+const sidebarModel = computed(() => {
+  if (props.variant === 'assignments') {
+    return [
+      {
+        title: '快捷操作',
+        actions: [
+          { key: 'assignment-todo', label: '筛选待提交作业', meta: '只看仍需完成的任务', variant: 'assignments', status: '正在进行' },
+          { key: 'assignment-feedback', label: '查看已批阅反馈', meta: reviewedAssignments.value.length ? `${reviewedAssignments.value.length} 项已提交记录` : '暂无已批阅反馈', variant: 'assignments', status: '全部' },
+          { key: 'assignment-mistakes', label: '进入错题复盘', meta: '跳转题库错题本', path: '/academy/question-bank/mistakes' },
+        ],
+      },
+      {
+        title: '推荐下一步',
+        actions: assignmentReminderActions.value.slice(0, 2),
+        empty: '暂无待处理作业，可以先复盘错题或预习下一节。',
+      },
+      {
+        title: '作业提醒',
+        actions: assignmentReminderActions.value,
+        empty: '暂无作业提醒。',
+      },
+    ]
+  }
+
+  if (props.variant === 'exams') {
+    return [
+      {
+        title: '快捷操作',
+        actions: [
+          { key: 'exam-open', label: '查看可进入考试', meta: '筛选当前正在进行的考试', variant: 'exams', status: '正在进行' },
+          { key: 'exam-device', label: '检查考试设备', meta: '进入最近一场考试说明页', path: examReminderActions.value[0]?.path || '/academy/exams' },
+          { key: 'exam-history', label: '查看历史成绩', meta: '筛选已结束考试', variant: 'exams', status: '已结束' },
+        ],
+      },
+      {
+        title: '推荐下一步',
+        actions: examReminderActions.value.slice(0, 2),
+        empty: '暂无临近考试，可以继续完成课程作业。',
+      },
+      {
+        title: '考试提醒',
+        actions: examReminderActions.value,
+        empty: '暂无考试提醒。',
+      },
+    ]
+  }
+
+  return [
+    {
+      title: '快捷操作',
+      kind: 'course-search',
+      actions: [
+        { key: 'recent-activity', label: '查看最近学习记录', meta: '跳转个人主页的最近动态', path: '/profile', hash: '#recent-activity' },
+        { key: 'course-category', label: '进入课程分类页', meta: '浏览在线开放课、通识课和微专业', path: '/academy/open-courses' },
+      ],
+    },
+    {
+      title: '推荐下一步',
+      actions: recentCourseActions.value.length
+        ? recentCourseActions.value
+        : [
+            { key: 'open-courses', label: '浏览在线开放课', meta: '从课程目录选择下一门课', path: '/academy/open-courses' },
+            { key: 'general-courses', label: '补充通识课程', meta: '完善跨学科学习结构', path: '/academy/general-courses' },
+          ],
+    },
+    {
+      title: '课程提醒',
+      actions: courseReminderActions.value,
+      empty: '暂无课程提醒。',
+    },
+  ]
+})
 
 /**
  * 获取空状态提示文本
@@ -365,6 +502,39 @@ const selectCategory = (tab) => {
   if (tab.key !== 'all') {
     router.push(tab.path)
   }
+}
+
+const handleCourseSearchSubmit = () => {
+  const keyword = courseSearchKeyword.value.trim()
+  router.push({
+    path: '/academy/home',
+    query: keyword ? { keyword } : {},
+  })
+  showSidebarFeedback(keyword ? `已跳转到在线学堂搜索：${keyword}` : '已跳转到在线学堂首页')
+}
+
+const openSidebarAction = (action) => {
+  if (action.path) {
+    router.push({ path: action.path, hash: action.hash || '' })
+    return
+  }
+
+  if (action.variant) {
+    activeCategory.value = action.variant
+    activeStatus.value = action.status || '全部'
+    const targetTab = categoryTabs.value.find((tab) => tab.key === action.variant)
+    if (targetTab && props.variant !== action.variant) {
+      router.push(targetTab.path)
+    }
+  }
+}
+
+const showSidebarFeedback = (message) => {
+  sidebarFeedback.value = message
+  window.clearTimeout(sidebarFeedbackTimer)
+  sidebarFeedbackTimer = window.setTimeout(() => {
+    sidebarFeedback.value = ''
+  }, 1800)
 }
 
 /**
@@ -493,6 +663,7 @@ onMounted(() => {
  */
 onBeforeUnmount(() => {
   window.clearTimeout(dropFeedbackTimer)
+  window.clearTimeout(sidebarFeedbackTimer)
 })
 </script>
 
@@ -688,12 +859,48 @@ onBeforeUnmount(() => {
 
       <!-- 右侧侧边栏 -->
       <aside class="academy-aggregate-sidebar" aria-label="右侧功能分区">
-        <section v-for="section in sidebarSections" :key="section.title">
+        <section v-for="section in sidebarModel" :key="section.title">
           <h2>{{ section.title }}</h2>
-          <ul>
-            <li v-for="item in section.items" :key="item">{{ item }}</li>
-          </ul>
+
+          <form
+            v-if="section.kind === 'course-search'"
+            class="academy-aggregate-search-form"
+            @submit.prevent="handleCourseSearchSubmit"
+          >
+            <input
+              v-model="courseSearchKeyword"
+              type="text"
+              placeholder="输入课程名、教师、分类或课程 ID"
+              aria-label="搜索在线学堂课程"
+            />
+            <button type="submit">搜索</button>
+          </form>
+
+          <div class="academy-aggregate-side-actions">
+            <button
+              v-for="action in section.actions"
+              :key="action.key"
+              type="button"
+              class="academy-aggregate-side-button"
+              @click="openSidebarAction(action)"
+            >
+              <strong>{{ action.label }}</strong>
+              <span>{{ action.meta }}</span>
+            </button>
+          </div>
+
+          <p v-if="section.empty && !section.actions.length" class="academy-aggregate-empty-note">
+            {{ section.empty }}
+          </p>
+
+          <p v-if="section.kind === 'course-search'" class="academy-aggregate-side-note">
+            输入内容会带到在线学堂首页搜索框。
+          </p>
         </section>
+
+        <p v-if="sidebarFeedback" class="academy-aggregate-side-feedback" role="status">
+          {{ sidebarFeedback }}
+        </p>
       </aside>
     </section>
   </main>
