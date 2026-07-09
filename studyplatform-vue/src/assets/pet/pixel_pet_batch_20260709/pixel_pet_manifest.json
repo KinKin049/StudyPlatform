@@ -1,0 +1,770 @@
+[
+  {
+    "id": "pet_01",
+    "family": "animal",
+    "kind": "cat",
+    "palette": "gray",
+    "accessory": "bow",
+    "filename": "pet_01_animal_cat_gray.png"
+  },
+  {
+    "id": "pet_02",
+    "family": "animal",
+    "kind": "dog",
+    "palette": "blue",
+    "accessory": "star",
+    "filename": "pet_02_animal_dog_blue.png"
+  },
+  {
+    "id": "pet_03",
+    "family": "animal",
+    "kind": "bunny",
+    "palette": "gray",
+    "accessory": "leaf",
+    "filename": "pet_03_animal_bunny_gray.png"
+  },
+  {
+    "id": "pet_04",
+    "family": "animal",
+    "kind": "bear",
+    "palette": "blue",
+    "accessory": "bow",
+    "filename": "pet_04_animal_bear_blue.png"
+  },
+  {
+    "id": "pet_05",
+    "family": "animal",
+    "kind": "panda",
+    "palette": "gray",
+    "accessory": "star",
+    "filename": "pet_05_animal_panda_gray.png"
+  },
+  {
+    "id": "pet_06",
+    "family": "animal",
+    "kind": "fox",
+    "palette": "blue",
+    "accessory": "leaf",
+    "filename": "pet_06_animal_fox_blue.png"
+  },
+  {
+    "id": "pet_07",
+    "family": "animal",
+    "kind": "cat",
+    "palette": "cream",
+    "accessory": "star",
+    "filename": "pet_07_animal_cat_cream.png"
+  },
+  {
+    "id": "pet_08",
+    "family": "animal",
+    "kind": "dog",
+    "palette": "pink",
+    "accessory": "leaf",
+    "filename": "pet_08_animal_dog_pink.png"
+  },
+  {
+    "id": "pet_09",
+    "family": "animal",
+    "kind": "bunny",
+    "palette": "cream",
+    "accessory": "bow",
+    "filename": "pet_09_animal_bunny_cream.png"
+  },
+  {
+    "id": "pet_10",
+    "family": "animal",
+    "kind": "bear",
+    "palette": "pink",
+    "accessory": "star",
+    "filename": "pet_10_animal_bear_pink.png"
+  },
+  {
+    "id": "pet_11",
+    "family": "animal",
+    "kind": "panda",
+    "palette": "cream",
+    "accessory": "leaf",
+    "filename": "pet_11_animal_panda_cream.png"
+  },
+  {
+    "id": "pet_12",
+    "family": "animal",
+    "kind": "fox",
+    "palette": "pink",
+    "accessory": "bow",
+    "filename": "pet_12_animal_fox_pink.png"
+  },
+  {
+    "id": "pet_13",
+    "family": "animal",
+    "kind": "cat",
+    "palette": "blue",
+    "accessory": "leaf",
+    "filename": "pet_13_animal_cat_blue.png"
+  },
+  {
+    "id": "pet_14",
+    "family": "animal",
+    "kind": "dog",
+    "palette": "gray",
+    "accessory": "bow",
+    "filename": "pet_14_animal_dog_gray.png"
+  },
+  {
+    "id": "pet_15",
+    "family": "animal",
+    "kind": "bunny",
+    "palette": "blue",
+    "accessory": "star",
+    "filename": "pet_15_animal_bunny_blue.png"
+  },
+  {
+    "id": "pet_16",
+    "family": "animal",
+    "kind": "bear",
+    "palette": "gray",
+    "accessory": "leaf",
+    "filename": "pet_16_animal_bear_gray.png"
+  },
+  {
+    "id": "pet_17",
+    "family": "animal",
+    "kind": "panda",
+    "palette": "blue",
+    "accessory": "bow",
+    "filename": "pet_17_animal_panda_blue.png"
+  },
+  {
+    "id": "pet_18",
+    "family": "animal",
+    "kind": "fox",
+    "palette": "gray",
+    "accessory": "star",
+    "filename": "pet_18_animal_fox_gray.png"
+  },
+  {
+    "id": "pet_19",
+    "family": "animal",
+    "kind": "cat",
+    "palette": "pink",
+    "accessory": "bow",
+    "filename": "pet_19_animal_cat_pink.png"
+  },
+  {
+    "id": "pet_20",
+    "family": "animal",
+    "kind": "dog",
+    "palette": "cream",
+    "accessory": "star",
+    "filename": "pet_20_animal_dog_cream.png"
+  },
+  {
+    "id": "pet_21",
+    "family": "animal",
+    "kind": "bunny",
+    "palette": "pink",
+    "accessory": "leaf",
+    "filename": "pet_21_animal_bunny_pink.png"
+  },
+  {
+    "id": "pet_22",
+    "family": "animal",
+    "kind": "bear",
+    "palette": "cream",
+    "accessory": "bow",
+    "filename": "pet_22_animal_bear_cream.png"
+  },
+  {
+    "id": "pet_23",
+    "family": "animal",
+    "kind": "panda",
+    "palette": "pink",
+    "accessory": "star",
+    "filename": "pet_23_animal_panda_pink.png"
+  },
+  {
+    "id": "pet_24",
+    "family": "animal",
+    "kind": "fox",
+    "palette": "cream",
+    "accessory": "leaf",
+    "filename": "pet_24_animal_fox_cream.png"
+  },
+  {
+    "id": "pet_25",
+    "family": "animal",
+    "kind": "cat",
+    "palette": "gray",
+    "accessory": "star",
+    "filename": "pet_25_animal_cat_gray.png"
+  },
+  {
+    "id": "pet_26",
+    "family": "animal",
+    "kind": "dog",
+    "palette": "blue",
+    "accessory": "leaf",
+    "filename": "pet_26_animal_dog_blue.png"
+  },
+  {
+    "id": "pet_27",
+    "family": "animal",
+    "kind": "bunny",
+    "palette": "gray",
+    "accessory": "bow",
+    "filename": "pet_27_animal_bunny_gray.png"
+  },
+  {
+    "id": "pet_28",
+    "family": "animal",
+    "kind": "bear",
+    "palette": "blue",
+    "accessory": "star",
+    "filename": "pet_28_animal_bear_blue.png"
+  },
+  {
+    "id": "pet_29",
+    "family": "animal",
+    "kind": "panda",
+    "palette": "gray",
+    "accessory": "leaf",
+    "filename": "pet_29_animal_panda_gray.png"
+  },
+  {
+    "id": "pet_30",
+    "family": "animal",
+    "kind": "fox",
+    "palette": "blue",
+    "accessory": "bow",
+    "filename": "pet_30_animal_fox_blue.png"
+  },
+  {
+    "id": "pet_31",
+    "family": "animal",
+    "kind": "cat",
+    "palette": "cream",
+    "accessory": "leaf",
+    "filename": "pet_31_animal_cat_cream.png"
+  },
+  {
+    "id": "pet_32",
+    "family": "animal",
+    "kind": "dog",
+    "palette": "pink",
+    "accessory": "bow",
+    "filename": "pet_32_animal_dog_pink.png"
+  },
+  {
+    "id": "pet_33",
+    "family": "animal",
+    "kind": "bunny",
+    "palette": "cream",
+    "accessory": "star",
+    "filename": "pet_33_animal_bunny_cream.png"
+  },
+  {
+    "id": "pet_34",
+    "family": "animal",
+    "kind": "bear",
+    "palette": "pink",
+    "accessory": "leaf",
+    "filename": "pet_34_animal_bear_pink.png"
+  },
+  {
+    "id": "pet_35",
+    "family": "animal",
+    "kind": "panda",
+    "palette": "cream",
+    "accessory": "bow",
+    "filename": "pet_35_animal_panda_cream.png"
+  },
+  {
+    "id": "pet_36",
+    "family": "animal",
+    "kind": "fox",
+    "palette": "pink",
+    "accessory": "star",
+    "filename": "pet_36_animal_fox_pink.png"
+  },
+  {
+    "id": "pet_37",
+    "family": "spirit",
+    "kind": "fairy",
+    "palette": "gray",
+    "accessory": "halo",
+    "filename": "pet_37_spirit_fairy_gray.png"
+  },
+  {
+    "id": "pet_38",
+    "family": "spirit",
+    "kind": "slime",
+    "palette": "blue",
+    "accessory": "gem",
+    "filename": "pet_38_spirit_slime_blue.png"
+  },
+  {
+    "id": "pet_39",
+    "family": "spirit",
+    "kind": "dragon",
+    "palette": "gray",
+    "accessory": "star",
+    "filename": "pet_39_spirit_dragon_gray.png"
+  },
+  {
+    "id": "pet_40",
+    "family": "spirit",
+    "kind": "mushroom",
+    "palette": "blue",
+    "accessory": "spark",
+    "filename": "pet_40_spirit_mushroom_blue.png"
+  },
+  {
+    "id": "pet_41",
+    "family": "spirit",
+    "kind": "star",
+    "palette": "gray",
+    "accessory": "halo",
+    "filename": "pet_41_spirit_star_gray.png"
+  },
+  {
+    "id": "pet_42",
+    "family": "spirit",
+    "kind": "fairy",
+    "palette": "violet",
+    "accessory": "gem",
+    "filename": "pet_42_spirit_fairy_violet.png"
+  },
+  {
+    "id": "pet_43",
+    "family": "spirit",
+    "kind": "slime",
+    "palette": "green",
+    "accessory": "star",
+    "filename": "pet_43_spirit_slime_green.png"
+  },
+  {
+    "id": "pet_44",
+    "family": "spirit",
+    "kind": "dragon",
+    "palette": "violet",
+    "accessory": "spark",
+    "filename": "pet_44_spirit_dragon_violet.png"
+  },
+  {
+    "id": "pet_45",
+    "family": "spirit",
+    "kind": "mushroom",
+    "palette": "green",
+    "accessory": "halo",
+    "filename": "pet_45_spirit_mushroom_green.png"
+  },
+  {
+    "id": "pet_46",
+    "family": "spirit",
+    "kind": "star",
+    "palette": "violet",
+    "accessory": "gem",
+    "filename": "pet_46_spirit_star_violet.png"
+  },
+  {
+    "id": "pet_47",
+    "family": "spirit",
+    "kind": "fairy",
+    "palette": "pink",
+    "accessory": "star",
+    "filename": "pet_47_spirit_fairy_pink.png"
+  },
+  {
+    "id": "pet_48",
+    "family": "spirit",
+    "kind": "slime",
+    "palette": "cream",
+    "accessory": "spark",
+    "filename": "pet_48_spirit_slime_cream.png"
+  },
+  {
+    "id": "pet_49",
+    "family": "spirit",
+    "kind": "dragon",
+    "palette": "pink",
+    "accessory": "halo",
+    "filename": "pet_49_spirit_dragon_pink.png"
+  },
+  {
+    "id": "pet_50",
+    "family": "spirit",
+    "kind": "mushroom",
+    "palette": "cream",
+    "accessory": "gem",
+    "filename": "pet_50_spirit_mushroom_cream.png"
+  },
+  {
+    "id": "pet_51",
+    "family": "spirit",
+    "kind": "star",
+    "palette": "pink",
+    "accessory": "star",
+    "filename": "pet_51_spirit_star_pink.png"
+  },
+  {
+    "id": "pet_52",
+    "family": "spirit",
+    "kind": "fairy",
+    "palette": "orange",
+    "accessory": "spark",
+    "filename": "pet_52_spirit_fairy_orange.png"
+  },
+  {
+    "id": "pet_53",
+    "family": "spirit",
+    "kind": "slime",
+    "palette": "mint",
+    "accessory": "halo",
+    "filename": "pet_53_spirit_slime_mint.png"
+  },
+  {
+    "id": "pet_54",
+    "family": "spirit",
+    "kind": "dragon",
+    "palette": "orange",
+    "accessory": "gem",
+    "filename": "pet_54_spirit_dragon_orange.png"
+  },
+  {
+    "id": "pet_55",
+    "family": "spirit",
+    "kind": "mushroom",
+    "palette": "mint",
+    "accessory": "star",
+    "filename": "pet_55_spirit_mushroom_mint.png"
+  },
+  {
+    "id": "pet_56",
+    "family": "spirit",
+    "kind": "star",
+    "palette": "orange",
+    "accessory": "spark",
+    "filename": "pet_56_spirit_star_orange.png"
+  },
+  {
+    "id": "pet_57",
+    "family": "spirit",
+    "kind": "fairy",
+    "palette": "blue",
+    "accessory": "halo",
+    "filename": "pet_57_spirit_fairy_blue.png"
+  },
+  {
+    "id": "pet_58",
+    "family": "spirit",
+    "kind": "slime",
+    "palette": "gray",
+    "accessory": "gem",
+    "filename": "pet_58_spirit_slime_gray.png"
+  },
+  {
+    "id": "pet_59",
+    "family": "spirit",
+    "kind": "dragon",
+    "palette": "blue",
+    "accessory": "star",
+    "filename": "pet_59_spirit_dragon_blue.png"
+  },
+  {
+    "id": "pet_60",
+    "family": "spirit",
+    "kind": "mushroom",
+    "palette": "gray",
+    "accessory": "spark",
+    "filename": "pet_60_spirit_mushroom_gray.png"
+  },
+  {
+    "id": "pet_61",
+    "family": "spirit",
+    "kind": "star",
+    "palette": "blue",
+    "accessory": "halo",
+    "filename": "pet_61_spirit_star_blue.png"
+  },
+  {
+    "id": "pet_62",
+    "family": "spirit",
+    "kind": "fairy",
+    "palette": "green",
+    "accessory": "gem",
+    "filename": "pet_62_spirit_fairy_green.png"
+  },
+  {
+    "id": "pet_63",
+    "family": "spirit",
+    "kind": "slime",
+    "palette": "violet",
+    "accessory": "star",
+    "filename": "pet_63_spirit_slime_violet.png"
+  },
+  {
+    "id": "pet_64",
+    "family": "spirit",
+    "kind": "dragon",
+    "palette": "green",
+    "accessory": "spark",
+    "filename": "pet_64_spirit_dragon_green.png"
+  },
+  {
+    "id": "pet_65",
+    "family": "spirit",
+    "kind": "mushroom",
+    "palette": "violet",
+    "accessory": "halo",
+    "filename": "pet_65_spirit_mushroom_violet.png"
+  },
+  {
+    "id": "pet_66",
+    "family": "spirit",
+    "kind": "star",
+    "palette": "green",
+    "accessory": "gem",
+    "filename": "pet_66_spirit_star_green.png"
+  },
+  {
+    "id": "pet_67",
+    "family": "spirit",
+    "kind": "fairy",
+    "palette": "cream",
+    "accessory": "star",
+    "filename": "pet_67_spirit_fairy_cream.png"
+  },
+  {
+    "id": "pet_68",
+    "family": "spirit",
+    "kind": "slime",
+    "palette": "pink",
+    "accessory": "spark",
+    "filename": "pet_68_spirit_slime_pink.png"
+  },
+  {
+    "id": "pet_69",
+    "family": "robot",
+    "kind": "roundbot",
+    "palette": "orange",
+    "accessory": "heart",
+    "filename": "pet_69_robot_roundbot_orange.png"
+  },
+  {
+    "id": "pet_70",
+    "family": "robot",
+    "kind": "cube",
+    "palette": "mint",
+    "accessory": "bolt",
+    "filename": "pet_70_robot_cube_mint.png"
+  },
+  {
+    "id": "pet_71",
+    "family": "robot",
+    "kind": "screenbot",
+    "palette": "orange",
+    "accessory": "spark",
+    "filename": "pet_71_robot_screenbot_orange.png"
+  },
+  {
+    "id": "pet_72",
+    "family": "robot",
+    "kind": "capsule",
+    "palette": "mint",
+    "accessory": "heart",
+    "filename": "pet_72_robot_capsule_mint.png"
+  },
+  {
+    "id": "pet_73",
+    "family": "robot",
+    "kind": "roundbot",
+    "palette": "mint",
+    "accessory": "bolt",
+    "filename": "pet_73_robot_roundbot_mint.png"
+  },
+  {
+    "id": "pet_74",
+    "family": "robot",
+    "kind": "cube",
+    "palette": "orange",
+    "accessory": "spark",
+    "filename": "pet_74_robot_cube_orange.png"
+  },
+  {
+    "id": "pet_75",
+    "family": "robot",
+    "kind": "screenbot",
+    "palette": "mint",
+    "accessory": "heart",
+    "filename": "pet_75_robot_screenbot_mint.png"
+  },
+  {
+    "id": "pet_76",
+    "family": "robot",
+    "kind": "capsule",
+    "palette": "orange",
+    "accessory": "bolt",
+    "filename": "pet_76_robot_capsule_orange.png"
+  },
+  {
+    "id": "pet_77",
+    "family": "robot",
+    "kind": "roundbot",
+    "palette": "orange",
+    "accessory": "spark",
+    "filename": "pet_77_robot_roundbot_orange.png"
+  },
+  {
+    "id": "pet_78",
+    "family": "robot",
+    "kind": "cube",
+    "palette": "mint",
+    "accessory": "heart",
+    "filename": "pet_78_robot_cube_mint.png"
+  },
+  {
+    "id": "pet_79",
+    "family": "robot",
+    "kind": "screenbot",
+    "palette": "orange",
+    "accessory": "bolt",
+    "filename": "pet_79_robot_screenbot_orange.png"
+  },
+  {
+    "id": "pet_80",
+    "family": "robot",
+    "kind": "capsule",
+    "palette": "mint",
+    "accessory": "spark",
+    "filename": "pet_80_robot_capsule_mint.png"
+  },
+  {
+    "id": "pet_81",
+    "family": "robot",
+    "kind": "roundbot",
+    "palette": "mint",
+    "accessory": "heart",
+    "filename": "pet_81_robot_roundbot_mint.png"
+  },
+  {
+    "id": "pet_82",
+    "family": "robot",
+    "kind": "cube",
+    "palette": "orange",
+    "accessory": "bolt",
+    "filename": "pet_82_robot_cube_orange.png"
+  },
+  {
+    "id": "pet_83",
+    "family": "robot",
+    "kind": "screenbot",
+    "palette": "mint",
+    "accessory": "spark",
+    "filename": "pet_83_robot_screenbot_mint.png"
+  },
+  {
+    "id": "pet_84",
+    "family": "robot",
+    "kind": "capsule",
+    "palette": "orange",
+    "accessory": "heart",
+    "filename": "pet_84_robot_capsule_orange.png"
+  },
+  {
+    "id": "pet_85",
+    "family": "robot",
+    "kind": "roundbot",
+    "palette": "orange",
+    "accessory": "bolt",
+    "filename": "pet_85_robot_roundbot_orange.png"
+  },
+  {
+    "id": "pet_86",
+    "family": "robot",
+    "kind": "cube",
+    "palette": "mint",
+    "accessory": "spark",
+    "filename": "pet_86_robot_cube_mint.png"
+  },
+  {
+    "id": "pet_87",
+    "family": "robot",
+    "kind": "screenbot",
+    "palette": "orange",
+    "accessory": "heart",
+    "filename": "pet_87_robot_screenbot_orange.png"
+  },
+  {
+    "id": "pet_88",
+    "family": "robot",
+    "kind": "capsule",
+    "palette": "mint",
+    "accessory": "bolt",
+    "filename": "pet_88_robot_capsule_mint.png"
+  },
+  {
+    "id": "pet_89",
+    "family": "robot",
+    "kind": "roundbot",
+    "palette": "mint",
+    "accessory": "spark",
+    "filename": "pet_89_robot_roundbot_mint.png"
+  },
+  {
+    "id": "pet_90",
+    "family": "robot",
+    "kind": "cube",
+    "palette": "orange",
+    "accessory": "heart",
+    "filename": "pet_90_robot_cube_orange.png"
+  },
+  {
+    "id": "pet_91",
+    "family": "robot",
+    "kind": "screenbot",
+    "palette": "mint",
+    "accessory": "bolt",
+    "filename": "pet_91_robot_screenbot_mint.png"
+  },
+  {
+    "id": "pet_92",
+    "family": "robot",
+    "kind": "capsule",
+    "palette": "orange",
+    "accessory": "spark",
+    "filename": "pet_92_robot_capsule_orange.png"
+  },
+  {
+    "id": "pet_93",
+    "family": "robot",
+    "kind": "roundbot",
+    "palette": "orange",
+    "accessory": "heart",
+    "filename": "pet_93_robot_roundbot_orange.png"
+  },
+  {
+    "id": "pet_94",
+    "family": "robot",
+    "kind": "cube",
+    "palette": "mint",
+    "accessory": "bolt",
+    "filename": "pet_94_robot_cube_mint.png"
+  },
+  {
+    "id": "pet_95",
+    "family": "robot",
+    "kind": "screenbot",
+    "palette": "orange",
+    "accessory": "spark",
+    "filename": "pet_95_robot_screenbot_orange.png"
+  },
+  {
+    "id": "pet_96",
+    "family": "robot",
+    "kind": "capsule",
+    "palette": "mint",
+    "accessory": "heart",
+    "filename": "pet_96_robot_capsule_mint.png"
+  }
+]

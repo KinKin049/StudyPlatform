@@ -1,0 +1,58 @@
+[
+  {
+    "id": "pet_27",
+    "family": "animal",
+    "kind": "bunny",
+    "palette": "gray",
+    "accessory": "bow",
+    "filename": "pet_27_animal_bunny_gray.png"
+  },
+  {
+    "id": "pet_20",
+    "family": "animal",
+    "kind": "dog",
+    "palette": "cream",
+    "accessory": "star",
+    "filename": "pet_20_animal_dog_cream.png"
+  },
+  {
+    "id": "pet_29",
+    "family": "animal",
+    "kind": "panda",
+    "palette": "gray",
+    "accessory": "leaf",
+    "filename": "pet_29_animal_panda_gray.png"
+  },
+  {
+    "id": "pet_44",
+    "family": "spirit",
+    "kind": "dragon",
+    "palette": "violet",
+    "accessory": "spark",
+    "filename": "pet_44_spirit_dragon_violet.png"
+  },
+  {
+    "id": "pet_75",
+    "family": "robot",
+    "kind": "screenbot",
+    "palette": "mint",
+    "accessory": "heart",
+    "filename": "pet_75_robot_screenbot_mint.png"
+  },
+  {
+    "id": "pet_49",
+    "family": "spirit",
+    "kind": "dragon",
+    "palette": "pink",
+    "accessory": "halo",
+    "filename": "pet_49_spirit_dragon_pink.png"
+  },
+  {
+    "id": "pet_39",
+    "family": "spirit",
+    "kind": "dragon",
+    "palette": "gray",
+    "accessory": "star",
+    "filename": "pet_39_spirit_dragon_gray.png"
+  }
+]
