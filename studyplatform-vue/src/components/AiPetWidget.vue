@@ -3,8 +3,11 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Hide, View } from '@element-plus/icons-vue'
+import MarkdownIt from 'markdown-it'
+import DOMPurify from 'dompurify'
 
 import { chatWithAiPet } from '../api/aiPet'
+import { AI_PET_BY_KEY, DEFAULT_PET_KEY, PET_SELECTION_EVENT, PET_STORAGE_KEYS } from '../data/aiPetShop'
 import idle01 from '../assets/pet/nebula-cat/idle-01.png'
 import idle02 from '../assets/pet/nebula-cat/idle-02.png'
 import idle03 from '../assets/pet/nebula-cat/idle-03.png'
@@ -33,6 +36,34 @@ import sleep04 from '../assets/pet/nebula-cat/sleep-04.png'
 const route = useRoute()
 const router = useRouter()
 
+const markdownRenderer = new MarkdownIt({
+  html: false,
+  linkify: true,
+  breaks: true,
+})
+
+const defaultLinkOpenRenderer = markdownRenderer.renderer.rules.link_open || ((tokens, index, options, env, self) => self.renderToken(tokens, index, options))
+
+markdownRenderer.renderer.rules.link_open = (tokens, index, options, env, self) => {
+  const token = tokens[index]
+  const targetIndex = token.attrIndex('target')
+  const relIndex = token.attrIndex('rel')
+
+  if (targetIndex < 0) {
+    token.attrPush(['target', '_blank'])
+  } else {
+    token.attrs[targetIndex][1] = '_blank'
+  }
+
+  if (relIndex < 0) {
+    token.attrPush(['rel', 'noopener noreferrer'])
+  } else {
+    token.attrs[relIndex][1] = 'noopener noreferrer'
+  }
+
+  return defaultLinkOpenRenderer(tokens, index, options, env, self)
+}
+
 // 宠物表情帧动画配置，包含空闲、说话、思考、开心、专注、睡眠六种状态
 const frames = {
   idle: [idle01, idle02, idle03, idle04],
@@ -48,11 +79,87 @@ const todoStorageKey = 'study-platform-ai-pet-todos'
 const focusStorageKey = 'study-platform-ai-pet-focus-summary'
 const positionStorageKey = 'study-platform-ai-pet-position'
 const visibilityStorageKey = 'study-platform-ai-pet-hidden'
+const quietModeStorageKey = 'study-platform-ai-pet-quiet-mode'
 const petSize = 116
 const viewportPadding = 14
+const actionFeedbackReserve = 74
 const pageContextTextLimit = 5200
 const pageContextSelectionLimit = 800
 const pageContextFormLimit = 14
+const quietPetVisuals = {
+  [DEFAULT_PET_KEY]: {
+    scale: 1,
+    blinkLeft: '40px',
+    blinkTop: '51px',
+    blinkGap: '30px',
+    blinkWidth: '8px',
+    blinkColor: '#241f46',
+  },
+  'pet-07-lucky-cat': {
+    scale: 0.68,
+    blinkLeft: '47px',
+    blinkTop: '55px',
+    blinkGap: '21px',
+    blinkWidth: '6px',
+    blinkColor: '#2a244b',
+  },
+  'pet-20-cream-dog': {
+    scale: 0.68,
+    blinkLeft: '49px',
+    blinkTop: '56px',
+    blinkGap: '19px',
+    blinkWidth: '6px',
+    blinkColor: '#2a244b',
+  },
+  'pet-27-crystal-bunny': {
+    scale: 0.68,
+    blinkLeft: '47px',
+    blinkTop: '52px',
+    blinkGap: '22px',
+    blinkWidth: '6px',
+    blinkColor: '#2a244b',
+  },
+  'pet-29-bamboo-panda': {
+    scale: 0.68,
+    blinkLeft: '42px',
+    blinkTop: '52px',
+    blinkGap: '34px',
+    blinkWidth: '10px',
+    blinkColor: '#20263f',
+  },
+  'pet-39-gray-dragon': {
+    scale: 0.68,
+    blinkLeft: '49px',
+    blinkTop: '57px',
+    blinkGap: '22px',
+    blinkWidth: '7px',
+    blinkColor: '#2a244b',
+  },
+  'pet-44-violet-dragon': {
+    scale: 0.68,
+    blinkLeft: '49px',
+    blinkTop: '57px',
+    blinkGap: '22px',
+    blinkWidth: '7px',
+    blinkColor: '#2a244b',
+  },
+  'pet-49-pink-dragon': {
+    scale: 0.68,
+    blinkLeft: '49px',
+    blinkTop: '55px',
+    blinkGap: '22px',
+    blinkWidth: '7px',
+    blinkColor: '#3a2b65',
+  },
+  'pet-75-screenbot': {
+    scale: 0.68,
+    blinkLeft: '47px',
+    blinkTop: '53px',
+    blinkGap: '20px',
+    blinkWidth: '8px',
+    blinkColor: '#255760',
+  },
+}
 const pageContextRootSelectors = [
   'main',
   '[data-ai-page-content]',
@@ -117,12 +224,15 @@ const focusRunning = ref(false)
 const focusSummary = ref({ sessions: 0, minutes: 0 })
 const widgetPosition = ref({ x: 0, y: 0 })
 const viewportSize = ref({ width: 1280, height: 720 })
+const chatMessagesRef = ref(null)
 const positionReady = ref(false)
 const dragging = ref(false)
 const landing = ref(false)
 const celebrating = ref(false)
 const suppressClick = ref(false)
 const userHidden = ref(false)
+const quietMode = ref(false)
+const selectedPetKey = ref(DEFAULT_PET_KEY)
 const petBubble = ref({
   visible: false,
   text: '',
@@ -134,7 +244,7 @@ const actionFeedback = ref({
 const messages = ref([
   {
     role: 'pet',
-    text: '喵，我是星云学习猫。现在可以真的帮你跳转页面、创建待办、启动番茄专注啦。',
+    text: '你好，我是你的 AI 学习伙伴。现在可以帮你理解当前页面、跳转功能、创建待办和启动番茄专注。',
   },
 ])
 
@@ -167,8 +277,46 @@ const activeMood = computed(() => {
   return mood.value
 })
 
+const selectedPet = computed(() => AI_PET_BY_KEY[selectedPetKey.value] || null)
+
+const petDisplayName = computed(() => selectedPet.value?.shortName || '星云猫')
+
+const selectedPetAction = computed(() => {
+  if (!selectedPet.value?.actions) {
+    return ''
+  }
+  const actionMap = {
+    idle: 'idle',
+    talk: 'happy',
+    thinking: 'study',
+    happy: celebrating.value ? 'levelup' : 'happy',
+    focus: 'study',
+    sleep: 'sleep',
+  }
+  return actionMap[activeMood.value] || 'idle'
+})
+
+const quietIdle = computed(() => quietMode.value && activeMood.value === 'idle')
+
+const quietVisual = computed(() => quietPetVisuals[selectedPetKey.value] || quietPetVisuals[DEFAULT_PET_KEY])
+
+const avatarStyle = computed(() => ({
+  '--ai-pet-quiet-scale': quietVisual.value.scale,
+  '--ai-pet-blink-left': quietVisual.value.blinkLeft,
+  '--ai-pet-blink-top': quietVisual.value.blinkTop,
+  '--ai-pet-blink-gap': quietVisual.value.blinkGap,
+  '--ai-pet-blink-width': quietVisual.value.blinkWidth,
+  '--ai-pet-blink-color': quietVisual.value.blinkColor,
+}))
+
 // 获取当前显示的宠物图片帧
 const petImage = computed(() => {
+  if (quietIdle.value) {
+    return selectedPet.value?.image || frames.idle[0]
+  }
+  if (selectedPet.value?.actions) {
+    return selectedPet.value.actions[selectedPetAction.value] || selectedPet.value.actions.idle || selectedPet.value.image
+  }
   const currentFrames = frames[activeMood.value] || frames.idle
   return currentFrames[frameIndex.value % currentFrames.length]
 })
@@ -190,9 +338,13 @@ const widgetClasses = computed(() => ({
   'is-landing': landing.value,
   'is-celebrating': celebrating.value,
   'is-user-hidden': userHidden.value,
+  'is-hidden-left': userHidden.value && hiddenToLeft.value,
+  'is-quiet': quietMode.value,
   'align-left': widgetPosition.value.x < 300,
   [`mood-${activeMood.value}`]: true,
 }))
+
+const hiddenToLeft = computed(() => widgetPosition.value.x < viewportSize.value.width / 2)
 
 // 宠物挂件显示位置（隐藏状态时有特殊处理）
 const displayPosition = computed(() => {
@@ -200,7 +352,9 @@ const displayPosition = computed(() => {
     return widgetPosition.value
   }
   return {
-    x: Math.max(viewportSize.value.width - 22, viewportPadding),
+    x: hiddenToLeft.value
+      ? 22 - petSize
+      : Math.max(viewportSize.value.width - 22, viewportPadding),
     y: Math.min(
       Math.max(widgetPosition.value.y + 18, viewportPadding),
       Math.max(viewportPadding, viewportSize.value.height - 86),
@@ -495,8 +649,29 @@ function pushPetMessage(text) {
   showPetBubble(text)
 }
 
+function renderMessageMarkdown(text) {
+  return DOMPurify.sanitize(markdownRenderer.render(String(text || '')), {
+    USE_PROFILES: { html: true },
+  })
+}
+
+async function scrollChatMessagesToBottom() {
+  if (!open.value || activeTab.value !== 'chat') {
+    return
+  }
+  await nextTick()
+  const messagesElement = chatMessagesRef.value
+  if (!messagesElement) {
+    return
+  }
+  window.requestAnimationFrame(() => {
+    messagesElement.scrollTop = messagesElement.scrollHeight
+  })
+}
+
 // 显示操作反馈提示
 function showActionFeedback(text) {
+  widgetPosition.value = clampPosition(widgetPosition.value, true)
   actionFeedback.value = {
     visible: true,
     text,
@@ -691,6 +866,42 @@ function savePetVisibility() {
   window.localStorage.setItem(visibilityStorageKey, userHidden.value ? '1' : '0')
 }
 
+function loadQuietMode() {
+  quietMode.value = window.localStorage.getItem(quietModeStorageKey) === '1'
+}
+
+function saveQuietMode() {
+  window.localStorage.setItem(quietModeStorageKey, quietMode.value ? '1' : '0')
+}
+
+function toggleQuietMode() {
+  quietMode.value = !quietMode.value
+  saveQuietMode()
+  setMood('idle')
+  showActionFeedback(quietMode.value ? '已进入安静模式' : '已恢复活跃模式')
+}
+
+function loadSelectedPet() {
+  const nextKey = window.localStorage.getItem(PET_STORAGE_KEYS.active) || DEFAULT_PET_KEY
+  selectedPetKey.value = AI_PET_BY_KEY[nextKey] ? nextKey : DEFAULT_PET_KEY
+}
+
+function handlePetSelectionChanged() {
+  const previousName = petDisplayName.value
+  loadSelectedPet()
+  if (petDisplayName.value !== previousName) {
+    setMood('happy', 2200)
+    showActionFeedback(`已切换为 ${petDisplayName.value}`)
+    showPetBubble(`${petDisplayName.value} 来陪你学习啦！`)
+  }
+}
+
+function handlePetStorageChanged(event) {
+  if (event.key === PET_STORAGE_KEYS.active) {
+    handlePetSelectionChanged()
+  }
+}
+
 // 更新视口大小
 function updateViewportSize() {
   viewportSize.value = {
@@ -700,9 +911,10 @@ function updateViewportSize() {
 }
 
 // 限制宠物位置在视口范围内
-function clampPosition(position) {
+function clampPosition(position, reserveActionFeedback = false) {
+  const bottomReserve = reserveActionFeedback ? actionFeedbackReserve : 0
   const maxX = Math.max(viewportPadding, viewportSize.value.width - petSize - viewportPadding)
-  const maxY = Math.max(viewportPadding, viewportSize.value.height - petSize - viewportPadding)
+  const maxY = Math.max(viewportPadding, viewportSize.value.height - petSize - viewportPadding - bottomReserve)
   return {
     x: Math.min(Math.max(position.x, viewportPadding), maxX),
     y: Math.min(Math.max(position.y, viewportPadding), maxY),
@@ -749,6 +961,7 @@ function togglePanel() {
   open.value = !open.value
   if (open.value) {
     clearPetBubble()
+    scrollChatMessagesToBottom()
   }
   setMood(open.value ? 'happy' : 'idle', 1200)
 }
@@ -766,6 +979,7 @@ function openPetBubble() {
   clearPetBubble()
   open.value = true
   activeTab.value = 'chat'
+  scrollChatMessagesToBottom()
   setMood('happy', 1200)
 }
 
@@ -988,7 +1202,7 @@ function finishFocusSegment() {
     minutes: focusSummary.value.minutes + completedMinutes,
   }
   saveFocusSummary()
-  pushPetMessage(`本轮 ${completedMinutes} 分钟专注完成啦！星云猫正在放烟花，先休息 ${getPhaseMinutes('break')} 分钟。`)
+  pushPetMessage(`本轮 ${completedMinutes} 分钟专注完成啦！${petDisplayName.value} 正在放烟花，先休息 ${getPhaseMinutes('break')} 分钟。`)
   playFocusCompleteSound()
   triggerFocusCelebration()
   switchFocusPhase('break')
@@ -996,7 +1210,7 @@ function finishFocusSegment() {
 
 // 完成休息阶段
 function finishBreak() {
-  pushPetMessage('休息结束啦，下一轮番茄钟自动开始。星云猫继续陪你冲！')
+  pushPetMessage(`休息结束啦，下一轮番茄钟自动开始。${petDisplayName.value} 继续陪你冲！`)
   switchFocusPhase('focus')
 }
 
@@ -1085,11 +1299,21 @@ watch(
   { flush: 'post' },
 )
 
+watch(
+  () => [messages.value.length, open.value, activeTab.value],
+  () => {
+    scrollChatMessagesToBottom()
+  },
+  { flush: 'post' },
+)
+
 onMounted(() => {
   // 加载本地存储数据
   loadTodos()
   loadFocusSummary()
   loadPetVisibility()
+  loadQuietMode()
+  loadSelectedPet()
   loadPosition()
   // 启动帧动画定时器
   animationTimer = window.setInterval(() => {
@@ -1099,6 +1323,8 @@ onMounted(() => {
   focusTimer = window.setInterval(tickFocus, 1000)
   // 监听窗口大小变化
   window.addEventListener('resize', handleResize)
+  window.addEventListener(PET_SELECTION_EVENT, handlePetSelectionChanged)
+  window.addEventListener('storage', handlePetStorageChanged)
   // 首次挂载后读取当前页面内容
   schedulePageContextRefresh(80)
 })
@@ -1135,6 +1361,8 @@ onBeforeUnmount(() => {
   // 清理拖动事件监听
   clearDragListeners()
   window.removeEventListener('resize', handleResize)
+  window.removeEventListener(PET_SELECTION_EVENT, handlePetSelectionChanged)
+  window.removeEventListener('storage', handlePetStorageChanged)
 })
 </script>
 
@@ -1171,7 +1399,7 @@ onBeforeUnmount(() => {
       <div class="ai-pet-panel__header">
         <div>
           <div class="ai-pet-panel__title-row">
-            <p>星云学习猫</p>
+            <p>{{ petDisplayName }}</p>
             <button
               type="button"
               class="ai-pet-panel__hide"
@@ -1180,6 +1408,15 @@ onBeforeUnmount(() => {
               @click="hidePet"
             >
               <el-icon><Hide /></el-icon>
+            </button>
+            <button
+              type="button"
+              class="ai-pet-panel__quiet"
+              :class="{ active: quietMode }"
+              :title="quietMode ? '恢复活跃待机' : '安静待机'"
+              @click="toggleQuietMode"
+            >
+              安静
             </button>
           </div>
           <span>待办 · 专注 · AI 助手</span>
@@ -1218,17 +1455,16 @@ onBeforeUnmount(() => {
           <strong>页面摘要</strong>
           <span>{{ contextSummary }}</span>
         </div>
-        <div class="ai-pet-messages">
-          <p
+        <div ref="chatMessagesRef" class="ai-pet-messages">
+          <article
             v-for="(message, index) in messages"
             :key="`${message.role}-${index}`"
             :class="['ai-pet-message', `is-${message.role}`]"
-          >
-            {{ message.text }}
-          </p>
+            v-html="renderMessageMarkdown(message.text)"
+          ></article>
         </div>
         <form class="ai-pet-input-row" @submit.prevent="sendMessage">
-          <input v-model="chatInput" type="text" placeholder="问问星云猫当前页面的问题..." />
+          <input v-model="chatInput" type="text" placeholder="问问 AI 学习伙伴当前页面的问题..." />
           <button type="submit" :disabled="chatLoading">{{ chatLoading ? '思考中' : '发送' }}</button>
         </form>
       </div>
@@ -1251,7 +1487,7 @@ onBeforeUnmount(() => {
             <span>{{ todo.title }}</span>
             <button type="button" class="ai-pet-delete" @click="removeTodo(todo.id)">删除</button>
           </article>
-          <p v-if="!todos.length" class="ai-pet-empty">还没有待办，先给星云猫一个任务吧。</p>
+          <p v-if="!todos.length" class="ai-pet-empty">还没有待办，先给 AI 学习伙伴一个任务吧。</p>
         </div>
       </div>
 
@@ -1290,6 +1526,7 @@ onBeforeUnmount(() => {
     <button
       type="button"
       class="ai-pet-avatar"
+      :style="avatarStyle"
       @click="handleAvatarClick"
       @pointerdown="beginDrag"
     >
@@ -1304,8 +1541,9 @@ onBeforeUnmount(() => {
         <i></i>
         <i></i>
       </span>
-      <img :src="petImage" alt="星云学习猫" draggable="false" />
-      <span v-if="!open" class="ai-pet-avatar__label">星云猫</span>
+      <span class="ai-pet-quiet-shadow" aria-hidden="true"></span>
+      <img :src="petImage" :alt="petDisplayName" draggable="false" />
+      <span v-if="!open" class="ai-pet-avatar__label">{{ petDisplayName }}</span>
     </button>
 
     <!-- 唤醒宠物按钮（宠物隐藏时显示） -->

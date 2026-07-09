@@ -1,6 +1,41 @@
 # StudyPlatform
 
-Study platform with a backend service and a Vue frontend.
+StudyPlatform 是一个包含 Spring Boot 后端、Vue/Vite 前端、OJ 沙箱与学习宠物模块的综合学习平台。
+
+## 跨电脑运行
+
+把整个项目文件夹复制到另一台 Windows 电脑后，优先阅读：
+
+```text
+docs/cross-computer-setup.md
+```
+
+最短启动流程：
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\scripts\setup-windows.ps1
+.\scripts\start-backend.ps1
+.\scripts\start-frontend.ps1
+```
+
+也可以用一键启动脚本：
+
+```cmd
+scripts\start-dev-windows.cmd
+```
+
+必需环境：
+
+- Node.js 22.18+ 或 24.12+
+- JDK 21
+- MySQL 8.x
+
+访问首页：
+
+```text
+http://localhost:5173
+```
 
 ## OJ Page
 

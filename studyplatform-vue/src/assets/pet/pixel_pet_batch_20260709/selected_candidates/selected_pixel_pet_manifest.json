@@ -1,5 +1,13 @@
 [
   {
+    "id": "pet_07",
+    "family": "animal",
+    "kind": "cat",
+    "palette": "cream",
+    "accessory": "star",
+    "filename": "pet_07_animal_cat_cream.png"
+  },
+  {
     "id": "pet_27",
     "family": "animal",
     "kind": "bunny",

@@ -10,7 +10,8 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT = Path(__file__).resolve().parents[1].resolve()
 BATCH_DIR = (ROOT / "studyplatform-vue" / "src" / "assets" / "pet" / "pixel_pet_batch_20260709").resolve()
 SELECTED_DIR = (BATCH_DIR / "selected_candidates").resolve()
-SELECTED_IDS = ["27", "20", "29", "44", "75", "49", "39"]
+SELECTED_IDS = ["07", "27", "20", "29", "44", "75", "49", "39"]
+SOURCE_SHADOW_PIXEL = (77, 95, 128, 48)
 
 
 def ensure_inside_workspace(path: Path) -> None:
@@ -22,6 +23,19 @@ def find_pet_file(pet_id: str) -> Path:
     if not matches:
         raise FileNotFoundError(f"Cannot find pet_{pet_id}_*.png in {BATCH_DIR}")
     return matches[0]
+
+
+def remove_source_shadow(path: Path) -> None:
+    image = Image.open(path).convert("RGBA")
+    pixels = image.load()
+    changed = False
+    for y in range(image.height):
+        for x in range(image.width):
+            if pixels[x, y] == SOURCE_SHADOW_PIXEL:
+                pixels[x, y] = (0, 0, 0, 0)
+                changed = True
+    if changed:
+        image.save(path)
 
 
 def make_catalog(files: list[Path]) -> None:
@@ -66,6 +80,7 @@ def main() -> None:
         source = find_pet_file(pet_id)
         target = SELECTED_DIR / source.name
         shutil.copy2(source, target)
+        remove_source_shadow(target)
         selected_files.append(target)
         manifest_items.append(manifest_by_id.get(pet_id, {"id": f"pet_{pet_id}", "filename": source.name}))
 

@@ -7,6 +7,7 @@ import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { fetchProfileOverview } from '../api/profile'
 import { exchangeVoucher, fetchUserVouchers, fetchVoucherItems } from '../api/vouchers'
+import { AI_PET_SHOP_ITEMS, PET_SELECTION_EVENT, PET_STORAGE_KEYS } from '../data/aiPetShop'
 
 // 用户概览信息
 const overview = ref(null)
@@ -22,6 +23,9 @@ const exchangingKey = ref('')
 const exchangeMessage = ref('')
 // 兑换失败错误信息
 const exchangeError = ref('')
+const ownedPetKeys = ref([])
+const activePetKey = ref('')
+const localPetSpent = ref(0)
 
 // 金币获取规则列表
 const earnRules = [
@@ -61,16 +65,25 @@ const earnRules = [
  * 计算展示的兑换区域数据
  * @returns {Array} 展示区域数组
  */
+const petShopItems = computed(() =>
+  AI_PET_SHOP_ITEMS.map((pet) => ({
+    ...pet,
+    kind: 'pet',
+    owned: ownedPetKeys.value.includes(pet.key),
+    active: activePetKey.value === pet.key,
+    status: activePetKey.value === pet.key ? '使用中' : ownedPetKeys.value.includes(pet.key) ? '切换' : '兑换',
+  })),
+)
+
+/**
+ * 计算展示的兑换区域数据
+ * @returns {Array} 展示区域数组
+ */
 const displaySections = computed(() => [
   {
     title: 'AI 陪伴宠物形象',
-    subtitle: '暂时只展示样式，后续可接入真实宠物解锁。',
-    items: [
-      { name: '学习猫', tag: '专注陪伴', price: 1200, status: '样式展示' },
-      { name: '代码机器人', tag: 'OJ 练习', price: 1800, status: '暂未开放' },
-      { name: '油气工程小助手', tag: '实验平台', price: 2200, status: '暂未开放' },
-      { name: '单词精灵', tag: '英语记忆', price: 1600, status: '暂未开放' },
-    ],
+    subtitle: '兑换后可立即切换全局 AI 陪伴宠物形象，选择会保存在本地。',
+    items: petShopItems.value,
   },
   {
     title: '优惠券与学习权益',
@@ -89,6 +102,7 @@ const displaySections = computed(() => [
  * @returns {number} 金币总数
  */
 const coinTotal = computed(() => Number(overview.value?.coinTotal ?? 0))
+const availableCoinTotal = computed(() => Math.max(0, coinTotal.value - localPetSpent.value))
 
 /**
  * 计算用户已拥有的卡券数量映射
@@ -121,6 +135,59 @@ async function loadOverview() {
   }
 }
 
+function loadPetState() {
+  try {
+    const savedOwned = JSON.parse(window.localStorage.getItem(PET_STORAGE_KEYS.owned) || '[]')
+    ownedPetKeys.value = Array.isArray(savedOwned) ? savedOwned.filter((key) => typeof key === 'string') : []
+  } catch {
+    ownedPetKeys.value = []
+  }
+  activePetKey.value = window.localStorage.getItem(PET_STORAGE_KEYS.active) || ''
+  localPetSpent.value = Number(window.localStorage.getItem(PET_STORAGE_KEYS.spent) || 0) || 0
+}
+
+function savePetState() {
+  window.localStorage.setItem(PET_STORAGE_KEYS.owned, JSON.stringify(ownedPetKeys.value))
+  window.localStorage.setItem(PET_STORAGE_KEYS.active, activePetKey.value)
+  window.localStorage.setItem(PET_STORAGE_KEYS.spent, String(localPetSpent.value))
+}
+
+function notifyPetSelectionChanged(pet) {
+  window.dispatchEvent(new CustomEvent(PET_SELECTION_EVENT, {
+    detail: {
+      key: pet.key,
+      name: pet.name,
+    },
+  }))
+}
+
+function handlePetAction(item) {
+  if (item.active) {
+    exchangeMessage.value = `${item.name} 已经是当前陪伴宠物`
+    exchangeError.value = ''
+    return
+  }
+
+  if (!item.owned && availableCoinTotal.value < item.price) {
+    exchangeMessage.value = ''
+    exchangeError.value = `金币不足，还差 ${Math.max(0, item.price - availableCoinTotal.value).toLocaleString('zh-CN')} 金币`
+    return
+  }
+
+  if (!item.owned) {
+    ownedPetKeys.value = [...new Set([...ownedPetKeys.value, item.key])]
+    localPetSpent.value += Number(item.price) || 0
+    exchangeMessage.value = `已兑换 ${item.name}，并自动切换为当前宠物`
+  } else {
+    exchangeMessage.value = `已切换为 ${item.name}`
+  }
+
+  activePetKey.value = item.key
+  exchangeError.value = ''
+  savePetState()
+  notifyPetSelectionChanged(item)
+}
+
 /**
  * 获取用户已拥有的指定卡券数量
  * @param {Object} item 卡券商品对象
@@ -128,6 +195,32 @@ async function loadOverview() {
  */
 function getOwnedQuantity(item) {
   return item.voucherKey ? voucherQuantityMap.value.get(item.voucherKey) || 0 : 0
+}
+
+function getActionDisabled(item) {
+  if (item.kind === 'pet') {
+    return loading.value || item.active || (!item.owned && availableCoinTotal.value < item.price)
+  }
+  return loading.value || exchangingKey.value === item.voucherKey || coinTotal.value < item.price || isVoucherSoldOut(item)
+}
+
+function getActionText(item) {
+  if (item.kind === 'pet') {
+    if (item.active) return '使用中'
+    if (item.owned) return '切换'
+    return availableCoinTotal.value < item.price ? '金币不足' : '兑换'
+  }
+  if (exchangingKey.value === item.voucherKey) return '兑换中...'
+  if (isVoucherSoldOut(item)) return '已兑完'
+  return coinTotal.value < item.price ? '金币不足' : item.status
+}
+
+function handleShopAction(item) {
+  if (item.kind === 'pet') {
+    handlePetAction(item)
+    return
+  }
+  handleExchange(item)
 }
 
 /**
@@ -234,7 +327,10 @@ function formatDate(value) {
 }
 
 // 页面挂载时加载数据
-onMounted(loadOverview)
+onMounted(() => {
+  loadPetState()
+  loadOverview()
+})
 </script>
 
 <template>
@@ -251,9 +347,10 @@ onMounted(loadOverview)
       </div>
       <!-- 用户金币余额卡片 -->
       <aside class="exchange-balance">
-        <span>当前金币</span>
-        <strong>{{ loading ? '...' : coinTotal.toLocaleString('zh-CN') }}</strong>
-        <p>兑换卡券会扣除对应金币</p>
+        <span>当前可用金币</span>
+        <strong>{{ loading ? '...' : availableCoinTotal.toLocaleString('zh-CN') }}</strong>
+        <p>宠物解锁会保存在本地，卡券兑换由后端扣除金币。</p>
+        <small v-if="localPetSpent">宠物已使用 {{ localPetSpent.toLocaleString('zh-CN') }} 金币</small>
         <RouterLink to="/exchange/vouchers" class="exchange-voucher-link">我的卡券</RouterLink>
       </aside>
     </section>
@@ -282,26 +379,40 @@ onMounted(loadOverview)
         <span>{{ section.subtitle }}</span>
       </header>
       <!-- 商品卡片网格 -->
-      <div class="exchange-shop-grid">
-        <article v-for="item in section.items" :key="item.name" class="exchange-shop-card">
-          <div class="exchange-shop-icon" aria-hidden="true">{{ item.name.slice(0, 1) }}</div>
-          <div>
+      <div
+        class="exchange-shop-grid"
+        :class="{ 'is-pet-grid': section.items.some((item) => item.kind === 'pet') }"
+      >
+        <article
+          v-for="item in section.items"
+          :key="item.key || item.voucherKey || item.name"
+          class="exchange-shop-card"
+          :class="{ 'is-pet': item.kind === 'pet', 'is-active-pet': item.active }"
+        >
+          <div v-if="item.kind === 'pet'" class="exchange-pet-preview" aria-hidden="true">
+            <img :src="item.preview || item.image" :alt="item.name" />
+          </div>
+          <div v-else class="exchange-shop-icon" aria-hidden="true">{{ item.name.slice(0, 1) }}</div>
+          <div class="exchange-shop-info">
             <span>{{ item.tag }}</span>
             <h3>{{ item.name }}</h3>
+            <p v-if="item.kind === 'pet'" class="exchange-pet-description">{{ item.description }}</p>
           </div>
           <!-- 底部操作区域 -->
           <footer>
             <strong>{{ item.price.toLocaleString('zh-CN') }} 金币</strong>
             <button
-              v-if="item.voucherKey"
               type="button"
-              :disabled="loading || exchangingKey === item.voucherKey || coinTotal < item.price || isVoucherSoldOut(item)"
-              @click="handleExchange(item)"
+              :disabled="getActionDisabled(item)"
+              @click="handleShopAction(item)"
             >
-              {{ exchangingKey === item.voucherKey ? '兑换中...' : isVoucherSoldOut(item) ? '已兑完' : coinTotal < item.price ? '金币不足' : item.status }}
+              {{ getActionText(item) }}
             </button>
-            <button v-else type="button" disabled>{{ item.status }}</button>
           </footer>
+          <div v-if="item.kind === 'pet'" class="exchange-pet-meta">
+            <small>{{ item.owned ? '已拥有' : '未拥有' }}</small>
+            <small>{{ item.active ? '当前正在陪伴你' : item.owned ? '可随时切换' : '兑换后立即解锁' }}</small>
+          </div>
           <!-- 卡券详细信息 -->
           <div v-if="item.voucherKey" class="exchange-voucher-meta">
             <small>{{ formatVoucherStock(item) }}</small>
@@ -396,6 +507,12 @@ onMounted(loadOverview)
   color: #64748b;
 }
 
+.exchange-balance small {
+  margin-top: 8px;
+  color: #b45309;
+  font-weight: 900;
+}
+
 .exchange-voucher-link {
   width: fit-content;
   margin-top: 18px;
@@ -429,6 +546,11 @@ onMounted(loadOverview)
   gap: 16px;
   max-width: 1180px;
   margin: 0 auto;
+}
+
+.exchange-shop-grid.is-pet-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
 }
 
 .exchange-rule-card {
@@ -508,6 +630,28 @@ onMounted(loadOverview)
   padding: 18px;
 }
 
+.exchange-shop-card.is-pet {
+  display: flex;
+  min-width: 0;
+  min-height: 430px;
+  flex-direction: column;
+  grid-template-columns: 1fr;
+  overflow: hidden;
+  border-color: rgba(139, 92, 246, 0.2);
+  padding: 22px;
+  background:
+    radial-gradient(circle at 20% 18%, rgba(255, 183, 213, 0.2), transparent 34%),
+    radial-gradient(circle at 90% 4%, rgba(125, 244, 229, 0.2), transparent 30%),
+    rgba(255, 255, 255, 0.82);
+}
+
+.exchange-shop-card.is-active-pet {
+  border-color: rgba(20, 184, 166, 0.5);
+  box-shadow:
+    0 24px 70px rgba(20, 184, 166, 0.16),
+    inset 0 0 0 1px rgba(20, 184, 166, 0.18);
+}
+
 .exchange-shop-icon {
   display: grid;
   place-items: center;
@@ -520,9 +664,51 @@ onMounted(loadOverview)
   font-weight: 900;
 }
 
+.exchange-pet-preview {
+  position: relative;
+  display: grid;
+  min-height: 188px;
+  place-items: center;
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(255, 247, 251, 0.95), rgba(235, 255, 251, 0.92)),
+    #ffffff;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+}
+
+.exchange-pet-preview img {
+  width: 156px;
+  height: 156px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 12px 10px rgba(15, 23, 42, 0.16));
+}
+
+.exchange-shop-info {
+  min-width: 0;
+}
+
+.exchange-shop-card.is-pet .exchange-shop-info {
+  display: grid;
+  gap: 7px;
+}
+
 .exchange-shop-card h3 {
   margin: 6px 0 0;
   font-size: 18px;
+}
+
+.exchange-pet-description {
+  min-height: 44px;
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.65;
+}
+
+.exchange-shop-card.is-pet footer {
+  margin-top: auto;
 }
 
 .exchange-shop-card footer {
@@ -559,6 +745,22 @@ onMounted(loadOverview)
   gap: 4px;
 }
 
+.exchange-pet-meta {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.exchange-pet-meta small {
+  border-radius: 999px;
+  padding: 6px 10px;
+  color: #0f766e;
+  background: rgba(20, 184, 166, 0.12);
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .exchange-voucher-meta small {
   color: #64748b;
   font-weight: 800;
@@ -581,6 +783,18 @@ onMounted(loadOverview)
     display: block;
     margin-top: 8px;
     text-align: left;
+  }
+}
+
+@media (max-width: 980px) {
+  .exchange-shop-grid.is-pet-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .exchange-shop-grid.is-pet-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

@@ -32,24 +32,28 @@
 }
 
 .ai-pet-action-feedback {
-  position: fixed;
+  position: absolute;
   left: 50%;
-  top: 50%;
-  z-index: 2300;
-  min-width: 220px;
-  max-width: min(420px, calc(100vw - 48px));
-  border-radius: 18px;
-  padding: 15px 24px;
-  background: rgba(0, 0, 0, 0.8);
+  top: calc(100% + 10px);
+  z-index: 12;
+  width: max-content;
+  min-width: 150px;
+  max-width: min(260px, calc(100vw - 36px));
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 12px;
+  padding: 10px 16px;
+  background: rgba(36, 31, 70, 0.86);
   color: #fff;
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 800;
   letter-spacing: 0.02em;
   line-height: 1.45;
   text-align: center;
   pointer-events: none;
-  transform: translate(-50%, -50%);
-  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.28);
+  transform: translateX(-50%);
+  box-shadow: 0 16px 34px rgba(36, 31, 70, 0.24);
+  backdrop-filter: blur(12px);
+  white-space: normal;
 }
 
 .ai-pet-action-feedback-enter-active,
@@ -60,7 +64,7 @@
 .ai-pet-action-feedback-enter-from,
 .ai-pet-action-feedback-leave-to {
   opacity: 0;
-  transform: translate(-50%, -44%) scale(0.94);
+  transform: translateX(-50%) translateY(-6px) scale(0.94);
 }
 
 .ai-pet-avatar {
@@ -85,6 +89,10 @@
   animation: none;
 }
 
+.ai-pet-widget.is-user-hidden.is-hidden-left .ai-pet-avatar {
+  transform: translateX(-98px) scale(0.86) rotate(-8deg);
+}
+
 .ai-pet-widget.is-user-hidden .ai-pet-avatar img {
   animation: none;
 }
@@ -104,6 +112,10 @@
   pointer-events: none;
   transform-origin: 50% 85%;
   animation: ai-pet-breathe 0.9s steps(2, end) infinite;
+}
+
+.ai-pet-quiet-shadow {
+  display: none;
 }
 
 .ai-pet-avatar__label {
@@ -511,6 +523,26 @@
   transform: translateX(0) translateY(-50%);
 }
 
+.ai-pet-panel__quiet {
+  height: 28px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 10px;
+  background: rgba(49, 36, 95, 0.07);
+  color: rgba(49, 36, 95, 0.66);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 900;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.ai-pet-panel__quiet:hover,
+.ai-pet-panel__quiet.active {
+  background: rgba(116, 235, 213, 0.42);
+  color: #241f46;
+  transform: translateY(-1px);
+}
+
 .ai-pet-wake-tab {
   position: absolute;
   left: 0;
@@ -556,6 +588,20 @@
   width: 112px;
   transform: translateX(-88px);
   box-shadow: -14px 18px 34px rgba(49, 36, 95, 0.3);
+}
+
+.ai-pet-widget.is-hidden-left .ai-pet-wake-tab {
+  left: calc(100% - 24px);
+  border-right: 1px solid rgba(255, 255, 255, 0.78);
+  border-left: 0;
+  border-radius: 0 18px 18px 0;
+  padding: 0 0 0 5px;
+  box-shadow: 8px 14px 28px rgba(49, 36, 95, 0.24);
+}
+
+.ai-pet-widget.is-hidden-left .ai-pet-wake-tab:hover {
+  transform: translateX(0);
+  box-shadow: 14px 18px 34px rgba(49, 36, 95, 0.3);
 }
 
 .ai-pet-wake-tab:hover span {
@@ -648,6 +694,63 @@
   justify-self: end;
   background: rgba(124, 91, 229, 0.12);
   color: #31245f;
+}
+
+.ai-pet-message :where(p, ul, ol, pre, blockquote) {
+  margin: 0;
+}
+
+.ai-pet-message :where(p, ul, ol, pre, blockquote) + :where(p, ul, ol, pre, blockquote) {
+  margin-top: 8px;
+}
+
+.ai-pet-message :where(ul, ol) {
+  padding-left: 18px;
+}
+
+.ai-pet-message li + li {
+  margin-top: 4px;
+}
+
+.ai-pet-message a {
+  color: #5b47c9;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.ai-pet-message a:hover {
+  text-decoration: underline;
+}
+
+.ai-pet-message code {
+  border-radius: 7px;
+  padding: 2px 5px;
+  background: rgba(49, 36, 95, 0.1);
+  color: #31245f;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+}
+
+.ai-pet-message pre {
+  overflow-x: auto;
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(36, 31, 70, 0.9);
+  color: #f8fffd;
+}
+
+.ai-pet-message pre code {
+  display: block;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  white-space: pre;
+}
+
+.ai-pet-message blockquote {
+  border-left: 3px solid rgba(124, 91, 229, 0.4);
+  padding-left: 10px;
+  color: rgba(37, 48, 77, 0.76);
 }
 
 .ai-pet-input-row {
@@ -872,6 +975,97 @@
 
   50% {
     transform: scale(1.025, 0.985) translateY(1px);
+  }
+}
+
+.ai-pet-widget.is-quiet.mood-idle:not(.is-dragging):not(.is-landing):not(.is-celebrating):not(.is-user-hidden) .ai-pet-avatar {
+  filter: drop-shadow(0 12px 20px rgba(43, 31, 94, 0.18));
+  animation: ai-pet-quiet-bob 3.2s ease-in-out infinite;
+}
+
+.ai-pet-widget.is-quiet.mood-idle:not(.is-dragging):not(.is-landing):not(.is-celebrating):not(.is-user-hidden) .ai-pet-avatar img {
+  animation: ai-pet-quiet-body 3.2s ease-in-out infinite;
+}
+
+.ai-pet-widget.is-quiet.mood-idle:not(.is-dragging):not(.is-landing):not(.is-celebrating):not(.is-user-hidden) .ai-pet-quiet-shadow {
+  display: block;
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  z-index: 1;
+  width: 54px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(43, 31, 94, 0.24);
+  filter: blur(2px);
+  pointer-events: none;
+  transform: translateX(-50%) scale(1);
+  animation: ai-pet-quiet-shadow 3.2s ease-in-out infinite;
+}
+
+.ai-pet-widget.is-quiet.mood-idle:not(.is-dragging):not(.is-landing):not(.is-celebrating):not(.is-user-hidden) .ai-pet-avatar::after {
+  content: '';
+  position: absolute;
+  left: var(--ai-pet-blink-left, 47px);
+  top: var(--ai-pet-blink-top, 55px);
+  z-index: 5;
+  width: var(--ai-pet-blink-width, 6px);
+  height: 2px;
+  border-radius: 999px;
+  background: var(--ai-pet-blink-color, #2a244b);
+  box-shadow: var(--ai-pet-blink-gap, 21px) 0 0 var(--ai-pet-blink-color, #2a244b);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%);
+  animation: ai-pet-quiet-blink 5.4s steps(1, end) infinite;
+}
+
+@keyframes ai-pet-quiet-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes ai-pet-quiet-body {
+  0%,
+  100% {
+    transform: scale(var(--ai-pet-quiet-scale, 0.68));
+  }
+
+  50% {
+    transform: scale(var(--ai-pet-quiet-scale, 0.68));
+  }
+}
+
+@keyframes ai-pet-quiet-shadow {
+  0%,
+  100% {
+    opacity: 0.72;
+    transform: translateX(-50%) scale(1);
+  }
+
+  50% {
+    opacity: 0.52;
+    transform: translateX(-50%) scale(0.92);
+  }
+}
+
+@keyframes ai-pet-quiet-blink {
+  0%,
+  88%,
+  92%,
+  100% {
+    opacity: 0;
+  }
+
+  89%,
+  91% {
+    opacity: 0.96;
   }
 }
 
