@@ -32,6 +32,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.multipart.MultipartFile;
@@ -477,7 +478,7 @@ public class AcademyService {
      * @return 分类列表
      */
     public List<AcademyCategoryResponse> listOnlineOpenCourseCategories() {
-        return academyRepository.findCategories("online_open_courses");
+        return academyRepository.findManagedCourseCategories("online-open-courses");
     }
 
     /**
@@ -486,7 +487,7 @@ public class AcademyService {
      * @return 分类列表
      */
     public List<AcademyCategoryResponse> listGeneralCourseCategories() {
-        return academyRepository.findCategories("general_courses");
+        return academyRepository.findManagedCourseCategories("general-courses");
     }
 
     /**
@@ -495,7 +496,7 @@ public class AcademyService {
      * @return 分类列表
      */
     public List<AcademyCategoryResponse> listMicroMajorCourseCategories() {
-        return academyRepository.findCategories("micro_major_courses");
+        return academyRepository.findManagedCourseCategories("micro-major-courses");
     }
 
     /**
@@ -513,6 +514,7 @@ public class AcademyService {
      * @param userId 用户ID
      * @param courseName 课程名称
      * @param startTime 开课时间
+     * @param category 课程分类
      * @param semesterPlan 学期计划
      * @param courseDetail 课程详情
      * @param courseOverview 课程概述
@@ -524,6 +526,7 @@ public class AcademyService {
             Long userId,
             String courseName,
             String startTime,
+            String category,
             String semesterPlan,
             String courseDetail,
             String courseOverview,
@@ -534,15 +537,20 @@ public class AcademyService {
         AuthUserResponse user = ensureTeacher(publisherUserId);
         String normalizedName = clean(courseName, 120);
         String normalizedStartTime = clean(startTime, 64);
+        String normalizedCategory = clean(category, 80);
         String normalizedSemesterPlan = clean(semesterPlan, 512);
         String normalizedDetail = clean(courseDetail, 4000);
         String normalizedOverview = clean(courseOverview, 1200);
         if (normalizedName.isBlank()
                 || normalizedStartTime.isBlank()
+                || normalizedCategory.isBlank()
                 || normalizedSemesterPlan.isBlank()
                 || normalizedDetail.isBlank()
                 || normalizedOverview.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "课程信息不能为空");
+        }
+        if (!academyRepository.managedCourseCategoryExists("online-open-courses", normalizedCategory)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "课程分类只能从管理员维护的分类中选择");
         }
 
         String coverPath = saveCourseFile(publisherUserId, cover, "cover", List.of("jpg", "jpeg", "png", "webp"), true);
@@ -552,7 +560,7 @@ public class AcademyService {
                 normalizedName,
                 clean(user.teacherName(), 80),
                 clean(user.school(), 120),
-                "教师发布",
+                normalizedCategory,
                 normalizedStartTime,
                 normalizedSemesterPlan,
                 normalizedDetail,
@@ -626,15 +634,54 @@ public class AcademyService {
     public AcademyCourseReviewResponse saveCourseReview(
             String resourceType,
             String courseId,
+            Long userId,
             AcademyCourseReviewRequest request
     ) {
         ensureCourseExists(resourceType, courseId);
-        String userName = request.userName().trim();
+        long normalizedUserId = requireUserId(userId);
+        AuthUserResponse user = authUserRepository.findResponseById(normalizedUserId);
+        String userName = cleanUserName(user.username());
         String content = request.content().trim();
-        if (userName.isBlank() || content.isBlank()) {
+        if (content.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "评价内容不能为空");
         }
-        return academyRepository.saveCourseReview(resourceType, courseId, userName, request.rating(), content);
+        Long parentReviewId = request.parentReviewId();
+        if (parentReviewId != null && !academyRepository.courseReviewExists(resourceType, courseId, parentReviewId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "回复的评论不存在");
+        }
+        return academyRepository.saveCourseReview(
+                resourceType,
+                courseId,
+                normalizedUserId,
+                userName,
+                user.roleType(),
+                request.rating(),
+                content,
+                parentReviewId
+        );
+    }
+
+    public AcademyCourseReviewResponse replyCourseReview(Long userId, Long parentReviewId, String content) {
+        long normalizedUserId = requireUserId(userId);
+        AuthUserResponse user = authUserRepository.findResponseById(normalizedUserId);
+        String safeContent = content == null ? "" : content.trim();
+        if (safeContent.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "回复内容不能为空");
+        }
+        if (parentReviewId == null || parentReviewId <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "回复的评论不存在");
+        }
+        try {
+            return academyRepository.saveCourseReviewReply(
+                    parentReviewId,
+                    normalizedUserId,
+                    cleanUserName(user.username()),
+                    user.roleType(),
+                    safeContent
+            );
+        } catch (EmptyResultDataAccessException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "回复的评论不存在");
+        }
     }
 
     /**
@@ -689,7 +736,8 @@ public class AcademyService {
                 fileUrl(course.videoFilePath()),
                 course.videoFilePath(),
                 course.link(),
-                course.certified()
+                course.certified(),
+                course.certificationLabel()
         );
     }
 
@@ -780,6 +828,20 @@ public class AcademyService {
      */
     private Long normalizeUserId(Long userId) {
         return userId == null || userId <= 0 ? DEFAULT_USER_ID : userId;
+    }
+
+    private long requireUserId(Long userId) {
+        if (userId == null || userId <= 0) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "请先登录后再发表评论");
+        }
+        return userId;
+    }
+
+    private String cleanUserName(String userName) {
+        if (userName == null || userName.isBlank()) {
+            return "用户";
+        }
+        return userName.trim();
     }
 
     /**

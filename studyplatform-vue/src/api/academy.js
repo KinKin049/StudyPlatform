@@ -292,6 +292,12 @@ export const createAcademyCourseReview = (resource, id, payload) =>
     body: JSON.stringify(payload),
   })
 
+export const replyAcademyCourseReview = (reviewId, payload) =>
+  request(`/api/academy/reviews/${reviewId}/reply`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+
 /**
  * 获取课程分类
  * @param {string} resource - 资源类型
@@ -460,4 +466,3 @@ export const importLuoguQuestionBank = ({ pages = 1, limit = 20 } = {}) =>
   request(`/api/academy/question-bank/import/luogu?pages=${pages}&limit=${limit}`, {
     method: 'POST',
   })
-

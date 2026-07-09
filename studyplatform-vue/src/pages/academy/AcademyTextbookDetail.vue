@@ -614,6 +614,14 @@ onBeforeUnmount(() => {
               <strong>{{ comment.user }}</strong>
               <span>{{ '★'.repeat(comment.rating || 5) }}</span>
               <p>{{ comment.content }}</p>
+              <div v-if="comment.replyContent" class="textbook-comment-reply">
+                <strong>
+                  {{ comment.replyUserName || '管理员' }} 回复
+                  <span v-if="comment.replyUserRoleType === 'admin'">管理员</span>
+                  <span v-else-if="comment.replyUserRoleType === 'teacher'">教师</span>
+                </strong>
+                <p>{{ comment.replyContent }}</p>
+              </div>
             </div>
           </div>
           <!-- 无评论提示 -->
@@ -648,3 +656,33 @@ onBeforeUnmount(() => {
     </template>
   </main>
 </template>
+
+<style scoped>
+.textbook-comment-reply {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #eef6ff;
+  color: #1e3a8a;
+}
+
+.textbook-comment-reply strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.textbook-comment-reply span {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 12px;
+}
+
+.textbook-comment-reply p {
+  margin: 0;
+}
+</style>

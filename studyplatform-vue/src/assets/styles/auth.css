@@ -164,6 +164,23 @@
   font-weight: 800;
 }
 
+.auth-link-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 22px;
+}
+
+.auth-link-row .auth-switch {
+  margin: 0;
+  text-align: left;
+}
+
+.auth-link-row .auth-switch:last-child {
+  text-align: right;
+}
+
 .auth-switch a {
   color: #178f86;
   font-weight: 950;

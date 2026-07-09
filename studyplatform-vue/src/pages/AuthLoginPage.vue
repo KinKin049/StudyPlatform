@@ -83,8 +83,10 @@ async function submitLogin() {
       </form>
 
       <!-- 跳转链接区域 -->
-      <p class="auth-switch">忘记密码？<RouterLink to="/forgot-password">找回密码</RouterLink></p>
-      <p class="auth-switch">还没有账号？<RouterLink to="/register">立即注册</RouterLink></p>
+      <div class="auth-link-row">
+        <span class="auth-switch">还没有账号？<RouterLink to="/register">立即注册</RouterLink></span>
+        <span class="auth-switch">忘记密码？<RouterLink to="/forgot-password">找回密码</RouterLink></span>
+      </div>
     </section>
   </main>
 </template>

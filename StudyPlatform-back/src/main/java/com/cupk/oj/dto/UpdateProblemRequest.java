@@ -13,6 +13,7 @@ import jakarta.validation.constraints.Size;
  */
 public record UpdateProblemRequest(
         /** 题目标题。 */
+        @Size(max = 80) String category,
         @NotBlank @Size(max = 128) String title,
         /** 题目描述。 */
         @NotBlank String description,

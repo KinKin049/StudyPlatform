@@ -3,6 +3,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import {
   deletePublishedOnlineOpenCourse,
+  fetchAcademyCategories,
   fetchMyPublishedOnlineOpenCourses,
   publishOnlineOpenCourse,
 } from '../api/academy'
@@ -120,9 +121,11 @@ const publishCourseDialogOpen = ref(false)
 const publishCourseError = ref('')
 const publishCourseCoverFile = ref(null)
 const publishCourseVideoFile = ref(null)
+const publishCourseCategories = ref([])
 const publishCourseForm = ref({
   courseName: '',
   startTime: '',
+  category: '',
   semesterPlan: '',
   courseDetail: '',
   courseOverview: '',
@@ -132,6 +135,10 @@ let activeTiltElements = new Set()
 const profileForm = ref({
   name: fallbackUser.name,
   bio: fallbackUser.bio,
+})
+const courseDeleteConfirm = ref({
+  open: false,
+  course: null,
 })
 
 // 卡片倾斜效果选择器
@@ -399,6 +406,7 @@ const openAssignmentEntry = (course) => {
 const openPublishCourseDialog = () => {
   publishCourseDialogOpen.value = true
   publishCourseError.value = ''
+  loadPublishCourseCategories()
 }
 
 // 关闭发布课程对话框
@@ -423,6 +431,7 @@ const resetPublishCourseForm = () => {
   publishCourseForm.value = {
     courseName: '',
     startTime: '',
+    category: '',
     semesterPlan: '',
     courseDetail: '',
     courseOverview: '',
@@ -436,6 +445,10 @@ const submitPublishCourseFromProfile = async () => {
   publishCourseError.value = ''
   if (!publishCourseCoverFile.value || !publishCourseVideoFile.value) {
     publishCourseError.value = '请上传课程封面和视频'
+    return
+  }
+  if (!publishCourseForm.value.category) {
+    publishCourseError.value = '请选择课程分类'
     return
   }
   const formData = new FormData()
@@ -459,15 +472,42 @@ const submitPublishCourseFromProfile = async () => {
   }
 }
 
+const loadPublishCourseCategories = async () => {
+  try {
+    publishCourseCategories.value = (await fetchAcademyCategories('online-open-courses'))
+      .map((category) => category.name)
+      .filter(Boolean)
+  } catch (error) {
+    publishCourseCategories.value = []
+    publishCourseError.value = error.message || '课程分类加载失败'
+  }
+}
+
 // 删除教师课程
-const removeTeacherCourse = async (course) => {
-  const confirmed = window.confirm(`确认删除课程《${course.name}》吗？`)
-  if (!confirmed) return
+const openTeacherCourseDeleteConfirm = (course) => {
+  courseDeleteConfirm.value = {
+    open: true,
+    course,
+  }
+}
+
+const closeTeacherCourseDeleteConfirm = () => {
+  if (deletingCourseId.value) return
+  courseDeleteConfirm.value = {
+    open: false,
+    course: null,
+  }
+}
+
+const removeTeacherCourse = async () => {
+  const course = courseDeleteConfirm.value.course
+  if (!course) return
   deletingCourseId.value = course.id
   teacherCoursesError.value = ''
   try {
     await deletePublishedOnlineOpenCourse(course.id)
     teacherCourses.value = teacherCourses.value.filter((item) => item.id !== course.id)
+    courseDeleteConfirm.value = { open: false, course: null }
     showFeedback('课程已删除')
   } catch (error) {
     teacherCoursesError.value = error.message || '删除课程失败'
@@ -837,7 +877,7 @@ onBeforeUnmount(() => {
                   type="button"
                   class="is-danger"
                   :disabled="deletingCourseId === course.id"
-                  @click="removeTeacherCourse(course)"
+                  @click="openTeacherCourseDeleteConfirm(course)"
                 >
                   {{ deletingCourseId === course.id ? '删除中' : '删除课程' }}
                 </button>
@@ -1098,6 +1138,15 @@ onBeforeUnmount(() => {
             />
           </label>
           <label>
+            课程分类
+            <select v-model="publishCourseForm.category" required>
+              <option value="" disabled>请选择分类</option>
+              <option v-for="category in publishCourseCategories" :key="category" :value="category">
+                {{ category }}
+              </option>
+            </select>
+          </label>
+          <label>
             学期安排
             <input
               v-model="publishCourseForm.semesterPlan"
@@ -1140,6 +1189,24 @@ onBeforeUnmount(() => {
             <button type="button" :disabled="publishingCourse" @click="closePublishCourseDialog">取消</button>
           </div>
         </form>
+      </section>
+    </div>
+
+    <div
+      v-if="courseDeleteConfirm.open"
+      class="profile-modal-backdrop"
+      role="presentation"
+      @click.self="closeTeacherCourseDeleteConfirm"
+    >
+      <section class="profile-edit-dialog profile-confirm-dialog" role="dialog" aria-modal="true" aria-label="确认删除课程">
+        <h2>删除课程</h2>
+        <p>确认删除课程《{{ courseDeleteConfirm.course?.name }}》吗？</p>
+        <div class="profile-edit-actions">
+          <button type="button" :disabled="Boolean(deletingCourseId)" @click="removeTeacherCourse">
+            {{ deletingCourseId ? '删除中...' : '确认删除' }}
+          </button>
+          <button type="button" :disabled="Boolean(deletingCourseId)" @click="closeTeacherCourseDeleteConfirm">取消</button>
+        </div>
       </section>
     </div>
 

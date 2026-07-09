@@ -7,6 +7,7 @@ import com.cupk.academy.dto.AcademyAssignmentSubmitResponse;
 import com.cupk.academy.dto.AcademyAssignmentSummaryResponse;
 import com.cupk.academy.dto.AcademyCourseEnrollmentRequest;
 import com.cupk.academy.dto.AcademyCourseEnrollmentResponse;
+import com.cupk.academy.dto.AcademyCourseReplyRequest;
 import com.cupk.academy.dto.AcademyCourseReviewRequest;
 import com.cupk.academy.dto.AcademyCourseReviewResponse;
 import com.cupk.academy.dto.AcademyCourseResponse;
@@ -263,6 +264,7 @@ public class AcademyController {
      * @param userId 用户ID
      * @param courseName 课程名称
      * @param startTime 开课时间
+     * @param category 课程分类
      * @param semesterPlan 学期计划
      * @param courseDetail 课程详情
      * @param courseOverview 课程概述
@@ -275,6 +277,7 @@ public class AcademyController {
             @RequestHeader(value = "X-Auth-User-Id", required = false) Long userId,
             @RequestParam String courseName,
             @RequestParam String startTime,
+            @RequestParam String category,
             @RequestParam String semesterPlan,
             @RequestParam String courseDetail,
             @RequestParam String courseOverview,
@@ -285,6 +288,7 @@ public class AcademyController {
                 userId,
                 courseName,
                 startTime,
+                category,
                 semesterPlan,
                 courseDetail,
                 courseOverview,
@@ -359,9 +363,19 @@ public class AcademyController {
     @PostMapping("/online-open-courses/{id}/reviews")
     public AcademyCourseReviewResponse saveOnlineOpenCourseReview(
             @PathVariable String id,
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long userId,
             @Valid @RequestBody AcademyCourseReviewRequest request
     ) {
-        return academyService.saveCourseReview("online-open-courses", id, request);
+        return academyService.saveCourseReview("online-open-courses", id, userId, request);
+    }
+
+    @PostMapping("/reviews/{reviewId}/reply")
+    public AcademyCourseReviewResponse replyCourseReview(
+            @PathVariable Long reviewId,
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long userId,
+            @Valid @RequestBody AcademyCourseReplyRequest request
+    ) {
+        return academyService.replyCourseReview(userId, reviewId, request == null ? null : request.content());
     }
 
     /**

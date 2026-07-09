@@ -122,6 +122,7 @@ async function judge(payload) {
         timeUsedMs: runResult.timeUsedMs,
         memoryUsedKb: null,
         message: caseMessage(caseStatus, runResult),
+        actualOutput: runResult.stdout,
       })
     }
 

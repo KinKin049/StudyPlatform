@@ -10,9 +10,17 @@ import {
   createSubmission,
   getProblem,
   getSubmission,
+  listCategories,
   listProblems,
   listSubmissionCases,
 } from '../oj/api'
+import {
+  algorithmCategoryOptions as defaultAlgorithmCategoryOptions,
+  difficultyLabel,
+  difficultyOptions,
+  quickAlgorithmCategories as defaultQuickAlgorithmCategories,
+  statementLanguageOptions,
+} from '../oj/catalog'
 
 // 初始化学习时长追踪器
 useLearningTimeTracker({
@@ -54,48 +62,8 @@ const selectedStatementLanguages = ref([])
 // 搜索防抖定时器
 let searchTimer = 0
 
-// 难度标签映射
-const difficultyLabel = {
-  EASY: '简单 Easy',
-  MEDIUM: '中等 Medium',
-  HARD: '困难 Hard',
-}
-
-// 难度选项列表
-const difficultyOptions = [
-  { value: 'EASY', label: '简单', labelEn: 'Easy' },
-  { value: 'MEDIUM', label: '中等', labelEn: 'Medium' },
-  { value: 'HARD', label: '困难', labelEn: 'Hard' },
-]
-
-// 题面语言选项列表
-const statementLanguageOptions = [
-  { value: 'zh', label: '中文题面', labelEn: 'Chinese' },
-  { value: 'en', label: '英文题面', labelEn: 'English' },
-]
-
-// 算法分类选项列表
-const algorithmCategoryOptions = [
-  { value: 'beginner', label: '入门', labelEn: 'Beginner' },
-  { value: 'math', label: '数学', labelEn: 'Math' },
-  { value: 'number-theory', label: '数论', labelEn: 'Number Theory' },
-  { value: 'array', label: '数组', labelEn: 'Array' },
-  { value: 'string', label: '字符串', labelEn: 'String' },
-  { value: 'stack', label: '栈', labelEn: 'Stack' },
-  { value: 'hash-table', label: '哈希表', labelEn: 'Hash Table' },
-  { value: 'sort', label: '排序', labelEn: 'Sort' },
-  { value: 'interval', label: '区间', labelEn: 'Interval' },
-  { value: 'dp', label: '动态规划', labelEn: 'Dynamic Programming' },
-  { value: 'binary-search', label: '二分', labelEn: 'Binary Search' },
-  { value: 'graph', label: '图论', labelEn: 'Graph' },
-  { value: 'bfs', label: '广度优先搜索', labelEn: 'BFS' },
-  { value: 'grid', label: '网格', labelEn: 'Grid' },
-  { value: 'sieve', label: '筛法', labelEn: 'Sieve' },
-  { value: 'prefix', label: '前缀', labelEn: 'Prefix' },
-]
-
-// 快捷算法分类
-const quickAlgorithmCategories = ['beginner', 'array', 'string', 'dp', 'graph', 'bfs']
+const algorithmCategoryOptions = ref(defaultAlgorithmCategoryOptions)
+const quickAlgorithmCategories = ref(defaultQuickAlgorithmCategories)
 
 // 判题状态标签映射
 const statusLabel = {
@@ -158,7 +126,7 @@ const activeFilterCount = computed(
  * @returns {Array} 快捷分类选项数组
  */
 const quickCategoryOptions = computed(() =>
-  algorithmCategoryOptions.filter((item) => quickAlgorithmCategories.includes(item.value)),
+  algorithmCategoryOptions.value.filter((item) => quickAlgorithmCategories.value.includes(item.value)),
 )
 
 // 监听语言变化，更新默认代码模板
@@ -383,8 +351,25 @@ function clearFilters() {
  * @returns {string} 标签显示文本
  */
 function tagLabel(tag) {
-  const option = algorithmCategoryOptions.find((item) => item.value === tag)
+  const option = algorithmCategoryOptions.value.find((item) => item.value === tag)
   return option ? `${option.label} ${option.labelEn}` : tag
+}
+
+async function loadCategories() {
+  const categories = await listCategories()
+  if (!Array.isArray(categories) || categories.length === 0) {
+    algorithmCategoryOptions.value = defaultAlgorithmCategoryOptions
+    quickAlgorithmCategories.value = defaultQuickAlgorithmCategories
+    return
+  }
+  algorithmCategoryOptions.value = categories.map((item) => {
+    const name = item.name || item.value || ''
+    const preset = defaultAlgorithmCategoryOptions.find((option) => option.value === name)
+    return preset || { value: name, label: name, labelEn: name }
+  }).filter((item) => item.value)
+  quickAlgorithmCategories.value = algorithmCategoryOptions.value
+    .slice(0, 6)
+    .map((item) => item.value)
 }
 
 /**
@@ -482,8 +467,11 @@ function formatError(error) {
   return error instanceof Error ? error.message : '请求失败'
 }
 
-// 页面挂载时加载题目列表
-onMounted(loadProblems)
+// 页面挂载时加载分类和题目列表
+onMounted(async () => {
+  await loadCategories()
+  await loadProblems()
+})
 </script>
 
 <template>

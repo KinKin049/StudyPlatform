@@ -86,7 +86,8 @@ public class RemoteJudgeSandboxClient implements JudgeSandboxClient {
                     accepted ? SubmissionStatus.ACCEPTED : SubmissionStatus.WRONG_ANSWER,
                     timeUsedMs,
                     memoryUsedKb,
-                    accepted ? "Accepted" : "Wrong answer"
+                    accepted ? "Accepted" : "Wrong answer",
+                    actual
             ));
         }
 

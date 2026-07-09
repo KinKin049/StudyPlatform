@@ -1368,3 +1368,14 @@
     gap: 5px;
   }
 }
+
+.profile-confirm-dialog {
+  display: grid;
+  gap: 14px;
+}
+
+.profile-confirm-dialog h2,
+.profile-confirm-dialog p {
+  margin: 0;
+}
+

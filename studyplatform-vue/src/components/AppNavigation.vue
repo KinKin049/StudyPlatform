@@ -2,7 +2,7 @@
 // 顶部导航栏组件，包含品牌标识、主导航菜单和用户操作区域
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { clearStoredAuthUser, getStoredAuthUser } from '../api/auth'
+import { getStoredAuthUser } from '../api/auth'
 import { fetchProfileUser } from '../api/profile'
 import { resolveResourceUrl } from '../api/request'
 
@@ -42,17 +42,15 @@ const handleUserEntryClick = (event) => {
   navigateTo(isLoggedIn.value ? '/profile' : '/login', event)
 }
 
-// 切换用户，清除本地认证信息并跳转到登录页
+// 切换用户，保留当前登录态，待新账号登录成功后再覆盖
 const switchUser = (event) => {
   event?.currentTarget?.blur()
-  clearStoredAuthUser()
   router.push('/login')
 }
 
-// 注册新用户，清除本地认证信息并跳转到注册页
+// 注册新用户，保留当前登录态，待注册成功后再覆盖
 const registerNewUser = (event) => {
   event?.currentTarget?.blur()
-  clearStoredAuthUser()
   router.push('/register')
 }
 
@@ -96,7 +94,8 @@ onBeforeUnmount(() => {
   <header class="site-header">
     <!-- 品牌标识，点击返回首页 -->
     <RouterLink class="site-brand" to="/" aria-label="返回首页">
-      EpistemeHub
+      <img class="site-brand-logo" src="/brand/epistemehub-logo.png" alt="" aria-hidden="true" />
+      <span class="site-brand-name">EpistemeHub</span>
     </RouterLink>
 
     <!-- 主导航菜单 -->

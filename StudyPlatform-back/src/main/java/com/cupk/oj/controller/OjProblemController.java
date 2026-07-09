@@ -1,5 +1,6 @@
 package com.cupk.oj.controller;
 
+import com.cupk.academy.dto.AcademyCategoryResponse;
 import com.cupk.oj.dto.CreateProblemRequest;
 import com.cupk.oj.dto.CreateTestCaseRequest;
 import com.cupk.oj.dto.ProblemSummary;
@@ -56,6 +57,11 @@ public class OjProblemController {
             @RequestParam(required = false) String languages
     ) {
         return problemService.listProblems(status, keyword, tags, difficulties, languages);
+    }
+
+    @GetMapping("/categories")
+    public List<AcademyCategoryResponse> listCategories() {
+        return problemService.listCategories();
     }
 
     /**
