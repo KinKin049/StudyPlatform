@@ -16,6 +16,8 @@ import com.cupk.academy.dto.AcademyTextbookOrderResponse;
 import com.cupk.academy.dto.AcademyTextbookCommentResponse;
 import com.cupk.academy.dto.AcademyTextbookReviewRequest;
 import com.cupk.academy.dto.AcademyTextbookResponse;
+import com.cupk.academy.dto.TeacherWorkbenchMetricResponse;
+import com.cupk.academy.dto.TeacherWorkbenchResponse;
 import com.cupk.academy.repository.AcademyRepository.AcademyTextbookOrderResponseData;
 import com.cupk.academy.repository.AcademyRepository;
 import com.cupk.auth.dto.AuthUserResponse;
@@ -121,6 +123,32 @@ public class AcademyService {
         long teacherUserId = normalizeUserId(userId);
         ensureTeacher(teacherUserId);
         return withCourseCovers(academyRepository.findPublishedOnlineOpenCourses(teacherUserId));
+    }
+
+    public TeacherWorkbenchResponse getTeacherWorkbench(Long userId) {
+        long teacherUserId = normalizeUserId(userId);
+        ensureTeacher(teacherUserId);
+        int ungradedAssignments = academyRepository.countTeacherPendingAssignmentReviews(teacherUserId);
+        int unreadComments = academyRepository.countTeacherUnreadCourseReviews(teacherUserId);
+        int ungradedExams = academyRepository.countTeacherPendingExamReviews(teacherUserId);
+        return new TeacherWorkbenchResponse(
+                ungradedAssignments,
+                unreadComments,
+                ungradedExams,
+                List.of(
+                        new TeacherWorkbenchMetricResponse("未批改作业数", ungradedAssignments, "#5fbf9f"),
+                        new TeacherWorkbenchMetricResponse("未读评论数", unreadComments, "#f2c04c"),
+                        new TeacherWorkbenchMetricResponse("未批改考试数", ungradedExams, "#e87575")
+                ),
+                academyRepository.findTeacherMailboxMessages(teacherUserId)
+        );
+    }
+
+    public TeacherWorkbenchResponse markTeacherMailboxRead(Long userId) {
+        long teacherUserId = normalizeUserId(userId);
+        ensureTeacher(teacherUserId);
+        academyRepository.markTeacherMailboxRead(teacherUserId);
+        return getTeacherWorkbench(teacherUserId);
     }
 
     /**

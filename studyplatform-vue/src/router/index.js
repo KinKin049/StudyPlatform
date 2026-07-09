@@ -66,6 +66,8 @@ const OjPlatform = () => import('../pages/OjPlatform.vue')
 const PetroleumSimulation = () => import('../pages/petroleum/PetroleumSimulation.vue')
 // 个人中心页
 const ProfilePage = () => import('../pages/ProfilePage.vue')
+// 教师信箱页
+const TeacherMailboxPage = () => import('../pages/TeacherMailboxPage.vue')
 // 测井模拟页
 const WellLogSimulation = () => import('../pages/WellLogSimulation.vue')
 // 可视化首页
@@ -294,6 +296,11 @@ const routes = [
     path: '/profile',
     name: 'profile',
     component: ProfilePage,
+  },
+  {
+    path: '/teacher-mailbox',
+    name: 'teacher-mailbox',
+    component: TeacherMailboxPage,
   },
   {
     path: '/lab/oj',

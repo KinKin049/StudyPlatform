@@ -1,0 +1,265 @@
+.teacher-mailbox-page {
+  min-height: calc(100vh - 102px);
+  padding: 42px clamp(24px, 5vw, 76px) 80px;
+  color: #173447;
+  background:
+    linear-gradient(180deg, rgba(239, 249, 255, 0.64), rgba(236, 253, 245, 0.78) 58%, rgba(248, 250, 252, 0.92));
+}
+
+.teacher-mailbox-hero,
+.teacher-mailbox-panel,
+.teacher-mailbox-metrics {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.teacher-mailbox-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px 0 22px;
+}
+
+.teacher-mailbox-hero p {
+  margin: 0 0 8px;
+  color: #178f86;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.teacher-mailbox-hero h1 {
+  margin: 0;
+  color: #102a43;
+  font-size: clamp(36px, 5vw, 58px);
+  font-weight: 950;
+  line-height: 1.06;
+}
+
+.teacher-mailbox-hero span {
+  display: block;
+  max-width: 620px;
+  margin-top: 12px;
+  color: #526173;
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.teacher-mailbox-hero button,
+.teacher-mailbox-card footer button {
+  border: 0;
+  border-radius: 8px;
+  color: #ffffff;
+  background: #2563eb;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+}
+
+.teacher-mailbox-hero button {
+  min-height: 42px;
+  padding: 0 18px;
+  white-space: nowrap;
+}
+
+.teacher-mailbox-hero button:disabled,
+.teacher-mailbox-card footer button:disabled {
+  color: #78909c;
+  background: #e2e8f0;
+  cursor: default;
+}
+
+.teacher-mailbox-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.teacher-mailbox-metrics article {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid rgba(71, 128, 151, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.teacher-mailbox-metrics i {
+  width: 28px;
+  height: 8px;
+  border-radius: 999px;
+}
+
+.teacher-mailbox-metrics span {
+  color: #607986;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.teacher-mailbox-metrics strong {
+  color: #173447;
+  font-size: 24px;
+  font-weight: 950;
+}
+
+.teacher-mailbox-alert {
+  max-width: 1180px;
+  margin: 0 auto 14px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  color: #b91c1c;
+  background: #fef2f2;
+  font-weight: 800;
+}
+
+.teacher-mailbox-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.teacher-mailbox-state {
+  padding: 36px 24px;
+  border: 1px solid rgba(71, 128, 151, 0.12);
+  border-radius: 8px;
+  color: #607986;
+  background: rgba(255, 255, 255, 0.82);
+  text-align: center;
+  font-weight: 900;
+}
+
+.teacher-mailbox-card {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid rgba(71, 128, 151, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 18px 42px rgba(23, 52, 71, 0.08);
+}
+
+.teacher-mailbox-card.is-unread {
+  border-color: rgba(239, 68, 68, 0.28);
+  box-shadow: 0 18px 42px rgba(239, 68, 68, 0.08);
+}
+
+.teacher-mailbox-card header,
+.teacher-mailbox-card footer,
+.teacher-mailbox-author-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.teacher-mailbox-card header {
+  justify-content: space-between;
+}
+
+.teacher-mailbox-card header button {
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  color: #173447;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 950;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.teacher-mailbox-card header button:hover,
+.teacher-mailbox-card header button:focus-visible {
+  color: #2563eb;
+  outline: none;
+}
+
+.teacher-mailbox-card time {
+  flex: 0 0 auto;
+  color: #78909c;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.teacher-mailbox-author-line strong {
+  color: #24442c;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.teacher-mailbox-author-line em,
+.teacher-mailbox-author-line span {
+  min-height: 20px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.teacher-mailbox-author-line em {
+  color: #0f766e;
+  background: #dff7f2;
+}
+
+.teacher-mailbox-author-line span {
+  color: #b91c1c;
+  background: #fee2e2;
+}
+
+.teacher-mailbox-card p {
+  margin: 0;
+  color: #34515e;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.teacher-mailbox-card textarea {
+  width: 100%;
+  min-height: 92px;
+  resize: vertical;
+  padding: 12px 13px;
+  border: 1px solid rgba(71, 128, 151, 0.16);
+  border-radius: 8px;
+  color: #111827;
+  background: #ffffff;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.teacher-mailbox-card textarea:focus {
+  border-color: rgba(37, 99, 235, 0.42);
+  outline: 3px solid rgba(37, 99, 235, 0.12);
+}
+
+.teacher-mailbox-card footer {
+  justify-content: flex-end;
+}
+
+.teacher-mailbox-card footer button {
+  min-height: 36px;
+  padding: 0 18px;
+}
+
+@media (max-width: 760px) {
+  .teacher-mailbox-hero {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .teacher-mailbox-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .teacher-mailbox-card header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

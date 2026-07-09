@@ -217,13 +217,30 @@ function selectedOjCategories(form) {
   return uniqueOjTags([form.category, form.difficulty, ...parseOjTags(form.tags)])
 }
 
-function updateOjCategories(form, event) {
-  const values = Array.from(event.target.selectedOptions).map((option) => option.value)
+function ojCategorySummary(form) {
+  const labels = selectedOjCategories(form).map(formatOjCategoryName).filter(Boolean)
+  return labels.length ? labels.join('、') : '请选择OJ分类'
+}
+
+function applyOjCategoryValues(form, values) {
   writeOjTags(form, values)
   const algorithmCategory = values.find((value) => !ojDifficultyValues.includes(value) && !statementLanguageOptions.some((item) => item.value === value))
   const difficultyCategory = values.find((value) => ojDifficultyValues.includes(value))
   form.category = algorithmCategory || ''
-  form.difficulty = difficultyCategory || form.difficulty || 'EASY'
+  form.difficulty = difficultyCategory || 'EASY'
+}
+
+function updateOjCategories(form, event) {
+  const values = Array.from(event.target.selectedOptions).map((option) => option.value)
+  applyOjCategoryValues(form, values)
+}
+
+function toggleOjCategory(form, value, checked) {
+  const values = selectedOjCategories(form)
+  const nextValues = checked
+    ? uniqueOjTags([...values, value])
+    : values.filter((item) => item !== value)
+  applyOjCategoryValues(form, nextValues)
 }
 
 async function handleQuestionSetFilterChange() {
@@ -1508,17 +1525,22 @@ onMounted(async () => {
               <form class="admin-form admin-oj-form" @submit.prevent="submitOjProblem">
                 <input v-model="ojForm.title" placeholder="题目标题" />
                 <input v-model="ojForm.slug" placeholder="题目标识，例如 two-sum" />
-                <label class="admin-field admin-field-wide">
+                <div class="admin-field admin-field-wide">
                   <span>OJ分类（可多选）</span>
-                  <select
-                    multiple
-                    class="admin-multi-select"
-                    :value="selectedOjCategories(ojForm)"
-                    @change="updateOjCategories(ojForm, $event)"
-                  >
-                    <option v-for="category in ojMetaCategories" :key="category.name" :value="category.name">{{ formatOjCategoryName(category.name) }}</option>
-                  </select>
-                </label>
+                  <details class="admin-multi-dropdown">
+                    <summary>{{ ojCategorySummary(ojForm) }}</summary>
+                    <div class="admin-multi-dropdown-menu">
+                      <label v-for="category in ojMetaCategories" :key="category.name">
+                        <input
+                          type="checkbox"
+                          :checked="selectedOjCategories(ojForm).includes(category.name)"
+                          @change="toggleOjCategory(ojForm, category.name, $event.target.checked)"
+                        />
+                        <span>{{ formatOjCategoryName(category.name) }}</span>
+                      </label>
+                    </div>
+                  </details>
+                </div>
                 <textarea v-model="ojForm.description" placeholder="题目描述"></textarea>
                 <textarea v-model="ojForm.inputDescription" placeholder="输入描述"></textarea>
                 <textarea v-model="ojForm.outputDescription" placeholder="输出描述"></textarea>
@@ -1903,17 +1925,22 @@ onMounted(async () => {
         <form v-else-if="activeEditor === 'oj'" class="admin-form admin-modal-form admin-oj-form" @submit.prevent="submitEditorOjProblem">
           <input v-model="editorOjForm.title" placeholder="题目标题" />
           <input v-model="editorOjForm.slug" placeholder="题目标识，例如 two-sum" />
-          <label class="admin-field admin-field-wide">
+          <div class="admin-field admin-field-wide">
             <span>OJ分类（可多选）</span>
-            <select
-              multiple
-              class="admin-multi-select"
-              :value="selectedOjCategories(editorOjForm)"
-              @change="updateOjCategories(editorOjForm, $event)"
-            >
-              <option v-for="category in ojMetaCategories" :key="category.name" :value="category.name">{{ formatOjCategoryName(category.name) }}</option>
-            </select>
-          </label>
+            <details class="admin-multi-dropdown">
+              <summary>{{ ojCategorySummary(editorOjForm) }}</summary>
+              <div class="admin-multi-dropdown-menu">
+                <label v-for="category in ojMetaCategories" :key="category.name">
+                  <input
+                    type="checkbox"
+                    :checked="selectedOjCategories(editorOjForm).includes(category.name)"
+                    @change="toggleOjCategory(editorOjForm, category.name, $event.target.checked)"
+                  />
+                  <span>{{ formatOjCategoryName(category.name) }}</span>
+                </label>
+              </div>
+            </details>
+          </div>
           <textarea v-model="editorOjForm.description" placeholder="题目描述"></textarea>
           <textarea v-model="editorOjForm.inputDescription" placeholder="输入描述"></textarea>
           <textarea v-model="editorOjForm.outputDescription" placeholder="输出描述"></textarea>
@@ -2140,10 +2167,86 @@ onMounted(async () => {
   cursor: not-allowed;
 }
 
-.admin-multi-select {
-  min-height: 180px;
+.admin-multi-dropdown {
+  position: relative;
   width: 100%;
-  resize: vertical;
+}
+
+.admin-multi-dropdown summary {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid #dbe3ef;
+  border-radius: 10px;
+  color: #0f172a;
+  background: #ffffff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.35;
+  list-style: none;
+}
+
+.admin-multi-dropdown summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-multi-dropdown summary::after {
+  color: #2563eb;
+  content: '▾';
+  flex: 0 0 auto;
+  font-size: 13px;
+}
+
+.admin-multi-dropdown[open] summary::after {
+  content: '▴';
+}
+
+.admin-multi-dropdown-menu {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+  max-height: 320px;
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid #dbe3ef;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.16);
+}
+
+.admin-multi-dropdown-menu label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 7px 9px;
+  border-radius: 9px;
+  color: #334155;
+  background: #f8fafc;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.admin-multi-dropdown-menu label:hover {
+  background: #eff6ff;
+}
+
+.admin-multi-dropdown-menu input {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
 }
 
 .admin-oj-form .admin-field-wide {

@@ -25,6 +25,7 @@ import com.cupk.academy.dto.AcademyTextbookOrderResponse;
 import com.cupk.academy.dto.AcademyTextbookCommentResponse;
 import com.cupk.academy.dto.AcademyTextbookReviewRequest;
 import com.cupk.academy.dto.AcademyTextbookResponse;
+import com.cupk.academy.dto.TeacherWorkbenchResponse;
 import com.cupk.academy.service.AcademyAssignmentService;
 import com.cupk.academy.service.AcademyExamService;
 import com.cupk.academy.service.AcademyService;
@@ -245,6 +246,20 @@ public class AcademyController {
             @RequestHeader(value = "X-Auth-User-Id", required = false) Long userId
     ) {
         return academyService.listMyPublishedOnlineOpenCourses(userId);
+    }
+
+    @GetMapping("/teacher/workbench")
+    public TeacherWorkbenchResponse getTeacherWorkbench(
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long userId
+    ) {
+        return academyService.getTeacherWorkbench(userId);
+    }
+
+    @PostMapping("/teacher/workbench/mailbox/read")
+    public TeacherWorkbenchResponse markTeacherMailboxRead(
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long userId
+    ) {
+        return academyService.markTeacherMailboxRead(userId);
     }
 
     /**

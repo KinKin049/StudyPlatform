@@ -379,6 +379,15 @@
 .home-donut-empty {
   color: #94a3b8;
   font-size: 13px;
+  max-width: 142px;
+  text-align: center;
+  line-height: 1.45;
+}
+
+.home-donut-empty.is-complete {
+  color: #9FA1FF;
+  font-size: 17px;
+  max-width: 168px;
 }
 
 @keyframes homeDonutFade {

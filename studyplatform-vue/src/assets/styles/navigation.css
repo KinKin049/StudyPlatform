@@ -1,3 +1,10 @@
+:root {
+  --nav-avatar-bg: #ffffff;
+  --nav-avatar-text: #1b1a55;
+  --nav-avatar-border: rgba(255, 255, 255, 0.92);
+  --nav-avatar-shell: rgba(255, 255, 255, 0.24);
+}
+
 .site-header {
   position: relative;
   z-index: 100;
@@ -63,8 +70,8 @@
 
 .site-brand-logo {
   flex: 0 0 auto;
-  width: 140px;
-  height: 140px;
+  width: 100px;
+  height: 100px;
   object-fit: contain;
 }
 
@@ -186,6 +193,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  margin-right: 58px;
+  padding-bottom: 18px;
+  margin-bottom: -18px;
 }
 
 .user-entry {
@@ -198,16 +208,19 @@
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.24);
+  background: var(--nav-avatar-shell);
   cursor: pointer;
 }
 
 .user-menu {
   position: absolute;
-  top: calc(100% + 12px);
-  right: 0;
+  top: calc(100% - 2px);
+  left: 50%;
   z-index: 320;
-  min-width: 164px;
+  width: min(260px, calc(100vw - 24px));
+  min-width: 210px;
+  max-height: min(72vh, 520px);
+  overflow: auto;
   padding: 10px;
   border: 1px solid rgba(81, 126, 89, 0.12);
   border-radius: 8px;
@@ -215,7 +228,7 @@
   box-shadow: 0 16px 36px rgba(43, 75, 50, 0.14);
   opacity: 0;
   pointer-events: none;
-  transform: translateY(8px);
+  transform: translate(-50%, 8px);
   transition:
     opacity 0.2s ease 0.2s,
     transform 0.2s ease 0.2s,
@@ -224,10 +237,10 @@
 
 .user-menu::before {
   position: absolute;
-  right: 0;
+  right: -36px;
   bottom: 100%;
-  left: 0;
-  height: 14px;
+  left: -36px;
+  height: 34px;
   content: '';
 }
 
@@ -236,7 +249,7 @@
 .user-area:focus-within .user-menu {
   opacity: 1;
   pointer-events: auto;
-  transform: translateY(0);
+  transform: translate(-50%, 0);
   transition-delay: 0s;
 }
 
@@ -251,7 +264,7 @@
 }
 
 .user-menu-account strong {
-  max-width: 150px;
+  max-width: 100%;
   overflow: hidden;
   color: #24442c;
   font-size: 16px;
@@ -276,6 +289,34 @@
   white-space: nowrap;
 }
 
+.teacher-mailbox-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.teacher-mailbox-entry i {
+  flex: 0 0 auto;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: #b91c1c;
+  background: #fee2e2;
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.teacher-mailbox-entry-error {
+  margin: 4px 0 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  color: #b91c1c;
+  background: #fef2f2;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .user-menu-link:hover,
 .user-menu-link:focus-visible {
   background: #edf7ef;
@@ -288,10 +329,10 @@
   justify-content: center;
   width: 44px;
   height: 44px;
-  border: 2px solid #ffffff;
+  border: 2px solid var(--nav-avatar-border);
   border-radius: 50%;
-  color: #1b1a55;
-  background: #ffffff;
+  color: var(--nav-avatar-text);
+  background: var(--nav-avatar-bg);
   font-size: 18px;
   font-weight: 700;
   overflow: hidden;
