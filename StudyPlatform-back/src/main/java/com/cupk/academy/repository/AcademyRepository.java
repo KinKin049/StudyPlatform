@@ -8,6 +8,7 @@ import com.cupk.academy.dto.AcademyEnrolledCourseResponse;
 import com.cupk.academy.dto.AcademyTextbookCartItemResponse;
 import com.cupk.academy.dto.AcademyTextbookDetailResponse;
 import com.cupk.academy.dto.AcademyTextbookResponse;
+import com.cupk.academy.dto.TeacherMailboxMessageResponse;
 import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -1114,6 +1115,108 @@ public class AcademyRepository {
                 """;
         Long replyId = jdbcTemplate.queryForObject(selectSql, Long.class, parentReviewId);
         return findCourseReviewById(replyId).orElseThrow(() -> new EmptyResultDataAccessException(1));
+    }
+
+    public int countTeacherPendingAssignmentReviews(long teacherUserId) {
+        Integer count = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM academy_assignment_submissions s
+                JOIN academy_assignments a ON a.id = s.assignment_id
+                JOIN teacher_published_courses p
+                  ON p.course_id = a.course_id AND a.course_resource_type = 'online-open-courses'
+                WHERE p.publisher_user_id = ?
+                  AND s.submission_status = 'pending_review'
+                """,
+                Integer.class,
+                teacherUserId
+        );
+        return count == null ? 0 : count;
+    }
+
+    public int countTeacherPendingExamReviews(long teacherUserId) {
+        Integer count = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM academy_exam_submissions s
+                JOIN academy_exams e ON e.id = s.exam_id
+                JOIN teacher_published_courses p
+                  ON p.course_id = e.course_id AND e.course_resource_type = 'online-open-courses'
+                WHERE p.publisher_user_id = ?
+                  AND s.submission_status = 'pending_review'
+                """,
+                Integer.class,
+                teacherUserId
+        );
+        return count == null ? 0 : count;
+    }
+
+    public int countTeacherUnreadCourseReviews(long teacherUserId) {
+        Integer count = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM academy_course_reviews r
+                JOIN teacher_published_courses p
+                  ON p.course_id = r.course_id AND r.resource_type = 'online-open-courses'
+                WHERE p.publisher_user_id = ?
+                  AND r.teacher_read_at IS NULL
+                  AND COALESCE(r.user_id, 0) <> ?
+                """,
+                Integer.class,
+                teacherUserId,
+                teacherUserId
+        );
+        return count == null ? 0 : count;
+    }
+
+    public List<TeacherMailboxMessageResponse> findTeacherMailboxMessages(long teacherUserId) {
+        return jdbcTemplate.query(
+                """
+                SELECT r.id, r.parent_review_id, r.course_id,
+                       COALESCE(c.course_name, r.course_id) AS course_title,
+                       r.user_id, r.user_name, u.role_type AS user_role_type,
+                       r.content, r.created_at, r.teacher_read_at
+                FROM academy_course_reviews r
+                JOIN teacher_published_courses p
+                  ON p.course_id = r.course_id AND r.resource_type = 'online-open-courses'
+                LEFT JOIN online_open_courses c ON c.external_course_id = r.course_id
+                LEFT JOIN users u ON u.id = r.user_id
+                WHERE p.publisher_user_id = ?
+                  AND COALESCE(r.user_id, 0) <> ?
+                ORDER BY r.teacher_read_at IS NULL DESC, r.created_at DESC, r.id DESC
+                LIMIT 30
+                """,
+                (rs, rowNum) -> new TeacherMailboxMessageResponse(
+                        rs.getLong("id"),
+                        getNullableLong(rs, "parent_review_id"),
+                        rs.getString("course_id"),
+                        rs.getString("course_title"),
+                        getNullableLong(rs, "user_id"),
+                        rs.getString("user_name"),
+                        rs.getString("user_role_type"),
+                        rs.getString("content"),
+                        rs.getTimestamp("created_at").toLocalDateTime(),
+                        rs.getTimestamp("teacher_read_at") == null
+                ),
+                teacherUserId,
+                teacherUserId
+        );
+    }
+
+    public void markTeacherMailboxRead(long teacherUserId) {
+        jdbcTemplate.update(
+                """
+                UPDATE academy_course_reviews r
+                JOIN teacher_published_courses p
+                  ON p.course_id = r.course_id AND r.resource_type = 'online-open-courses'
+                SET r.teacher_read_at = COALESCE(r.teacher_read_at, CURRENT_TIMESTAMP)
+                WHERE p.publisher_user_id = ?
+                  AND COALESCE(r.user_id, 0) <> ?
+                  AND r.teacher_read_at IS NULL
+                """,
+                teacherUserId,
+                teacherUserId
+        );
     }
 
     /**

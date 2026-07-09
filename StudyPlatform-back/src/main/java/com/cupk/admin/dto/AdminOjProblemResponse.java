@@ -16,6 +16,9 @@ public record AdminOjProblemResponse(
         Integer memoryLimitKb,
         String tags,
         String status,
+        Long createdBy,
+        String ownerName,
+        String ownerRoleType,
         List<AdminOjTestCaseResponse> testCases
 ) {
 }

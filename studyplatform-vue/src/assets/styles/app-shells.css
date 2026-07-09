@@ -80,13 +80,6 @@ button {
   background: rgba(255, 255, 255, 0.24);
 }
 
-.lab-shell .user-avatar {
-  border-color: rgba(11, 158, 152, 0.46);
-  color: #12302d;
-  background: linear-gradient(135deg, #42d8d0, #fff4df);
-  box-shadow: 0 10px 22px rgba(11, 158, 152, 0.14);
-}
-
 .production-shell {
   background: #c8fff1;
   background: -webkit-linear-gradient(to right, #4aa6a8, #b9fbc0);
@@ -94,8 +87,7 @@ button {
 }
 
 .production-shell .site-brand,
-.production-shell .nav-button,
-.production-shell .user-avatar {
+.production-shell .nav-button {
   color: #4D3C77;
 }
 
@@ -160,14 +152,12 @@ button {
 }
 
 .visual-shell .site-brand,
-.visual-shell .nav-button,
-.visual-shell .user-avatar {
+.visual-shell .nav-button {
   color: #ffffff;
 }
 
 .academy-shell .site-brand,
-.academy-shell .nav-button,
-.academy-shell .user-avatar {
+.academy-shell .nav-button {
   color: #4b70f5;
 }
 
@@ -207,14 +197,25 @@ button {
   color: #5c3b00;
 }
 
-.games-home-shell .user-avatar {
-  color: #7a5200;
-}
-
 .games-home-shell .nav-button:hover,
 .games-home-shell .nav-button:focus-visible,
 .games-home-shell .nav-item:hover .nav-button {
   background: rgba(92, 59, 0, 0.1);
+}
+
+.app-shell .site-header .user-entry {
+  background: var(--nav-avatar-shell) !important;
+}
+
+.app-shell .site-header .user-avatar {
+  border-color: var(--nav-avatar-border) !important;
+  color: var(--nav-avatar-text) !important;
+  background: var(--nav-avatar-bg) !important;
+  box-shadow: none !important;
+}
+
+.app-shell .site-header .user-avatar span {
+  color: var(--nav-avatar-text) !important;
 }
 
 .immersive-game-shell {

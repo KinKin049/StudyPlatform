@@ -225,7 +225,7 @@ public class AdminService {
     }
 
     public List<AcademyCategoryResponse> listOjCategories(Long currentUserId) {
-        ensureAdmin(currentUserId);
+        requireOjEditor(currentUserId);
         return adminRepository.findOjCategories();
     }
 
@@ -412,21 +412,28 @@ public class AdminService {
      * @return 卡券列表
      */
     public List<AdminOjProblemResponse> listOjProblems(Long currentUserId) {
-        ensureAdmin(currentUserId);
-        return adminRepository.findOjProblems();
+        AdminRepository.AdminAuthRow editor = requireOjEditor(currentUserId);
+        return isAdminAuth(editor) ? adminRepository.findOjProblems() : adminRepository.findOjProblemsByOwner(editor.id());
     }
 
     public AdminOjProblemResponse getOjProblem(Long currentUserId, long problemId) {
-        ensureAdmin(currentUserId);
-        return adminRepository.findOjProblem(problemId)
+        AdminRepository.AdminAuthRow editor = requireOjEditor(currentUserId);
+        AdminOjProblemResponse problem = adminRepository.findOjProblem(problemId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "OJ题目不存在"));
+        ensureOjProblemEditable(editor, problem);
+        return problem;
     }
 
     @Transactional
     public AdminOjProblemResponse saveOjProblem(Long currentUserId, Long problemId, AdminOjProblemRequest request) {
-        ensureAdmin(currentUserId);
+        AdminRepository.AdminAuthRow editor = requireOjEditor(currentUserId);
+        if (problemId != null) {
+            AdminOjProblemResponse existing = adminRepository.findOjProblem(problemId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "OJ题目不存在"));
+            ensureOjProblemEditable(editor, existing);
+        }
         AdminOjProblemRequest safeRequest = normalizeOjProblemRequest(problemId, request);
-        long savedId = adminRepository.upsertOjProblem(problemId, safeRequest);
+        long savedId = adminRepository.upsertOjProblem(problemId, safeRequest, editor.id());
         return getOjProblem(currentUserId, savedId);
     }
 
@@ -439,7 +446,7 @@ public class AdminService {
     }
 
     public AdminOjCheckResponse checkOjProblem(Long currentUserId, AdminOjProblemRequest request) {
-        ensureAdmin(currentUserId);
+        requireOjEditor(currentUserId);
         AdminOjProblemRequest safeRequest = normalizeOjProblemRequest(request == null ? null : request.id(), request);
         if (safeRequest.standardCode().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请先填写标准代码再校验");
@@ -500,6 +507,31 @@ public class AdminService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "需要管理员权限");
         }
         return user;
+    }
+
+    private AdminRepository.AdminAuthRow requireOjEditor(Long currentUserId) {
+        if (currentUserId == null || currentUserId <= 0) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "请先登录");
+        }
+        AdminRepository.AdminAuthRow user = adminRepository.findAuthRow(currentUserId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "请先登录"));
+        if (!isAdminAuth(user) && !"teacher".equalsIgnoreCase(user.roleType())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "只有管理员或教师可以管理OJ题目");
+        }
+        return user;
+    }
+
+    private boolean isAdminAuth(AdminRepository.AdminAuthRow user) {
+        return user != null && ADMIN_EMAIL.equalsIgnoreCase(user.email()) && ADMIN_ROLE.equalsIgnoreCase(user.roleType());
+    }
+
+    private void ensureOjProblemEditable(AdminRepository.AdminAuthRow editor, AdminOjProblemResponse problem) {
+        if (isAdminAuth(editor)) {
+            return;
+        }
+        if (problem.createdBy() == null || problem.createdBy() != editor.id()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "只能修改自己创建的OJ题目");
+        }
     }
 
     private String normalizeReviewType(String reviewType) {

@@ -129,6 +129,14 @@ export const publishOnlineOpenCourse = (payload) =>
 export const fetchMyPublishedOnlineOpenCourses = () =>
   request('/api/academy/online-open-courses/teacher/mine')
 
+export const fetchTeacherWorkbench = () =>
+  request('/api/academy/teacher/workbench')
+
+export const markTeacherMailboxRead = () =>
+  request('/api/academy/teacher/workbench/mailbox/read', {
+    method: 'POST',
+  })
+
 /**
  * 删除已发布的在线公开课
  * @param {string|number} id - 课程 ID

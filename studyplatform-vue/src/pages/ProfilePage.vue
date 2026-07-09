@@ -5,8 +5,17 @@ import {
   deletePublishedOnlineOpenCourse,
   fetchAcademyCategories,
   fetchMyPublishedOnlineOpenCourses,
+  fetchTeacherWorkbench,
   publishOnlineOpenCourse,
 } from '../api/academy'
+import {
+  checkAdminOjProblem,
+  createAdminOjProblem,
+  fetchAdminOjCategories,
+  fetchAdminOjProblem,
+  fetchAdminOjProblems,
+  updateAdminOjProblem,
+} from '../api/admin'
 import {
   fetchProfileOverview,
   fetchProfileUser,
@@ -14,6 +23,12 @@ import {
   uploadProfileAvatar,
 } from '../api/profile'
 import { resolveResourceUrl } from '../api/request'
+import {
+  difficultyOptions,
+  formatAlgorithmCategory,
+  formatDifficulty,
+  statementLanguageOptions,
+} from '../oj/catalog'
 
 // 用户信息兜底数据
 const fallbackUser = {
@@ -114,6 +129,9 @@ const feedbackVisible = ref(false)
 const teacherCourses = ref([])
 const teacherCoursesLoading = ref(false)
 const teacherCoursesError = ref('')
+const teacherWorkbench = ref(null)
+const teacherWorkbenchLoading = ref(false)
+const teacherWorkbenchError = ref('')
 const deletingCourseId = ref('')
 const classAssignments = ref({})
 const publishingCourse = ref(false)
@@ -129,6 +147,21 @@ const publishCourseForm = ref({
   semesterPlan: '',
   courseDetail: '',
   courseOverview: '',
+})
+const teacherOjProblems = ref([])
+const teacherOjCategories = ref([])
+const teacherOjLoading = ref(false)
+const teacherOjSaving = ref(false)
+const teacherOjError = ref('')
+const teacherOjDialogOpen = ref(false)
+const teacherOjDialogMode = ref('create')
+const teacherOjCheckResult = ref(null)
+const teacherOjForm = ref(emptyTeacherOjForm())
+const teacherOjSnapshot = ref('')
+const teacherOjCloseConfirm = ref(false)
+const teacherOjCaseDeleteConfirm = ref({
+  open: false,
+  index: -1,
 })
 let feedbackTimer = null
 let activeTiltElements = new Set()
@@ -161,6 +194,56 @@ const user = computed(() => profileUser.value || fallbackUser)
 const isTeacherProfile = computed(() => user.value.roleType === 'teacher')
 // 教师课程数量
 const teacherCourseCount = computed(() => teacherCourses.value.length)
+const teacherOjCount = computed(() => teacherOjProblems.value.length)
+const ojDifficultyValues = difficultyOptions.map((item) => item.value)
+const teacherOjMetaCategories = computed(() => {
+  const current = teacherOjCategories.value.map((item) => ({ name: item.name || item.value || item }))
+  const currentNames = new Set(current.map((item) => item.name))
+  const fallback = [
+    ...difficultyOptions.map((item) => ({ name: item.value })),
+    ...statementLanguageOptions.map((item) => ({ name: item.value })),
+  ].filter((item) => currentNames.has(item.name))
+  return uniqueTeacherOjTags([...current, ...fallback].map((item) => item.name)).map((name) => ({ name }))
+})
+const canCheckTeacherOjCases = computed(() => Boolean(teacherOjForm.value.standardCode?.trim()))
+const teacherWorkbenchMetrics = computed(() => {
+  const metrics = teacherWorkbench.value?.metrics?.length
+    ? teacherWorkbench.value.metrics
+    : [
+        { label: '未批改作业数', value: 0, color: '#5fbf9f' },
+        { label: '未读评论数', value: 0, color: '#f2c04c' },
+        { label: '未批改考试数', value: 0, color: '#e87575' },
+      ]
+
+  return metrics.map((item) => ({
+    label: item.label,
+    value: Number(item.value ?? 0),
+    color: item.color || '#60a5fa',
+  }))
+})
+const teacherWorkbenchTotal = computed(() =>
+  teacherWorkbenchMetrics.value.reduce((sum, item) => sum + item.value, 0),
+)
+const teacherWorkbenchRingStyle = computed(() => {
+  const total = teacherWorkbenchTotal.value
+  if (!total) {
+    return {
+      background: 'rgba(226, 232, 240, 0.82)',
+    }
+  }
+
+  let cursor = 0
+  const segments = teacherWorkbenchMetrics.value
+    .filter((item) => item.value > 0)
+    .map((item) => {
+      const start = cursor
+      cursor += (item.value / total) * 360
+      return `${item.color} ${start.toFixed(2)}deg ${cursor.toFixed(2)}deg`
+    })
+  return {
+    background: `conic-gradient(from -90deg, ${segments.join(', ')})`,
+  }
+})
 // 学习概览数据（带兜底）
 const dashboard = computed(() => overview.value || fallbackOverview)
 // 学习统计数据
@@ -297,6 +380,192 @@ const showFeedback = (message) => {
   }, 1800)
 }
 
+function emptyTeacherOjCase(sortOrder = 1) {
+  return {
+    id: null,
+    inputData: '',
+    expectedOutput: '',
+    sample: sortOrder === 1,
+    weight: 1,
+    sortOrder,
+  }
+}
+
+function emptyTeacherOjForm() {
+  return {
+    id: null,
+    title: '',
+    slug: '',
+    category: '',
+    description: '',
+    inputDescription: '',
+    outputDescription: '',
+    standardCode: '',
+    difficulty: 'EASY',
+    timeLimitMs: 1000,
+    memoryLimitKb: 262144,
+    tags: '',
+    status: 'DRAFT',
+    testCases: [emptyTeacherOjCase()],
+  }
+}
+
+function parseTeacherOjTags(tags) {
+  return String(tags || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
+function uniqueTeacherOjTags(values) {
+  return Array.from(new Set(values.filter(Boolean)))
+}
+
+function writeTeacherOjTags(form, values) {
+  form.tags = uniqueTeacherOjTags(values).join(',')
+}
+
+function selectedTeacherOjCategories(form = teacherOjForm.value) {
+  return uniqueTeacherOjTags([form.category, form.difficulty, ...parseTeacherOjTags(form.tags)])
+}
+
+function teacherOjCategorySummary(form = teacherOjForm.value) {
+  const labels = selectedTeacherOjCategories(form).map(formatTeacherOjCategoryName).filter(Boolean)
+  return labels.length ? labels.join('、') : '请选择OJ分类'
+}
+
+function applyTeacherOjCategoryValues(form, values) {
+  writeTeacherOjTags(form, values)
+  const algorithmCategory = values.find(
+    (value) => !ojDifficultyValues.includes(value) && !statementLanguageOptions.some((item) => item.value === value),
+  )
+  const difficultyCategory = values.find((value) => ojDifficultyValues.includes(value))
+  form.category = algorithmCategory || ''
+  form.difficulty = difficultyCategory || 'EASY'
+  teacherOjCheckResult.value = null
+}
+
+function updateTeacherOjCategories(event) {
+  const values = Array.from(event.target.selectedOptions).map((option) => option.value)
+  applyTeacherOjCategoryValues(teacherOjForm.value, values)
+}
+
+function toggleTeacherOjCategory(value, checked) {
+  const values = selectedTeacherOjCategories()
+  const nextValues = checked
+    ? uniqueTeacherOjTags([...values, value])
+    : values.filter((item) => item !== value)
+  applyTeacherOjCategoryValues(teacherOjForm.value, nextValues)
+}
+
+function syncTeacherOjCategory(form = teacherOjForm.value) {
+  if (!form.category) return
+  const tags = parseTeacherOjTags(form.tags)
+  if (!tags.includes(form.category)) {
+    writeTeacherOjTags(form, [form.category, ...tags])
+  }
+}
+
+function ensureTeacherOjFormCategory(form = teacherOjForm.value) {
+  const validCategories = teacherOjCategories.value.map((item) => item.name)
+  const tags = parseTeacherOjTags(form.tags).filter((tag) => validCategories.includes(tag))
+  if (!form.category && tags.length > 0) {
+    form.category = tags.find((tag) => !ojDifficultyValues.includes(tag)) || tags[0]
+  }
+  if ((!form.category || !validCategories.includes(form.category)) && teacherOjCategories.value.length > 0) {
+    const category = teacherOjCategories.value.find((item) => !ojDifficultyValues.includes(item.name)) || teacherOjCategories.value[0]
+    form.category = category.name
+  }
+  syncTeacherOjCategory(form)
+}
+
+function normalizedTeacherOjTagsForPayload(form = teacherOjForm.value) {
+  const tags = parseTeacherOjTags(form.tags)
+  return uniqueTeacherOjTags([form.category, form.difficulty, ...tags]).join(',')
+}
+
+function teacherOjPayload(form = teacherOjForm.value) {
+  const tags = normalizedTeacherOjTagsForPayload(form)
+  return {
+    id: form.id,
+    title: form.title,
+    slug: form.slug,
+    category: form.category || parseTeacherOjTags(tags)[0] || '',
+    description: form.description,
+    inputDescription: form.inputDescription,
+    outputDescription: form.outputDescription,
+    standardCode: String(form.standardCode || ''),
+    difficulty: form.difficulty,
+    timeLimitMs: Number(form.timeLimitMs || 1000),
+    memoryLimitKb: Number(form.memoryLimitKb || 262144),
+    tags,
+    status: form.status,
+    testCases: form.testCases.map((item, index) => ({
+      id: item.id || null,
+      inputData: item.inputData,
+      expectedOutput: item.expectedOutput,
+      sample: Boolean(item.sample),
+      weight: Number(item.weight || 1),
+      sortOrder: index + 1,
+    })),
+  }
+}
+
+function teacherOjDetailToForm(problem) {
+  return {
+    id: problem.id || null,
+    title: problem.title || '',
+    slug: problem.slug || '',
+    category: problem.category || '',
+    description: problem.description || '',
+    inputDescription: problem.inputDescription || '',
+    outputDescription: problem.outputDescription || '',
+    standardCode: problem.standardCode || '',
+    difficulty: problem.difficulty || 'EASY',
+    timeLimitMs: problem.timeLimitMs || 1000,
+    memoryLimitKb: problem.memoryLimitKb || 262144,
+    tags: problem.tags || problem.category || '',
+    status: problem.status || 'DRAFT',
+    testCases: Array.isArray(problem.testCases) && problem.testCases.length > 0
+      ? problem.testCases.map((item, index) => ({
+        id: item.id || null,
+        inputData: item.inputData || '',
+        expectedOutput: item.expectedOutput || '',
+        sample: Boolean(item.sample),
+        weight: item.weight || 1,
+        sortOrder: item.sortOrder || index + 1,
+      }))
+      : [emptyTeacherOjCase()],
+  }
+}
+
+function captureTeacherOjSnapshot() {
+  teacherOjSnapshot.value = JSON.stringify(teacherOjPayload())
+}
+
+function isTeacherOjDirty() {
+  return teacherOjDialogOpen.value && JSON.stringify(teacherOjPayload()) !== teacherOjSnapshot.value
+}
+
+function formatTeacherOjCategoryName(value) {
+  const difficulty = difficultyOptions.find((item) => item.value === value)
+  if (difficulty) return `${difficulty.label} ${difficulty.labelEn}`
+  const language = statementLanguageOptions.find((item) => item.value === value)
+  if (language) return `${language.label} ${language.labelEn}`
+  return formatAlgorithmCategory(value || '')
+}
+
+function formatTeacherOjActualOutput(caseResult) {
+  const output = caseResult?.actualOutput
+  if (output === null || output === undefined) {
+    return '实际输出：<沙箱未返回 actualOutput 字段>'
+  }
+  if (String(output).length === 0) {
+    return '实际输出：<程序输出为空>'
+  }
+  return `实际输出：\n${output}`
+}
+
 // 重置单个元素的倾斜效果
 const resetTiltElement = (element) => {
   if (!element) return
@@ -384,6 +653,172 @@ const loadTeacherCourses = async () => {
     teacherCoursesError.value = error.message || '课程管理数据加载失败'
   } finally {
     teacherCoursesLoading.value = false
+  }
+}
+
+const loadTeacherWorkbench = async () => {
+  teacherWorkbenchLoading.value = true
+  teacherWorkbenchError.value = ''
+  try {
+    teacherWorkbench.value = await fetchTeacherWorkbench()
+  } catch (error) {
+    teacherWorkbench.value = null
+    teacherWorkbenchError.value = error.message || '教师工作台数据加载失败'
+  } finally {
+    teacherWorkbenchLoading.value = false
+  }
+}
+
+const loadTeacherOjProblems = async () => {
+  teacherOjLoading.value = true
+  teacherOjError.value = ''
+  try {
+    const [problems, categories] = await Promise.all([
+      fetchAdminOjProblems(),
+      fetchAdminOjCategories(),
+    ])
+    teacherOjProblems.value = problems
+    teacherOjCategories.value = (categories || [])
+      .map((category) => ({ name: category.name || category.value || category }))
+      .filter((category) => category.name)
+    ensureTeacherOjFormCategory()
+  } catch (error) {
+    teacherOjProblems.value = []
+    teacherOjCategories.value = []
+    teacherOjError.value = error.message || 'OJ题目管理数据加载失败'
+  } finally {
+    teacherOjLoading.value = false
+  }
+}
+
+const openTeacherOjCreateDialog = () => {
+  teacherOjDialogMode.value = 'create'
+  teacherOjForm.value = emptyTeacherOjForm()
+  ensureTeacherOjFormCategory()
+  teacherOjCheckResult.value = null
+  teacherOjError.value = ''
+  teacherOjCloseConfirm.value = false
+  teacherOjCaseDeleteConfirm.value = { open: false, index: -1 }
+  teacherOjDialogOpen.value = true
+  captureTeacherOjSnapshot()
+}
+
+const openTeacherOjEditDialog = async (problem) => {
+  teacherOjError.value = ''
+  teacherOjLoading.value = true
+  try {
+    const detail = await fetchAdminOjProblem(problem.id)
+    teacherOjDialogMode.value = 'edit'
+    teacherOjForm.value = teacherOjDetailToForm(detail)
+    ensureTeacherOjFormCategory()
+    teacherOjCheckResult.value = null
+    teacherOjCloseConfirm.value = false
+    teacherOjCaseDeleteConfirm.value = { open: false, index: -1 }
+    teacherOjDialogOpen.value = true
+    captureTeacherOjSnapshot()
+  } catch (error) {
+    teacherOjError.value = error.message || 'OJ题目详情加载失败'
+    showFeedback(teacherOjError.value)
+  } finally {
+    teacherOjLoading.value = false
+  }
+}
+
+const requestCloseTeacherOjDialog = () => {
+  if (teacherOjSaving.value) return
+  if (isTeacherOjDirty()) {
+    teacherOjCloseConfirm.value = true
+    return
+  }
+  closeTeacherOjDialog(true)
+}
+
+const closeTeacherOjDialog = (force = false) => {
+  if (teacherOjSaving.value && !force) return
+  teacherOjDialogOpen.value = false
+  teacherOjCloseConfirm.value = false
+  teacherOjCaseDeleteConfirm.value = { open: false, index: -1 }
+  teacherOjCheckResult.value = null
+}
+
+const addTeacherOjCase = () => {
+  teacherOjForm.value.testCases.push(emptyTeacherOjCase(teacherOjForm.value.testCases.length + 1))
+  teacherOjCheckResult.value = null
+}
+
+const requestRemoveTeacherOjCase = (index) => {
+  teacherOjCaseDeleteConfirm.value = {
+    open: true,
+    index,
+  }
+}
+
+const closeTeacherOjCaseDeleteConfirm = () => {
+  teacherOjCaseDeleteConfirm.value = { open: false, index: -1 }
+}
+
+const confirmRemoveTeacherOjCase = () => {
+  const index = teacherOjCaseDeleteConfirm.value.index
+  if (index < 0) return
+  if (teacherOjForm.value.testCases.length <= 1) {
+    teacherOjForm.value.testCases = [emptyTeacherOjCase()]
+  } else {
+    teacherOjForm.value.testCases.splice(index, 1)
+  }
+  teacherOjCheckResult.value = null
+  closeTeacherOjCaseDeleteConfirm()
+  showFeedback('测试点已删除')
+}
+
+const checkTeacherOjCases = async () => {
+  if (!teacherOjForm.value.standardCode?.trim()) {
+    teacherOjError.value = '请先填写标准代码后再校验测试点'
+    showFeedback(teacherOjError.value)
+    return
+  }
+  teacherOjSaving.value = true
+  teacherOjError.value = ''
+  try {
+    teacherOjCheckResult.value = await checkAdminOjProblem(teacherOjPayload())
+    let filledCount = 0
+    teacherOjCheckResult.value?.cases?.forEach((item, index) => {
+      if (!teacherOjForm.value.testCases[index]?.expectedOutput?.trim() && item.actualOutput !== null && item.actualOutput !== undefined) {
+        teacherOjForm.value.testCases[index].expectedOutput = item.actualOutput
+        filledCount += 1
+      }
+    })
+    if (filledCount > 0) {
+      teacherOjCheckResult.value = {
+        ...teacherOjCheckResult.value,
+        message: `${teacherOjCheckResult.value?.message || '校验完成'}，已自动填充 ${filledCount} 个输出样例`,
+      }
+    }
+    showFeedback('OJ测试点已校验')
+  } catch (error) {
+    teacherOjError.value = error.message || 'OJ测试点校验失败'
+    showFeedback(teacherOjError.value)
+  } finally {
+    teacherOjSaving.value = false
+  }
+}
+
+const submitTeacherOjProblem = async () => {
+  teacherOjSaving.value = true
+  teacherOjError.value = ''
+  try {
+    if (teacherOjDialogMode.value === 'edit' && teacherOjForm.value.id) {
+      await updateAdminOjProblem(teacherOjForm.value.id, teacherOjPayload())
+    } else {
+      await createAdminOjProblem(teacherOjPayload())
+    }
+    await loadTeacherOjProblems()
+    closeTeacherOjDialog(true)
+    showFeedback('OJ题目已保存')
+  } catch (error) {
+    teacherOjError.value = error.message || 'OJ题目保存失败'
+    showFeedback(teacherOjError.value)
+  } finally {
+    teacherOjSaving.value = false
   }
 }
 
@@ -527,8 +962,11 @@ const applyProfileUser = (nextUser) => {
   window.dispatchEvent(new CustomEvent('study-platform:profile-updated', { detail: nextUser }))
   if (nextUser?.roleType === 'teacher') {
     overview.value = null
+    loadTeacherWorkbench()
     loadTeacherCourses()
+    loadTeacherOjProblems()
   } else {
+    teacherWorkbench.value = null
     loadProfileOverview()
   }
 }
@@ -822,6 +1260,37 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
+      <section v-if="isTeacherProfile" class="profile-panel profile-teacher-workbench-panel">
+        <div class="profile-panel-head">
+          <div>
+            <p>Teacher Workbench</p>
+            <h2>待办工作台</h2>
+          </div>
+          <span>{{ teacherWorkbenchTotal }} 项</span>
+        </div>
+        <div v-if="teacherWorkbenchLoading" class="profile-teacher-state">正在加载工作台...</div>
+        <div v-else-if="teacherWorkbenchError" class="profile-teacher-state is-error">
+          <span>{{ teacherWorkbenchError }}</span>
+          <button type="button" @click="loadTeacherWorkbench">重试</button>
+        </div>
+        <div v-else class="profile-teacher-workbench-body">
+          <div class="profile-teacher-workbench-ring" :style="teacherWorkbenchRingStyle">
+            <div class="profile-teacher-workbench-ring-core">
+              <strong v-if="teacherWorkbenchTotal">{{ teacherWorkbenchTotal }}</strong>
+              <span v-if="teacherWorkbenchTotal">待处理事项</span>
+              <span v-else>工作已经全部完成啦，休息一下吧~</span>
+            </div>
+          </div>
+          <div class="profile-teacher-workbench-list">
+            <div v-for="item in teacherWorkbenchMetrics" :key="item.label">
+              <i :style="{ background: item.color }"></i>
+              <span>{{ item.label }}</span>
+              <strong>{{ item.value }} 项</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- 教师课程管理面板 -->
       <section v-if="isTeacherProfile" class="profile-panel profile-teacher-course-panel">
         <div class="profile-panel-head">
@@ -887,8 +1356,41 @@ onBeforeUnmount(() => {
         </div>
       </section>
 
+      <section v-if="isTeacherProfile" class="profile-panel profile-teacher-oj-panel">
+        <div class="profile-panel-head">
+          <div>
+            <p>OJ Problem Management</p>
+            <h2>OJ题目管理</h2>
+          </div>
+          <div class="profile-teacher-head-actions">
+            <span>{{ teacherOjCount }} 道题目</span>
+            <button type="button" @click="openTeacherOjCreateDialog">新增OJ题目</button>
+          </div>
+        </div>
+
+        <div v-if="teacherOjLoading && !teacherOjDialogOpen" class="profile-teacher-state">正在加载OJ题目...</div>
+        <div v-else-if="teacherOjError && !teacherOjDialogOpen" class="profile-teacher-state is-error">
+          <span>{{ teacherOjError }}</span>
+          <button type="button" @click="loadTeacherOjProblems">重试</button>
+        </div>
+        <div v-else-if="teacherOjProblems.length === 0" class="profile-teacher-state">
+          <span>暂无自己创建的OJ题目</span>
+          <button type="button" @click="openTeacherOjCreateDialog">新增OJ题目</button>
+        </div>
+        <div v-else class="profile-teacher-oj-list">
+          <article v-for="problem in teacherOjProblems" :key="problem.id" class="profile-teacher-oj-card">
+            <div>
+              <span>{{ formatTeacherOjCategoryName(problem.category) || '未分类' }}</span>
+              <h3>{{ problem.title }}</h3>
+              <p>{{ problem.slug }} · {{ formatDifficulty(problem.difficulty) }} · {{ problem.status }}</p>
+            </div>
+            <button type="button" @click="openTeacherOjEditDialog(problem)">编辑题目</button>
+          </article>
+        </div>
+      </section>
+
       <!-- 学生学习概览面板 -->
-      <div v-else class="profile-summary">
+      <div v-if="!isTeacherProfile" class="profile-summary">
         <p>{{ profileLoading ? 'Syncing Data' : 'Learning Dashboard' }}</p>
         <h2>今天也有一点进步，被系统悄悄记下来了。</h2>
         <span v-if="profileError" class="profile-data-note">暂时使用兜底数据：{{ profileError }}</span>
@@ -1189,6 +1691,158 @@ onBeforeUnmount(() => {
             <button type="button" :disabled="publishingCourse" @click="closePublishCourseDialog">取消</button>
           </div>
         </form>
+      </section>
+    </div>
+
+    <div
+      v-if="teacherOjDialogOpen"
+      class="profile-modal-backdrop"
+      role="presentation"
+      @click.self="requestCloseTeacherOjDialog"
+    >
+      <section
+        class="profile-edit-dialog profile-teacher-oj-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="profile-teacher-oj-title"
+      >
+        <div class="profile-edit-head">
+          <div>
+            <p>Teacher OJ</p>
+            <h2 id="profile-teacher-oj-title">{{ teacherOjDialogMode === 'edit' ? '编辑OJ题目' : '新增OJ题目' }}</h2>
+          </div>
+          <button type="button" :disabled="teacherOjSaving" aria-label="关闭OJ题目窗口" @click="requestCloseTeacherOjDialog">
+            ×
+          </button>
+        </div>
+
+        <form class="profile-teacher-oj-form" @submit.prevent="submitTeacherOjProblem">
+          <div class="profile-teacher-oj-grid">
+            <label>
+              题目标题
+              <input v-model="teacherOjForm.title" type="text" maxlength="128" required />
+            </label>
+            <label>
+              题目标识
+              <input v-model="teacherOjForm.slug" type="text" maxlength="128" placeholder="例如 two-sum" required />
+            </label>
+          </div>
+          <div class="profile-teacher-oj-field">
+            OJ分类（可多选）
+            <details class="profile-teacher-oj-dropdown">
+              <summary>{{ teacherOjCategorySummary() }}</summary>
+              <div class="profile-teacher-oj-dropdown-menu">
+                <label v-for="category in teacherOjMetaCategories" :key="category.name">
+                  <input
+                    type="checkbox"
+                    :checked="selectedTeacherOjCategories().includes(category.name)"
+                    @change="toggleTeacherOjCategory(category.name, $event.target.checked)"
+                  />
+                  <span>{{ formatTeacherOjCategoryName(category.name) }}</span>
+                </label>
+              </div>
+            </details>
+          </div>
+          <textarea v-model="teacherOjForm.description" rows="5" placeholder="题目描述" required></textarea>
+          <div class="profile-teacher-oj-grid">
+            <textarea v-model="teacherOjForm.inputDescription" rows="3" placeholder="输入描述"></textarea>
+            <textarea v-model="teacherOjForm.outputDescription" rows="3" placeholder="输出描述"></textarea>
+          </div>
+          <textarea
+            v-model="teacherOjForm.standardCode"
+            class="profile-teacher-oj-code"
+            rows="8"
+            placeholder="标准代码（C++）。有标准代码时可自动生成未填写的测试点输出"
+          ></textarea>
+          <div class="profile-teacher-oj-grid is-three">
+            <label>
+              状态
+              <select v-model="teacherOjForm.status">
+                <option value="DRAFT">草稿</option>
+                <option value="PUBLISHED">发布</option>
+                <option value="ARCHIVED">归档</option>
+              </select>
+            </label>
+            <label>
+              时间限制(ms)
+              <input v-model.number="teacherOjForm.timeLimitMs" type="number" min="100" max="30000" />
+            </label>
+            <label>
+              内存限制(KB)
+              <input v-model.number="teacherOjForm.memoryLimitKb" type="number" min="1024" max="1048576" />
+            </label>
+          </div>
+          <p class="profile-teacher-oj-derived">难度：{{ formatDifficulty(teacherOjForm.difficulty) }}</p>
+
+          <div class="profile-teacher-oj-cases">
+            <article v-for="(testCase, index) in teacherOjForm.testCases" :key="index" class="profile-teacher-oj-case">
+              <header>
+                <strong>测试点 {{ index + 1 }}</strong>
+                <button type="button" aria-label="删除测试点" @click="requestRemoveTeacherOjCase(index)">×</button>
+              </header>
+              <textarea v-model="testCase.inputData" rows="3" placeholder="测试点输入" required></textarea>
+              <textarea v-model="testCase.expectedOutput" rows="3" placeholder="测试点输出（可留空，由标准代码生成）"></textarea>
+              <label>
+                权重
+                <input v-model.number="testCase.weight" type="number" min="1" />
+              </label>
+              <div v-if="teacherOjCheckResult?.cases?.[index]" class="profile-teacher-oj-result">
+                <p :class="{ danger: !teacherOjCheckResult.cases[index].matched }">
+                  {{ teacherOjCheckResult.cases[index].message }}
+                </p>
+                <pre>{{ formatTeacherOjActualOutput(teacherOjCheckResult.cases[index]) }}</pre>
+              </div>
+            </article>
+            <button type="button" class="profile-teacher-oj-add-case" @click="addTeacherOjCase">+</button>
+          </div>
+
+          <div v-if="teacherOjCheckResult" :class="['profile-teacher-oj-check', { danger: !teacherOjCheckResult.passed }]">
+            <strong>{{ teacherOjCheckResult.passed ? '校验通过' : '校验存在提示' }}</strong>
+            <span>{{ teacherOjCheckResult.message }}</span>
+          </div>
+          <p v-if="teacherOjError" class="online-course-publish-message is-error">{{ teacherOjError }}</p>
+          <div class="online-course-publish-actions">
+            <button type="button" :disabled="!canCheckTeacherOjCases || teacherOjSaving" @click="checkTeacherOjCases">
+              校验测试点
+            </button>
+            <button type="submit" :disabled="teacherOjSaving">
+              {{ teacherOjSaving ? '保存中...' : '保存OJ题目' }}
+            </button>
+            <button type="button" :disabled="teacherOjSaving" @click="requestCloseTeacherOjDialog">取消</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <div
+      v-if="teacherOjCloseConfirm"
+      class="profile-modal-backdrop profile-confirm-layer"
+      role="presentation"
+      @click.self="teacherOjCloseConfirm = false"
+    >
+      <section class="profile-edit-dialog profile-confirm-dialog" role="dialog" aria-modal="true" aria-label="确认关闭OJ题目编辑">
+        <h2>放弃修改</h2>
+        <p>当前OJ题目还有未保存的修改，确认关闭吗？</p>
+        <div class="profile-edit-actions">
+          <button type="button" @click="closeTeacherOjDialog(true)">确认关闭</button>
+          <button type="button" @click="teacherOjCloseConfirm = false">继续编辑</button>
+        </div>
+      </section>
+    </div>
+
+    <div
+      v-if="teacherOjCaseDeleteConfirm.open"
+      class="profile-modal-backdrop profile-confirm-layer"
+      role="presentation"
+      @click.self="closeTeacherOjCaseDeleteConfirm"
+    >
+      <section class="profile-edit-dialog profile-confirm-dialog" role="dialog" aria-modal="true" aria-label="确认删除测试点">
+        <h2>删除测试点</h2>
+        <p>确认删除测试点 {{ teacherOjCaseDeleteConfirm.index + 1 }} 吗？</p>
+        <div class="profile-edit-actions">
+          <button type="button" @click="confirmRemoveTeacherOjCase">确认删除</button>
+          <button type="button" @click="closeTeacherOjCaseDeleteConfirm">取消</button>
+        </div>
       </section>
     </div>
 

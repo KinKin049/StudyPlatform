@@ -2,6 +2,7 @@
 // 顶部导航栏组件，包含品牌标识、主导航菜单和用户操作区域
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { fetchTeacherWorkbench } from '../api/academy'
 import { getStoredAuthUser } from '../api/auth'
 import { fetchProfileUser } from '../api/profile'
 import { resolveResourceUrl } from '../api/request'
@@ -19,17 +20,22 @@ const navigationUser = ref({
   name: 'Kinkin',
   avatarUrl: '',
 })
+const teacherWorkbench = ref(null)
+const teacherMailboxLoading = ref(false)
+const teacherMailboxError = ref('')
 
 // 判断用户是否已登录
 const isLoggedIn = computed(() => Boolean(authUser.value?.id))
 // 判断当前用户是否为管理员
 const isAdmin = computed(() => authUser.value?.email === 'admin@admin.com' && authUser.value?.roleType === 'admin')
+const isTeacher = computed(() => authUser.value?.roleType === 'teacher')
 // 获取用户显示名称，优先级：认证用户名 > 导航用户名称 > 默认名称
 const userDisplayName = computed(() => authUser.value?.username || navigationUser.value.name || 'Kinkin')
 // 获取用户头像完整 URL
 const avatarSrc = computed(() => resolveResourceUrl(navigationUser.value.avatarUrl))
 // 获取用户名称首字母用于头像占位
 const avatarInitial = computed(() => (userDisplayName.value || 'K').trim().slice(0, 1).toUpperCase())
+const teacherUnreadCount = computed(() => Number(teacherWorkbench.value?.unreadComments ?? 0))
 
 // 导航跳转方法，点击后移除按钮焦点
 const navigateTo = (path, event) => {
@@ -63,6 +69,23 @@ const loadNavigationUser = async () => {
   }
 }
 
+const loadTeacherWorkbench = async () => {
+  if (!isTeacher.value) {
+    teacherWorkbench.value = null
+    teacherMailboxError.value = ''
+    return
+  }
+  teacherMailboxLoading.value = true
+  teacherMailboxError.value = ''
+  try {
+    teacherWorkbench.value = await fetchTeacherWorkbench()
+  } catch (error) {
+    teacherMailboxError.value = error.message || '信箱加载失败'
+  } finally {
+    teacherMailboxLoading.value = false
+  }
+}
+
 // 处理个人资料更新事件
 const handleProfileUpdated = (event) => {
   if (event.detail) {
@@ -75,10 +98,12 @@ const handleProfileUpdated = (event) => {
 // 处理认证状态更新事件
 const handleAuthUpdated = (event) => {
   authUser.value = event.detail || getStoredAuthUser()
+  loadTeacherWorkbench()
 }
 
 onMounted(() => {
   loadNavigationUser()
+  loadTeacherWorkbench()
   window.addEventListener('study-platform:profile-updated', handleProfileUpdated)
   window.addEventListener('study-platform:auth-updated', handleAuthUpdated)
 })
@@ -150,6 +175,21 @@ onBeforeUnmount(() => {
             <span>当前用户</span>
             <strong>{{ userDisplayName }}</strong>
           </div>
+          <button
+            v-if="isTeacher"
+            class="user-menu-link teacher-mailbox-entry"
+            type="button"
+            role="menuitem"
+            @click="navigateTo('/teacher-mailbox', $event)"
+          >
+            <span>教师信箱</span>
+            <i v-if="teacherMailboxLoading">加载中</i>
+            <i v-else-if="teacherUnreadCount > 0">{{ teacherUnreadCount }} 未读</i>
+            <i v-else>已读</i>
+          </button>
+          <p v-if="isTeacher && teacherMailboxError" class="teacher-mailbox-entry-error">
+            {{ teacherMailboxError }}
+          </p>
           <button class="user-menu-link" type="button" role="menuitem" @click="navigateTo('/profile', $event)">
             个人主页
           </button>

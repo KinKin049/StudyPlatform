@@ -1,6 +1,7 @@
 <script setup>
 // 平台首页：未登录时作为项目展示门面，登录后作为学习仪表盘入口
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { fetchTeacherWorkbench } from '../api/academy'
 import { getStoredAuthUser } from '../api/auth'
 import { fetchProfileOverview } from '../api/profile'
 import academyFutureImage from '../assets/home/academy.jpg'
@@ -10,6 +11,7 @@ import practiceFutureImage from '../assets/home/practice.jpg'
 
 const authUser = ref(getStoredAuthUser())
 const overview = ref(null)
+const teacherWorkbench = ref(null)
 const overviewLoading = ref(false)
 const overviewError = ref('')
 const modulesRef = ref(null)
@@ -100,6 +102,7 @@ const modules = [
 ]
 
 const isLoggedIn = computed(() => Boolean(authUser.value?.id))
+const isTeacher = computed(() => authUser.value?.roleType === 'teacher')
 const displayName = computed(() => authUser.value?.username || '同学')
 const dashboard = computed(() => overview.value || emptyOverview)
 const stats = computed(() => dashboard.value.stats?.length ? dashboard.value.stats.slice(0, 3) : emptyOverview.stats)
@@ -124,8 +127,25 @@ const practiceRingStyle = computed(() => ({
   '--home-practice-progress': `${overallProgress.value}%`,
 }))
 const donutRenderKey = ref(0)
-const practiceSolvedTotal = computed(() =>
-  difficultyStats.value.reduce((sum, item) => sum + Number(item.solved || 0), 0),
+const teacherWorkbenchMetrics = computed(() => {
+  const metrics = teacherWorkbench.value?.metrics?.length
+    ? teacherWorkbench.value.metrics
+    : [
+        { label: '未批改作业数', value: 0, color: '#5fbf9f' },
+        { label: '未读评论数', value: 0, color: '#f2c04c' },
+        { label: '未批改考试数', value: 0, color: '#e87575' },
+      ]
+
+  return metrics.map((item) => ({
+    label: item.label,
+    solved: Number(item.value ?? item.solved ?? 0),
+    total: Number(item.value ?? item.solved ?? 0),
+    color: item.color || '#60a5fa',
+  }))
+})
+const firstDashboardStats = computed(() => (isTeacher.value ? teacherWorkbenchMetrics.value : difficultyStats.value))
+const firstDashboardTotal = computed(() =>
+  firstDashboardStats.value.reduce((sum, item) => sum + Number(item.solved || 0), 0),
 )
 
 const buildDonutSegments = (items) => {
@@ -171,7 +191,15 @@ const buildDonutSegments = (items) => {
   })
 }
 
-const practiceDonutSegments = computed(() => buildDonutSegments(difficultyStats.value))
+const practiceDonutSegments = computed(() => buildDonutSegments(firstDashboardStats.value))
+const firstDashboardEmptyText = computed(() =>
+  isTeacher.value ? '工作已经全部完成啦，休息一下吧~' : '暂无数据',
+)
+const firstDashboardAriaLabel = computed(() => (
+  isTeacher.value
+    ? `教师工作台待办总计 ${firstDashboardTotal.value} 项`
+    : `练习分布总计 ${firstDashboardTotal.value} 个`
+))
 const learningOverviewStats = computed(() => {
   const overviewStats = dashboard.value.learningOverview || dashboard.value.academyOverview || {}
   return [
@@ -280,6 +308,7 @@ const updateModuleScrollState = () => {
 const loadOverview = async () => {
   if (!isLoggedIn.value) {
     overview.value = null
+    teacherWorkbench.value = null
     overviewError.value = ''
     return
   }
@@ -287,9 +316,15 @@ const loadOverview = async () => {
   overviewLoading.value = true
   overviewError.value = ''
   try {
-    overview.value = await fetchProfileOverview()
+    const [profileOverview, workbench] = await Promise.all([
+      fetchProfileOverview(),
+      isTeacher.value ? fetchTeacherWorkbench() : Promise.resolve(null),
+    ])
+    overview.value = profileOverview
+    teacherWorkbench.value = workbench
   } catch (error) {
     overview.value = null
+    teacherWorkbench.value = null
     overviewError.value = '暂时没有读取到学习画像，完成练习后这里会自动刷新。'
     console.warn('failed to load home dashboard:', error)
   } finally {
@@ -371,17 +406,17 @@ onBeforeUnmount(() => {
               class="home-dashboard-carousel-track"
               :style="{ transform: `translate3d(${-activeDashboardSlide * 100}%, 0, 0)` }"
             >
-              <section class="home-dashboard-slide" aria-label="练习分布">
+              <section class="home-dashboard-slide" :aria-label="isTeacher ? '教师工作台' : '练习分布'">
                 <div class="home-dashboard-card is-practice-only">
                   <div class="home-dashboard-card-head">
-                    <span>总计 {{ practiceSolvedTotal }} 个</span>
+                    <span>总计 {{ firstDashboardTotal }} {{ isTeacher ? '项' : '个' }}</span>
                   </div>
                   <div class="home-donut-card-body">
                     <div class="home-dashboard-legend">
-                      <div v-for="item in difficultyStats" :key="item.label">
+                      <div v-for="item in firstDashboardStats" :key="item.label">
                         <i :style="{ background: item.color }"></i>
                         <span>{{ item.label }}</span>
-                        <small>{{ item.solved }} / {{ item.total }}</small>
+                        <small>{{ isTeacher ? `${item.solved} 项` : `${item.solved} / ${item.total}` }}</small>
                       </div>
                     </div>
                     <div class="home-donut-wrap" :key="`practice-${donutRenderKey}`">
@@ -389,7 +424,7 @@ onBeforeUnmount(() => {
                         v-if="practiceDonutSegments.length"
                         class="home-donut-ring"
                         role="img"
-                        :aria-label="`练习分布总计 ${practiceSolvedTotal} 个`"
+                        :aria-label="firstDashboardAriaLabel"
                       >
                         <span
                           v-for="segment in practiceDonutSegments"
@@ -399,7 +434,12 @@ onBeforeUnmount(() => {
                           aria-hidden="true"
                         ></span>
                       </div>
-                      <span v-else class="home-donut-empty">暂无数据</span>
+                      <span
+                        v-else
+                        :class="['home-donut-empty', { 'is-complete': isTeacher }]"
+                      >
+                        {{ firstDashboardEmptyText }}
+                      </span>
                     </div>
                   </div>
                 </div>

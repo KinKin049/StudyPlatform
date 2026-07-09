@@ -12,7 +12,7 @@ import {
   fetchMyAcademyCourses,
   unenrollAcademyCourse,
 } from '../../api/academy'
-import { fetchProfileOverview } from '../../api/profile'
+import { fetchProfileOverview, fetchProfileUser } from '../../api/profile'
 import { resolveResourceUrl } from '../../api/request'
 
 /**
@@ -29,15 +29,6 @@ const props = defineProps({
  * 路由实例
  */
 const router = useRouter()
-
-/**
- * 用户信息
- */
-const userInfo = {
-  accountId: 'STU-2026-0001',
-  role: '学生',
-  initial: 'K',
-}
 
 /**
  * 状态筛选选项
@@ -70,6 +61,8 @@ const examsError = ref('')
 const courseSearchKeyword = ref('')
 const sidebarFeedback = ref('')
 const profileOverview = ref(null)
+const profileUser = ref(null)
+const profileUserError = ref('')
 const studyTimeLoading = ref(false)
 const studyTimeError = ref('')
 const droppingCourseKey = ref('')
@@ -102,6 +95,15 @@ watch(
  * 获取当前页面标题
  */
 const pageTitle = computed(() => pageTitles[props.variant] || pageTitles.courses)
+const displayedProfileUser = computed(() => profileUser.value || {
+  name: '同学',
+  role: '学生',
+  avatarUrl: '',
+})
+const aggregateUserAvatar = computed(() => resolveResourceUrl(displayedProfileUser.value.avatarUrl))
+const aggregateUserInitial = computed(() =>
+  (displayedProfileUser.value.name || '同').trim().slice(0, 1).toUpperCase(),
+)
 
 /**
  * 获取真实学习时长
@@ -605,6 +607,16 @@ const loadProfileStudyTime = async () => {
   }
 }
 
+const loadProfileUser = async () => {
+  profileUserError.value = ''
+  try {
+    profileUser.value = await fetchProfileUser()
+  } catch (error) {
+    profileUser.value = null
+    profileUserError.value = error instanceof Error ? error.message : '个人信息加载失败'
+  }
+}
+
 /**
  * 打开退课确认对话框
  */
@@ -652,6 +664,7 @@ const confirmDropCourse = async () => {
  * 组件挂载时加载所有数据
  */
 onMounted(() => {
+  loadProfileUser()
   loadProfileStudyTime()
   loadMyCourses()
   loadAssignments()
@@ -705,10 +718,14 @@ onBeforeUnmount(() => {
     <!-- 用户信息栏 -->
     <section class="academy-aggregate-userbar" aria-label="用户信息">
       <div class="academy-aggregate-user">
-        <div class="academy-aggregate-avatar" aria-hidden="true">{{ userInfo.initial }}</div>
+        <div class="academy-aggregate-avatar" aria-hidden="true">
+          <img v-if="aggregateUserAvatar" :src="aggregateUserAvatar" :alt="displayedProfileUser.name" />
+          <span v-else>{{ aggregateUserInitial }}</span>
+        </div>
         <div>
-          <strong>{{ userInfo.accountId }}</strong>
-          <span>{{ userInfo.role }}</span>
+          <strong>{{ displayedProfileUser.name }}</strong>
+          <span>{{ displayedProfileUser.role }}</span>
+          <small v-if="profileUserError">{{ profileUserError }}</small>
         </div>
       </div>
 

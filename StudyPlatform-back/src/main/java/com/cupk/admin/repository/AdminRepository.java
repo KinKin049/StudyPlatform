@@ -704,29 +704,23 @@ public class AdminRepository {
 
     public List<AdminOjProblemResponse> findOjProblems() {
         return jdbcTemplate.query(
-                """
-                SELECT id, title, slug, category, description, input_description, output_description,
-                       standard_code, difficulty, time_limit_ms, memory_limit_kb,
-                       CAST(tags AS CHAR) AS tags, status
-                FROM oj_problems
-                ORDER BY id DESC
-                LIMIT 500
-                """,
+                ojProblemSelectSql("") + " ORDER BY p.id DESC LIMIT 500",
                 (rs, rowNum) -> mapOjProblem(rs, List.of())
+        );
+    }
+
+    public List<AdminOjProblemResponse> findOjProblemsByOwner(long ownerId) {
+        return jdbcTemplate.query(
+                ojProblemSelectSql("WHERE p.created_by = ?") + " ORDER BY p.id DESC LIMIT 500",
+                (rs, rowNum) -> mapOjProblem(rs, List.of()),
+                ownerId
         );
     }
 
     public Optional<AdminOjProblemResponse> findOjProblem(long problemId) {
         try {
             return Optional.ofNullable(jdbcTemplate.queryForObject(
-                    """
-                    SELECT id, title, slug, category, description, input_description, output_description,
-                           standard_code, difficulty, time_limit_ms, memory_limit_kb,
-                           CAST(tags AS CHAR) AS tags, status
-                    FROM oj_problems
-                    WHERE id = ?
-                    LIMIT 1
-                    """,
+                    ojProblemSelectSql("WHERE p.id = ?") + " LIMIT 1",
                     (rs, rowNum) -> mapOjProblem(rs, findOjTestCases(problemId)),
                     problemId
             ));
@@ -735,14 +729,14 @@ public class AdminRepository {
         }
     }
 
-    public long upsertOjProblem(Long problemId, AdminOjProblemRequest request) {
+    public long upsertOjProblem(Long problemId, AdminOjProblemRequest request, long createdBy) {
         Long savedId = problemId;
         if (savedId == null) {
             String sql = """
                     INSERT INTO oj_problems
                       (title, slug, category, description, input_description, output_description, standard_code,
                        samples, difficulty, time_limit_ms, memory_limit_kb, tags, status, created_by)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, CAST(? AS JSON), ?, NULL)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, CAST(? AS JSON), ?, ?)
                     """;
             KeyHolder keyHolder = new GeneratedKeyHolder();
             jdbcTemplate.update(connection -> {
@@ -759,6 +753,7 @@ public class AdminRepository {
                 ps.setInt(10, request.memoryLimitKb());
                 ps.setString(11, tagsToJson(request.tags()));
                 ps.setString(12, request.status());
+                ps.setLong(13, createdBy);
                 return ps;
             }, keyHolder);
             Number key = keyHolder.getKey();
@@ -1074,6 +1069,9 @@ public class AdminRepository {
                 rs.getInt("memory_limit_kb"),
                 tagsFromJson(rs.getString("tags")),
                 rs.getString("status"),
+                getNullableLong(rs, "created_by"),
+                getOptionalString(rs, "owner_name"),
+                getOptionalString(rs, "owner_role_type"),
                 testCases
         );
     }
@@ -1131,6 +1129,23 @@ public class AdminRepository {
                 %s
                 ORDER BY c.id DESC
                 """.formatted(resourceType, detailColumns, table, detailJoin, where);
+    }
+
+    private String ojProblemSelectSql(String where) {
+        return """
+                SELECT p.id, p.title, p.slug, p.category, p.description, p.input_description, p.output_description,
+                       p.standard_code, p.difficulty, p.time_limit_ms, p.memory_limit_kb,
+                       CAST(p.tags AS CHAR) AS tags, p.status, p.created_by,
+                       COALESCE(NULLIF(owner.nickname, ''), NULLIF(owner.username, ''), '') AS owner_name,
+                       COALESCE(NULLIF(owner.role_type, ''),
+                         CASE WHEN owner.role = 'TEACHER' THEN 'teacher'
+                              WHEN owner.role = 'ADMIN' THEN 'admin'
+                              ELSE 'student' END
+                       ) AS owner_role_type
+                FROM oj_problems p
+                LEFT JOIN users owner ON owner.id = p.created_by
+                %s
+                """.formatted(where == null ? "" : where);
     }
 
     private String courseTable(String resourceType) {
