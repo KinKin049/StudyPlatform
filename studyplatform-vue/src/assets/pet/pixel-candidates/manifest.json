@@ -1,0 +1,290 @@
+[
+  {
+    "code": "A01",
+    "category": "cute-animal",
+    "name": "peach-bunny",
+    "file": "a01-peach-bunny.png"
+  },
+  {
+    "code": "A02",
+    "category": "cute-animal",
+    "name": "nebula-kitten",
+    "file": "a02-nebula-kitten.png"
+  },
+  {
+    "code": "A03",
+    "category": "cute-animal",
+    "name": "mint-panda",
+    "file": "a03-mint-panda.png"
+  },
+  {
+    "code": "A04",
+    "category": "cute-animal",
+    "name": "pudding-puppy",
+    "file": "a04-pudding-puppy.png"
+  },
+  {
+    "code": "A05",
+    "category": "cute-animal",
+    "name": "cloud-sheep",
+    "file": "a05-cloud-sheep.png"
+  },
+  {
+    "code": "A06",
+    "category": "cute-animal",
+    "name": "honey-bear",
+    "file": "a06-honey-bear.png"
+  },
+  {
+    "code": "A07",
+    "category": "cute-animal",
+    "name": "star-penguin",
+    "file": "a07-star-penguin.png"
+  },
+  {
+    "code": "A08",
+    "category": "cute-animal",
+    "name": "strawberry-fox",
+    "file": "a08-strawberry-fox.png"
+  },
+  {
+    "code": "A09",
+    "category": "cute-animal",
+    "name": "milk-cow",
+    "file": "a09-milk-cow.png"
+  },
+  {
+    "code": "A10",
+    "category": "cute-animal",
+    "name": "tiny-owl",
+    "file": "a10-tiny-owl.png"
+  },
+  {
+    "code": "A11",
+    "category": "cute-animal",
+    "name": "blue-whale",
+    "file": "a11-blue-whale.png"
+  },
+  {
+    "code": "A12",
+    "category": "cute-animal",
+    "name": "cocoa-squirrel",
+    "file": "a12-cocoa-squirrel.png"
+  },
+  {
+    "code": "A13",
+    "category": "cute-animal",
+    "name": "lemon-duck",
+    "file": "a13-lemon-duck.png"
+  },
+  {
+    "code": "A14",
+    "category": "cute-animal",
+    "name": "snow-ferret",
+    "file": "a14-snow-ferret.png"
+  },
+  {
+    "code": "A15",
+    "category": "cute-animal",
+    "name": "bubble-axolotl",
+    "file": "a15-bubble-axolotl.png"
+  },
+  {
+    "code": "A16",
+    "category": "cute-animal",
+    "name": "matcha-frog",
+    "file": "a16-matcha-frog.png"
+  },
+  {
+    "code": "S01",
+    "category": "anime-sprite",
+    "name": "leaf-pixie",
+    "file": "s01-leaf-pixie.png"
+  },
+  {
+    "code": "S02",
+    "category": "anime-sprite",
+    "name": "moon-fairy",
+    "file": "s02-moon-fairy.png"
+  },
+  {
+    "code": "S03",
+    "category": "anime-sprite",
+    "name": "star-mage",
+    "file": "s03-star-mage.png"
+  },
+  {
+    "code": "S04",
+    "category": "anime-sprite",
+    "name": "jelly-sprite",
+    "file": "s04-jelly-sprite.png"
+  },
+  {
+    "code": "S05",
+    "category": "anime-sprite",
+    "name": "flower-elf",
+    "file": "s05-flower-elf.png"
+  },
+  {
+    "code": "S06",
+    "category": "anime-sprite",
+    "name": "snow-spirit",
+    "file": "s06-snow-spirit.png"
+  },
+  {
+    "code": "S07",
+    "category": "anime-sprite",
+    "name": "flame-buddy",
+    "file": "s07-flame-buddy.png"
+  },
+  {
+    "code": "S08",
+    "category": "anime-sprite",
+    "name": "water-wisp",
+    "file": "s08-water-wisp.png"
+  },
+  {
+    "code": "S09",
+    "category": "anime-sprite",
+    "name": "book-charm",
+    "file": "s09-book-charm.png"
+  },
+  {
+    "code": "S10",
+    "category": "anime-sprite",
+    "name": "dream-ghost",
+    "file": "s10-dream-ghost.png"
+  },
+  {
+    "code": "S11",
+    "category": "anime-sprite",
+    "name": "mushroom-kid",
+    "file": "s11-mushroom-kid.png"
+  },
+  {
+    "code": "S12",
+    "category": "anime-sprite",
+    "name": "sparkle-slime",
+    "file": "s12-sparkle-slime.png"
+  },
+  {
+    "code": "S13",
+    "category": "anime-sprite",
+    "name": "cloud-nymph",
+    "file": "s13-cloud-nymph.png"
+  },
+  {
+    "code": "S14",
+    "category": "anime-sprite",
+    "name": "crystal-mini",
+    "file": "s14-crystal-mini.png"
+  },
+  {
+    "code": "S15",
+    "category": "anime-sprite",
+    "name": "pumpkin-fae",
+    "file": "s15-pumpkin-fae.png"
+  },
+  {
+    "code": "S16",
+    "category": "anime-sprite",
+    "name": "cosmic-baby",
+    "file": "s16-cosmic-baby.png"
+  },
+  {
+    "code": "R01",
+    "category": "cute-robot",
+    "name": "capsule-bot",
+    "file": "r01-capsule-bot.png"
+  },
+  {
+    "code": "R02",
+    "category": "cute-robot",
+    "name": "cat-ear-bot",
+    "file": "r02-cat-ear-bot.png"
+  },
+  {
+    "code": "R03",
+    "category": "cute-robot",
+    "name": "study-cube",
+    "file": "r03-study-cube.png"
+  },
+  {
+    "code": "R04",
+    "category": "cute-robot",
+    "name": "round-droid",
+    "file": "r04-round-droid.png"
+  },
+  {
+    "code": "R05",
+    "category": "cute-robot",
+    "name": "heart-bot",
+    "file": "r05-heart-bot.png"
+  },
+  {
+    "code": "R06",
+    "category": "cute-robot",
+    "name": "book-bot",
+    "file": "r06-book-bot.png"
+  },
+  {
+    "code": "R07",
+    "category": "cute-robot",
+    "name": "star-antenna",
+    "file": "r07-star-antenna.png"
+  },
+  {
+    "code": "R08",
+    "category": "cute-robot",
+    "name": "cloud-mech",
+    "file": "r08-cloud-mech.png"
+  },
+  {
+    "code": "R09",
+    "category": "cute-robot",
+    "name": "tiny-rover",
+    "file": "r09-tiny-rover.png"
+  },
+  {
+    "code": "R10",
+    "category": "cute-robot",
+    "name": "sleepy-screen",
+    "file": "r10-sleepy-screen.png"
+  },
+  {
+    "code": "R11",
+    "category": "cute-robot",
+    "name": "music-bot",
+    "file": "r11-music-bot.png"
+  },
+  {
+    "code": "R12",
+    "category": "cute-robot",
+    "name": "pencil-bot",
+    "file": "r12-pencil-bot.png"
+  },
+  {
+    "code": "R13",
+    "category": "cute-robot",
+    "name": "mochi-drone",
+    "file": "r13-mochi-drone.png"
+  },
+  {
+    "code": "R14",
+    "category": "cute-robot",
+    "name": "bubble-terminal",
+    "file": "r14-bubble-terminal.png"
+  },
+  {
+    "code": "R15",
+    "category": "cute-robot",
+    "name": "sprout-bot",
+    "file": "r15-sprout-bot.png"
+  },
+  {
+    "code": "R16",
+    "category": "cute-robot",
+    "name": "planet-bot",
+    "file": "r16-planet-bot.png"
+  }
+]

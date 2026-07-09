@@ -1,6 +1,6 @@
 <script setup>
 // AI 学习宠物组件，提供待办管理、番茄钟专注和 AI 对话功能
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Hide, View } from '@element-plus/icons-vue'
 
@@ -50,6 +50,41 @@ const positionStorageKey = 'study-platform-ai-pet-position'
 const visibilityStorageKey = 'study-platform-ai-pet-hidden'
 const petSize = 116
 const viewportPadding = 14
+const pageContextTextLimit = 5200
+const pageContextSelectionLimit = 800
+const pageContextFormLimit = 14
+const pageContextRootSelectors = [
+  'main',
+  '[data-ai-page-content]',
+  '.admin-page',
+  '.auth-page',
+  '.exchange-page',
+  '.lab-page',
+  '.profile-page',
+  '.visualization-page',
+  '.visual-home',
+  '.game-platform',
+  '.academy-main',
+  '.academy-page',
+  '#app',
+]
+const pageContextIgnoreSelector = [
+  '.ai-pet-widget',
+  '.site-header',
+  '.academy-subnav',
+  '.dropdown-menu',
+  '.academy-dropdown-menu',
+  '.el-overlay',
+  '.el-popper',
+  'script',
+  'style',
+  'noscript',
+  'svg',
+  'canvas',
+  '[aria-hidden="true"]',
+  '[hidden]',
+].join(',')
+const sensitiveFieldPattern = /password|pwd|token|secret|key|验证码|密码|密钥|身份证|手机|电话|邮箱|email|账号|用户名/i
 
 // 导航目标配置，用于语义理解跳转
 const navigationTargets = [
@@ -112,6 +147,7 @@ let celebrationTimer = null
 let suppressClickTimer = null
 let petBubbleTimer = null
 let actionFeedbackTimer = null
+let contextRefreshTimer = null
 let dragState = null
 
 // 根据路由元信息判断是否隐藏宠物
@@ -205,28 +241,210 @@ const focusPrimaryButtonText = computed(() => {
 })
 
 // 当前页面上下文信息，用于 AI 对话
-const pageContext = computed(() => {
-  const headings = Array.from(document.querySelectorAll('h1, h2, h3'))
-    .slice(0, 5)
-    .map((element) => element.textContent?.trim())
-    .filter(Boolean)
-  const visibleText = document.body?.innerText
-    ?.replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 1800) || ''
-  return {
-    path: route.path,
-    title: document.title || 'StudyPlatform',
-    headings,
-    textSnippet: visibleText,
-  }
-})
+const pageContext = ref(createEmptyPageContext())
 
 // 页面上下文摘要
 const contextSummary = computed(() => {
   const headingText = pageContext.value.headings.length ? pageContext.value.headings.join(' / ') : '当前页面暂无标题摘要'
-  return `${pageContext.value.path} · ${headingText}`
+  const textCount = pageContext.value.contentLength || 0
+  return `${pageContext.value.path} · ${headingText} · 已读取约 ${textCount} 字`
 })
+
+// 创建空页面上下文，避免组件挂载前访问 DOM
+function createEmptyPageContext() {
+  return {
+    path: route.fullPath || route.path,
+    routeName: route.name ? String(route.name) : '',
+    title: 'StudyPlatform',
+    headings: [],
+    selectedText: '',
+    formSnapshot: [],
+    contentLength: 0,
+    textSnippet: '',
+  }
+}
+
+// 主动刷新页面上下文，确保 AI 对话拿到最新页面内容
+async function refreshPageContext() {
+  await nextTick()
+  pageContext.value = capturePageContext()
+  return pageContext.value
+}
+
+// 延迟刷新页面上下文，用于等待路由页面完成渲染
+function schedulePageContextRefresh(delay = 160) {
+  if (typeof window === 'undefined') {
+    return
+  }
+  if (contextRefreshTimer) {
+    window.clearTimeout(contextRefreshTimer)
+  }
+  contextRefreshTimer = window.setTimeout(() => {
+    contextRefreshTimer = null
+    refreshPageContext()
+  }, delay)
+}
+
+// 采集当前页面可见内容、标题、选中文本和安全的表单摘要
+function capturePageContext() {
+  if (typeof document === 'undefined') {
+    return createEmptyPageContext()
+  }
+  const root = findPageContextRoot()
+  const visibleText = collectVisibleText(root, pageContextTextLimit)
+  const selectedText = normalizeContextText(window.getSelection?.().toString() || '', pageContextSelectionLimit)
+  const formSnapshot = collectFormSnapshot(root)
+  const textSections = [
+    visibleText ? `页面可见内容：${visibleText}` : '',
+    selectedText ? `用户当前选中文本：${selectedText}` : '',
+    formSnapshot.length ? `页面表单/输入状态：${formSnapshot.join('；')}` : '',
+  ].filter(Boolean)
+
+  return {
+    path: route.fullPath || route.path,
+    routeName: route.name ? String(route.name) : '',
+    title: document.title || 'StudyPlatform',
+    headings: collectHeadings(root),
+    selectedText,
+    formSnapshot,
+    contentLength: visibleText.length,
+    textSnippet: textSections.join('\n'),
+  }
+}
+
+// 寻找页面主体容器，优先使用 main，避免读入宠物自身内容
+function findPageContextRoot() {
+  const candidates = pageContextRootSelectors
+    .flatMap((selector) => Array.from(document.querySelectorAll(selector)))
+    .filter((element) => element instanceof HTMLElement)
+    .filter((element) => !element.closest('.ai-pet-widget'))
+    .filter(isVisibleElement)
+
+  return candidates[0] || document.body
+}
+
+// 采集页面标题层级
+function collectHeadings(root) {
+  return Array.from(root.querySelectorAll('h1, h2, h3, [data-ai-heading]'))
+    .filter((element) => !shouldIgnoreContextElement(element))
+    .filter(isVisibleElement)
+    .map((element) => normalizeContextText(element.textContent || '', 120))
+    .filter(Boolean)
+    .filter(uniqueText)
+    .slice(0, 8)
+}
+
+// 采集可见文本节点，排除导航、宠物、脚本和不可见元素
+function collectVisibleText(root, maxLength) {
+  const fragments = []
+  const walker = document.createTreeWalker(root, window.NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      const parent = node.parentElement
+      if (!parent || shouldIgnoreContextElement(parent) || !isVisibleElement(parent)) {
+        return window.NodeFilter.FILTER_REJECT
+      }
+      const text = normalizeContextText(node.nodeValue || '', 220)
+      if (!text || text.length < 2) {
+        return window.NodeFilter.FILTER_REJECT
+      }
+      return window.NodeFilter.FILTER_ACCEPT
+    },
+  })
+
+  while (walker.nextNode()) {
+    const text = normalizeContextText(walker.currentNode.nodeValue || '', 220)
+    if (text && !fragments.includes(text)) {
+      fragments.push(text)
+    }
+    if (fragments.join(' ').length >= maxLength) {
+      break
+    }
+  }
+
+  return normalizeContextText(fragments.join(' '), maxLength)
+}
+
+// 采集非敏感表单状态，帮助 AI 理解筛选、搜索和当前输入
+function collectFormSnapshot(root) {
+  return Array.from(root.querySelectorAll('input, textarea, select'))
+    .filter((element) => !shouldIgnoreContextElement(element))
+    .filter(isVisibleElement)
+    .map(describeFormField)
+    .filter(Boolean)
+    .filter(uniqueText)
+    .slice(0, pageContextFormLimit)
+}
+
+// 描述单个表单字段，敏感字段只提示已填写，不上传明文
+function describeFormField(element) {
+  const label = getFieldLabel(element)
+  const type = (element.getAttribute('type') || element.tagName || '').toLowerCase()
+  if (type === 'hidden' || type === 'file' || type === 'password') {
+    return ''
+  }
+  const isSensitive = sensitiveFieldPattern.test(`${label} ${element.name || ''} ${element.id || ''} ${element.placeholder || ''}`)
+  if (element instanceof HTMLSelectElement) {
+    const selectedText = Array.from(element.selectedOptions).map((option) => option.textContent?.trim()).filter(Boolean).join('/')
+    return `${label || '选择框'}：${normalizeContextText(selectedText || '未选择', 80)}`
+  }
+  if (element instanceof HTMLInputElement && ['checkbox', 'radio'].includes(type)) {
+    return `${label || element.value || type}：${element.checked ? '已选中' : '未选中'}`
+  }
+  const rawValue = element.value || ''
+  if (isSensitive && rawValue) {
+    return `${label || '输入框'}：已填写`
+  }
+  const value = normalizeContextText(rawValue, 120)
+  return value ? `${label || '输入框'}：${value}` : `${label || element.placeholder || '输入框'}：未填写`
+}
+
+// 获取表单字段可读标签
+function getFieldLabel(element) {
+  const explicitLabel = element.id && window.CSS?.escape
+    ? document.querySelector(`label[for="${window.CSS.escape(element.id)}"]`)
+    : null
+  const implicitLabel = element.closest('label')
+  return normalizeContextText(
+    element.getAttribute('aria-label') ||
+      explicitLabel?.textContent ||
+      implicitLabel?.textContent ||
+      element.placeholder ||
+      element.name ||
+      '',
+    80,
+  )
+}
+
+// 判断元素是否应从页面上下文中忽略
+function shouldIgnoreContextElement(element) {
+  return Boolean(element.closest(pageContextIgnoreSelector))
+}
+
+// 判断元素是否可见
+function isVisibleElement(element) {
+  if (!(element instanceof HTMLElement)) {
+    return false
+  }
+  const style = window.getComputedStyle(element)
+  if (style.display === 'none' || style.visibility === 'hidden') {
+    return false
+  }
+  return element.getClientRects().length > 0 || element === document.body
+}
+
+// 文本归一化和截断
+function normalizeContextText(value, maxLength = 500) {
+  const text = String(value || '').replace(/\s+/g, ' ').trim()
+  if (text.length <= maxLength) {
+    return text
+  }
+  return `${text.slice(0, maxLength)}…`
+}
+
+// 数组去重过滤器
+function uniqueText(value, index, array) {
+  return array.indexOf(value) === index
+}
 
 // 设置宠物心情状态，duration 毫秒后自动恢复为 idle
 function setMood(nextMood, duration = 1800) {
@@ -805,9 +1023,10 @@ async function sendMessage() {
   chatLoading.value = true
   setMood('thinking', 8000)
   try {
+    const currentPageContext = await refreshPageContext()
     const response = await chatWithAiPet({
       message: text,
-      pageContext: pageContext.value,
+      pageContext: currentPageContext,
       history: buildChatHistory(),
     })
     pushPetMessage(response.reply || '喵，我刚刚有点走神，没有拿到有效回复。')
@@ -857,6 +1076,15 @@ watch(hidden, (isHidden) => {
   }
 })
 
+// 路由切换后刷新页面上下文，等待新页面完成渲染
+watch(
+  () => route.fullPath,
+  () => {
+    schedulePageContextRefresh()
+  },
+  { flush: 'post' },
+)
+
 onMounted(() => {
   // 加载本地存储数据
   loadTodos()
@@ -871,6 +1099,8 @@ onMounted(() => {
   focusTimer = window.setInterval(tickFocus, 1000)
   // 监听窗口大小变化
   window.addEventListener('resize', handleResize)
+  // 首次挂载后读取当前页面内容
+  schedulePageContextRefresh(80)
 })
 
 onBeforeUnmount(() => {
@@ -898,6 +1128,9 @@ onBeforeUnmount(() => {
   }
   if (actionFeedbackTimer) {
     window.clearTimeout(actionFeedbackTimer)
+  }
+  if (contextRefreshTimer) {
+    window.clearTimeout(contextRefreshTimer)
   }
   // 清理拖动事件监听
   clearDragListeners()

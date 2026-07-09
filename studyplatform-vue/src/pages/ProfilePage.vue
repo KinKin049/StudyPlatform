@@ -1075,7 +1075,7 @@ onBeforeUnmount(() => {
           </div>
         </article>
 
-        <article class="profile-panel profile-activity-panel">
+        <article id="recent-activity" class="profile-panel profile-activity-panel">
           <div class="profile-panel-head">
             <div>
               <p>Recent</p>
