@@ -52,7 +52,7 @@ public class AcademyRepository {
                 SELECT external_course_id, course_name, teacher_name, category, school_name,
                        cover_url, cover_file_path, start_time, participant_count,
                        COALESCE(p.course_overview, course_comment) AS course_comment,
-                       COALESCE(p.course_detail, '') AS course_description,
+                       COALESCE(p.course_detail, c.course_description, '') AS course_description,
                        p.semester_plan, p.course_overview, p.video_file_path,
                        source_url, c.certified, c.certification_label
                 FROM online_open_courses c
@@ -170,7 +170,7 @@ public class AcademyRepository {
                 SELECT c.external_course_id, c.course_name, c.teacher_name, c.category, c.school_name,
                        c.cover_url, c.cover_file_path, c.start_time, c.participant_count,
                        COALESCE(p.course_overview, c.course_comment) AS course_comment,
-                       COALESCE(p.course_detail, '') AS course_description,
+                       COALESCE(p.course_detail, c.course_description, '') AS course_description,
                        p.semester_plan, p.course_overview, p.video_file_path,
                        c.source_url, c.certified, c.certification_label
                 FROM online_open_courses c
@@ -185,6 +185,21 @@ public class AcademyRepository {
         }
     }
 
+    public int updateOnlineOpenCourseSourceContent(String courseId, String courseComment, String courseDescription) {
+        return jdbcTemplate.update(
+                """
+                UPDATE online_open_courses
+                SET course_comment = COALESCE(NULLIF(?, ''), course_comment),
+                    course_description = COALESCE(NULLIF(?, ''), course_description),
+                    source_synced_at = CURRENT_TIMESTAMP
+                WHERE external_course_id = ?
+                """,
+                courseComment,
+                courseDescription,
+                courseId
+        );
+    }
+
     /**
      * 查询指定用户发布的在线公开课列表
      *
@@ -196,7 +211,7 @@ public class AcademyRepository {
                 SELECT c.external_course_id, c.course_name, c.teacher_name, c.category, c.school_name,
                        c.cover_url, c.cover_file_path, c.start_time, c.participant_count,
                        COALESCE(p.course_overview, c.course_comment) AS course_comment,
-                       COALESCE(p.course_detail, '') AS course_description,
+                       COALESCE(p.course_detail, c.course_description, '') AS course_description,
                        p.semester_plan, p.course_overview, p.video_file_path,
                        c.source_url, c.certified, c.certification_label
                 FROM teacher_published_courses p
@@ -912,7 +927,7 @@ public class AcademyRepository {
                     SELECT e.resource_type, c.external_course_id, c.course_name, c.teacher_name,
                            c.category, c.school_name, c.cover_url, c.cover_file_path,
                            c.start_time, c.participant_count, c.course_comment,
-                           COALESCE(p.course_detail, '') AS course_description,
+                           COALESCE(p.course_detail, c.course_description, '') AS course_description,
                            p.semester_plan, p.course_overview, p.video_file_path,
                            c.source_url, e.created_at AS enrolled_at
                     FROM academy_course_enrollments e
