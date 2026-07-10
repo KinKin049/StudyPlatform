@@ -1116,7 +1116,7 @@ public class AdminRepository {
                   """
                 : "";
         String detailColumns = "online-open-courses".equals(resourceType)
-                ? "COALESCE(p.course_detail, '') AS course_description, p.semester_plan, p.course_overview, p.video_file_path"
+                ? "COALESCE(p.course_detail, c.course_description, '') AS course_description, p.semester_plan, p.course_overview, p.video_file_path"
                 : "c.course_description, NULL AS semester_plan, NULL AS course_overview, NULL AS video_file_path";
         String where = single ? "WHERE c.external_course_id = ?" : "";
         return """
