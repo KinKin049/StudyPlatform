@@ -3,8 +3,6 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Hide, View } from '@element-plus/icons-vue'
-import MarkdownIt from 'markdown-it'
-import DOMPurify from 'dompurify'
 
 import { chatWithAiPet } from '../api/aiPet'
 import { AI_PET_BY_KEY, DEFAULT_PET_KEY, PET_SELECTION_EVENT, PET_STORAGE_KEYS } from '../data/aiPetShop'
@@ -36,32 +34,104 @@ import sleep04 from '../assets/pet/nebula-cat/sleep-04.png'
 const route = useRoute()
 const router = useRouter()
 
-const markdownRenderer = new MarkdownIt({
-  html: false,
-  linkify: true,
-  breaks: true,
-})
+const allowedMessageTags = new Set([
+  'A',
+  'BLOCKQUOTE',
+  'BR',
+  'CODE',
+  'EM',
+  'HR',
+  'LI',
+  'OL',
+  'P',
+  'PRE',
+  'S',
+  'STRONG',
+  'UL',
+])
+const allowedLinkProtocols = new Set(['http:', 'https:', 'mailto:'])
 
-const defaultLinkOpenRenderer = markdownRenderer.renderer.rules.link_open || ((tokens, index, options, env, self) => self.renderToken(tokens, index, options))
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
 
-markdownRenderer.renderer.rules.link_open = (tokens, index, options, env, self) => {
-  const token = tokens[index]
-  const targetIndex = token.attrIndex('target')
-  const relIndex = token.attrIndex('rel')
+function renderInlineMarkdown(text) {
+  return escapeHtml(text)
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/__([^_]+)__/g, '<strong>$1</strong>')
+    .replace(/~~([^~]+)~~/g, '<s>$1</s>')
+    .replace(/\*([^*\n]+)\*/g, '<em>$1</em>')
+    .replace(/_([^_\n]+)_/g, '<em>$1</em>')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+|mailto:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+    .replace(/(^|[\s>])((?:https?:\/\/)[^\s<]+)/g, '$1<a href="$2" target="_blank" rel="noopener noreferrer">$2</a>')
+}
 
-  if (targetIndex < 0) {
-    token.attrPush(['target', '_blank'])
-  } else {
-    token.attrs[targetIndex][1] = '_blank'
-  }
+function renderSimpleMarkdown(text) {
+  const source = String(text || '').replace(/\r\n/g, '\n')
+  const codeBlocks = []
+  const withoutCodeBlocks = source.replace(/```([\s\S]*?)```/g, (_, code) => {
+    const index = codeBlocks.push(`<pre><code>${escapeHtml(code.replace(/^\n|\n$/g, ''))}</code></pre>`) - 1
+    return `\n@@AI_PET_CODE_BLOCK_${index}@@\n`
+  })
 
-  if (relIndex < 0) {
-    token.attrPush(['rel', 'noopener noreferrer'])
-  } else {
-    token.attrs[relIndex][1] = 'noopener noreferrer'
-  }
+  const blocks = withoutCodeBlocks
+    .split(/\n{2,}/)
+    .map((block) => block.trim())
+    .filter(Boolean)
+    .map((block) => {
+      const codeMatch = block.match(/^@@AI_PET_CODE_BLOCK_(\d+)@@$/)
+      if (codeMatch) {
+        return codeBlocks[Number(codeMatch[1])] || ''
+      }
+      return `<p>${renderInlineMarkdown(block).replace(/\n/g, '<br>')}</p>`
+    })
 
-  return defaultLinkOpenRenderer(tokens, index, options, env, self)
+  return blocks.join('')
+}
+
+function sanitizeMessageHtml(html) {
+  if (typeof document === 'undefined') return String(html || '')
+  const template = document.createElement('template')
+  template.innerHTML = String(html || '')
+
+  template.content.querySelectorAll('*').forEach((element) => {
+    if (!allowedMessageTags.has(element.tagName)) {
+      element.replaceWith(...Array.from(element.childNodes))
+      return
+    }
+
+    Array.from(element.attributes).forEach((attribute) => {
+      const name = attribute.name.toLowerCase()
+      if (element.tagName === 'A' && ['href', 'target', 'rel'].includes(name)) {
+        return
+      }
+      element.removeAttribute(attribute.name)
+    })
+
+    if (element.tagName === 'A') {
+      const href = element.getAttribute('href') || ''
+      let safeHref = false
+      try {
+        const parsedUrl = new URL(href, window.location.origin)
+        safeHref = allowedLinkProtocols.has(parsedUrl.protocol)
+      } catch {
+        safeHref = false
+      }
+      if (!safeHref) {
+        element.removeAttribute('href')
+      }
+      element.setAttribute('target', '_blank')
+      element.setAttribute('rel', 'noopener noreferrer')
+    }
+  })
+
+  return template.innerHTML
 }
 
 // 宠物表情帧动画配置，包含空闲、说话、思考、开心、专注、睡眠六种状态
@@ -650,9 +720,7 @@ function pushPetMessage(text) {
 }
 
 function renderMessageMarkdown(text) {
-  return DOMPurify.sanitize(markdownRenderer.render(String(text || '')), {
-    USE_PROFILES: { html: true },
-  })
+  return sanitizeMessageHtml(renderSimpleMarkdown(text))
 }
 
 async function scrollChatMessagesToBottom() {

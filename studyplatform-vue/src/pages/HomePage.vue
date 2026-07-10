@@ -1,7 +1,12 @@
 <script setup>
 // 平台首页：未登录时作为项目展示门面，登录后作为学习仪表盘入口
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { fetchTeacherWorkbench } from '../api/academy'
+import {
+  fetchAcademyAssignments,
+  fetchAcademyExams,
+  fetchMyAcademyCourses,
+  fetchTeacherWorkbench,
+} from '../api/academy'
 import { getStoredAuthUser } from '../api/auth'
 import { fetchProfileOverview } from '../api/profile'
 import academyFutureImage from '../assets/home/academy.jpg'
@@ -12,6 +17,10 @@ import practiceFutureImage from '../assets/home/practice.jpg'
 const authUser = ref(getStoredAuthUser())
 const overview = ref(null)
 const teacherWorkbench = ref(null)
+const recommendedAssignments = ref([])
+const recommendedExams = ref([])
+const recommendedCourses = ref([])
+const recommendationsLoading = ref(false)
 const overviewLoading = ref(false)
 const overviewError = ref('')
 const modulesRef = ref(null)
@@ -21,6 +30,36 @@ const moduleScrollPhase = ref(0)
 const activeDashboardSlide = ref(0)
 const dashboardSlideCount = 4
 let dashboardCarouselTimer = null
+
+const handleRecommendationPointerMove = (event) => {
+  const card = event.currentTarget
+  if (!card) return
+  const rect = card.getBoundingClientRect()
+  const x = event.clientX - rect.left
+  const y = event.clientY - rect.top
+  const centerX = x - rect.width / 2
+  const centerY = y - rect.height / 2
+  const ratioX = centerX / (rect.width / 2)
+  const ratioY = centerY / (rect.height / 2)
+
+  card.style.setProperty('--pointer-x', `${x}px`)
+  card.style.setProperty('--pointer-y', `${y}px`)
+  card.style.setProperty('--tilt-x', `${(-ratioY * 7).toFixed(2)}deg`)
+  card.style.setProperty('--tilt-y', `${(ratioX * 9).toFixed(2)}deg`)
+  card.style.setProperty('--float-x', `${(ratioX * 7).toFixed(2)}px`)
+  card.style.setProperty('--float-y', `${(ratioY * 5).toFixed(2)}px`)
+  card.style.setProperty('--glow-scale', '1')
+}
+
+const handleRecommendationPointerLeave = (event) => {
+  const card = event.currentTarget
+  if (!card) return
+  card.style.setProperty('--tilt-x', '0deg')
+  card.style.setProperty('--tilt-y', '0deg')
+  card.style.setProperty('--float-x', '0px')
+  card.style.setProperty('--float-y', '0px')
+  card.style.setProperty('--glow-scale', '0.72')
+}
 
 const emptyOverview = {
   stats: [
@@ -200,6 +239,466 @@ const firstDashboardAriaLabel = computed(() => (
     ? `教师工作台待办总计 ${firstDashboardTotal.value} 项`
     : `练习分布总计 ${firstDashboardTotal.value} 个`
 ))
+const isFinishedSubmission = (item) =>
+  ['graded', 'pending_review'].includes(item?.submissionStatus)
+
+const isEndedStatus = (item) => {
+  const statusText = String(item?.status || '').toLowerCase()
+  if (statusText.includes('ended') || statusText.includes('closed')) return true
+  return String(item?.status || '').includes('结束')
+}
+
+const getRecommendationCount = (...values) => values
+  .map((value) => Number(value ?? 0))
+  .find((value) => Number.isFinite(value) && value > 0) || 0
+
+const resourceDetailPath = {
+  'online-open-courses': '/academy/open-courses',
+  'general-courses': '/academy/general-courses',
+  'micro-major-courses': '/academy/micro-majors',
+}
+
+const getTimeValue = (value) => {
+  const time = new Date(value || 0).getTime()
+  return Number.isFinite(time) ? time : 0
+}
+
+const getCourseDetailPath = (course) => {
+  if (!course?.id) return '/academy/open-courses'
+  const basePath = resourceDetailPath[course.resourceType] || '/academy/open-courses'
+  return `${basePath}/${encodeURIComponent(course.id)}`
+}
+
+const getCourseQuestionBankCode = (course) =>
+  course?.questionBankCode || course?.setCode || course?.courseCode || course?.code || ''
+
+const buildQuestionBankCoursePath = (course) => {
+  const code = getCourseQuestionBankCode(course)
+  return code ? `/academy/question-bank/courses/${encodeURIComponent(code)}` : '/academy/question-bank/courses'
+}
+
+const buildQuestionBankFilterPath = (basePath, course) => {
+  const code = getCourseQuestionBankCode(course)
+  return code ? `${basePath}?setCode=${encodeURIComponent(code)}` : basePath
+}
+
+const pickTopRecommendations = (candidates) =>
+  candidates
+    .filter(Boolean)
+    .map((item, index) => ({ ...item, score: Number(item.score || 0), order: index }))
+    .sort((left, right) => right.score - left.score || left.order - right.order)
+    .slice(0, 4)
+    .map(({ score, order, displayTitle, ...item }) => ({
+      ...item,
+      title: displayTitle || item.title,
+    }))
+
+const homeRecommendations = computed(() => {
+  if (!isLoggedIn.value) {
+    return pickTopRecommendations([
+      {
+        key: 'login',
+        label: '账号',
+        title: '登录后查看推荐',
+        reason: '根据你的课程、作业、考试和练习状态生成入口。',
+        path: '/login',
+        action: '去登录',
+        tone: 'blue',
+        score: 100,
+      },
+      {
+        key: 'academy',
+        displayTitle: 'C语言程序设计(下)',
+        label: '课程',
+        title: '在线学堂',
+        reason: '先浏览课程资源，找到适合当前阶段的学习内容。',
+        path: '/academy/open-courses/46004_1476538444',
+        action: '进入学堂',
+        tone: 'green',
+        score: 82,
+      },
+      {
+        key: 'open-courses',
+        displayTitle: 'C语言程序设计(下)',
+        label: '公开课',
+        title: '在线公开课',
+        reason: '从开放课程中快速找到可以马上开始的内容。',
+        path: '/academy/open-courses/46004_1476538444',
+        action: '浏览课程',
+        tone: 'green',
+        score: 76,
+      },
+      {
+        key: 'question-bank',
+        displayTitle: 'C语言程序设计题库',
+        label: '练习',
+        title: '课程题库',
+        reason: '先用题库了解平台的练习和反馈能力。',
+        path: '/academy/question-bank/courses/c-language',
+        action: '查看题库',
+        tone: 'amber',
+        score: 68,
+      },
+      {
+        key: 'lab-oj',
+        label: '编程',
+        title: '在线 OJ',
+        reason: '从编程练习开始，巩固算法和代码能力。',
+        path: '/lab/oj',
+        action: '开始练习',
+        tone: 'violet',
+        score: 64,
+      },
+      {
+        key: 'visualization',
+        displayTitle: '单链表逆置动画',
+        label: '可视化',
+        title: '算法可视化',
+        reason: '用动态演示理解数据结构和算法过程。',
+        path: '/visualization/data-structure/single-linked-list-reverse',
+        action: '进入可视化',
+        tone: 'blue',
+        score: 58,
+      },
+      {
+        key: 'games',
+        displayTitle: 'Type Warrior',
+        label: '游戏',
+        title: '游戏学习',
+        reason: '通过闯关和打字练习降低开始学习的门槛。',
+        path: '/games/type-warrior',
+        action: '开始游戏',
+        tone: 'amber',
+        score: 52,
+      },
+    ])
+  }
+
+  if (isTeacher.value) {
+    const unread = getRecommendationCount(
+      teacherWorkbench.value?.unreadComments,
+      teacherWorkbench.value?.mailboxUnreadCount,
+      teacherWorkbench.value?.metrics?.find((item) => String(item.label || '').includes('评论'))?.value,
+    )
+    const assignments = getRecommendationCount(
+      teacherWorkbench.value?.ungradedAssignments,
+      teacherWorkbench.value?.pendingAssignments,
+      teacherWorkbench.value?.metrics?.find((item) => String(item.label || '').includes('作业'))?.value,
+    )
+    const exams = getRecommendationCount(
+      teacherWorkbench.value?.ungradedExams,
+      teacherWorkbench.value?.pendingExams,
+      teacherWorkbench.value?.metrics?.find((item) => String(item.label || '').includes('考试'))?.value,
+    )
+    const candidates = [
+      unread > 0 && {
+        key: 'teacher-mailbox',
+        label: '信箱',
+        title: '教师信箱',
+        reason: `有 ${unread} 条未读课程评论，适合优先回复。`,
+        path: '/teacher-mailbox',
+        action: '查看信箱',
+        tone: 'amber',
+        score: 120 + unread * 8,
+      },
+      assignments > 0 && {
+        key: 'teacher-assignments',
+        label: '作业',
+        title: '课程作业',
+        reason: `有 ${assignments} 份作业待批改。`,
+        path: '/academy/assignments',
+        action: '处理作业',
+        tone: 'green',
+        score: 110 + assignments * 6,
+      },
+      exams > 0 && {
+        key: 'teacher-exams',
+        label: '考试',
+        title: '我的考试',
+        reason: `有 ${exams} 份考试待批改。`,
+        path: '/academy/exams',
+        action: '处理考试',
+        tone: 'blue',
+        score: 106 + exams * 6,
+      },
+      {
+        key: 'teacher-profile',
+        label: '管理',
+        title: '个人主页',
+        reason: '管理课程、个人资料和自己发布的 OJ 题目。',
+        path: '/profile',
+        action: '进入主页',
+        tone: 'violet',
+        score: 78,
+      },
+      {
+        key: 'teacher-oj',
+        label: 'OJ',
+        title: '在线 OJ',
+        reason: '查看题目运行效果，也可以配合个人主页维护题目。',
+        path: '/lab/oj',
+        action: '查看 OJ',
+        tone: 'blue',
+        score: 70,
+      },
+      {
+        key: 'teacher-question-bank',
+        displayTitle: '课程题库列表',
+        label: '题库',
+        title: '课程题库',
+        reason: '检查课程题库、错题和收藏题相关学习资源。',
+        path: '/academy/question-bank/courses',
+        action: '进入题库',
+        tone: 'amber',
+        score: 66,
+      },
+      {
+        key: 'teacher-courses',
+        displayTitle: 'C语言程序设计(下)',
+        label: '课程',
+        title: '在线学堂',
+        reason: '查看课程资源和学生可能访问的学习入口。',
+        path: '/academy/open-courses/46004_1476538444',
+        action: '进入学堂',
+        tone: 'green',
+        score: 62,
+      },
+      {
+        key: 'teacher-visualization',
+        displayTitle: '单链表逆置动画',
+        label: '可视化',
+        title: '算法可视化',
+        reason: '用可视化演示辅助课程讲解和课堂展示。',
+        path: '/visualization/data-structure/single-linked-list-reverse',
+        action: '打开演示',
+        tone: 'violet',
+        score: 54,
+      },
+      {
+        key: 'teacher-textbooks',
+        displayTitle: 'C语言程序设计',
+        label: '教材',
+        title: '精品教材',
+        reason: '补充课程配套教材和教学参考内容。',
+        path: '/academy/textbooks/23',
+        action: '查看教材',
+        tone: 'green',
+        score: 50,
+      },
+    ]
+
+    return pickTopRecommendations(candidates)
+  }
+
+  const pendingAssignments = recommendedAssignments.value.filter((item) =>
+    !isFinishedSubmission(item) && !isEndedStatus(item),
+  )
+  const activeExams = recommendedExams.value.filter((item) =>
+    !isFinishedSubmission(item) && !isEndedStatus(item),
+  )
+  const courseCount = recommendedCourses.value.length
+  const hasPendingAssignments = pendingAssignments.length > 0
+  const hasActiveExams = activeExams.length > 0
+  const hasCourses = courseCount > 0
+  const nextAssignment = [...pendingAssignments]
+    .sort((left, right) => getTimeValue(left.deadline) - getTimeValue(right.deadline))[0]
+  const nextExam = [...activeExams]
+    .sort((left, right) => getTimeValue(left.startsAt || left.deadline) - getTimeValue(right.startsAt || right.deadline))[0]
+  const recentCourse = [...recommendedCourses.value]
+    .sort((left, right) => getTimeValue(right.enrolledAt) - getTimeValue(left.enrolledAt))[0]
+  const focusedCourse = recentCourse || recommendedCourses.value[0]
+  const focusedQuestionBankPath = buildQuestionBankCoursePath(focusedCourse)
+  const candidates = [
+    hasPendingAssignments && {
+      key: 'student-assignments',
+      displayTitle: nextAssignment?.title || '课程作业',
+      label: '待办',
+      title: '课程作业',
+      reason: `还有 ${pendingAssignments.length} 个作业可以继续完成。`,
+      path: nextAssignment?.id ? `/academy/assignments/${encodeURIComponent(nextAssignment.id)}` : '/academy/assignments',
+      action: '查看作业',
+      tone: 'green',
+      score: 120 + pendingAssignments.length * 8,
+    },
+    hasActiveExams && {
+      key: 'student-exams',
+      displayTitle: nextExam?.title || '我的考试',
+      label: '考试',
+      title: '我的考试',
+      reason: `有 ${activeExams.length} 场考试可查看或准备。`,
+      path: nextExam?.id ? `/academy/exams/${encodeURIComponent(nextExam.id)}` : '/academy/exams',
+      action: '进入考试',
+      tone: 'blue',
+      score: 112 + activeExams.length * 7,
+    },
+    hasCourses && {
+      key: 'student-courses',
+      displayTitle: focusedCourse?.name || '我的课程',
+      label: '课程',
+      title: '我的课程',
+      reason: `你已加入 ${courseCount} 门课程，可以继续学习。`,
+      path: getCourseDetailPath(focusedCourse),
+      action: '继续学习',
+      tone: 'violet',
+      score: 92 + Math.min(courseCount, 6) * 3,
+    },
+    {
+      key: 'question-bank',
+      displayTitle: focusedCourse?.name ? `${focusedCourse.name}题库` : '课程题库列表',
+      label: '练习',
+      title: '课程题库',
+      reason: '用题库、收藏题和错题本补齐最近学习的薄弱点。',
+      path: focusedQuestionBankPath,
+      action: '开始刷题',
+      tone: 'amber',
+      score: hasCourses ? 82 : 70,
+    },
+    {
+      key: 'mistakes',
+      displayTitle: focusedCourse?.name ? `${focusedCourse.name}错题本` : '错题本',
+      label: '复盘',
+      title: '错题本',
+      reason: '优先回看做错的题，比随机练习更容易补短板。',
+      path: buildQuestionBankFilterPath('/academy/question-bank/mistakes', focusedCourse),
+      action: '复习错题',
+      tone: 'green',
+      score: hasCourses || hasPendingAssignments ? 78 : 58,
+    },
+    {
+      key: 'favorites',
+      displayTitle: focusedCourse?.name ? `${focusedCourse.name}收藏题` : '收藏题目',
+      label: '收藏',
+      title: '收藏题目',
+      reason: '整理重点题目，适合考试或作业前快速回顾。',
+      path: buildQuestionBankFilterPath('/academy/question-bank/favorites', focusedCourse),
+      action: '查看收藏',
+      tone: 'violet',
+      score: hasActiveExams ? 76 : 56,
+    },
+    {
+      key: 'online-oj',
+      label: '编程',
+      title: '在线 OJ',
+      reason: '通过编程题训练算法思路和代码提交能力。',
+      path: '/lab/oj',
+      action: '进入 OJ',
+      tone: 'blue',
+      score: 72,
+    },
+    {
+      key: 'academy-home',
+      displayTitle: focusedCourse?.name || 'C语言程序设计(下)',
+      label: '学堂',
+      title: '在线学堂',
+      reason: '浏览公开课、通识课、微专业和课程资源。',
+      path: getCourseDetailPath(focusedCourse),
+      action: '进入学堂',
+      tone: 'green',
+      score: hasCourses ? 62 : 80,
+    },
+    {
+      key: 'open-courses',
+      displayTitle: 'C语言程序设计(下)',
+      label: '公开课',
+      title: '在线公开课',
+      reason: '从开放课程中扩展新的学习主题。',
+      path: hasCourses ? '/academy/open-courses/46004_1476538444' : '/academy/open-courses/46004_1476538444',
+      action: '浏览公开课',
+      tone: 'green',
+      score: hasCourses ? 58 : 74,
+    },
+    {
+      key: 'general-courses',
+      displayTitle: '劳动通论',
+      label: '通识',
+      title: '通识课程',
+      reason: '在专业学习之外补充跨学科知识。',
+      path: '/academy/general-courses/general-labor-001',
+      action: '查看通识课',
+      tone: 'amber',
+      score: 52,
+    },
+    {
+      key: 'micro-majors',
+      displayTitle: '数据分析微专业',
+      label: '微专业',
+      title: '微专业课程',
+      reason: '围绕一个方向系统推进专项学习。',
+      path: '/academy/micro-majors/micro-data-001',
+      action: '查看微专业',
+      tone: 'violet',
+      score: 50,
+    },
+    {
+      key: 'textbooks',
+      displayTitle: 'C语言程序设计',
+      label: '教材',
+      title: '精品教材',
+      reason: '查找课程配套教材，补充系统学习资料。',
+      path: '/academy/textbooks/23',
+      action: '查看教材',
+      tone: 'green',
+      score: hasCourses ? 60 : 48,
+    },
+    {
+      key: 'visualization',
+      displayTitle: '单链表逆置动画',
+      label: '可视化',
+      title: '算法可视化',
+      reason: '通过动态过程理解数据结构和算法原理。',
+      path: '/visualization/data-structure/single-linked-list-reverse',
+      action: '进入可视化',
+      tone: 'violet',
+      score: 68,
+    },
+    {
+      key: 'function-2d',
+      displayTitle: '函数图像',
+      label: '函数',
+      title: '函数图像',
+      reason: '用二维图像观察函数变化和数学关系。',
+      path: '/visualization/function-2d',
+      action: '查看图像',
+      tone: 'blue',
+      score: 46,
+    },
+    {
+      key: 'space-models',
+      displayTitle: '空间模型',
+      label: '空间',
+      title: '空间模型',
+      reason: '用三维模型辅助理解空间结构。',
+      path: '/visualization/space-models',
+      action: '打开模型',
+      tone: 'violet',
+      score: 44,
+    },
+    {
+      key: 'games',
+      displayTitle: 'Type Warrior',
+      label: '游戏',
+      title: '游戏学习',
+      reason: '用闯关和打字练习在轻量场景里保持手感。',
+      path: '/games/type-warrior',
+      action: '开始游戏',
+      tone: 'amber',
+      score: hasPendingAssignments || hasActiveExams ? 42 : 66,
+    },
+    {
+      key: 'profile',
+      label: '主页',
+      title: '个人主页',
+      reason: '查看学习画像、最近动态和个人资料。',
+      path: '/profile',
+      action: '查看主页',
+      tone: 'green',
+      score: 40,
+    },
+  ]
+
+  return pickTopRecommendations(candidates)
+})
+
 const learningOverviewStats = computed(() => {
   const overviewStats = dashboard.value.learningOverview || dashboard.value.academyOverview || {}
   return [
@@ -305,15 +804,47 @@ const updateModuleScrollState = () => {
   activeModuleIndex.value = Math.min(Math.max(nextIndex, 0), modules.length - 1)
 }
 
+const loadRecommendations = async () => {
+  recommendedAssignments.value = []
+  recommendedExams.value = []
+  recommendedCourses.value = []
+
+  if (!isLoggedIn.value || isTeacher.value) return
+
+  recommendationsLoading.value = true
+  try {
+    const [courses, assignments, exams] = await Promise.all([
+      fetchMyAcademyCourses(1),
+      fetchAcademyAssignments(1),
+      fetchAcademyExams(1),
+    ])
+    recommendedCourses.value = Array.isArray(courses) ? courses : []
+    recommendedAssignments.value = Array.isArray(assignments) ? assignments : []
+    recommendedExams.value = Array.isArray(exams) ? exams : []
+  } catch (error) {
+    recommendedCourses.value = []
+    recommendedAssignments.value = []
+    recommendedExams.value = []
+    console.warn('failed to load home recommendations:', error)
+  } finally {
+    recommendationsLoading.value = false
+  }
+}
+
 const loadOverview = async () => {
   if (!isLoggedIn.value) {
     overview.value = null
     teacherWorkbench.value = null
+    recommendedAssignments.value = []
+    recommendedExams.value = []
+    recommendedCourses.value = []
+    recommendationsLoading.value = false
     overviewError.value = ''
     return
   }
 
   overviewLoading.value = true
+  recommendationsLoading.value = !isTeacher.value
   overviewError.value = ''
   try {
     const [profileOverview, workbench] = await Promise.all([
@@ -322,9 +853,14 @@ const loadOverview = async () => {
     ])
     overview.value = profileOverview
     teacherWorkbench.value = workbench
+    await loadRecommendations()
   } catch (error) {
     overview.value = null
     teacherWorkbench.value = null
+    recommendedAssignments.value = []
+    recommendedExams.value = []
+    recommendedCourses.value = []
+    recommendationsLoading.value = false
     overviewError.value = '暂时没有读取到学习画像，完成练习后这里会自动刷新。'
     console.warn('failed to load home dashboard:', error)
   } finally {
@@ -572,6 +1108,38 @@ onBeforeUnmount(() => {
       <div class="home-module-scroll-spacer" aria-hidden="true">
         <span v-for="module in modules" :key="`spacer-${module.key}`"></span>
       </div>
+    </section>
+
+    <section class="home-recommendations" :style="moduleShowcaseStyle" aria-labelledby="home-recommendations-title">
+      <div class="home-section-head">
+        <p>Recommended</p>
+        <h2 id="home-recommendations-title">为你推荐</h2>
+        <span>
+          {{
+            isLoggedIn
+              ? (recommendationsLoading ? '正在根据当前数据更新推荐入口。' : '根据当前待办和学习状态生成入口。')
+              : '登录后会根据你的课程、作业和考试更新推荐。'
+          }}
+        </span>
+      </div>
+
+      <div class="home-recommendation-grid">
+        <RouterLink
+          v-for="item in homeRecommendations"
+          :key="item.key"
+          :to="item.path"
+          :class="['home-recommendation-card', `is-${item.tone}`]"
+          @pointermove="handleRecommendationPointerMove"
+          @pointerleave="handleRecommendationPointerLeave"
+        >
+          <span>{{ item.label }}</span>
+          <strong>{{ item.title }}</strong>
+          <p>{{ item.reason }}</p>
+          <small>{{ item.action }}</small>
+        </RouterLink>
+      </div>
+
+      <div class="home-recommendation-corner">个性化推荐</div>
     </section>
   </main>
 </template>

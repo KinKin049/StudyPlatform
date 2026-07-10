@@ -10,6 +10,7 @@ import {
   fetchAcademyExams,
   fetchAcademyHome,
   fetchMyAcademyCourses,
+  fetchQuestionBankCourseCatalog,
 } from '../../api/academy'
 
 const router = useRouter()
@@ -61,6 +62,16 @@ const addCourseLoading = ref(false)
 const courseCatalogLoading = ref(false)
 // 课程搜索框焦点状态
 const courseSearchFocused = ref(false)
+const academySearchKeyword = ref('')
+const academySearchFocused = ref(false)
+const academySearchLoading = ref(false)
+const academySearchLoaded = ref(false)
+const academySearchError = ref('')
+const academySearchCatalog = ref({
+  courses: [],
+  textbooks: [],
+  questionBanks: [],
+})
 // 反馈提示消息
 const feedbackMessage = ref('')
 const feedbackVisible = ref(false)
@@ -73,6 +84,7 @@ const courseCatalogCache = ref({})
 // 定时器引用
 let feedbackTimer = null
 let courseSearchBlurTimer = null
+let academySearchBlurTimer = null
 
 // 资源类型对应的详情页路径映射
 const resourceDetailPath = {
@@ -227,6 +239,31 @@ const showCourseSuggestions = computed(() =>
   && courseUid.value.trim().length > 0,
 )
 
+const academySearchResults = computed(() => {
+  const keyword = normalizeSearchText(academySearchKeyword.value)
+  if (!keyword) {
+    return []
+  }
+
+  return [
+    ...academySearchCatalog.value.courses,
+    ...academySearchCatalog.value.textbooks,
+    ...academySearchCatalog.value.questionBanks,
+  ]
+    .map((item) => ({
+      ...item,
+      matchScore: getAcademySearchScore(item, keyword),
+    }))
+    .filter((item) => item.matchScore > 0)
+    .sort((left, right) => right.matchScore - left.matchScore)
+    .slice(0, 8)
+})
+
+const showAcademySearchPanel = computed(() =>
+  academySearchFocused.value
+  && academySearchKeyword.value.trim().length > 0,
+)
+
 /**
  * 加载首页内容区块数据
  * 如果 API 请求失败，使用默认的 fallback 数据
@@ -268,6 +305,118 @@ const loadSidebarData = async () => {
     sidebarError.value = error.message || '侧边栏数据加载失败'
   } finally {
     sidebarLoading.value = false
+  }
+}
+
+// 加载首页统一搜索所需的课程、教材和题库目录
+const loadAcademySearchCatalog = async () => {
+  if (academySearchLoading.value || academySearchLoaded.value) {
+    return
+  }
+
+  academySearchLoading.value = true
+  academySearchError.value = ''
+
+  try {
+    const [courseEntries, textbooks, questionCategories] = await Promise.all([
+      Promise.all(
+        resourceOptions.map(async (option) => [
+          option,
+          await getCourseCatalog(option.type),
+        ]),
+      ),
+      fetchAcademyCourses('textbooks'),
+      fetchQuestionBankCourseCatalog(),
+    ])
+
+    academySearchCatalog.value = {
+      courses: courseEntries.flatMap(([option, courses]) =>
+        (Array.isArray(courses) ? courses : []).map((course) => ({
+          type: 'course',
+          typeLabel: '课程',
+          title: course.name,
+          meta: [option.label, course.teacher, course.category].filter(Boolean).join(' · '),
+          path: `${resourceDetailPath[option.type] || '/academy/open-courses'}/${encodeURIComponent(course.id)}`,
+          fields: [course.id, course.name, course.teacher, course.category, course.school, option.label],
+        })),
+      ),
+      textbooks: (Array.isArray(textbooks) ? textbooks : []).map((textbook) => ({
+        type: 'textbook',
+        typeLabel: '教材',
+        title: textbook.name,
+        meta: [textbook.editor, textbook.publisher, textbook.category, textbook.isbn].filter(Boolean).join(' · '),
+        path: `/academy/textbooks/${encodeURIComponent(textbook.id)}`,
+        fields: [textbook.id, textbook.name, textbook.editor, textbook.publisher, textbook.category, textbook.isbn, textbook.description],
+      })),
+      questionBanks: (Array.isArray(questionCategories) ? questionCategories : []).flatMap((category) =>
+        (Array.isArray(category.sets) ? category.sets : []).map((set) => ({
+          type: 'question-bank',
+          typeLabel: '题库',
+          title: set.title,
+          meta: [category.name, set.subtitle, set.statusLabel, set.questionCount ? `${set.questionCount} 题` : ''].filter(Boolean).join(' · '),
+          path: set.routePath || `/academy/question-bank/courses/${encodeURIComponent(set.code)}`,
+          fields: [set.code, set.title, set.subtitle, set.description, set.categoryName, category.name],
+        })),
+      ),
+    }
+    academySearchLoaded.value = true
+  } catch (error) {
+    academySearchError.value = error.message || '搜索数据加载失败，请稍后重试'
+  } finally {
+    academySearchLoading.value = false
+  }
+}
+
+const getAcademySearchScore = (item, keyword) => {
+  const titleText = normalizeSearchText(item.title)
+  const fieldTexts = (item.fields || []).map(normalizeSearchText).filter(Boolean)
+
+  if (titleText === keyword) return 140
+  if (fieldTexts.some((field) => field === keyword)) return 128
+  if (titleText.startsWith(keyword)) return 112
+  if (fieldTexts.some((field) => field.startsWith(keyword))) return 96
+  if (titleText.includes(keyword)) return 84
+  if (fieldTexts.some((field) => field.includes(keyword))) return 64
+  return 0
+}
+
+const handleAcademySearchFocus = () => {
+  academySearchFocused.value = true
+  window.clearTimeout(academySearchBlurTimer)
+  loadAcademySearchCatalog()
+}
+
+const handleAcademySearchInput = () => {
+  academySearchFocused.value = true
+  if (academySearchKeyword.value.trim()) {
+    loadAcademySearchCatalog()
+  }
+}
+
+const handleAcademySearchBlur = () => {
+  window.clearTimeout(academySearchBlurTimer)
+  academySearchBlurTimer = window.setTimeout(() => {
+    academySearchFocused.value = false
+  }, 140)
+}
+
+const openAcademySearchResult = (item) => {
+  if (!item?.path) {
+    return
+  }
+  academySearchKeyword.value = item.title || ''
+  academySearchFocused.value = false
+  router.push(item.path)
+}
+
+const submitAcademySearch = () => {
+  const firstResult = academySearchResults.value[0]
+  if (firstResult) {
+    openAcademySearchResult(firstResult)
+    return
+  }
+  if (academySearchKeyword.value.trim()) {
+    loadAcademySearchCatalog()
   }
 }
 
@@ -588,11 +737,13 @@ onMounted(() => {
   loadAcademyHome()
   loadSidebarData()
   loadAllCourseCatalogs()
+  loadAcademySearchCatalog()
 })
 
 onBeforeUnmount(() => {
   window.clearTimeout(feedbackTimer)
   window.clearTimeout(courseSearchBlurTimer)
+  window.clearTimeout(academySearchBlurTimer)
 })
 </script>
 
@@ -613,12 +764,39 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- 全局搜索框 -->
-      <div class="academy-search" role="search">
-        <input type="search" placeholder="搜索课程、教材或专题" aria-label="搜索课程、教材或专题" />
-        <button type="button" aria-label="搜索">
+      <form class="academy-search" role="search" @submit.prevent="submitAcademySearch">
+        <input
+          v-model="academySearchKeyword"
+          type="search"
+          placeholder="搜索课程、教材或题库"
+          aria-label="搜索课程、教材或题库"
+          autocomplete="off"
+          @focus="handleAcademySearchFocus"
+          @input="handleAcademySearchInput"
+          @blur="handleAcademySearchBlur"
+        />
+        <button type="submit" aria-label="搜索">
           <el-icon><Search /></el-icon>
         </button>
-      </div>
+        <div v-if="showAcademySearchPanel" class="academy-search-panel" role="listbox">
+          <p v-if="academySearchLoading" class="academy-search-state">正在加载课程、教材和题库...</p>
+          <p v-else-if="academySearchError" class="academy-search-state is-error">{{ academySearchError }}</p>
+          <template v-else-if="academySearchResults.length">
+            <button
+              v-for="item in academySearchResults"
+              :key="`${item.type}-${item.path}`"
+              type="button"
+              class="academy-search-result"
+              @mousedown.prevent="openAcademySearchResult(item)"
+            >
+              <span>{{ item.typeLabel }}</span>
+              <strong>{{ item.title }}</strong>
+              <em>{{ item.meta || '暂无更多信息' }}</em>
+            </button>
+          </template>
+          <p v-else class="academy-search-state">没有找到匹配的课程、教材或题库</p>
+        </div>
+      </form>
     </section>
 
     <!-- 加载状态提示 -->

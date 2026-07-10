@@ -92,16 +92,16 @@ const fallbackOverview = {
     { title: '薄弱知识点', value: '7 个', meta: '选择题 / 词汇 / 主观题', tone: 'amber' },
   ],
   rankingMetrics: [
-    { title: '全站排名', value: '#128', meta: '超过 82% 学习者', tone: 'cyan' },
-    { title: '本周排名', value: '#19', meta: '连续学习加成中', tone: 'blue' },
+    { title: '学习时长排名', value: '#0', meta: '累计学习时长 0m · 暂无排名数据', tone: 'cyan' },
+    { title: '累计学习时长', value: '0m', meta: '排名依据：全站累计学习时长', tone: 'blue' },
   ],
   achievementMetrics: [
     { title: '成就点数', value: '1,260', meta: '样式预览 · 12 枚徽章', tone: 'violet' },
     { title: '稀有成就', value: '3 枚', meta: 'CET / OJ / 可视化', tone: 'amber' },
   ],
   textbookOrders: [
-    { title: '教材订单', value: '3 单', meta: '待支付 1 · 已完成 2', tone: 'cyan' },
-    { title: '教材收藏', value: '18 本', meta: '计算机 / 公共课 / 英语', tone: 'blue' },
+    { title: '购物车', value: '0 本', meta: '购物车暂无教材', tone: 'blue' },
+    { title: '待评价', value: '0 本', meta: '已购教材均已评价或暂无已购教材', tone: 'amber' },
   ],
 }
 
@@ -163,6 +163,7 @@ const teacherOjCaseDeleteConfirm = ref({
   open: false,
   index: -1,
 })
+const achievementDialogOpen = ref(false)
 let feedbackTimer = null
 let activeTiltElements = new Set()
 const profileForm = ref({
@@ -299,9 +300,20 @@ const rankingMetrics = computed(() =>
   dashboard.value.rankingMetrics?.length ? dashboard.value.rankingMetrics : fallbackOverview.rankingMetrics,
 )
 // 成就数据
-const achievementMetrics = computed(() =>
-  dashboard.value.achievementMetrics?.length ? dashboard.value.achievementMetrics : fallbackOverview.achievementMetrics,
-)
+const achievementMetrics = computed(() => [
+  {
+    title: '已解锁成就',
+    value: `${achievementSummary.value.unlocked} 枚`,
+    meta: `共 ${achievementSummary.value.total} 枚 · ${achievementSummary.value.percent}%`,
+    tone: 'violet',
+  },
+  {
+    title: '最近徽章',
+    value: achievementPreview.value[0]?.title || '暂无成就',
+    meta: unlockedAchievements.value.length ? '来自成就徽章系统' : '继续学习即可解锁',
+    tone: 'amber',
+  },
+])
 // 教材订单数据
 const textbookOrders = computed(() =>
   dashboard.value.textbookOrders?.length ? dashboard.value.textbookOrders : fallbackOverview.textbookOrders,
@@ -318,17 +330,54 @@ const previewSections = computed(() => [
   { key: 'mistakes', eyebrow: 'Mistakes', title: '错题本', items: mistakeMetrics.value },
   { key: 'ranking', eyebrow: 'Ranking', title: '排名', items: rankingMetrics.value },
   { key: 'achievements', eyebrow: 'Achievements', title: '成就', items: achievementMetrics.value },
-  { key: 'orders', eyebrow: 'Orders', title: '教材购书订单', items: textbookOrders.value },
+  { key: 'orders', eyebrow: 'Textbooks', title: '教材数据', items: textbookOrders.value },
 ])
 // 整体进度百分比
 const overallProgress = computed(() => {
-  const progress = Number(dashboard.value.overallProgress ?? 0)
+  const explicitProgress = Number(dashboard.value.overallProgress)
+  const difficultySolved = difficultyStats.value.reduce((sum, item) => sum + Number(item.solved || 0), 0)
+  const difficultyTotal = difficultyStats.value.reduce((sum, item) => sum + Number(item.total || 0), 0)
+  const derivedProgress = difficultyTotal > 0 ? Math.round((difficultySolved / difficultyTotal) * 100) : 0
+  const progress = Number.isFinite(explicitProgress) && explicitProgress > 0
+    ? explicitProgress
+    : derivedProgress
   return Math.min(Math.max(Number.isFinite(progress) ? Math.round(progress) : 0, 0), 100)
 })
 // 进度环样式
 const progressRingStyle = computed(() => ({
   '--profile-progress': `${overallProgress.value}%`,
+  '--profile-progress-deg': `${overallProgress.value * 3.6}deg`,
+  '--profile-ring-gradient': practiceDistributionGradient.value,
 }))
+const practiceDistributionItems = computed(() => {
+  const solvedTotal = difficultyStats.value.reduce((sum, item) => sum + Number(item.solved || 0), 0)
+  const valueKey = solvedTotal > 0 ? 'solved' : 'total'
+  return difficultyStats.value
+    .map((item, index) => ({
+      label: item.label,
+      value: Number(item[valueKey] || 0),
+      color: item.color || ['#74ebd5', '#60a5fa', '#f59e0b', '#8b5cf6'][index % 4],
+    }))
+    .filter((item) => item.value > 0)
+})
+const practiceDistributionTotal = computed(() =>
+  practiceDistributionItems.value.reduce((sum, item) => sum + item.value, 0),
+)
+const practiceDistributionGradient = computed(() => {
+  if (!practiceDistributionTotal.value) {
+    return 'conic-gradient(rgba(96, 121, 134, 0.16) 0deg 360deg)'
+  }
+
+  let cursor = 0
+  const segments = practiceDistributionItems.value.map((item, index) => {
+    const start = cursor
+    cursor += index === practiceDistributionItems.value.length - 1
+      ? 360 - cursor
+      : (item.value / practiceDistributionTotal.value) * 360
+    return `${item.color} ${start.toFixed(2)}deg ${cursor.toFixed(2)}deg`
+  })
+  return `conic-gradient(from -90deg, ${segments.join(', ')})`
+})
 // 用户名称首字母
 const userInitial = computed(() => (user.value.name || 'K').trim().slice(0, 1).toUpperCase())
 // 用户头像 URL
@@ -347,6 +396,123 @@ const codingCompletion = computed(() => {
   return Math.round((codingSolvedTotal.value / codingQuestionTotal.value) * 100)
 })
 // 编程难度环形进度样式
+const statByKeyword = (keyword) =>
+  stats.value.find((item) => String(item.label || '').includes(keyword))
+
+const numericFromText = (value) => {
+  const normalized = String(value ?? '').replace(/,/g, '')
+  const match = normalized.match(/-?\d+(?:\.\d+)?/)
+  return match ? Number(match[0]) : 0
+}
+
+const durationMinutesFromText = (value) => {
+  const text = String(value ?? '').replace(/\s+/g, '')
+  const hourMatch = text.match(/(\d+(?:\.\d+)?)(?:h|小时|时)/i)
+  const minuteMatch = text.match(/(\d+(?:\.\d+)?)(?:m|分钟|分)/i)
+  const secondMatch = text.match(/(\d+(?:\.\d+)?)(?:s|秒)/i)
+  if (hourMatch || minuteMatch || secondMatch) {
+    return Math.round(
+      Number(hourMatch?.[1] || 0) * 60
+      + Number(minuteMatch?.[1] || 0)
+      + Number(secondMatch?.[1] || 0) / 60,
+    )
+  }
+  return numericFromText(text)
+}
+
+const achievementSource = computed(() => {
+  const totalLearningMinutes = durationMinutesFromText(
+    statByKeyword('学习时长')?.value
+    || learningTimes.value.find((item) => String(item.label || '').includes('学习'))?.value,
+  )
+  const todayLearningMinutes = durationMinutesFromText(
+    statByKeyword('今日')?.value
+    || learningTimes.value.find((item) => String(item.label || '').includes('今日'))?.value,
+  )
+  const practiceCount = numericFromText(statByKeyword('练习')?.value)
+  const streakDays = numericFromText(statByKeyword('连续')?.value)
+  const activeDays = activityDays.value.filter((day) => Number(day.count || 0) > 0 || Number(day.level || 0) > 0).length
+
+  return {
+    totalLearningMinutes,
+    todayLearningMinutes,
+    practiceCount,
+    streakDays,
+    activeDays,
+    overallProgress: overallProgress.value,
+    codingSolved: codingSolvedTotal.value,
+    coinTotal: numericFromText(profileCoinValue.value),
+    unlockedBackendBadges: badges.value.filter((badge) => {
+      const text = String(badge || '')
+      return text && !text.includes('等待') && !text.includes('准备')
+    }),
+  }
+})
+
+const createAchievement = ({ key, title, description, metric, target, unit = '', tone = 'cyan' }) => {
+  const value = Math.max(Number(metric || 0), 0)
+  const safeTarget = Math.max(Number(target || 1), 1)
+  const progress = Math.min(Math.round((value / safeTarget) * 100), 100)
+  return {
+    key,
+    title,
+    description,
+    value,
+    target: safeTarget,
+    unit,
+    tone,
+    unlocked: value >= safeTarget,
+    progress,
+  }
+}
+
+const allAchievements = computed(() => {
+  const source = achievementSource.value
+  const generated = [
+    createAchievement({ key: 'first-practice', title: '初次练习', description: '完成第 1 次练习记录', metric: source.practiceCount, target: 1, unit: '次', tone: 'cyan' }),
+    createAchievement({ key: 'practice-10', title: '稳定刷题', description: '累计完成 10 次练习记录', metric: source.practiceCount, target: 10, unit: '次', tone: 'blue' }),
+    createAchievement({ key: 'practice-50', title: '题感养成', description: '累计完成 50 次练习记录', metric: source.practiceCount, target: 50, unit: '次', tone: 'violet' }),
+    createAchievement({ key: 'learn-30m', title: '专注半小时', description: '累计学习时长达到 30 分钟', metric: source.totalLearningMinutes, target: 30, unit: '分钟', tone: 'green' }),
+    createAchievement({ key: 'learn-120m', title: '两小时沉浸', description: '累计学习时长达到 120 分钟', metric: source.totalLearningMinutes, target: 120, unit: '分钟', tone: 'cyan' }),
+    createAchievement({ key: 'today-15m', title: '今日已开工', description: '今日学习时长达到 15 分钟', metric: source.todayLearningMinutes, target: 15, unit: '分钟', tone: 'amber' }),
+    createAchievement({ key: 'streak-3', title: '连续三天', description: '连续学习 3 天', metric: source.streakDays, target: 3, unit: '天', tone: 'green' }),
+    createAchievement({ key: 'streak-7', title: '一周不断档', description: '连续学习 7 天', metric: source.streakDays, target: 7, unit: '天', tone: 'violet' }),
+    createAchievement({ key: 'progress-25', title: '题库探索者', description: '总体题库完成度达到 25%', metric: source.overallProgress, target: 25, unit: '%', tone: 'blue' }),
+    createAchievement({ key: 'progress-60', title: '题库推进者', description: '总体题库完成度达到 60%', metric: source.overallProgress, target: 60, unit: '%', tone: 'violet' }),
+    createAchievement({ key: 'coding-1', title: 'OJ 起步', description: '完成第 1 道编程题', metric: source.codingSolved, target: 1, unit: '题', tone: 'cyan' }),
+    createAchievement({ key: 'coding-10', title: '代码手感', description: '累计完成 10 道编程题', metric: source.codingSolved, target: 10, unit: '题', tone: 'green' }),
+    createAchievement({ key: 'active-days-7', title: '活跃一周', description: '近 17 周内累计 7 天有学习活动', metric: source.activeDays, target: 7, unit: '天', tone: 'amber' }),
+    createAchievement({ key: 'coin-100', title: '金币入袋', description: '累计获得 100 金币', metric: source.coinTotal, target: 100, unit: '金币', tone: 'amber' }),
+  ]
+
+  const backendBadges = source.unlockedBackendBadges.map((badge, index) => ({
+    key: `backend-${index}-${badge}`,
+    title: badge,
+    description: '由学习数据接口返回的已解锁徽章',
+    value: 1,
+    target: 1,
+    unit: '枚',
+    tone: 'violet',
+    unlocked: true,
+    progress: 100,
+  }))
+
+  return [...generated, ...backendBadges]
+})
+
+const unlockedAchievements = computed(() => allAchievements.value.filter((achievement) => achievement.unlocked))
+const achievementPreview = computed(() => {
+  const unlocked = unlockedAchievements.value.slice(0, 6)
+  return unlocked.length ? unlocked : allAchievements.value.slice(0, 6)
+})
+const achievementSummary = computed(() => ({
+  unlocked: unlockedAchievements.value.length,
+  total: allAchievements.value.length,
+  percent: allAchievements.value.length
+    ? Math.round((unlockedAchievements.value.length / allAchievements.value.length) * 100)
+    : 0,
+}))
+
 const codingRingStyle = computed(() => {
   const safeSolved = Math.max(codingSolvedTotal.value, 1)
   const easy = Number(codingDifficulties.value[0]?.solved || 0) / safeSolved * 180
@@ -1475,10 +1641,20 @@ onBeforeUnmount(() => {
             <p>Badges</p>
             <h2>&#x6210;&#x5c31;&#x5fbd;&#x7ae0;</h2>
           </div>
+          <span>{{ achievementSummary.unlocked }} / {{ achievementSummary.total }}</span>
         </div>
         <div class="profile-badges">
-          <span v-for="badge in badges" :key="badge">{{ badge }}</span>
+          <span
+            v-for="achievement in achievementPreview"
+            :key="achievement.key"
+            :class="[`is-${achievement.tone}`, { 'is-locked': !achievement.unlocked }]"
+          >
+            {{ achievement.title }}
+          </span>
         </div>
+        <button type="button" class="profile-achievement-all-button" @click="achievementDialogOpen = true">
+          查看所有成就
+        </button>
       </article>
 
       <article class="profile-panel profile-heatmap-panel">
@@ -1533,7 +1709,6 @@ onBeforeUnmount(() => {
               <p>Progress</p>
               <h2>练习分布</h2>
             </div>
-            <strong>{{ overallProgress }}%</strong>
           </div>
           <div
             class="profile-ring"
@@ -1860,6 +2035,58 @@ onBeforeUnmount(() => {
             {{ deletingCourseId ? '删除中...' : '确认删除' }}
           </button>
           <button type="button" :disabled="Boolean(deletingCourseId)" @click="closeTeacherCourseDeleteConfirm">取消</button>
+        </div>
+      </section>
+    </div>
+
+    <div
+      v-if="achievementDialogOpen"
+      class="profile-modal-backdrop"
+      role="presentation"
+      @click.self="achievementDialogOpen = false"
+    >
+      <section
+        class="profile-edit-dialog profile-achievement-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="profile-achievement-title"
+      >
+        <div class="profile-edit-head">
+          <div>
+            <p>Achievements</p>
+            <h2 id="profile-achievement-title">全部成就</h2>
+          </div>
+          <button type="button" aria-label="关闭全部成就窗口" @click="achievementDialogOpen = false">
+            &times;
+          </button>
+        </div>
+        <div class="profile-achievement-summary">
+          <strong>{{ achievementSummary.unlocked }} / {{ achievementSummary.total }}</strong>
+          <span>已解锁 {{ achievementSummary.percent }}%</span>
+        </div>
+        <div class="profile-achievement-list">
+          <article
+            v-for="achievement in allAchievements"
+            :key="achievement.key"
+            :class="['profile-achievement-item', `is-${achievement.tone}`, { 'is-locked': !achievement.unlocked }]"
+          >
+            <div class="profile-achievement-icon">
+              {{ achievement.unlocked ? '✓' : achievement.progress }}
+            </div>
+            <div>
+              <header>
+                <strong>{{ achievement.title }}</strong>
+                <span>{{ achievement.unlocked ? '已解锁' : '进行中' }}</span>
+              </header>
+              <p>{{ achievement.description }}</p>
+              <div class="profile-achievement-progress">
+                <i :style="{ width: `${achievement.progress}%` }"></i>
+              </div>
+              <small>
+                {{ achievement.value }} / {{ achievement.target }}{{ achievement.unit }}
+              </small>
+            </div>
+          </article>
         </div>
       </section>
     </div>
