@@ -29,7 +29,104 @@ const activeModuleIndex = ref(0)
 const moduleScrollPhase = ref(0)
 const activeDashboardSlide = ref(0)
 const dashboardSlideCount = 4
+const guestBrandLetters = 'EpistemeHub'.split('')
+const guestParticlePath = [
+  [2.4, 8.3],
+  [10.6, 28.0],
+  [18.1, 43.0],
+  [27.1, 55.5],
+  [38.1, 63.2],
+  [51.5, 69.8],
+  [64.5, 73.0],
+  [72.6, 65.8],
+  [78.7, 53.5],
+  [83.7, 37.5],
+  [87.2, 16.6],
+  [90.5, 2.7],
+]
+const guestParticles = Array.from({ length: 420 }, (_, index) => {
+  const lane = index % 28
+  const band = Math.floor(index / 28)
+  const laneOffset = lane - 14
+  const startJitterX = ((index * 17) % 70) / 10 - 3.5
+  const startJitterY = ((index * 23) % 56) / 10 - 2.8
+  const arcJitter = ((index * 13) % 80) / 10 - 4
+  const depthJitter = ((index * 19) % 70) / 10 - 3.5
+  const nearBrand = lane > 8 && lane < 20 && band > 4 && band < 11
+  const point = (pointIndex, jitterScaleX = 0.16, jitterScaleY = 0.16) => {
+    const [x, y] = guestParticlePath[pointIndex]
+    return {
+      x: x + laneOffset * 0.1 + arcJitter * jitterScaleX,
+      y: y + depthJitter * jitterScaleY,
+    }
+  }
+  const pathPoints = guestParticlePath.map((_, pointIndex) => point(pointIndex))
+  const startX = guestParticlePath[0][0] + startJitterX
+  const startY = guestParticlePath[0][1] + startJitterY
+  const shift = (target) => ({
+    x: `${target.x - startX}vw`,
+    y: `${target.y - startY}vh`,
+  })
+  const pathShifts = pathPoints.map(shift)
+
+  return {
+    id: index,
+    x: startX,
+    y: startY,
+    size: 8.4 + ((index * 7) % 36) / 3,
+    opacity: nearBrand ? 0.3 : Math.min(0.92, 0.5 + ((index * 11) % 30) / 100),
+    delay: -((index * 0.11) % 15),
+    duration: 15 + ((index * 5) % 8),
+    curveX: pathShifts[1].x,
+    curveY: pathShifts[1].y,
+    curve2X: pathShifts[2].x,
+    curve2Y: pathShifts[2].y,
+    curve3X: pathShifts[3].x,
+    curve3Y: pathShifts[3].y,
+    curve4X: pathShifts[4].x,
+    curve4Y: pathShifts[4].y,
+    curve5X: pathShifts[5].x,
+    curve5Y: pathShifts[5].y,
+    curve6X: pathShifts[6].x,
+    curve6Y: pathShifts[6].y,
+    curve7X: pathShifts[7].x,
+    curve7Y: pathShifts[7].y,
+    curve8X: pathShifts[8].x,
+    curve8Y: pathShifts[8].y,
+    curve9X: pathShifts[9].x,
+    curve9Y: pathShifts[9].y,
+    curve10X: pathShifts[10].x,
+    curve10Y: pathShifts[10].y,
+    driftX: pathShifts[11].x,
+    driftY: pathShifts[11].y,
+    rotate: `${-24 + ((index * 29) % 58)}deg`,
+  }
+})
 let dashboardCarouselTimer = null
+
+const handleGuestHeroPointerMove = (event) => {
+  const hero = event.currentTarget
+  if (!hero || isLoggedIn.value) return
+  const rect = hero.getBoundingClientRect()
+  const ratioX = ((event.clientX - rect.left) / rect.width - 0.5) * 2
+  const ratioY = ((event.clientY - rect.top) / rect.height - 0.5) * 2
+
+  hero.style.setProperty('--guest-magnet-x', `${(ratioX * 8).toFixed(2)}px`)
+  hero.style.setProperty('--guest-magnet-y', `${(ratioY * 6).toFixed(2)}px`)
+  hero.style.setProperty('--guest-line-x', `${(-ratioX * 5).toFixed(2)}px`)
+  hero.style.setProperty('--guest-line-y', `${(-ratioY * 4).toFixed(2)}px`)
+  hero.style.setProperty('--guest-glow-x', `${((ratioX + 1) * 50).toFixed(2)}%`)
+}
+
+const handleGuestHeroPointerLeave = (event) => {
+  const hero = event.currentTarget
+  if (!hero) return
+  hero.style.setProperty('--guest-magnet-x', '0px')
+  hero.style.setProperty('--guest-magnet-y', '0px')
+  hero.style.setProperty('--guest-line-x', '0px')
+  hero.style.setProperty('--guest-line-y', '0px')
+  hero.style.setProperty('--guest-glow-x', '50%')
+}
 
 const handleRecommendationPointerMove = (event) => {
   const card = event.currentTarget
@@ -897,28 +994,29 @@ onBeforeUnmount(() => {
 
 <template>
   <main class="home-main">
-    <section class="home-hero" :class="{ 'is-dashboard': isLoggedIn }" aria-labelledby="home-title">
+    <section
+      class="home-hero"
+      :class="{ 'is-dashboard': isLoggedIn, 'is-guest': !isLoggedIn }"
+      aria-labelledby="home-title"
+      @pointermove="handleGuestHeroPointerMove"
+      @pointerleave="handleGuestHeroPointerLeave"
+    >
+      <template v-if="isLoggedIn">
       <div class="home-hero-copy">
-        <p v-if="!isLoggedIn" class="home-kicker">StudyPlatform</p>
         <h1 id="home-title">
-          {{ isLoggedIn ? `欢迎回来，${displayName}` : '把课程、练习、实验与游戏放进同一个学习空间' }}
+          {{ `欢迎回来，${displayName}` }}
         </h1>
-        <p v-if="!isLoggedIn" class="home-copy">
-          {{
-            'StudyPlatform 面向课程学习、题库训练、实验仿真与游戏化练习，帮助学习过程从“打开页面”变成可追踪、可反馈、可激励的成长路径。'
-          }}
-        </p>
         <div class="home-hero-actions">
-          <RouterLink class="home-primary-action" :to="isLoggedIn ? '/profile' : '/login'">
-            {{ isLoggedIn ? '查看完整个人主页' : '登录后查看仪表盘' }}
+          <RouterLink class="home-primary-action" to="/profile">
+            查看完整个人主页
           </RouterLink>
-          <RouterLink class="home-secondary-action" :to="isLoggedIn ? '/academy/home' : '/register'">
-            {{ isLoggedIn ? '继续学习' : '注册账号' }}
+          <RouterLink class="home-secondary-action" to="/academy/home">
+            继续学习
           </RouterLink>
         </div>
       </div>
 
-      <div v-if="isLoggedIn" class="home-hero-rings">
+      <div class="home-hero-rings">
         <article class="home-dashboard-carousel" aria-label="学习仪表盘轮播">
           <button
             type="button"
@@ -1034,21 +1132,97 @@ onBeforeUnmount(() => {
           </div>
         </article>
       </div>
+      </template>
 
-      <div v-else class="home-hero-visual" aria-hidden="true">
-        <div class="home-orbit-card is-main">
-          <span>Course</span>
-          <strong>课堂学习</strong>
+      <template v-else>
+        <svg class="home-guest-lines" viewBox="0 0 1440 720" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="homeGuestLineGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#ffffff" stop-opacity="0.18" />
+              <stop offset="38%" stop-color="#ffffff" stop-opacity="0.86" />
+              <stop offset="68%" stop-color="#ffffff" stop-opacity="0.62" />
+              <stop offset="100%" stop-color="#ffffff" stop-opacity="0.24" />
+            </linearGradient>
+            <linearGradient id="homeGuestCircuitGradient" x1="18%" y1="82%" x2="82%" y2="18%">
+              <stop offset="0%" stop-color="#008c9f" stop-opacity="0.38" />
+              <stop offset="52%" stop-color="#ffffff" stop-opacity="0.74" />
+              <stop offset="100%" stop-color="#ff7d96" stop-opacity="0.34" />
+            </linearGradient>
+            <filter id="homeGuestLineGlow" x="-10%" y="-30%" width="120%" height="160%">
+              <feGaussianBlur stdDeviation="2.2" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+          <g id="homeGuestFlowPaths" class="home-guest-flow" fill="none" stroke="url(#homeGuestLineGradient)" stroke-linecap="round" filter="url(#homeGuestLineGlow)">
+            <path d="M-210 694 C 58 520, 164 230, 382 202 C 600 174, 604 464, 816 442 C 1018 421, 1056 168, 1234 188 C 1340 200, 1418 286, 1520 246" />
+            <path d="M-198 724 C 82 548, 182 256, 396 230 C 610 204, 612 490, 826 470 C 1030 451, 1070 200, 1244 220 C 1350 232, 1424 316, 1524 280" />
+            <path d="M-186 754 C 106 576, 200 282, 410 258 C 620 234, 620 516, 836 498 C 1042 481, 1084 232, 1254 252 C 1360 264, 1430 346, 1528 314" />
+            <path d="M-174 784 C 130 604, 218 308, 424 286 C 630 264, 628 542, 846 526 C 1054 511, 1098 264, 1264 284 C 1370 296, 1436 376, 1532 348" />
+            <path d="M-162 814 C 154 632, 236 334, 438 314 C 640 294, 636 568, 856 554 C 1066 541, 1112 296, 1274 316 C 1380 328, 1442 406, 1536 382" />
+            <path d="M-150 844 C 178 660, 254 360, 452 342 C 650 324, 644 594, 866 582 C 1078 571, 1126 328, 1284 348 C 1390 360, 1448 436, 1540 416" />
+            <path d="M-138 874 C 202 688, 272 386, 466 370 C 660 354, 652 620, 876 610 C 1090 601, 1140 360, 1294 380 C 1400 392, 1454 466, 1544 450" />
+            <path d="M-126 904 C 226 716, 290 412, 480 398 C 670 384, 660 646, 886 638 C 1102 631, 1154 392, 1304 412 C 1410 424, 1460 496, 1548 484" />
+            <path d="M-114 934 C 250 744, 308 438, 494 426 C 680 414, 668 672, 896 666 C 1114 661, 1168 424, 1314 444 C 1420 456, 1466 526, 1552 518" />
+            <path d="M-102 964 C 274 772, 326 464, 508 454 C 690 444, 676 698, 906 694 C 1126 691, 1182 456, 1324 476 C 1430 488, 1472 556, 1556 552" />
+            <path d="M-90 994 C 298 800, 344 490, 522 482 C 700 474, 684 724, 916 722 C 1138 721, 1196 488, 1334 508 C 1440 520, 1478 586, 1560 586" />
+            <path d="M-78 1024 C 322 828, 362 516, 536 510 C 710 504, 692 750, 926 750 C 1150 751, 1210 520, 1344 540 C 1450 552, 1484 616, 1564 620" />
+            <path d="M-66 1054 C 346 856, 380 542, 550 538 C 720 534, 700 776, 936 778 C 1162 781, 1224 552, 1354 572 C 1460 584, 1490 646, 1568 654" />
+            <path d="M-54 1084 C 370 884, 398 568, 564 566 C 730 564, 708 802, 946 806 C 1174 811, 1238 584, 1364 604 C 1470 616, 1496 676, 1572 688" />
+          </g>
+        </svg>
+        <svg class="home-guest-lines home-guest-lines--over" viewBox="0 0 1440 720" preserveAspectRatio="none" aria-hidden="true">
+          <use href="#homeGuestFlowPaths"></use>
+        </svg>
+        <div class="home-guest-particles" aria-hidden="true">
+          <i
+            v-for="particle in guestParticles"
+            :key="particle.id"
+            :style="{
+              '--particle-x': `${particle.x}%`,
+              '--particle-y': `${particle.y}%`,
+              '--particle-size': `${particle.size}px`,
+              '--particle-opacity': particle.opacity,
+              '--particle-delay': `${particle.delay}s`,
+              '--particle-duration': `${particle.duration}s`,
+              '--particle-drift-x': particle.driftX,
+              '--particle-drift-y': particle.driftY,
+              '--particle-curve-x': particle.curveX,
+              '--particle-curve-y': particle.curveY,
+              '--particle-curve2-x': particle.curve2X,
+              '--particle-curve2-y': particle.curve2Y,
+              '--particle-curve3-x': particle.curve3X,
+              '--particle-curve3-y': particle.curve3Y,
+              '--particle-curve4-x': particle.curve4X,
+              '--particle-curve4-y': particle.curve4Y,
+              '--particle-curve5-x': particle.curve5X,
+              '--particle-curve5-y': particle.curve5Y,
+              '--particle-curve6-x': particle.curve6X,
+              '--particle-curve6-y': particle.curve6Y,
+              '--particle-curve7-x': particle.curve7X,
+              '--particle-curve7-y': particle.curve7Y,
+              '--particle-curve8-x': particle.curve8X,
+              '--particle-curve8-y': particle.curve8Y,
+              '--particle-curve9-x': particle.curve9X,
+              '--particle-curve9-y': particle.curve9Y,
+              '--particle-curve10-x': particle.curve10X,
+              '--particle-curve10-y': particle.curve10Y,
+              '--particle-rotate': particle.rotate,
+            }"
+          ></i>
         </div>
-        <div class="home-orbit-card is-practice">
-          <span>Practice</span>
-          <strong>题库反馈</strong>
-        </div>
-        <div class="home-orbit-card is-lab">
-          <span>Lab</span>
-          <strong>实验探索</strong>
-        </div>
-      </div>
+        <RouterLink id="home-title" class="home-guest-brand" to="/" aria-label="EpistemeHub">
+          <span
+            v-for="(letter, index) in guestBrandLetters"
+            :key="`${letter}-${index}`"
+            :style="{ '--letter-index': index }"
+          >
+            {{ letter }}
+          </span>
+        </RouterLink>
+      </template>
     </section>
 
     <section
