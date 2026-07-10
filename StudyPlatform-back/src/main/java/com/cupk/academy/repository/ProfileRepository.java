@@ -306,6 +306,75 @@ public class ProfileRepository {
      * @param endAt 结束时间
      * @return 学习时长（秒）
      */
+    public LearningTimeRankingRow findLearningTimeRanking(long userId) {
+        long totalSeconds = sumAllLearningTimeSeconds(userId);
+        long rank = queryLong(
+                """
+                SELECT COUNT(*) + 1
+                FROM (
+                  SELECT all_users.user_id,
+                         COALESCE(SUM(r.duration_seconds), 0) AS total_seconds
+                  FROM (
+                    SELECT id AS user_id FROM users
+                    UNION
+                    SELECT user_id FROM profile_user_profiles
+                    UNION
+                    SELECT user_id FROM profile_learning_time_records
+                  ) all_users
+                  LEFT JOIN profile_learning_time_records r ON r.user_id = all_users.user_id
+                  GROUP BY all_users.user_id
+                ) ranked
+                WHERE ranked.total_seconds > ?
+                """,
+                totalSeconds
+        );
+        long participantCount = queryLong(
+                """
+                SELECT COUNT(*)
+                FROM (
+                  SELECT id AS user_id FROM users
+                  UNION
+                  SELECT user_id FROM profile_user_profiles
+                  UNION
+                  SELECT user_id FROM profile_learning_time_records
+                ) all_users
+                """
+        );
+        return new LearningTimeRankingRow(rank, Math.max(participantCount, rank), totalSeconds);
+    }
+
+    public TextbookProfileStatsRow findTextbookProfileStats(long userId) {
+        long cartItemCount = queryLong(
+                "SELECT COUNT(*) FROM academy_textbook_cart_items WHERE user_id = ?",
+                userId
+        );
+        long cartQuantity = queryLong(
+                "SELECT COALESCE(SUM(quantity), 0) FROM academy_textbook_cart_items WHERE user_id = ?",
+                userId
+        );
+        long pendingReviewCount = queryLong(
+                """
+                SELECT COUNT(*)
+                FROM (
+                  SELECT DISTINCT i.textbook_id
+                  FROM academy_textbook_orders o
+                  JOIN academy_textbook_order_items i ON i.order_id = o.id
+                  WHERE o.user_id = ?
+                    AND o.order_status IN ('已支付', '已完成')
+                ) purchased
+                LEFT JOIN (
+                  SELECT DISTINCT textbook_id
+                  FROM academy_textbook_reviews
+                  WHERE user_id = ?
+                ) reviewed ON reviewed.textbook_id = purchased.textbook_id
+                WHERE reviewed.textbook_id IS NULL
+                """,
+                userId,
+                userId
+        );
+        return new TextbookProfileStatsRow(cartItemCount, cartQuantity, pendingReviewCount);
+    }
+
     public long sumLearningTimeSecondsBetween(long userId, LocalDateTime startAt, LocalDateTime endAt) {
         Long value = jdbcTemplate.queryForObject(
                 """
@@ -708,6 +777,20 @@ public class ProfileRepository {
             String difficulty,
             long solved,
             long total
+    ) {
+    }
+
+    public record LearningTimeRankingRow(
+            long rank,
+            long participantCount,
+            long totalSeconds
+    ) {
+    }
+
+    public record TextbookProfileStatsRow(
+            long cartItemCount,
+            long cartQuantity,
+            long pendingReviewCount
     ) {
     }
 

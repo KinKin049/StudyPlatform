@@ -115,7 +115,7 @@
     align-items: stretch;
   }
 
-  .academy-search button {
+  .academy-search > button {
     width: 100%;
   }
 

@@ -119,7 +119,7 @@ onBeforeUnmount(() => {
   <header class="site-header">
     <!-- 品牌标识，点击返回首页 -->
     <RouterLink class="site-brand" to="/" aria-label="返回首页">
-      <img class="site-brand-logo" src="/brand/epistemehub-logo.png" alt="" aria-hidden="true" />
+      <span class="site-brand-logo" aria-hidden="true"></span>
       <span class="site-brand-name">EpistemeHub</span>
     </RouterLink>
 

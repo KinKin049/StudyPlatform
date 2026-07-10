@@ -1264,7 +1264,10 @@ onMounted(async () => {
           <section v-if="activeTab === 'users'" class="admin-panel">
             <h2>用户管理</h2>
             <div class="admin-search-row">
-              <input v-model="userSearch" placeholder="搜索用户序号、邮箱或名称" />
+                            <label class="admin-field">
+                <span>搜索用户序号、邮箱或名称</span>
+                <input v-model="userSearch" placeholder="搜索用户序号、邮箱或名称" />
+              </label>
             </div>
             <div class="admin-table">
               <article v-for="user in filteredUsers" :key="user.id" class="admin-row">
@@ -1297,16 +1300,22 @@ onMounted(async () => {
           <section v-if="activeTab === 'courses'" class="admin-panel">
             <div class="admin-panel-head">
               <h2>课程管理</h2>
-            <select v-model="selectedResourceType" @change="loadCourses(); resetCourseForm()">
+                        <label class="admin-field">
+              <span>课程类型</span>
+              <select v-model="selectedResourceType" data-admin-label="课程类型" @change="loadCourses(); resetCourseForm()">
               <option v-for="item in resourceTypes" :key="item.value" :value="item.value">{{ item.label }}</option>
             </select>
+            </label>
             </div>
 
             <section class="admin-category-manager">
               <div class="admin-category-head">
                 <strong>课程分类管理</strong>
                 <form class="admin-category-form" @submit.prevent="addCourseCategory">
-                  <input v-model="newCourseCategory" placeholder="新增分类名称" />
+                                    <label class="admin-field">
+                    <span>新增分类名称</span>
+                    <input v-model="newCourseCategory" placeholder="新增分类名称" />
+                  </label>
                   <button type="submit" :disabled="loading">添加分类</button>
                 </form>
               </div>
@@ -1320,30 +1329,59 @@ onMounted(async () => {
 
             <!-- 课程表单 -->
             <form class="admin-form" @submit.prevent="submitCourse">
-              <input v-model="courseForm.id" placeholder="课程编号" />
-            <input v-model="courseForm.name" placeholder="课程名称" />
-            <input v-model="courseForm.teacher" placeholder="教师" />
-            <select v-model="courseForm.category">
+                            <label class="admin-field">
+                <span>课程编号</span>
+                <input v-model="courseForm.id" placeholder="课程编号" />
+              </label>
+                        <label class="admin-field">
+              <span>课程名称</span>
+              <input v-model="courseForm.name" placeholder="课程名称" />
+            </label>
+                        <label class="admin-field">
+              <span>教师</span>
+              <input v-model="courseForm.teacher" placeholder="教师" />
+            </label>
+                        <label class="admin-field">
+              <span>课程分类</span>
+              <select v-model="courseForm.category" data-admin-label="课程分类">
               <option value="">请选择分类</option>
               <option v-for="category in courseCategories" :key="category.name" :value="category.name">
                 {{ category.name }}
               </option>
             </select>
-            <input v-model="courseForm.school" placeholder="学校" />
-            <input v-model="courseForm.startTime" placeholder="开课时间" />
+            </label>
+                        <label class="admin-field">
+              <span>学校</span>
+              <input v-model="courseForm.school" placeholder="学校" />
+            </label>
+                        <label class="admin-field">
+              <span>开课时间</span>
+              <input v-model="courseForm.startTime" placeholder="开课时间" />
+            </label>
             <label class="admin-field">
               <span>参与人数</span>
               <input v-model.number="courseForm.participants" type="number" min="0" placeholder="例如 1200" />
             </label>
-            <input v-model="courseForm.certificationLabel" placeholder="认证标签，清空即删除" />
-            <textarea v-model="courseForm.comment" placeholder="课程概述"></textarea>
-            <textarea v-model="courseForm.description" placeholder="课程详情"></textarea>
+                        <label class="admin-field">
+              <span>认证标签，清空即删除</span>
+              <input v-model="courseForm.certificationLabel" placeholder="认证标签，清空即删除" />
+            </label>
+                        <label class="admin-field admin-field-wide">
+              <span>课程概述</span>
+              <textarea v-model="courseForm.comment" placeholder="课程概述"></textarea>
+            </label>
+                        <label class="admin-field admin-field-wide">
+              <span>课程详情</span>
+              <textarea v-model="courseForm.description" placeholder="课程详情"></textarea>
+            </label>
             <label class="admin-field">
               <span>封面本地路径</span>
               <input v-model="courseForm.coverFilePath" placeholder="storage/... 或 teacher_courses/..." />
             </label>
-            <input v-model="courseForm.videoFilePath" placeholder="视频本地路径" />
-            <input v-model="courseForm.link" placeholder="链接" />
+                        <label class="admin-field">
+              <span>视频本地路径</span>
+              <input v-model="courseForm.videoFilePath" placeholder="视频本地路径" />
+            </label>
             <div class="admin-actions">
               <button type="submit" :disabled="loading">保存课程</button>
               <button type="button" @click="resetCourseForm">清空</button>
@@ -1351,7 +1389,10 @@ onMounted(async () => {
           </form>
 
             <div class="admin-search-row">
-              <input v-model="courseSearch" placeholder="搜索课程名称或编号" />
+                            <label class="admin-field">
+                <span>搜索课程名称或编号</span>
+                <input v-model="courseSearch" placeholder="搜索课程名称或编号" />
+              </label>
             </div>
             <!-- 课程列表 -->
             <div class="admin-card-grid">
@@ -1379,17 +1420,29 @@ onMounted(async () => {
 
             <!-- 卡券表单 -->
             <form class="admin-form admin-voucher-form" @submit.prevent="submitVoucher">
-            <input v-model="voucherForm.voucherKey" placeholder="卡券编号，例如 coupon-textbook-80-15" />
-            <select v-model="voucherForm.voucherType">
+                        <label class="admin-field">
+              <span>卡券编号，例如 coupon-textbook-80-15</span>
+              <input v-model="voucherForm.voucherKey" placeholder="卡券编号，例如 coupon-textbook-80-15" />
+            </label>
+                        <label class="admin-field">
+              <span>卡券类型</span>
+              <select v-model="voucherForm.voucherType" data-admin-label="卡券类型">
               <option value="DISCOUNT">优惠券</option>
               <option value="GAME_ITEM">游戏券</option>
             </select>
-            <input v-model="voucherForm.name" placeholder="卡券名称" />
+            </label>
+                        <label class="admin-field">
+              <span>卡券名称</span>
+              <input v-model="voucherForm.name" placeholder="卡券名称" />
+            </label>
             <label class="admin-field">
               <span>兑换金币价格</span>
               <input v-model.number="voucherForm.price" type="number" min="0" placeholder="例如 200" />
             </label>
-            <textarea v-model="voucherForm.description" placeholder="卡券说明"></textarea>
+                        <label class="admin-field admin-field-wide">
+              <span>卡券说明</span>
+              <textarea v-model="voucherForm.description" placeholder="卡券说明"></textarea>
+            </label>
             <label class="admin-check"><input v-model="voucherForm.enabled" type="checkbox" /> 上架启用</label>
             <label class="admin-check"><input v-model="voucherForm.unlimitedStock" type="checkbox" /> 无限库存</label>
             <label class="admin-field">
@@ -1403,11 +1456,14 @@ onMounted(async () => {
               />
             </label>
 
-            <select v-model="voucherForm.discountType" :disabled="voucherForm.voucherType === 'GAME_ITEM'">
+                        <label class="admin-field">
+              <span>优惠类型</span>
+              <select v-model="voucherForm.discountType" data-admin-label="优惠类型" :disabled="voucherForm.voucherType === 'GAME_ITEM'">
               <option value="NONE">无折扣</option>
               <option value="AMOUNT">满减</option>
               <option value="PERCENT">折扣</option>
             </select>
+            </label>
             <label class="admin-field">
               <span>使用门槛金额</span>
               <input v-model.number="voucherForm.thresholdAmount" type="number" min="0" step="0.01" placeholder="例如 80" />
@@ -1437,8 +1493,14 @@ onMounted(async () => {
               <span>减免上限</span>
               <input v-model.number="voucherForm.maxDiscountAmount" type="number" min="0" step="0.01" placeholder="0 表示不限" />
             </label>
-            <input v-model="voucherForm.validFrom" type="datetime-local" placeholder="有效期开始" />
-            <input v-model="voucherForm.validUntil" type="datetime-local" placeholder="有效期结束" />
+                        <label class="admin-field">
+              <span>有效期开始</span>
+              <input v-model="voucherForm.validFrom" type="datetime-local" placeholder="有效期开始" />
+            </label>
+                        <label class="admin-field">
+              <span>有效期结束</span>
+              <input v-model="voucherForm.validUntil" type="datetime-local" placeholder="有效期结束" />
+            </label>
             <label class="admin-field">
               <span>排序</span>
               <input v-model.number="voucherForm.sortOrder" type="number" placeholder="数字越小越靠前" />
@@ -1451,7 +1513,10 @@ onMounted(async () => {
           </form>
 
             <div class="admin-search-row">
-              <input v-model="voucherSearch" placeholder="按卡券编号搜索" />
+                            <label class="admin-field">
+                <span>按卡券编号搜索</span>
+                <input v-model="voucherSearch" placeholder="按卡券编号搜索" />
+              </label>
             </div>
             <!-- 卡券列表 -->
             <div class="admin-card-grid">
@@ -1487,15 +1552,24 @@ onMounted(async () => {
               <button type="button" :class="{ active: questionBankMode === 'oj' }" @click="questionBankMode = 'oj'">OJ题库</button>
             </div>
             <div class="admin-search-row admin-question-search">
-              <input v-model="questionBankSearch" placeholder="搜索题库或题目" />
-              <select v-model="selectedQuestionSetFilter" @change="handleQuestionSetFilterChange">
+                            <label class="admin-field">
+                <span>搜索题库或题目</span>
+                <input v-model="questionBankSearch" placeholder="搜索题库或题目" />
+              </label>
+                            <label class="admin-field">
+                <span>匹配题库</span>
+                <select v-model="selectedQuestionSetFilter" data-admin-label="匹配题库" @change="handleQuestionSetFilterChange">
                 <option value="">匹配题库</option>
                 <option v-for="set in matchedQuestionSets" :key="set.code" :value="set.code">{{ set.title }}</option>
               </select>
-              <select v-model="selectedQuestionFilter">
+              </label>
+                            <label class="admin-field">
+                <span>匹配题目</span>
+                <select v-model="selectedQuestionFilter" data-admin-label="匹配题目">
                 <option value="">匹配题目</option>
                 <option v-for="question in matchedQuestions" :key="question.id" :value="String(question.id)">{{ question.stem }}</option>
               </select>
+              </label>
             </div>
 
             <section v-if="questionBankMode === 'oj'" class="admin-category-manager">
@@ -1503,7 +1577,10 @@ onMounted(async () => {
                 <strong>在线OJ分类同步</strong>
                 <span>算法、难度、题面语言与实验平台在线OJ保持一致</span>
                 <form class="admin-category-form" @submit.prevent="addOjCategory">
-                  <input v-model="newOjCategory" placeholder="新增OJ分类名称" />
+                                    <label class="admin-field">
+                    <span>新增OJ分类名称</span>
+                    <input v-model="newOjCategory" placeholder="新增OJ分类名称" />
+                  </label>
                   <button type="submit" :disabled="loading">添加分类</button>
                 </form>
               </div>
@@ -1523,8 +1600,14 @@ onMounted(async () => {
 
             <div v-if="questionBankMode === 'oj'" class="admin-split admin-oj-layout">
               <form class="admin-form admin-oj-form" @submit.prevent="submitOjProblem">
-                <input v-model="ojForm.title" placeholder="题目标题" />
-                <input v-model="ojForm.slug" placeholder="题目标识，例如 two-sum" />
+                                <label class="admin-field">
+                  <span>题目标题</span>
+                  <input v-model="ojForm.title" placeholder="题目标题" />
+                </label>
+                                <label class="admin-field">
+                  <span>题目标识，例如 two-sum</span>
+                  <input v-model="ojForm.slug" placeholder="题目标识，例如 two-sum" />
+                </label>
                 <div class="admin-field admin-field-wide">
                   <span>OJ分类（可多选）</span>
                   <details class="admin-multi-dropdown">
@@ -1541,21 +1624,42 @@ onMounted(async () => {
                     </div>
                   </details>
                 </div>
-                <textarea v-model="ojForm.description" placeholder="题目描述"></textarea>
-                <textarea v-model="ojForm.inputDescription" placeholder="输入描述"></textarea>
-                <textarea v-model="ojForm.outputDescription" placeholder="输出描述"></textarea>
-                <textarea v-model="ojForm.standardCode" class="admin-code-input" placeholder="标准代码（C++）"></textarea>
+                                <label class="admin-field admin-field-wide">
+                  <span>题目描述</span>
+                  <textarea v-model="ojForm.description" placeholder="题目描述"></textarea>
+                </label>
+                                <label class="admin-field admin-field-wide">
+                  <span>输入描述</span>
+                  <textarea v-model="ojForm.inputDescription" placeholder="输入描述"></textarea>
+                </label>
+                                <label class="admin-field admin-field-wide">
+                  <span>输出描述</span>
+                  <textarea v-model="ojForm.outputDescription" placeholder="输出描述"></textarea>
+                </label>
+                                <label class="admin-field admin-field-wide">
+                  <span>标准代码（C++）</span>
+                  <textarea v-model="ojForm.standardCode" class="admin-code-input" placeholder="标准代码（C++）"></textarea>
+                </label>
                 <div class="admin-form-row">
-                  <select v-model="ojForm.status">
+                                    <label class="admin-field">
+                    <span>发布状态</span>
+                    <select v-model="ojForm.status" data-admin-label="发布状态">
                     <option value="DRAFT">草稿</option>
                     <option value="PUBLISHED">发布</option>
                     <option value="ARCHIVED">归档</option>
                   </select>
+                  </label>
                   <span class="admin-oj-derived-difficulty">难度：{{ formatDifficulty(ojForm.difficulty) }}</span>
                 </div>
                 <div class="admin-form-row">
-                  <input v-model.number="ojForm.timeLimitMs" type="number" min="100" placeholder="时间限制ms" />
-                  <input v-model.number="ojForm.memoryLimitKb" type="number" min="1024" placeholder="内存限制KB" />
+                                    <label class="admin-field">
+                    <span>时间限制ms</span>
+                    <input v-model.number="ojForm.timeLimitMs" type="number" min="100" placeholder="时间限制ms" />
+                  </label>
+                                    <label class="admin-field">
+                    <span>内存限制KB</span>
+                    <input v-model.number="ojForm.memoryLimitKb" type="number" min="1024" placeholder="内存限制KB" />
+                  </label>
                 </div>
                 <div class="admin-oj-cases">
                   <article v-for="(testCase, index) in ojForm.testCases" :key="index" class="admin-oj-case">
@@ -1564,9 +1668,18 @@ onMounted(async () => {
                       <label><input v-model="testCase.sample" type="checkbox" /> 示例</label>
                       <button type="button" aria-label="删除测试点" @click="removeOjCase(index)">×</button>
                     </header>
-                    <textarea v-model="testCase.inputData" placeholder="测试点输入"></textarea>
-                    <textarea v-model="testCase.expectedOutput" placeholder="测试点输出（可留空，由标准代码生成）"></textarea>
-                    <input v-model.number="testCase.weight" type="number" min="1" placeholder="权重" />
+                                        <label class="admin-field admin-field-wide">
+                      <span>测试点输入</span>
+                      <textarea v-model="testCase.inputData" placeholder="测试点输入"></textarea>
+                    </label>
+                                        <label class="admin-field admin-field-wide">
+                      <span>测试点输出（可留空，由标准代码生成）</span>
+                      <textarea v-model="testCase.expectedOutput" placeholder="测试点输出（可留空，由标准代码生成）"></textarea>
+                    </label>
+                                        <label class="admin-field">
+                      <span>权重</span>
+                      <input v-model.number="testCase.weight" type="number" min="1" placeholder="权重" />
+                    </label>
                     <div v-if="ojCheckResult?.cases?.[index]" class="admin-case-result">
                       <p :class="{ danger: !ojCheckResult.cases[index].matched }">
                         {{ ojCheckResult.cases[index].message }}
@@ -1608,15 +1721,42 @@ onMounted(async () => {
               <!-- 题库表单与列表 -->
               <div>
                 <form class="admin-form" @submit.prevent="submitSet">
-                <input v-model="setForm.categoryCode" placeholder="分类编号" />
-                <input v-model="setForm.categoryName" placeholder="分类名称" />
-                <input v-model="setForm.code" placeholder="题库编号" />
-                <input v-model="setForm.title" placeholder="题库名称" />
-                <input v-model="setForm.subtitle" placeholder="副标题" />
-                <input v-model="setForm.difficultyLabel" placeholder="难度" />
-                <input v-model="setForm.statusLabel" placeholder="状态" />
-                <textarea v-model="setForm.description" placeholder="题库描述"></textarea>
-                <textarea v-model="setForm.sourceRefsText" placeholder="来源链接，每行一个"></textarea>
+                                <label class="admin-field">
+                  <span>分类编号</span>
+                  <input v-model="setForm.categoryCode" placeholder="分类编号" />
+                </label>
+                                <label class="admin-field">
+                  <span>分类名称</span>
+                  <input v-model="setForm.categoryName" placeholder="分类名称" />
+                </label>
+                                <label class="admin-field">
+                  <span>题库编号</span>
+                  <input v-model="setForm.code" placeholder="题库编号" />
+                </label>
+                                <label class="admin-field">
+                  <span>题库名称</span>
+                  <input v-model="setForm.title" placeholder="题库名称" />
+                </label>
+                                <label class="admin-field">
+                  <span>副标题</span>
+                  <input v-model="setForm.subtitle" placeholder="副标题" />
+                </label>
+                                <label class="admin-field">
+                  <span>难度</span>
+                  <input v-model="setForm.difficultyLabel" placeholder="难度" />
+                </label>
+                                <label class="admin-field">
+                  <span>状态</span>
+                  <input v-model="setForm.statusLabel" placeholder="状态" />
+                </label>
+                                <label class="admin-field admin-field-wide">
+                  <span>题库描述</span>
+                  <textarea v-model="setForm.description" placeholder="题库描述"></textarea>
+                </label>
+                                <label class="admin-field admin-field-wide">
+                  <span>来源链接，每行一个</span>
+                  <textarea v-model="setForm.sourceRefsText" placeholder="来源链接，每行一个"></textarea>
+                </label>
                 <div class="admin-actions">
                   <button type="submit" :disabled="loading">保存题库</button>
                   <button type="button" @click="resetSetForm">清空</button>
@@ -1640,16 +1780,25 @@ onMounted(async () => {
               <!-- 题目表单与列表 -->
               <div>
                 <form class="admin-form" @submit.prevent="submitQuestion">
-                <select v-model="selectedSetCode" @change="loadQuestions(); resetQuestionForm()">
+                                <label class="admin-field">
+                  <span>所属题库</span>
+                  <select v-model="selectedSetCode" data-admin-label="所属题库" @change="loadQuestions(); resetQuestionForm()">
                   <option v-for="set in questionSets" :key="set.code" :value="set.code">{{ set.title }}</option>
                 </select>
-                <select v-model="questionForm.type" @change="handleQuestionTypeChange">
+                </label>
+                                <label class="admin-field">
+                  <span>题目类型</span>
+                  <select v-model="questionForm.type" data-admin-label="题目类型" @change="handleQuestionTypeChange">
                   <option value="single">单选题</option>
                   <option value="multiple">多选题</option>
                   <option value="short">主观题</option>
                   <option value="vocabulary">词汇题</option>
                 </select>
-                <textarea v-model="questionForm.stem" placeholder="题干"></textarea>
+                </label>
+                                <label class="admin-field admin-field-wide">
+                  <span>题干</span>
+                  <textarea v-model="questionForm.stem" placeholder="题干"></textarea>
+                </label>
                 <div v-if="isChoiceQuestion" class="admin-choice-options">
                   <label v-for="(_, index) in questionForm.options" :key="index" class="admin-choice-row">
                     <span>{{ choiceLabels[index] }}.</span>
@@ -1658,10 +1807,22 @@ onMounted(async () => {
                   </label>
                   <button v-if="questionForm.options.length < choiceLabels.length" type="button" class="admin-add-option" @click="addChoiceOption">+</button>
                 </div>
-                <textarea v-else v-model="questionForm.optionsText" placeholder="选项或补充内容，每行一个"></textarea>
-                <input v-model="questionForm.answer" placeholder="答案" />
-                <textarea v-model="questionForm.explanation" placeholder="解析"></textarea>
-                <input v-model="questionForm.difficultyLabel" placeholder="难度" />
+                <label v-else class="admin-field admin-field-wide">
+                  <span>选项或补充内容，每行一个</span>
+                  <textarea v-model="questionForm.optionsText" placeholder="选项或补充内容，每行一个"></textarea>
+                </label>
+                                <label class="admin-field">
+                  <span>答案</span>
+                  <input v-model="questionForm.answer" placeholder="答案" />
+                </label>
+                                <label class="admin-field admin-field-wide">
+                  <span>解析</span>
+                  <textarea v-model="questionForm.explanation" placeholder="解析"></textarea>
+                </label>
+                                <label class="admin-field">
+                  <span>难度</span>
+                  <input v-model="questionForm.difficultyLabel" placeholder="难度" />
+                </label>
                 <div class="admin-actions">
                   <button type="submit" :disabled="loading">保存题目</button>
                   <button type="button" @click="resetQuestionForm">清空</button>
@@ -1693,8 +1854,14 @@ onMounted(async () => {
           <section v-if="activeTab === 'reviews'" class="admin-panel">
             <h2>评论管理</h2>
             <div class="admin-search-row admin-review-search">
-              <input v-model="reviewUserSearch" placeholder="搜索用户名、序号或邮箱" />
-              <input v-model="reviewContentSearch" placeholder="搜索评论内容" />
+                            <label class="admin-field">
+                <span>搜索用户名、序号或邮箱</span>
+                <input v-model="reviewUserSearch" placeholder="搜索用户名、序号或邮箱" />
+              </label>
+                            <label class="admin-field">
+                <span>搜索评论内容</span>
+                <input v-model="reviewContentSearch" placeholder="搜索评论内容" />
+              </label>
             </div>
 
             <section class="admin-review-section">
@@ -1802,7 +1969,7 @@ onMounted(async () => {
           <template v-else>
             <input v-model="userForm.username" placeholder="用户名" />
             <input v-model="userForm.email" placeholder="邮箱" />
-            <select v-model="userForm.roleType">
+            <select v-model="userForm.roleType" data-admin-label="账号身份">
               <option value="student">学生</option>
               <option value="teacher">教师</option>
             </select>
@@ -1825,7 +1992,7 @@ onMounted(async () => {
           <input v-model="courseForm.id" placeholder="课程编号" />
           <input v-model="courseForm.name" placeholder="课程名称" />
           <input v-model="courseForm.teacher" placeholder="教师" />
-          <select v-model="courseForm.category">
+          <select v-model="courseForm.category" data-admin-label="课程分类">
             <option value="">请选择分类</option>
             <option v-for="category in courseCategories" :key="category.name" :value="category.name">{{ category.name }}</option>
           </select>
@@ -1840,7 +2007,6 @@ onMounted(async () => {
           <textarea v-model="courseForm.description" placeholder="课程详情"></textarea>
           <input v-model="courseForm.coverFilePath" placeholder="封面本地路径（storage/... 或 teacher_courses/...）" />
           <input v-model="courseForm.videoFilePath" placeholder="视频本地路径" />
-          <input v-model="courseForm.link" placeholder="链接" />
           <div class="admin-actions admin-modal-actions">
             <button type="submit" :disabled="loading">保存课程</button>
             <button type="button" @click="requestCloseEditor">取消</button>
@@ -1849,7 +2015,7 @@ onMounted(async () => {
 
         <form v-else-if="activeEditor === 'voucher'" class="admin-form admin-modal-form" @submit.prevent="submitVoucher">
           <input v-model="voucherForm.voucherKey" placeholder="卡券编号" />
-          <select v-model="voucherForm.voucherType">
+          <select v-model="voucherForm.voucherType" data-admin-label="卡券类型">
             <option value="DISCOUNT">优惠券</option>
             <option value="GAME_ITEM">游戏券</option>
           </select>
@@ -1859,7 +2025,7 @@ onMounted(async () => {
           <label class="admin-check"><input v-model="voucherForm.enabled" type="checkbox" /> 上架启用</label>
           <label class="admin-check"><input v-model="voucherForm.unlimitedStock" type="checkbox" /> 无限库存</label>
           <input v-model.number="voucherForm.stockQuantity" type="number" min="0" :disabled="voucherForm.unlimitedStock" placeholder="库存数量" />
-          <select v-model="voucherForm.discountType" :disabled="voucherForm.voucherType === 'GAME_ITEM'">
+          <select v-model="voucherForm.discountType" data-admin-label="优惠类型" :disabled="voucherForm.voucherType === 'GAME_ITEM'">
             <option value="NONE">无折扣</option>
             <option value="AMOUNT">满减</option>
             <option value="PERCENT">折扣</option>
@@ -1868,8 +2034,8 @@ onMounted(async () => {
           <input v-model.number="voucherForm.discountAmount" type="number" min="0" step="0.01" placeholder="减免金额" />
           <input v-model.number="voucherForm.discountRate" type="number" min="0" max="1" step="0.01" placeholder="0.9 表示 9 折" />
           <input v-model.number="voucherForm.maxDiscountAmount" type="number" min="0" step="0.01" placeholder="减免上限" />
-          <input v-model="voucherForm.validFrom" type="datetime-local" />
-          <input v-model="voucherForm.validUntil" type="datetime-local" />
+          <input v-model="voucherForm.validFrom" type="datetime-local" data-admin-label="有效期开始" />
+          <input v-model="voucherForm.validUntil" type="datetime-local" data-admin-label="有效期结束" />
           <input v-model.number="voucherForm.sortOrder" type="number" placeholder="排序" />
           <div class="admin-actions admin-modal-actions">
             <button type="submit" :disabled="loading">保存卡券</button>
@@ -1894,16 +2060,25 @@ onMounted(async () => {
         </form>
 
         <form v-else-if="activeEditor === 'question'" class="admin-form admin-modal-form" @submit.prevent="submitEditorQuestion">
-          <select v-model="selectedSetCode">
+          <label class="admin-field">
+            <span>所属题库</span>
+            <select v-model="selectedSetCode" data-admin-label="所属题库">
             <option v-for="set in questionSets" :key="set.code" :value="set.code">{{ set.title }}</option>
           </select>
-          <select v-model="editorQuestionForm.type" @change="handleEditorQuestionTypeChange">
+          </label>
+          <label class="admin-field">
+            <span>题目类型</span>
+            <select v-model="editorQuestionForm.type" data-admin-label="题目类型" @change="handleEditorQuestionTypeChange">
             <option value="single">单选题</option>
             <option value="multiple">多选题</option>
             <option value="short">主观题</option>
             <option value="vocabulary">词汇题</option>
           </select>
-          <textarea v-model="editorQuestionForm.stem" placeholder="题干"></textarea>
+          </label>
+          <label class="admin-field admin-field-wide">
+            <span>题干</span>
+            <textarea v-model="editorQuestionForm.stem" placeholder="题干"></textarea>
+          </label>
           <div v-if="isEditorChoiceQuestion" class="admin-choice-options">
             <label v-for="(_, index) in editorQuestionForm.options" :key="index" class="admin-choice-row">
               <span>{{ choiceLabels[index] }}.</span>
@@ -1912,10 +2087,22 @@ onMounted(async () => {
             </label>
             <button v-if="editorQuestionForm.options.length < choiceLabels.length" type="button" class="admin-add-option" @click="addChoiceOption(editorQuestionForm)">+</button>
           </div>
-          <textarea v-else v-model="editorQuestionForm.optionsText" placeholder="选项或补充内容，每行一个"></textarea>
-          <input v-model="editorQuestionForm.answer" placeholder="答案" />
-          <textarea v-model="editorQuestionForm.explanation" placeholder="解析"></textarea>
-          <input v-model="editorQuestionForm.difficultyLabel" placeholder="难度" />
+          <label v-else class="admin-field admin-field-wide">
+            <span>选项或补充内容，每行一个</span>
+            <textarea v-model="editorQuestionForm.optionsText" placeholder="选项或补充内容，每行一个"></textarea>
+          </label>
+          <label class="admin-field">
+            <span>答案</span>
+            <input v-model="editorQuestionForm.answer" placeholder="答案" />
+          </label>
+          <label class="admin-field admin-field-wide">
+            <span>解析</span>
+            <textarea v-model="editorQuestionForm.explanation" placeholder="解析"></textarea>
+          </label>
+          <label class="admin-field">
+            <span>难度</span>
+            <input v-model="editorQuestionForm.difficultyLabel" placeholder="难度" />
+          </label>
           <div class="admin-actions admin-modal-actions">
             <button type="submit" :disabled="loading">保存题目</button>
             <button type="button" @click="requestCloseEditor">取消</button>
@@ -1946,7 +2133,7 @@ onMounted(async () => {
           <textarea v-model="editorOjForm.outputDescription" placeholder="输出描述"></textarea>
           <textarea v-model="editorOjForm.standardCode" class="admin-code-input" placeholder="标准代码（C++）"></textarea>
           <div class="admin-form-row">
-            <select v-model="editorOjForm.status">
+            <select v-model="editorOjForm.status" data-admin-label="发布状态">
               <option value="DRAFT">草稿</option>
               <option value="PUBLISHED">发布</option>
               <option value="ARCHIVED">归档</option>

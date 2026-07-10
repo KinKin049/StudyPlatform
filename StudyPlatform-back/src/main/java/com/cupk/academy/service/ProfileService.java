@@ -123,9 +123,9 @@ public class ProfileService {
                 buildGameMetrics(userId, ladderJumpAggregate, typeWarriorAggregate),
                 coinRewardService.totalCoins(userId) + adminCoinAdjustment,
                 buildMistakeMetrics(userId),
-                buildRankingMetrics(),
+                buildRankingMetrics(userId, totalLearningSeconds),
                 buildAchievementMetrics(),
-                buildTextbookOrders()
+                buildTextbookOrders(userId)
         );
     }
 
@@ -503,10 +503,27 @@ public class ProfileService {
      *
      * @return 排名指标响应列表
      */
-    private List<ProfilePreviewMetricResponse> buildRankingMetrics() {
+    private List<ProfilePreviewMetricResponse> buildRankingMetrics(long userId, long totalLearningSeconds) {
+        ProfileRepository.LearningTimeRankingRow ranking = profileRepository.findLearningTimeRanking(userId);
+        long participantCount = Math.max(ranking.participantCount(), 1);
+        long rank = Math.max(ranking.rank(), 1);
+        long exceededPercent = participantCount <= 1
+                ? 0
+                : Math.max(0, Math.round((participantCount - rank) * 100.0 / participantCount));
         return List.of(
-                new ProfilePreviewMetricResponse("全站排名", "#128", "超过 82% 学习者", "cyan"),
-                new ProfilePreviewMetricResponse("本周排名", "#19", "连续学习加成中", "blue")
+                new ProfilePreviewMetricResponse(
+                        "学习时长排名",
+                        "#" + formatNumber(rank),
+                        "累计学习时长 " + formatDuration(totalLearningSeconds)
+                                + " · 共 " + formatNumber(participantCount) + " 名学习者",
+                        "cyan"
+                ),
+                new ProfilePreviewMetricResponse(
+                        "累计学习时长",
+                        formatDuration(totalLearningSeconds),
+                        "排名依据：全站累计学习时长 · 超过 " + exceededPercent + "% 学习者",
+                        "blue"
+                )
         );
     }
 
@@ -527,10 +544,25 @@ public class ProfileService {
      *
      * @return 教材订单指标响应列表
      */
-    private List<ProfilePreviewMetricResponse> buildTextbookOrders() {
+    private List<ProfilePreviewMetricResponse> buildTextbookOrders(long userId) {
+        ProfileRepository.TextbookProfileStatsRow stats = profileRepository.findTextbookProfileStats(userId);
         return List.of(
-                new ProfilePreviewMetricResponse("教材订单", "3 单", "待支付 1 · 已完成 2", "cyan"),
-                new ProfilePreviewMetricResponse("教材收藏", "18 本", "计算机 / 公共课 / 英语", "blue")
+                new ProfilePreviewMetricResponse(
+                        "购物车",
+                        formatNumber(stats.cartQuantity()) + " 本",
+                        stats.cartItemCount() > 0
+                                ? "共 " + formatNumber(stats.cartItemCount()) + " 种教材待结算"
+                                : "购物车暂无教材",
+                        "blue"
+                ),
+                new ProfilePreviewMetricResponse(
+                        "待评价",
+                        formatNumber(stats.pendingReviewCount()) + " 本",
+                        stats.pendingReviewCount() > 0
+                                ? "已购教材中还有内容等待评价"
+                                : "已购教材均已评价或暂无已购教材",
+                        "amber"
+                )
         );
     }
 
