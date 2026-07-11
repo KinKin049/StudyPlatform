@@ -1,0 +1,50 @@
+7.2  功能展示
+本节按照系统主要功能模块展示已完成的页面和操作流程。由于当前无法直接读取后端启动终端窗口，本文对后台 SQL 日志截图保留统一图题和空白位置，后续可将运行系统时控制台输出的白底日志截图替换到对应位置。
+7.2.1  用户登录与注册功能
+用户认证模块提供登录、注册、忘记密码和入职引导功能。启动后端项目并启动前端项目后，在浏览器输入地址 http://localhost:5173/login 访问登录页面。用户在邮箱输入框中填写演示账号 lin.yutong2026@study-demo.com，在密码框中填写 Student@2026!，单击“登录”按钮后，前端调用 /api/auth/login 接口，后端校验 users 表中的账号、密码和角色信息，返回当前用户资料并写入浏览器本地认证状态。
+图7-3  用户登录页面
+图7-4  学生账号登录后系统首页
+本模块主要使用 users、password_reset_codes、profile_user_profiles 等数据表。注册成功后，用户基础信息写入 users 表；忘记密码流程写入 password_reset_codes 表；入职引导阶段保存 role_type、learning_goal、interests、school、teacher_name 和 pet_key 等字段。
+图7-5  用户登录与注册功能后台SQL日志截图（预留）
+7.2.2  在线学堂与课程学习功能
+在线学堂模块是系统的课程学习入口。用户登录后访问 http://localhost:5173/academy/home，页面展示我的课程、课程作业和课程考试等聚合信息；进入 http://localhost:5173/academy/open-courses 可查看在线开放课程列表，点击课程卡片可进入课程详情页，完成课程介绍查看、课程加入、视频学习、课程评价和教师回复等操作。
+图7-6  在线学堂首页
+图7-7  在线开放课程列表页面
+该模块主要使用 online_open_courses、general_courses、micro_major_courses、academy_course_enrollments、academy_course_reviews、academy_assignments、academy_exams、academy_textbook_orders 等数据表。后台接口集中在 AcademyController 和 AcademyService 中，完成课程查询、加入课程、作业考试、教材购物车和订单支付等操作。
+图7-8  在线学堂课程查询与学习记录后台SQL日志截图（预留）
+7.2.3  题库练习与学习反馈功能
+题库练习模块提供题库首页、课程题库列表、题目练习、错题本和收藏题目等功能。访问 http://localhost:5173/academy/question-bank 可进入题库首页，系统展示题库入口、错题数量和收藏入口；访问 http://localhost:5173/academy/question-bank/courses 可查看课程题库列表，进入题库后可以按题目分页练习，提交答案后后端记录作答结果、错题状态和学习事件。
+图7-9  题库练习首页
+图7-10  课程题库列表页面
+本模块主要使用 question_bank_subjects、question_bank_problems、course_question_bank_sets、course_question_bank_questions、course_question_bank_mistakes、course_question_bank_favorites 和 profile_learning_events 等数据表。错题本与收藏功能通过 user_id 与题目编号关联，可以支撑个人错题复习和学习画像统计。
+图7-11  题库作答、错题记录与收藏功能后台SQL日志截图（预留）
+7.2.4  个人主页、教师端与AI宠物功能
+个人主页用于展示用户学习画像。学生账号访问 http://localhost:5173/profile 后，可以查看学习时长、今日学习、练习记录、连续学习、学习热力图、金币余额、近期动态和成就等信息。教师账号访问同一页面时，系统根据 roleType 显示课程管理、课程发布、课程编辑、待办工作台和作业布置等教师功能。AI宠物作为全局浮窗存在于主要页面中，支持账号宠物切换、学习问答、页面导航、待办清单和番茄钟。
+图7-12  学生个人主页与学习画像
+图7-13  教师个人主页与课程管理
+图7-14  教师信箱页面
+该模块主要使用 users、profile_user_profiles、profile_learning_time_records、profile_learning_events、teacher_published_courses、academy_course_reviews、academy_assignments 和 users.pet_key 等数据。后端通过 ProfileController、AcademyController 和 AiPetChatController 提供画像查询、头像更新、教师工作台、信箱阅读和AI宠物聊天接口。
+图7-15  个人主页、教师工作台与AI宠物后台SQL日志截图（预留）
+7.2.5  OJ在线编程与实验仿真功能
+实验平台入口地址为 http://localhost:5173/lab，页面提供 OJ 在线编程、石油气仿真、测井仿真等实践训练入口。进入 http://localhost:5173/lab/oj 后，用户可以查看题目列表、题目难度、标签和测试要求，输入 C++ 代码后提交到后端，后端创建 oj_submissions 记录并调用判题沙箱执行编译、运行和测试用例比对。石油气仿真和测井仿真则用于保存专业实验记录和学习时长。
+图7-16  实验平台入口页面
+图7-17  OJ在线编程页面
+本模块主要使用 oj_problems、oj_test_cases、oj_submissions、oj_submission_cases、well_log_template、well_log_record、production_pump_record、production_reservoir_record、production_waterflood_record 和 production_stimulation_record 等数据表。
+图7-18  OJ代码提交与实验记录后台SQL日志截图（预留）
+7.2.6  可视化学习与学习游戏功能
+可视化学习模块访问地址为 http://localhost:5173/visualization，提供数据结构可视化、算法演示、二维函数图像和三维空间模型等入口。学习游戏模块访问地址为 http://localhost:5173/games，目前包含万题天梯跳和 Type Warrior 两类游戏。游戏结束后，前端提交得分、金币、答题情况和有效时长，后端写入游戏记录并通过 CoinRewardService 发放平台金币。
+图7-19  可视化学习中心页面
+图7-20  学习游戏平台页面
+该模块主要使用 game_ladder_jump_records、game_type_warrior_records、coin_reward_records 和 profile_learning_events 等数据表。可视化页面主要在前端完成交互和图形呈现，游戏记录和金币结算则由后端统一校验和持久化。
+图7-21  可视化学习与学习游戏后台SQL日志截图（预留）
+7.2.7  金币兑换中心功能
+金币兑换中心访问地址为 http://localhost:5173/exchange。页面展示当前金币余额、金币获取规则、AI宠物形象、学习卡券和虚拟资产。用户点击兑换按钮后，前端调用 /api/rewards/vouchers/exchange 或 /api/auth/pet 等接口，后端根据 coin_reward_records 计算可用金币，并写入 coin_spend_records、user_vouchers 或 users.pet_key，保证兑换结果与当前账号绑定。
+图7-22  金币兑换中心页面
+本模块主要使用 coin_reward_records、voucher_items、coin_spend_records、user_vouchers 和 users 表。AI宠物切换功能已按账号隔离，学生、教师和管理员切换账号后会分别加载各自绑定的宠物形象。
+图7-23  金币兑换与AI宠物切换后台SQL日志截图（预留）
+7.2.8  后台管理功能
+管理员账号登录后访问 http://localhost:5173/admin 进入后台管理页面。后台管理页面提供用户管理、课程管理、课程分类管理、课程评价与回复管理、题库集管理、题目管理、OJ题目管理和兑换商品管理等功能。管理员可以在页面中新增、修改、删除或审核基础数据，后端通过 X-Auth-User-Id 识别当前管理员身份，并在 AdminService 中进行权限校验。
+图7-24  管理员后台管理页面
+图7-25  管理员个人主页页面
+后台管理模块会访问 users、online_open_courses、general_courses、micro_major_courses、academy_course_reviews、course_question_bank_sets、course_question_bank_questions、oj_problems、oj_test_cases 和 voucher_items 等核心表。该模块对第七章功能展示很重要，因为它能够证明系统数据不是静态页面，而是可以通过管理端维护。
+图7-26  管理员后台管理操作SQL日志截图（预留）

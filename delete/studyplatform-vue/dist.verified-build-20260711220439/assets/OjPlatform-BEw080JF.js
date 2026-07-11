@@ -1,0 +1,59 @@
+import{$ as e,L as t,P as n,Vt as r,Wt as i,Z as a,_ as o,_t as s,ct as c,et as l,f as u,i as d,l as f,p,u as m,v as ee,z as h}from"./runtime-core.esm-bundler-CO1KWIfF.js";import{Ft as g,Lt as te,Rt as _,gt as v,vt as ne}from"./index-BSCjbX4Q.js";import{n as re,o as y,r as b,s as x,t as S}from"./catalog-ZNwZyj9m.js";import{t as ie}from"./useLearningTimeTracker-CfhIx3bW.js";function ae(e=``,t={}){let n=new URLSearchParams({status:`PUBLISHED`});return e.trim()&&n.set(`keyword`,e.trim()),t.tags?.length&&n.set(`tags`,t.tags.join(`,`)),t.difficulties?.length&&n.set(`difficulties`,t.difficulties.join(`,`)),t.languages?.length&&n.set(`languages`,t.languages.join(`,`)),v(`/api/oj/problems?${n.toString()}`)}function oe(){return v(`/api/oj/problems/categories`)}function se(e){return v(`/api/oj/problems/${e}`)}function ce(e){return v(`/api/oj/submissions`,{method:`POST`,body:JSON.stringify(e)})}function le(e){return v(`/api/oj/submissions/${e}`)}function C(e){return v(`/api/oj/submissions/${e}/cases`)}var ue={class:`oj-shell`},de={class:`oj-header`},fe={class:`oj-layout`},pe={class:`problem-list`,"aria-label":`题库`},me={class:`list-header`},he={class:`problem-search`},ge={key:0},_e={class:`quick-filter-row`,"aria-label":`快捷分类筛选`},ve=[`onClick`],ye=[`onClick`],be=[`onClick`],xe={key:0,class:`filter-dropdown`},Se=[`value`],Ce=[`value`],we=[`value`],Te={class:`problem-results`},Ee={key:0,class:`muted-text`},De={key:1,class:`muted-text`},Oe=[`onClick`],w={class:`problem-title`},T={class:`problem-meta`},ke={class:`problem-tag-preview`},Ae={key:0,class:`problem-workspace`},je={class:`workspace-toolbar`},Me={class:`tag-row`},Ne={class:`limit-box`},Pe={class:`tab-strip`},Fe={key:0,class:`statement-panel`},Ie={class:`statement-text`},Le={key:1,class:`submit-panel`},Re={class:`submit-toolbar`},ze=[`disabled`],Be={key:2,class:`result-panel`},Ve={key:0,class:`result-summary`},He={key:0},Ue={class:`case-list`},We=[`onClick`],Ge={key:1,class:`case-detail`},Ke={key:1,class:`empty-state`},qe={key:0,class:`error-toast`},E={__name:`OjPlatform`,setup(v){ie({moduleType:`oj`,targetCode:`lab-oj`,targetTitle:`OJ 在线判题`});let E=c([]),D=c(null),O=c([]),k=c([]),A=c(!1),j=c(!1),M=c(``),N=c(`statement`),P=c(``),F=c(`cpp`),I=c(``),L=c(!1),R=c([]),z=c([]),B=c([]),V=0,H=c(S),U=c(y),W={PENDING:`等待中`,JUDGING:`判题中`,ACCEPTED:`通过`,WRONG_ANSWER:`答案错误`,TIME_LIMIT_EXCEEDED:`超时`,MEMORY_LIMIT_EXCEEDED:`内存超限`,RUNTIME_ERROR:`运行错误`,COMPILE_ERROR:`编译错误`,SYSTEM_ERROR:`系统错误`},Je=f(()=>{if(!D.value?.samples)return[];try{return JSON.parse(D.value.samples)}catch{return[]}}),Ye=f(()=>{if(!D.value?.tags)return[];try{return JSON.parse(D.value.tags)}catch{return[]}}),G=f(()=>O.value[0]||null),K=f(()=>R.value.length+z.value.length+B.value.length),Xe=f(()=>H.value.filter(e=>U.value.includes(e.value)));a(F,()=>{P.value=Y(D.value?.slug,F.value)}),a([I,()=>R.value.slice(),()=>z.value.slice(),()=>B.value.slice()],()=>{window.clearTimeout(V),V=window.setTimeout(()=>{q()},300)});async function q(){A.value=!0,M.value=``;try{E.value=await ae(I.value,{tags:R.value,difficulties:z.value,languages:B.value}),E.value.length>0?await J(E.value[0]):(D.value=null,k.value=[])}catch(e){M.value=$(e)}finally{A.value=!1}}async function J(e){M.value=``,N.value=`statement`,k.value=[],D.value=await se(e.id),P.value=Y(D.value.slug,F.value)}async function Ze(){if(D.value){j.value=!0,M.value=``,k.value=[];try{let e=await ce({problemId:D.value.id,userId:null,language:F.value,sourceCode:P.value});O.value.unshift(e),N.value=`result`,await Qe(e.id)}catch(e){M.value=$(e)}finally{j.value=!1}}}async function Qe(e){for(let t=0;t<10;t+=1){let t=await le(e);if(O.value=[t,...O.value.filter(t=>t.id!==e)],![`PENDING`,`JUDGING`].includes(t.status)){k.value=await C(e);return}await dt(800)}}async function $e(e){k.value=await C(e.id),N.value=`result`}function Y(e,t){return t===`answer`?et(e):t===`cpp`?tt(e):``}function et(e){return e===`a-plus-b`?`3
+---
+6
+`:e===`maximum-number`?`9
+---
+-3
+`:e===`fibonacci`?`55
+---
+1134903170
+`:``}function tt(e){return e===`maximum-number`?`#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+    long long ans;
+    cin >> ans;
+    for (int i = 1; i < n; ++i) {
+        long long x;
+        cin >> x;
+        ans = max(ans, x);
+    }
+    cout << ans << '
+';
+    return 0;
+}
+`:e===`fibonacci`?`#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    cin >> n;
+    long long a = 0, b = 1;
+    for (int i = 0; i < n; ++i) {
+        long long c = a + b;
+        a = b;
+        b = c;
+    }
+    cout << a << '
+';
+    return 0;
+}
+`:`#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    // 在这里编写你的解题代码。
+    return 0;
+}
+`}function nt(){I.value=``}function rt(){R.value=[],z.value=[],B.value=[]}function X(e){let t=H.value.find(t=>t.value===e);return t?`${t.label} ${t.labelEn}`:e}async function Z(){let e=await oe();if(!Array.isArray(e)||e.length===0){H.value=S,U.value=y;return}H.value=e.map(e=>{let t=e.name||e.value||``;return S.find(e=>e.value===t)||{value:t,label:t,labelEn:t}}).filter(e=>e.value),U.value=H.value.slice(0,6).map(e=>e.value)}function it(e){Q(R,e)}function at(e){Q(z,e)}function ot(e){Q(B,e)}function st(e){return R.value.includes(e)}function ct(e){return z.value.includes(e)}function lt(e){return B.value.includes(e)}function ut(e){try{return JSON.parse(e.tags||`[]`)}catch{return[]}}function Q(e,t){e.value.includes(t)?e.value=e.value.filter(e=>e!==t):e.value=[...e.value,t]}function dt(e){return new Promise(t=>window.setTimeout(t,e))}function $(e){return e instanceof Error?e.message:`请求失败`}return n(async()=>{await Z(),await q()}),(n,a)=>(t(),p(`div`,ue,[m(`header`,de,[a[11]||=m(`div`,null,[m(`p`,{class:`oj-kicker`},`StudyPlatform OJ`),m(`h1`,null,`在线判题平台`)],-1),ee(s(ne),{class:`home-link`,to:`/lab`},{default:e(()=>[...a[10]||=[o(`返回实验平台`,-1)]]),_:1})]),m(`main`,fe,[m(`aside`,pe,[m(`div`,me,[a[12]||=m(`h2`,null,`题库`,-1),m(`span`,null,i(E.value.length)+` 题`,1)]),m(`div`,he,[l(m(`input`,{"onUpdate:modelValue":a[0]||=e=>I.value=e,type:`search`,placeholder:`搜索题名、算法分类或标签`,"aria-label":`搜索题目`},null,512),[[_,I.value]]),m(`button`,{class:r([`filter-toggle`,{active:L.value||K.value>0}]),type:`button`,onClick:a[1]||=e=>L.value=!L.value},[a[13]||=o(` 分类筛选`,-1),K.value?(t(),p(`span`,ge,i(K.value),1)):u(``,!0)],2),I.value?(t(),p(`button`,{key:0,type:`button`,onClick:nt},`清空`)):u(``,!0)]),m(`div`,_e,[(t(!0),p(d,null,h(Xe.value,e=>(t(),p(`button`,{key:e.value,type:`button`,class:r({active:st(e.value)}),onClick:t=>it(e.value)},i(e.label)+` / `+i(e.labelEn),11,ve))),128)),(t(!0),p(d,null,h(s(b),e=>(t(),p(`button`,{key:e.value,type:`button`,class:r({active:ct(e.value)}),onClick:t=>at(e.value)},i(e.label)+` / `+i(e.labelEn),11,ye))),128)),(t(!0),p(d,null,h(s(x),e=>(t(),p(`button`,{key:e.value,type:`button`,class:r({active:lt(e.value)}),onClick:t=>ot(e.value)},i(e.label)+` / `+i(e.labelEn),11,be))),128))]),L.value?(t(),p(`div`,xe,[m(`section`,null,[a[14]||=m(`div`,{class:`filter-title`},[m(`strong`,null,`算法分类`),m(`span`,null,`Algorithm Categories`)],-1),(t(!0),p(d,null,h(H.value,e=>(t(),p(`label`,{key:e.value,class:`filter-option`},[l(m(`input`,{"onUpdate:modelValue":a[2]||=e=>R.value=e,type:`checkbox`,value:e.value},null,8,Se),[[g,R.value]]),m(`span`,null,i(e.label),1),m(`em`,null,i(e.labelEn),1)]))),128))]),m(`section`,null,[a[15]||=m(`div`,{class:`filter-title`},[m(`strong`,null,`难度分类`),m(`span`,null,`Difficulty Levels`)],-1),(t(!0),p(d,null,h(s(b),e=>(t(),p(`label`,{key:e.value,class:`filter-option`},[l(m(`input`,{"onUpdate:modelValue":a[3]||=e=>z.value=e,type:`checkbox`,value:e.value},null,8,Ce),[[g,z.value]]),m(`span`,null,i(e.label),1),m(`em`,null,i(e.labelEn),1)]))),128))]),m(`section`,null,[a[16]||=m(`div`,{class:`filter-title`},[m(`strong`,null,`中英文分类`),m(`span`,null,`Statement Language`)],-1),(t(!0),p(d,null,h(s(x),e=>(t(),p(`label`,{key:e.value,class:`filter-option`},[l(m(`input`,{"onUpdate:modelValue":a[4]||=e=>B.value=e,type:`checkbox`,value:e.value},null,8,we),[[g,B.value]]),m(`span`,null,i(e.label),1),m(`em`,null,i(e.labelEn),1)]))),128))]),K.value?(t(),p(`button`,{key:0,class:`filter-clear`,type:`button`,onClick:rt},` 清除分类筛选 `)):u(``,!0)])):u(``,!0),m(`div`,Te,[A.value?(t(),p(`p`,Ee,`正在加载题库...`)):E.value.length===0?(t(),p(`p`,De,`未找到匹配题目。`)):u(``,!0),(t(!0),p(d,null,h(E.value,e=>(t(),p(`button`,{key:e.id,class:r([`problem-item`,{active:D.value?.id===e.id}]),type:`button`,onClick:t=>J(e)},[m(`span`,w,i(e.title),1),m(`span`,T,[m(`span`,{class:r([`difficulty`,e.difficulty?.toLowerCase()])},i(s(re)[e.difficulty]||e.difficulty),3),m(`span`,null,i(e.timeLimitMs)+` ms`,1)]),m(`span`,ke,[(t(!0),p(d,null,h(ut(e).slice(0,3),e=>(t(),p(`span`,{key:e},i(X(e)),1))),128))])],10,Oe))),128))])]),D.value?(t(),p(`section`,Ae,[m(`div`,je,[m(`div`,null,[m(`h2`,null,i(D.value.title),1),m(`div`,Me,[(t(!0),p(d,null,h(Ye.value,e=>(t(),p(`span`,{key:e,class:`tag-pill`},i(X(e)),1))),128))])]),m(`div`,Ne,[m(`span`,null,i(D.value.timeLimitMs)+` ms`,1),m(`span`,null,i(Math.round(D.value.memoryLimitKb/1024))+` MB`,1)])]),m(`div`,Pe,[m(`button`,{class:r({active:N.value===`statement`}),type:`button`,onClick:a[5]||=e=>N.value=`statement`},` 题面 `,2),m(`button`,{class:r({active:N.value===`submit`}),type:`button`,onClick:a[6]||=e=>N.value=`submit`},` 提交 `,2),m(`button`,{class:r({active:N.value===`result`}),type:`button`,onClick:a[7]||=e=>N.value=`result`},` 结果 `,2)]),N.value===`statement`?(t(),p(`section`,Fe,[m(`p`,Ie,i(D.value.description),1),a[19]||=m(`h3`,null,`输入说明`,-1),m(`p`,null,i(D.value.inputDescription),1),a[20]||=m(`h3`,null,`输出说明`,-1),m(`p`,null,i(D.value.outputDescription),1),a[21]||=m(`h3`,null,`样例`,-1),(t(!0),p(d,null,h(Je.value,(e,n)=>(t(),p(`div`,{key:n,class:`sample-grid`},[m(`div`,null,[a[17]||=m(`strong`,null,`输入`,-1),m(`pre`,null,i(e.input),1)]),m(`div`,null,[a[18]||=m(`strong`,null,`输出`,-1),m(`pre`,null,i(e.output),1)])]))),128))])):u(``,!0),N.value===`submit`?(t(),p(`section`,Le,[m(`div`,Re,[m(`label`,null,[a[23]||=o(` 语言 `,-1),l(m(`select`,{"onUpdate:modelValue":a[8]||=e=>F.value=e},[...a[22]||=[m(`option`,{value:`cpp`},`C++`,-1),m(`option`,{value:`answer`},`answer 测试模式`,-1),m(`option`,{value:`java`},`Java`,-1),m(`option`,{value:`python`},`Python`,-1)]],512),[[te,F.value]])]),m(`button`,{class:`primary-button`,type:`button`,disabled:j.value,onClick:Ze},i(j.value?`提交中...`:`提交判题`),9,ze)]),l(m(`textarea`,{"onUpdate:modelValue":a[9]||=e=>P.value=e,spellcheck:`false`,"aria-label":`代码或答案输入`},null,512),[[_,P.value]]),a[24]||=m(`p`,{class:`helper-text`},` C++ 判题需要先启动 judge-sandbox 服务，并确保后端配置 oj.sandbox-url=http://localhost:9000。 `,-1)])):u(``,!0),N.value===`result`?(t(),p(`section`,Be,[G.value?(t(),p(`div`,Ve,[m(`span`,{class:r([`status-badge`,G.value.status?.toLowerCase()])},i(W[G.value.status]||G.value.status),3),m(`span`,null,`得分 `+i(G.value.score),1),G.value.message?(t(),p(`span`,He,i(G.value.message),1)):u(``,!0)])):u(``,!0),m(`div`,Ue,[(t(!0),p(d,null,h(O.value,e=>(t(),p(`button`,{key:e.id,class:`submission-row`,type:`button`,onClick:t=>$e(e)},[m(`span`,null,`#`+i(e.id),1),m(`span`,null,i(e.language),1),m(`span`,{class:r([`status-text`,e.status?.toLowerCase()])},i(W[e.status]||e.status),3),m(`span`,null,i(e.score)+` 分`,1)],8,We))),128))]),k.value.length?(t(),p(`div`,Ge,[a[25]||=m(`h3`,null,`测试点详情`,-1),(t(!0),p(d,null,h(k.value,e=>(t(),p(`div`,{key:e.id,class:`case-row`},[m(`span`,null,`Case `+i(e.testCaseId),1),m(`span`,{class:r([`status-text`,e.status?.toLowerCase()])},i(W[e.status]||e.status),3),m(`span`,null,i(e.timeUsedMs??`-`)+` ms`,1),m(`span`,null,i(e.message),1)]))),128))])):u(``,!0)])):u(``,!0)])):(t(),p(`section`,Ke,[...a[26]||=[m(`p`,null,`暂无题目。`,-1)]]))]),M.value?(t(),p(`p`,qe,i(M.value),1)):u(``,!0)]))}};export{E as default};
