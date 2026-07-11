@@ -8,6 +8,7 @@ import { chatWithAiPet } from '../api/aiPet'
 import { getStoredAuthUser } from '../api/auth'
 import { AI_PET_BY_KEY, DEFAULT_PET_KEY, PET_SELECTION_EVENT, PET_STORAGE_KEYS } from '../data/aiPetShop'
 import { renderMessageMarkdown } from '../utils/markdown'
+import { AI_PET_BY_KEY, DEFAULT_PET_KEY, PET_SELECTION_EVENT, PET_STORAGE_KEYS, normalizePetKey } from '../data/aiPetShop'
 import idle01 from '../assets/pet/nebula-cat/idle-01.png'
 import idle02 from '../assets/pet/nebula-cat/idle-02.png'
 import idle03 from '../assets/pet/nebula-cat/idle-03.png'
@@ -52,6 +53,7 @@ const focusStorageKey = 'study-platform-ai-pet-focus-summary'
 const positionStorageKey = 'study-platform-ai-pet-position'
 const visibilityStorageKey = 'study-platform-ai-pet-hidden'
 const quietModeStorageKey = 'study-platform-ai-pet-quiet-mode'
+const authUpdatedEvent = 'study-platform:auth-updated'
 const petSize = 116
 const viewportPadding = 14
 const actionFeedbackReserve = 74
@@ -857,8 +859,14 @@ function toggleQuietMode() {
 }
 
 function loadSelectedPet() {
-  const nextKey = window.localStorage.getItem(PET_STORAGE_KEYS.active) || DEFAULT_PET_KEY
-  selectedPetKey.value = AI_PET_BY_KEY[nextKey] ? nextKey : DEFAULT_PET_KEY
+  const user = getStoredAuthUser()
+  const scopedActiveKey = readUserPetStorage(PET_STORAGE_KEYS.active, user?.id)
+  const nextKey = normalizePetKey(user?.petKey || scopedActiveKey || window.localStorage.getItem(PET_STORAGE_KEYS.active))
+  selectedPetKey.value = (AI_PET_BY_KEY[nextKey] || nextKey === DEFAULT_PET_KEY) ? nextKey : DEFAULT_PET_KEY
+  window.localStorage.setItem(PET_STORAGE_KEYS.active, selectedPetKey.value)
+  if (user?.id) {
+    window.localStorage.setItem(userPetStorageKey(PET_STORAGE_KEYS.active, user.id), selectedPetKey.value)
+  }
 }
 
 function handlePetSelectionChanged() {
@@ -872,13 +880,36 @@ function handlePetSelectionChanged() {
 }
 
 function handlePetStorageChanged(event) {
-  if (event.key === PET_STORAGE_KEYS.active) {
+  const user = getStoredAuthUser()
+  if (event.key === PET_STORAGE_KEYS.active || event.key === userPetStorageKey(PET_STORAGE_KEYS.active, user?.id)) {
     handlePetSelectionChanged()
   }
 }
 
 function handleAuthUpdated() {
   loadTodos()
+function userPetStorageKey(baseKey, userId) {
+  return userId ? `${baseKey}:${userId}` : baseKey
+}
+
+function readUserPetStorage(baseKey, userId) {
+  return userId ? window.localStorage.getItem(userPetStorageKey(baseKey, userId)) : ''
+}
+
+function handleAuthUpdated(event) {
+  const previousName = petDisplayName.value
+  const user = event.detail || getStoredAuthUser()
+  const nextKey = normalizePetKey(user?.petKey || readUserPetStorage(PET_STORAGE_KEYS.active, user?.id))
+  selectedPetKey.value = (AI_PET_BY_KEY[nextKey] || nextKey === DEFAULT_PET_KEY) ? nextKey : DEFAULT_PET_KEY
+  window.localStorage.setItem(PET_STORAGE_KEYS.active, selectedPetKey.value)
+  if (user?.id) {
+    window.localStorage.setItem(userPetStorageKey(PET_STORAGE_KEYS.active, user.id), selectedPetKey.value)
+  }
+  if (petDisplayName.value !== previousName) {
+    setMood('happy', 2200)
+    showActionFeedback(`已切换为 ${petDisplayName.value}`)
+    showPetBubble(`${petDisplayName.value} 来陪你学习啦！`)
+  }
 }
 
 // 更新视口大小
@@ -1306,6 +1337,7 @@ onMounted(() => {
   // 监听窗口大小变化
   window.addEventListener('resize', handleResize)
   window.addEventListener(PET_SELECTION_EVENT, handlePetSelectionChanged)
+  window.addEventListener(authUpdatedEvent, handleAuthUpdated)
   window.addEventListener('storage', handlePetStorageChanged)
   window.addEventListener('study-platform:auth-updated', handleAuthUpdated)
   // 首次挂载后读取当前页面内容
@@ -1345,6 +1377,7 @@ onBeforeUnmount(() => {
   clearDragListeners()
   window.removeEventListener('resize', handleResize)
   window.removeEventListener(PET_SELECTION_EVENT, handlePetSelectionChanged)
+  window.removeEventListener(authUpdatedEvent, handleAuthUpdated)
   window.removeEventListener('storage', handlePetStorageChanged)
   window.removeEventListener('study-platform:auth-updated', handleAuthUpdated)
 })

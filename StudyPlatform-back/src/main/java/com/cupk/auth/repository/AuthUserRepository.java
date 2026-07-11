@@ -189,6 +189,18 @@ public class AuthUserRepository {
         );
     }
 
+    public void updatePetKey(long userId, String petKey) {
+        jdbcTemplate.update(
+                """
+                UPDATE users
+                SET pet_key = ?
+                WHERE id = ?
+                """,
+                petKey,
+                userId
+        );
+    }
+
     /**
      * 更新用户邮箱。
      *

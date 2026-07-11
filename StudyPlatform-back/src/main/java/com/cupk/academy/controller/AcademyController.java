@@ -29,6 +29,7 @@ import com.cupk.academy.dto.AcademyTextbookPaymentStatusResponse;
 import com.cupk.academy.dto.AcademyTextbookCommentResponse;
 import com.cupk.academy.dto.AcademyTextbookReviewRequest;
 import com.cupk.academy.dto.AcademyTextbookResponse;
+import com.cupk.academy.dto.AcademyTeacherAssignmentRequest;
 import com.cupk.academy.dto.TeacherWorkbenchResponse;
 import com.cupk.academy.dto.TeacherAssignmentCreateRequest;
 import com.cupk.academy.service.AcademyAssignmentService;
@@ -280,6 +281,7 @@ public class AcademyController {
     public AcademyAssignmentDetailResponse createTeacherAssignment(
             @RequestHeader(value = "X-Auth-User-Id", required = false) Long userId,
             @RequestBody TeacherAssignmentCreateRequest request
+            @RequestBody AcademyTeacherAssignmentRequest request
     ) {
         return assignmentService.createTeacherAssignment(userId, request);
     }
@@ -323,6 +325,33 @@ public class AcademyController {
     ) {
         return academyService.publishOnlineOpenCourse(
                 userId,
+                courseName,
+                startTime,
+                category,
+                semesterPlan,
+                courseDetail,
+                courseOverview,
+                cover,
+                video
+        );
+    }
+
+    @PutMapping(value = "/online-open-courses/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public AcademyCourseResponse updatePublishedOnlineOpenCourse(
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long userId,
+            @PathVariable String id,
+            @RequestParam String courseName,
+            @RequestParam String startTime,
+            @RequestParam String category,
+            @RequestParam String semesterPlan,
+            @RequestParam String courseDetail,
+            @RequestParam String courseOverview,
+            @RequestParam(value = "cover", required = false) MultipartFile cover,
+            @RequestParam(value = "video", required = false) MultipartFile video
+    ) {
+        return academyService.updatePublishedOnlineOpenCourse(
+                userId,
+                id,
                 courseName,
                 startTime,
                 category,

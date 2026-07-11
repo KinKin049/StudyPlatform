@@ -8,6 +8,7 @@ import { useRouter } from 'vue-router'
 import { fetchAcademyCategories } from '../api/academy'
 import { getStoredAuthUser, saveAuthOnboarding, storeAuthUser } from '../api/auth'
 import { AI_PET_SHOP_ITEMS, PET_SELECTION_EVENT, PET_STORAGE_KEYS } from '../data/aiPetShop'
+import { AI_PET_SHOP_ITEMS } from '../data/aiPetShop'
 
 const router = useRouter()
 
@@ -92,6 +93,14 @@ const petCatalog = AI_PET_SHOP_ITEMS.map((pet) => ({
   ...pet,
   ...(PET_DISPLAY_TEXT[pet.key] || {}),
   note: PET_DISPLAY_TEXT[pet.key]?.note || pet.tag || '学习陪伴宠物',
+/**
+ * 宠物选项列表
+ */
+const pets = AI_PET_SHOP_ITEMS.slice(0, 3).map((pet) => ({
+  key: pet.key,
+  name: pet.name,
+  note: pet.tag,
+  image: pet.preview || pet.image,
 }))
 
 /**
@@ -115,6 +124,7 @@ const cardSubtitle = computed(() => {
   if (step.value === 'role') return '请选择学生或教师，后续页面会根据身份切换。'
   if (step.value === 'details') return selectedRole.value === 'teacher' ? '填写学校和教师姓名。' : '填写目标，并选择你感兴趣的课程方向。'
   return '系统会随机给出三位学习伙伴。引导页不会提前显示悬浮AI宠物，选择完成后它会进入平台陪你学习。'
+  return '选择一个 AI 学习伙伴，之后也可以在金币兑换中心切换。'
 })
 
 /**
@@ -388,6 +398,7 @@ function uniqueValues(values) {
               @click="choosePet(pet.key)"
             >
               <img class="auth-pet-card-image" :src="pet.preview || pet.image" :alt="pet.name" />
+              <img :src="pet.image" :alt="pet.name" />
               <strong>{{ pet.name }}</strong>
               <span>{{ pet.note }}</span>
             </button>

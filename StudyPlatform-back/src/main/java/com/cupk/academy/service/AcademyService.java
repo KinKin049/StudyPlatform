@@ -185,6 +185,63 @@ public class AcademyService {
         return new AcademyCourseEnrollmentResponse(false, "课程已删除");
     }
 
+    public AcademyCourseResponse updatePublishedOnlineOpenCourse(
+            Long userId,
+            String courseId,
+            String courseName,
+            String startTime,
+            String category,
+            String semesterPlan,
+            String courseDetail,
+            String courseOverview,
+            MultipartFile cover,
+            MultipartFile video
+    ) {
+        long publisherUserId = normalizeUserId(userId);
+        AuthUserResponse user = ensureTeacher(publisherUserId);
+        String normalizedCourseId = clean(courseId, 120);
+        if (normalizedCourseId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "课程编号不能为空");
+        }
+        String normalizedName = clean(courseName, 120);
+        String normalizedStartTime = clean(startTime, 64);
+        String normalizedCategory = clean(category, 80);
+        String normalizedSemesterPlan = clean(semesterPlan, 512);
+        String normalizedDetail = clean(courseDetail, 4000);
+        String normalizedOverview = clean(courseOverview, 1200);
+        if (normalizedName.isBlank()
+                || normalizedStartTime.isBlank()
+                || normalizedCategory.isBlank()
+                || normalizedSemesterPlan.isBlank()
+                || normalizedDetail.isBlank()
+                || normalizedOverview.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "课程信息不能为空");
+        }
+        if (!academyRepository.managedCourseCategoryExists("online-open-courses", normalizedCategory)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "课程分类只能从管理员维护的分类中选择");
+        }
+        String coverPath = saveCourseFile(publisherUserId, cover, "cover", List.of("jpg", "jpeg", "png", "webp"), false);
+        String videoPath = saveCourseFile(publisherUserId, video, "video", List.of("mp4", "webm", "ogg", "mov"), false);
+        int updated = academyRepository.updatePublishedOnlineOpenCourse(
+                publisherUserId,
+                normalizedCourseId,
+                normalizedName,
+                clean(user.teacherName(), 80),
+                clean(user.school(), 120),
+                normalizedCategory,
+                normalizedStartTime,
+                normalizedSemesterPlan,
+                normalizedDetail,
+                normalizedOverview,
+                coverPath,
+                videoPath
+        );
+        if (updated <= 0) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "课程不存在或不属于当前教师");
+        }
+        return getOnlineOpenCourse(normalizedCourseId);
+    }
+
     /**
      * 获取通识课程列表。
      *

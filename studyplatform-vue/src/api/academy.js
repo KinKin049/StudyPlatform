@@ -142,6 +142,12 @@ export const publishOnlineOpenCourse = (payload) =>
     body: payload,
   })
 
+export const updatePublishedOnlineOpenCourse = (id, payload) =>
+  request(`/api/academy/online-open-courses/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    body: payload,
+  })
+
 /**
  * 获取我发布的在线公开课列表
  * @returns {Promise<any>} 课程列表

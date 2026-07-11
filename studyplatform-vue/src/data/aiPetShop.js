@@ -205,3 +205,20 @@ export const AI_PET_SHOP_ITEMS = [
 ]
 
 export const AI_PET_BY_KEY = Object.fromEntries(AI_PET_SHOP_ITEMS.map((pet) => [pet.key, pet]))
+
+export const LEGACY_PET_KEY_MAP = {
+  spark: 'pet-07-lucky-cat',
+  byte: 'pet-75-screenbot',
+  terra: 'pet-39-gray-dragon',
+  milu: 'pet-29-bamboo-panda',
+  aurora: 'pet-44-violet-dragon',
+  nova: 'pet-75-screenbot',
+}
+
+export function normalizePetKey(key) {
+  const value = String(key || '').trim()
+  if (AI_PET_BY_KEY[value] || value === DEFAULT_PET_KEY) {
+    return value
+  }
+  return LEGACY_PET_KEY_MAP[value] || DEFAULT_PET_KEY
+}

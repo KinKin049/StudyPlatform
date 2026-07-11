@@ -1091,6 +1091,8 @@
 }
 
 .profile-teacher-oj-form {
+.profile-teacher-oj-form,
+.profile-assignment-form {
   display: grid;
   gap: 14px;
 }
@@ -1106,6 +1108,7 @@
 }
 
 .profile-teacher-oj-form label,
+.profile-assignment-form label,
 .profile-teacher-oj-field {
   display: grid;
   gap: 7px;
@@ -1116,7 +1119,10 @@
 
 .profile-teacher-oj-form input,
 .profile-teacher-oj-form select,
-.profile-teacher-oj-form textarea {
+.profile-teacher-oj-form textarea,
+.profile-assignment-form input,
+.profile-assignment-form select,
+.profile-assignment-form textarea {
   box-sizing: border-box;
   width: 100%;
   border: 1px solid rgba(71, 128, 151, 0.16);
@@ -1131,20 +1137,137 @@
 }
 
 .profile-teacher-oj-form input,
-.profile-teacher-oj-form select {
+.profile-teacher-oj-form select,
+.profile-assignment-form input,
+.profile-assignment-form select {
   min-height: 42px;
 }
 
-.profile-teacher-oj-form textarea {
+.profile-teacher-oj-form textarea,
+.profile-assignment-form textarea {
   resize: vertical;
   line-height: 1.55;
 }
 
 .profile-teacher-oj-form input:focus,
 .profile-teacher-oj-form select:focus,
-.profile-teacher-oj-form textarea:focus {
+.profile-teacher-oj-form textarea:focus,
+.profile-assignment-form input:focus,
+.profile-assignment-form select:focus,
+.profile-assignment-form textarea:focus {
   border-color: rgba(23, 143, 134, 0.45);
   box-shadow: 0 0 0 4px rgba(116, 235, 213, 0.14);
+}
+
+.profile-assignment-dialog {
+  width: min(980px, 100%);
+  max-height: min(88vh, 940px);
+  overflow: auto;
+}
+
+.profile-assignment-course,
+.profile-assignment-question {
+  border: 1px solid rgba(71, 128, 151, 0.12);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.profile-assignment-course {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+}
+
+.profile-assignment-course span,
+.profile-assignment-question header strong {
+  color: #178f86;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.profile-assignment-course strong {
+  color: #173447;
+  font-size: 16px;
+  font-weight: 950;
+  line-height: 1.35;
+}
+
+.profile-assignment-wide-label {
+  min-width: 0;
+}
+
+.profile-assignment-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.profile-assignment-toolbar button,
+.profile-assignment-question header button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 14px;
+  color: #178f86;
+  background: rgba(116, 235, 213, 0.18);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.profile-assignment-question-list {
+  display: grid;
+  gap: 12px;
+}
+
+.profile-assignment-question {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.profile-assignment-question header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.profile-assignment-question header button {
+  width: 36px;
+  padding: 0;
+  color: #dc2626;
+  background: rgba(239, 71, 111, 0.12);
+}
+
+.profile-assignment-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.profile-assignment-options label {
+  position: relative;
+}
+
+.profile-assignment-options span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #607986;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.profile-assignment-options span input {
+  width: 16px;
+  min-height: 16px;
 }
 
 .profile-teacher-oj-code {
@@ -2091,8 +2214,15 @@
   .profile-teacher-assignment-options > div,
   .profile-teacher-oj-card,
   .profile-teacher-oj-grid,
-  .profile-teacher-oj-grid.is-three {
+  .profile-teacher-oj-grid.is-three,
+  .profile-assignment-options {
     grid-template-columns: 1fr;
+  }
+
+  .profile-assignment-course,
+  .profile-assignment-question header {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .profile-achievement-list {
