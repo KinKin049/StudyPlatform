@@ -10,10 +10,12 @@ import {
   fetchMyAcademyCourses,
   replyAcademyCourseReview,
 } from '../../api/academy'
+import { chatWithAiPet } from '../../api/aiPet'
 import { getStoredAuthUser } from '../../api/auth'
 import { resolveResourceUrl } from '../../api/request'
 import CourseReviewThread from '../../components/CourseReviewThread.vue'
 import { useVideoLearningTimeTracker } from '../../composables/useLearningTimeTracker'
+import { renderMessageMarkdown } from '../../utils/markdown'
 
 // 组件属性定义
 const props = defineProps({
@@ -72,7 +74,7 @@ useVideoLearningTimeTracker(courseVideoRef, {
 
 // 智慧课堂功能列表
 const featureItems = [
-  { icon: '◌', title: 'AI 助教智能问答', text: '预留课程答疑、知识点解释和代码问题分析入口' },
+  { key: 'ai-assistant', icon: '◌', title: 'AI 助教智能问答', text: '基于课程介绍和概述进行即时答疑' },
 ]
 
 /**
@@ -156,6 +158,78 @@ const teacherList = computed(() => {
 const countReviews = (items) => items.reduce((total, item) => total + 1 + countReviews(item.replies || []), 0)
 const reviewCount = computed(() => countReviews(reviews.value))
 const currentUserName = computed(() => authUser.value?.username || '未登录')
+
+const courseAiOpen = ref(false)
+const courseAiInput = ref('')
+const courseAiLoading = ref(false)
+const courseAiError = ref('')
+const courseAiMessages = ref([
+  {
+    role: 'assistant',
+    text: '你好，我会结合这门课的介绍、概述和教师信息回答问题。',
+  },
+])
+
+const courseAiContext = computed(() => {
+  const textSnippet = [
+    `课程名称：${course.value?.name || ''}`,
+    `课程分类：${course.value?.category || ''}`,
+    `授课教师：${teacherList.value.join('、')}`,
+    `课程简介：${courseIntro.value}`,
+    `课程概述：${course.value?.description || course.value?.overview || course.value?.comment || ''}`,
+    `学期计划：${course.value?.semesterPlan || courseWeeks.value}`,
+    `开课时间：${coursePeriod.value}`,
+  ].join('\n')
+  return {
+    path: window.location.pathname + window.location.search,
+    routeName: 'academy-course-detail',
+    title: `${course.value?.name || '课程详情'} AI 助手`,
+    headings: [course.value?.name || '课程详情', '课程简介', '课程概述', 'AI 助教智能问答'],
+    selectedText: '',
+    formSnapshot: [
+      `资源类型：${props.resource}`,
+      `课程 ID：${props.courseId}`,
+      `报名状态：${enrollmentState.value}`,
+    ],
+    contentLength: textSnippet.length,
+    textSnippet,
+  }
+})
+
+const buildCourseAiHistory = () => courseAiMessages.value
+  .slice(-8)
+  .map((message) => ({ role: message.role === 'user' ? 'user' : 'assistant', text: message.text }))
+
+const toggleCourseAiAssistant = () => {
+  courseAiOpen.value = !courseAiOpen.value
+}
+
+const submitCourseAiQuestion = async () => {
+  const text = courseAiInput.value.trim()
+  if (!text || courseAiLoading.value) return
+  courseAiOpen.value = true
+  courseAiInput.value = ''
+  courseAiMessages.value.push({ role: 'user', text })
+  courseAiLoading.value = true
+  courseAiError.value = ''
+  try {
+    const response = await chatWithAiPet({
+      message: text,
+      pageContext: courseAiContext.value,
+      history: buildCourseAiHistory(),
+    })
+    courseAiMessages.value.push({
+      role: 'assistant',
+      text: response.reply || '我没有拿到有效回复，请换个问题再试一次。',
+    })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'AI 助手暂时无法连接'
+    courseAiError.value = message
+    courseAiMessages.value.push({ role: 'assistant', text: message })
+  } finally {
+    courseAiLoading.value = false
+  }
+}
 
 /**
  * 计算属性：分类路由
@@ -449,12 +523,38 @@ watch(() => [props.resource, props.courseId], loadCourse)
           <span>利用人工智能技术，为你提供高效、个性的学习服务</span>
         </div>
         <div class="smart-feature-grid">
-          <button v-for="item in featureItems" :key="item.title" type="button">
+          <button
+            v-for="item in featureItems"
+            :key="item.title"
+            type="button"
+            :class="{ 'is-active': item.key === 'ai-assistant' && courseAiOpen }"
+            @click="item.key === 'ai-assistant' ? toggleCourseAiAssistant() : null"
+          >
             <span class="smart-feature-icon">{{ item.icon }}</span>
             <strong>{{ item.title }}</strong>
             <small>{{ item.text }}</small>
           </button>
         </div>
+        <section v-if="courseAiOpen" class="course-ai-assistant" aria-label="课程 AI 助手">
+          <div class="course-ai-messages">
+            <article
+              v-for="(message, index) in courseAiMessages"
+              :key="`${message.role}-${index}`"
+              :class="['course-ai-message', `is-${message.role}`]"
+              v-html="renderMessageMarkdown(message.text)"
+            ></article>
+            <article v-if="courseAiLoading" class="course-ai-message is-assistant">正在结合课程介绍思考...</article>
+          </div>
+          <p v-if="courseAiError" class="course-ai-error">{{ courseAiError }}</p>
+          <form class="course-ai-form" @submit.prevent="submitCourseAiQuestion">
+            <textarea
+              v-model="courseAiInput"
+              rows="3"
+              placeholder="围绕课程介绍、概述或学习安排提问"
+            ></textarea>
+            <button type="submit" :disabled="courseAiLoading || !courseAiInput.trim()">发送</button>
+          </form>
+        </section>
       </section>
 
       <!-- 课程主体内容布局 -->
@@ -609,6 +709,129 @@ watch(() => [props.resource, props.courseId], loadCourse)
 
 .review-user-display strong {
   color: #0f172a;
+}
+
+.course-ai-assistant {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.course-ai-messages {
+  display: grid;
+  gap: 10px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.course-ai-message {
+  max-width: 88%;
+  border-radius: 14px;
+  padding: 10px 12px;
+  color: #0f172a;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.course-ai-message :deep(p) {
+  margin: 0;
+}
+
+.course-ai-message :deep(p + p),
+.course-ai-message :deep(pre),
+.course-ai-message :deep(ul),
+.course-ai-message :deep(ol),
+.course-ai-message :deep(blockquote) {
+  margin: 8px 0 0;
+}
+
+.course-ai-message :deep(code) {
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.08);
+  padding: 2px 5px;
+  font-family: Consolas, 'Courier New', monospace;
+}
+
+.course-ai-message :deep(pre) {
+  overflow-x: auto;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.08);
+  padding: 10px;
+}
+
+.course-ai-message :deep(pre code) {
+  background: transparent;
+  padding: 0;
+}
+
+.course-ai-message :deep(a) {
+  color: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+}
+
+.course-ai-message.is-assistant {
+  justify-self: start;
+  background: #eef2ff;
+}
+
+.course-ai-message.is-user {
+  justify-self: end;
+  background: #2563eb;
+  color: #fff;
+}
+
+.course-ai-error {
+  margin: 0;
+  color: #dc2626;
+  font-size: 13px;
+}
+
+.course-ai-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.course-ai-form textarea {
+  resize: vertical;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 10px 12px;
+  color: #0f172a;
+}
+
+.course-ai-form button {
+  border: 0;
+  border-radius: 999px;
+  background: #4f46e5;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 800;
+  padding: 10px 18px;
+}
+
+.course-ai-form button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+:deep(.smart-feature-grid button.is-active) {
+  border-color: rgba(79, 70, 229, 0.35);
+  box-shadow: 0 18px 36px rgba(79, 70, 229, 0.14);
+}
+
+@media (max-width: 640px) {
+  .course-ai-form {
+    grid-template-columns: 1fr;
+  }
 }
 
 :deep(.course-review-thread) {

@@ -100,6 +100,51 @@ public class AuthUserRepository {
     }
 
     /**
+     * 根据用户ID查询用户记录。
+     *
+     * @param userId 用户ID
+     * @return 用户行记录，不存在返回null
+     */
+    public AuthUserRow findById(long userId) {
+        List<AuthUserRow> rows = jdbcTemplate.query(
+                """
+                SELECT id, COALESCE(NULLIF(nickname, ''), username) AS username,
+                       email, password_hash,
+                       COALESCE(NULLIF(role_type, ''),
+                         CASE WHEN role = 'TEACHER' THEN 'teacher'
+                              WHEN role = 'ADMIN' THEN 'admin'
+                              ELSE 'student' END
+                       ) AS role_type,
+                       learning_goal, interests_json,
+                       school, teacher_name, pet_key, onboarding_completed
+                FROM users
+                WHERE id = ?
+                LIMIT 1
+                """,
+                this::mapUserRow,
+                userId
+        );
+        return rows.isEmpty() ? null : rows.get(0);
+    }
+
+    /**
+     * 判断邮箱是否属于其他用户。
+     *
+     * @param email 邮箱地址
+     * @param userId 当前用户ID
+     * @return 被其他用户占用返回true
+     */
+    public boolean emailBelongsToOtherUser(String email, long userId) {
+        Long count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM users WHERE email = ? AND id <> ?",
+                Long.class,
+                email,
+                userId
+        );
+        return count != null && count > 0;
+    }
+
+    /**
      * 根据用户ID查询用户响应对象。
      *
      * @param userId 用户ID
@@ -140,6 +185,24 @@ public class AuthUserRepository {
                 WHERE id = ?
                 """,
                 passwordHash,
+                userId
+        );
+    }
+
+    /**
+     * 更新用户邮箱。
+     *
+     * @param userId 用户ID
+     * @param email 新邮箱
+     */
+    public void updateEmail(long userId, String email) {
+        jdbcTemplate.update(
+                """
+                UPDATE users
+                SET email = ?
+                WHERE id = ?
+                """,
+                email,
                 userId
         );
     }
@@ -191,8 +254,9 @@ public class AuthUserRepository {
         jdbcTemplate.update(
                 """
                 INSERT INTO profile_user_profiles
-                  (user_id, display_name, handle, role_label, bio, location, school)
-                VALUES (?, ?, ?, '学生', '这个账号正在完善自己的学习主页。', 'China', 'StudyPlatform')
+                  (user_id, display_name, handle, role_label, bio, location, profile_tags_json, school)
+                VALUES (?, ?, ?, '学生', '这个账号正在完善自己的学习主页。', 'China',
+                        JSON_ARRAY('目标：稳稳变强'), 'StudyPlatform')
                 ON DUPLICATE KEY UPDATE
                   display_name = VALUES(display_name),
                   handle = VALUES(handle)
@@ -217,11 +281,12 @@ public class AuthUserRepository {
         jdbcTemplate.update(
                 """
                 UPDATE profile_user_profiles
-                SET role_label = ?, bio = ?, school = ?
+                SET role_label = ?, bio = ?, profile_tags_json = JSON_ARRAY(?), school = ?
                 WHERE user_id = ?
                 """,
                 roleLabel,
                 bio,
+                "目标：" + clean(request.learningGoal(), "持续学习"),
                 school,
                 request.userId()
         );

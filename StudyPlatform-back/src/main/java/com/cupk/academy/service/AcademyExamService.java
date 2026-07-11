@@ -4,17 +4,20 @@ import com.cupk.academy.dto.AcademyExamAnswerRequest;
 import com.cupk.academy.dto.AcademyExamDetailResponse;
 import com.cupk.academy.dto.AcademyExamQuestionResponse;
 import com.cupk.academy.dto.AcademyExamQuestionResultResponse;
+import com.cupk.academy.dto.AcademyRandomExamRequest;
 import com.cupk.academy.dto.AcademyExamSubmitResponse;
 import com.cupk.academy.dto.AcademyExamSummaryResponse;
 import com.cupk.academy.repository.AcademyExamRepository;
 import com.cupk.academy.repository.AcademyExamRepository.ExamDetailRow;
 import com.cupk.academy.repository.AcademyExamRepository.ExamQuestionRow;
+import com.cupk.academy.repository.AcademyExamRepository.RandomExamQuestionRow;
 import com.cupk.oj.dto.CreateSubmissionRequest;
 import com.cupk.oj.model.OjSubmission;
 import com.cupk.oj.service.OjSubmissionService;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -226,6 +229,50 @@ public class AcademyExamService {
                 pendingTeacherReview ? "客观题已自动批改，主观题或编程题待教师审核" : "考试提交并批改完成",
                 results
         );
+    }
+
+    public AcademyExamDetailResponse createRandomExam(AcademyRandomExamRequest request) {
+        Long normalizedUserId = normalizeUserId(request == null ? null : request.userId());
+        int questionCount = clamp(request == null ? null : request.questionCount(), 5, 30, 10);
+        int durationMinutes = clamp(request == null ? null : request.durationMinutes(), 10, 180, 45);
+        List<RandomExamQuestionRow> questions =
+                examRepository.findRandomQuestionsFromEnrolledCourses(normalizedUserId, questionCount);
+        if (questions.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "当前已选课程还没有可用于随机组卷的题库题目");
+        }
+        String courseTitle = randomExamCourseTitle(questions);
+        String examCode = examRepository.createRandomExam(
+                normalizedUserId,
+                courseTitle,
+                "随机组卷 · " + courseTitle,
+                durationMinutes,
+                questions
+        );
+        return getExam(examCode, normalizedUserId);
+    }
+
+    private int clamp(Integer value, int min, int max, int fallback) {
+        int safeValue = value == null ? fallback : value;
+        return Math.min(Math.max(safeValue, min), max);
+    }
+
+    private String randomExamCourseTitle(List<RandomExamQuestionRow> questions) {
+        LinkedHashSet<String> names = new LinkedHashSet<>();
+        for (RandomExamQuestionRow question : questions) {
+            if (question.courseTitle() != null && !question.courseTitle().isBlank()) {
+                names.add(question.courseTitle());
+            }
+            if (names.size() >= 2) {
+                break;
+            }
+        }
+        if (names.isEmpty()) {
+            return "已选课程";
+        }
+        if (names.size() == 1) {
+            return names.iterator().next();
+        }
+        return String.join(" / ", names);
     }
 
     /**

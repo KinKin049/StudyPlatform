@@ -4,13 +4,17 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -61,10 +65,11 @@ public class AcademyExamRepository {
                     ORDER BY s.id DESC
                     LIMIT 1
                   )
+                WHERE e.course_resource_type <> 'random-paper' OR e.course_id = CONCAT('user-', ?)
                 GROUP BY e.id, latest.id
                 ORDER BY e.starts_at ASC, e.deadline_at DESC, e.id DESC
                 """;
-        return jdbcTemplate.query(sql, examSummaryMapper(), userId);
+        return jdbcTemplate.query(sql, examSummaryMapper(), userId, userId);
     }
 
     /**
@@ -229,6 +234,115 @@ public class AcademyExamRepository {
         );
     }
 
+    public List<RandomExamQuestionRow> findRandomQuestionsFromEnrolledCourses(Long userId, int limit) {
+        String sql = """
+                SELECT q.id, q.question_type, q.stem, CAST(q.options_json AS CHAR) AS options_json,
+                       q.answer, q.explanation, s.title AS set_title, matched.course_title
+                FROM course_question_bank_questions q
+                JOIN course_question_bank_sets s ON s.id = q.set_id
+                JOIN course_question_bank_categories c ON c.id = s.category_id
+                JOIN (
+                    SELECT e.course_name AS course_title, e.category, e.cover_file_path
+                    FROM (
+                        SELECT c.course_name, c.category, c.cover_file_path
+                        FROM academy_course_enrollments enrollment
+                        JOIN online_open_courses c ON c.external_course_id = enrollment.course_id
+                        WHERE enrollment.resource_type = 'online-open-courses' AND enrollment.user_id = ?
+                        UNION ALL
+                        SELECT c.course_name, c.category, c.cover_file_path
+                        FROM academy_course_enrollments enrollment
+                        JOIN general_courses c ON c.external_course_id = enrollment.course_id
+                        WHERE enrollment.resource_type = 'general-courses' AND enrollment.user_id = ?
+                        UNION ALL
+                        SELECT c.course_name, c.category, c.cover_file_path
+                        FROM academy_course_enrollments enrollment
+                        JOIN micro_major_courses c ON c.external_course_id = enrollment.course_id
+                        WHERE enrollment.resource_type = 'micro-major-courses' AND enrollment.user_id = ?
+                    ) e
+                ) matched ON (
+                    LOWER(matched.course_title) LIKE CONCAT('%', LOWER(s.title), '%')
+                    OR LOWER(s.title) LIKE CONCAT('%', LOWER(matched.course_title), '%')
+                    OR matched.cover_file_path = s.cover_file_path
+                    OR matched.category = c.category_name
+                )
+                WHERE q.answer IS NOT NULL AND q.answer <> ''
+                  AND q.question_type IN ('single', 'multiple', 'blank')
+                GROUP BY q.id, q.question_type, q.stem, options_json, q.answer, q.explanation, s.title, matched.course_title
+                ORDER BY
+                  MIN(CASE
+                    WHEN LOWER(matched.course_title) LIKE CONCAT('%', LOWER(s.title), '%')
+                      OR LOWER(s.title) LIKE CONCAT('%', LOWER(matched.course_title), '%')
+                      OR matched.cover_file_path = s.cover_file_path
+                    THEN 0 ELSE 1 END),
+                  RAND()
+                LIMIT ?
+                """;
+        return jdbcTemplate.query(sql, randomExamQuestionMapper(), userId, userId, userId, Math.max(1, limit));
+    }
+
+    public String createRandomExam(
+            Long userId,
+            String courseTitle,
+            String examTitle,
+            int durationMinutes,
+            List<RandomExamQuestionRow> questions
+    ) {
+        String examCode = "random-paper-" + userId + "-" + System.currentTimeMillis();
+        int totalScore = questions.stream().mapToInt(question -> question.score()).sum();
+        String insertExamSql = """
+                INSERT INTO academy_exams
+                  (exam_code, course_resource_type, course_id, course_title, exam_title, teacher_name,
+                   exam_status, starts_at, deadline_at, attempts_limit, duration_minutes, total_score, exam_description)
+                VALUES (?, 'random-paper', ?, ?, ?, '系统随机组卷',
+                        '正在进行', CURRENT_TIMESTAMP, DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 7 DAY),
+                        1, ?, ?, ?)
+                """;
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(connection -> {
+            var ps = connection.prepareStatement(insertExamSql, Statement.RETURN_GENERATED_KEYS);
+            ps.setString(1, examCode);
+            ps.setString(2, "user-" + userId);
+            ps.setString(3, courseTitle);
+            ps.setString(4, examTitle);
+            ps.setInt(5, durationMinutes);
+            ps.setInt(6, totalScore);
+            ps.setString(7, "从已选课程关联题库中随机抽取题目生成，可直接进入考试答题。");
+            return ps;
+        }, keyHolder);
+        Number key = keyHolder.getKey();
+        long examId = key == null ? 0L : key.longValue();
+        insertRandomExamQuestions(examId, questions);
+        return examCode;
+    }
+
+    private void insertRandomExamQuestions(long examId, List<RandomExamQuestionRow> questions) {
+        String sql = """
+                INSERT INTO academy_exam_questions
+                  (exam_id, question_order, question_type, question_label, question_title,
+                   question_options, placeholder_text, score, correct_answer, answer_explanation,
+                   auto_gradable, oj_problem_id, requires_teacher_review)
+                VALUES (?, ?, ?, ?, ?, CAST(? AS JSON), ?, ?, CAST(? AS JSON), ?, 1, NULL, 0)
+                """;
+        List<Object[]> batchArgs = new ArrayList<>();
+        int order = 1;
+        for (RandomExamQuestionRow question : questions) {
+            batchArgs.add(new Object[] {
+                    examId,
+                    order,
+                    question.type(),
+                    question.label(),
+                    question.stem(),
+                    question.optionsJson(),
+                    "blank".equals(question.type()) ? "请输入答案" : null,
+                    question.score(),
+                    writeJson(question.answer()),
+                    question.explanation(),
+            });
+            order += 1;
+        }
+        jdbcTemplate.batchUpdate(sql, batchArgs);
+    }
+
     /**
      * 创建考试汇总行映射器
      *
@@ -298,6 +412,36 @@ public class AcademyExamRepository {
                 rs.getObject("oj_problem_id", Long.class),
                 rs.getBoolean("requires_teacher_review")
         );
+    }
+
+    private RowMapper<RandomExamQuestionRow> randomExamQuestionMapper() {
+        return (rs, rowNum) -> {
+            String type = rs.getString("question_type");
+            return new RandomExamQuestionRow(
+                    rs.getLong("id"),
+                    type,
+                    labelForQuestionType(type),
+                    rs.getString("stem"),
+                    normalizeOptionsJson(rs.getString("options_json")),
+                    rs.getString("answer"),
+                    rs.getString("explanation"),
+                    rs.getString("set_title"),
+                    rs.getString("course_title"),
+                    10
+            );
+        };
+    }
+
+    private String labelForQuestionType(String type) {
+        return switch (type == null ? "" : type) {
+            case "multiple" -> "多选题";
+            case "blank" -> "填空题";
+            default -> "单选题";
+        };
+    }
+
+    private String normalizeOptionsJson(String json) {
+        return json == null || json.isBlank() ? "[]" : json;
     }
 
     /**
@@ -436,6 +580,20 @@ public class AcademyExamRepository {
             Integer score,
             LocalDateTime startedAt,
             LocalDateTime submittedAt
+    ) {
+    }
+
+    public record RandomExamQuestionRow(
+            Long id,
+            String type,
+            String label,
+            String stem,
+            String optionsJson,
+            String answer,
+            String explanation,
+            String setTitle,
+            String courseTitle,
+            Integer score
     ) {
     }
 }

@@ -1380,6 +1380,65 @@
   font-weight: 850;
 }
 
+.academy-random-exam-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.academy-random-exam-form label {
+  display: grid;
+  gap: 6px;
+  color: #607986;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.academy-random-exam-form input {
+  min-width: 0;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid rgba(71, 128, 151, 0.16);
+  border-radius: 8px;
+  color: #274855;
+  background: rgba(255, 255, 255, 0.92);
+  outline: 0;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.academy-random-exam-form input:focus {
+  border-color: rgba(116, 235, 213, 0.9);
+  box-shadow: 0 0 0 3px rgba(116, 235, 213, 0.18);
+}
+
+.academy-random-exam-form button,
+.academy-random-exam-form small {
+  grid-column: 1 / -1;
+}
+
+.academy-random-exam-form button {
+  height: 40px;
+  border: 0;
+  border-radius: 8px;
+  color: #ffffff;
+  background: #74ebd5;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.academy-random-exam-form button:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
+.academy-random-exam-form small {
+  color: #78909c;
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .academy-aggregate-side-actions {
   display: grid;
   gap: 10px;

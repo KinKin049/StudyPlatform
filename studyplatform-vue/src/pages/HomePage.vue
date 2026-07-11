@@ -282,16 +282,47 @@ const buildQuestionBankFilterPath = (basePath, course) => {
   return code ? `${basePath}?setCode=${encodeURIComponent(code)}` : basePath
 }
 
-const pickTopRecommendations = (candidates) =>
+const normalizeRecommendationSubject = (value) =>
+  String(value || '')
+    .toLowerCase()
+    .replace(/[（(].*?[）)]/g, '')
+    .replace(/python\s*/g, 'python')
+    .replace(/程序设计|程序开发|课程题库|题库|错题本|收藏题目|收藏题|练习|作业|考试|课程|公开课|精品教材|教材/g, '')
+    .replace(/[\s·、，,。.:：/\\|_-]+/g, '')
+    .trim()
+
+const getRecommendationSubjectKey = (...values) => {
+  const normalized = values
+    .map(normalizeRecommendationSubject)
+    .find((value) => value.length >= 2)
+  return normalized ? `subject:${normalized}` : ''
+}
+
+const sortedRecommendationCandidates = (candidates) =>
   candidates
     .filter(Boolean)
     .map((item, index) => ({ ...item, score: Number(item.score || 0), order: index }))
     .sort((left, right) => right.score - left.score || left.order - right.order)
+
+const pickTopRecommendations = (candidates, { dedupeSubjects = false } = {}) => {
+  const selected = []
+  const usedSubjects = new Set()
+
+  for (const item of sortedRecommendationCandidates(candidates)) {
+    const subjectKey = item.subjectKey || ''
+    if (dedupeSubjects && subjectKey && usedSubjects.has(subjectKey)) continue
+    selected.push(item)
+    if (dedupeSubjects && subjectKey) usedSubjects.add(subjectKey)
+    if (selected.length >= 4) break
+  }
+
+  return selected
     .slice(0, 4)
-    .map(({ score, order, displayTitle, ...item }) => ({
+    .map(({ score, order, displayTitle, subjectKey, ...item }) => ({
       ...item,
       title: displayTitle || item.title,
     }))
+}
 
 const homeRecommendations = computed(() => {
   if (!isLoggedIn.value) {
@@ -299,77 +330,42 @@ const homeRecommendations = computed(() => {
       {
         key: 'login',
         label: '账号',
-        title: '登录后查看推荐',
-        reason: '根据你的课程、作业、考试和练习状态生成入口。',
+        title: '登录账号',
+        reason: '登录后才能根据你的课程、作业、考试和练习状态生成个性化入口。',
         path: '/login',
         action: '去登录',
         tone: 'blue',
-        score: 100,
+        score: 104,
       },
       {
-        key: 'academy',
-        displayTitle: 'C语言程序设计(下)',
-        label: '课程',
-        title: '在线学堂',
-        reason: '先浏览课程资源，找到适合当前阶段的学习内容。',
-        path: '/academy/open-courses/46004_1476538444',
-        action: '进入学堂',
+        key: 'login-profile',
+        label: '个人数据',
+        title: '登录后同步学习状态',
+        reason: '登录后会读取你的课程、收藏、待办和考试信息，再生成推荐。',
+        path: '/login',
+        action: '登录同步',
         tone: 'green',
-        score: 82,
+        score: 103,
       },
       {
-        key: 'open-courses',
-        displayTitle: 'C语言程序设计(下)',
-        label: '公开课',
-        title: '在线公开课',
-        reason: '从开放课程中快速找到可以马上开始的内容。',
-        path: '/academy/open-courses/46004_1476538444',
-        action: '浏览课程',
-        tone: 'green',
-        score: 76,
-      },
-      {
-        key: 'question-bank',
-        displayTitle: 'C语言程序设计题库',
-        label: '练习',
-        title: '课程题库',
-        reason: '先用题库了解平台的练习和反馈能力。',
-        path: '/academy/question-bank/courses/c-language',
-        action: '查看题库',
-        tone: 'amber',
-        score: 68,
-      },
-      {
-        key: 'lab-oj',
-        label: '编程',
-        title: '在线 OJ',
-        reason: '从编程练习开始，巩固算法和代码能力。',
-        path: '/lab/oj',
-        action: '开始练习',
+        key: 'login-progress',
+        label: '学习进度',
+        title: '登录后恢复进度',
+        reason: '登录后可以继续查看学习时长、练习分布、成就和排名。',
+        path: '/login',
+        action: '登录查看',
         tone: 'violet',
-        score: 64,
+        score: 102,
       },
       {
-        key: 'visualization',
-        displayTitle: '单链表逆置动画',
-        label: '可视化',
-        title: '算法可视化',
-        reason: '用动态演示理解数据结构和算法过程。',
-        path: '/visualization/data-structure/single-linked-list-reverse',
-        action: '进入可视化',
-        tone: 'blue',
-        score: 58,
-      },
-      {
-        key: 'games',
-        displayTitle: 'Type Warrior',
-        label: '游戏',
-        title: '游戏学习',
-        reason: '通过闯关和打字练习降低开始学习的门槛。',
-        path: '/games/type-warrior',
-        action: '开始游戏',
+        key: 'login-recommendation',
+        label: '推荐',
+        title: '登录后开启推荐',
+        reason: '当前未登录，只提供登录入口，不推荐课程、题库或其它任务。',
+        path: '/login',
+        action: '立即登录',
         tone: 'amber',
-        score: 52,
+        score: 101,
       },
     ])
   }
@@ -512,6 +508,7 @@ const homeRecommendations = computed(() => {
     hasPendingAssignments && {
       key: 'student-assignments',
       displayTitle: nextAssignment?.title || '课程作业',
+      subjectKey: getRecommendationSubjectKey(nextAssignment?.course, nextAssignment?.title),
       label: '待办',
       title: '课程作业',
       reason: `还有 ${pendingAssignments.length} 个作业可以继续完成。`,
@@ -523,6 +520,7 @@ const homeRecommendations = computed(() => {
     hasActiveExams && {
       key: 'student-exams',
       displayTitle: nextExam?.title || '我的考试',
+      subjectKey: getRecommendationSubjectKey(nextExam?.course, nextExam?.title),
       label: '考试',
       title: '我的考试',
       reason: `有 ${activeExams.length} 场考试可查看或准备。`,
@@ -534,6 +532,7 @@ const homeRecommendations = computed(() => {
     hasCourses && {
       key: 'student-courses',
       displayTitle: focusedCourse?.name || '我的课程',
+      subjectKey: getRecommendationSubjectKey(focusedCourse?.name, focusedCourse?.id),
       label: '课程',
       title: '我的课程',
       reason: `你已加入 ${courseCount} 门课程，可以继续学习。`,
@@ -545,6 +544,7 @@ const homeRecommendations = computed(() => {
     {
       key: 'question-bank',
       displayTitle: focusedCourse?.name ? `${focusedCourse.name}题库` : '课程题库列表',
+      subjectKey: getRecommendationSubjectKey(focusedCourse?.name, getCourseQuestionBankCode(focusedCourse)),
       label: '练习',
       title: '课程题库',
       reason: '用题库、收藏题和错题本补齐最近学习的薄弱点。',
@@ -556,6 +556,7 @@ const homeRecommendations = computed(() => {
     {
       key: 'mistakes',
       displayTitle: focusedCourse?.name ? `${focusedCourse.name}错题本` : '错题本',
+      subjectKey: getRecommendationSubjectKey(focusedCourse?.name, getCourseQuestionBankCode(focusedCourse)),
       label: '复盘',
       title: '错题本',
       reason: '优先回看做错的题，比随机练习更容易补短板。',
@@ -567,6 +568,7 @@ const homeRecommendations = computed(() => {
     {
       key: 'favorites',
       displayTitle: focusedCourse?.name ? `${focusedCourse.name}收藏题` : '收藏题目',
+      subjectKey: getRecommendationSubjectKey(focusedCourse?.name, getCourseQuestionBankCode(focusedCourse)),
       label: '收藏',
       title: '收藏题目',
       reason: '整理重点题目，适合考试或作业前快速回顾。',
@@ -588,6 +590,7 @@ const homeRecommendations = computed(() => {
     {
       key: 'academy-home',
       displayTitle: focusedCourse?.name || 'C语言程序设计(下)',
+      subjectKey: getRecommendationSubjectKey(focusedCourse?.name, focusedCourse?.id),
       label: '学堂',
       title: '在线学堂',
       reason: '浏览公开课、通识课、微专业和课程资源。',
@@ -599,6 +602,7 @@ const homeRecommendations = computed(() => {
     {
       key: 'open-courses',
       displayTitle: 'C语言程序设计(下)',
+      subjectKey: getRecommendationSubjectKey('C语言程序设计'),
       label: '公开课',
       title: '在线公开课',
       reason: '从开放课程中扩展新的学习主题。',
@@ -610,6 +614,7 @@ const homeRecommendations = computed(() => {
     {
       key: 'general-courses',
       displayTitle: '劳动通论',
+      subjectKey: getRecommendationSubjectKey('劳动通论'),
       label: '通识',
       title: '通识课程',
       reason: '在专业学习之外补充跨学科知识。',
@@ -621,6 +626,7 @@ const homeRecommendations = computed(() => {
     {
       key: 'micro-majors',
       displayTitle: '数据分析微专业',
+      subjectKey: getRecommendationSubjectKey('数据分析微专业'),
       label: '微专业',
       title: '微专业课程',
       reason: '围绕一个方向系统推进专项学习。',
@@ -632,6 +638,7 @@ const homeRecommendations = computed(() => {
     {
       key: 'textbooks',
       displayTitle: 'C语言程序设计',
+      subjectKey: getRecommendationSubjectKey('C语言程序设计'),
       label: '教材',
       title: '精品教材',
       reason: '查找课程配套教材，补充系统学习资料。',
@@ -696,7 +703,7 @@ const homeRecommendations = computed(() => {
     },
   ]
 
-  return pickTopRecommendations(candidates)
+  return pickTopRecommendations(candidates, { dedupeSubjects: true })
 })
 
 const learningOverviewStats = computed(() => {
@@ -1123,6 +1130,8 @@ onBeforeUnmount(() => {
         </span>
       </div>
 
+      <div class="home-recommendation-corner">个性化推荐</div>
+
       <div class="home-recommendation-grid">
         <RouterLink
           v-for="item in homeRecommendations"
@@ -1138,8 +1147,6 @@ onBeforeUnmount(() => {
           <small>{{ item.action }}</small>
         </RouterLink>
       </div>
-
-      <div class="home-recommendation-corner">个性化推荐</div>
     </section>
   </main>
 </template>

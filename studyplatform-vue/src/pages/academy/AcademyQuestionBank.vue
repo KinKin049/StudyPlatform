@@ -6,7 +6,11 @@
 import { computed, onMounted, ref } from 'vue'
 import { Collection, Connection, Notebook, Reading } from '@element-plus/icons-vue'
 import { RouterLink, useRouter } from 'vue-router'
-import { fetchQuestionBankFavoriteSummary, fetchQuestionBankMistakeSummary } from '../../api/academy'
+import {
+  createAcademyRandomExam,
+  fetchQuestionBankFavoriteSummary,
+  fetchQuestionBankMistakeSummary,
+} from '../../api/academy'
 
 /** 路由实例 */
 const router = useRouter()
@@ -24,6 +28,9 @@ const favoriteSummary = ref({
   total: 0,
   sets: [],
 })
+
+const randomExamGenerating = ref(false)
+const randomExamMessage = ref('')
 
 /** 预留功能模块（暂未实现） */
 const reservedModules = [
@@ -71,11 +78,34 @@ const loadFavoriteSummary = async () => {
 
 /** 处理预留模块点击事件 */
 const handleModuleClick = (module) => {
+  if (module.key === 'mock-exam') {
+    createRandomExam()
+    return
+  }
   if (module.path) {
     router.push(module.path)
     return
   }
   console.info('question bank module action reserved:', module.key)
+}
+
+const createRandomExam = async () => {
+  if (randomExamGenerating.value) return
+  randomExamGenerating.value = true
+  randomExamMessage.value = ''
+  try {
+    const exam = await createAcademyRandomExam({
+      userId: 1,
+      questionCount: 10,
+      durationMinutes: 45,
+    })
+    randomExamMessage.value = '随机试卷已生成，正在进入试卷详情。'
+    router.push(`/academy/exams/${encodeURIComponent(exam.id)}`)
+  } catch (error) {
+    randomExamMessage.value = error instanceof Error ? error.message : '随机组卷失败'
+  } finally {
+    randomExamGenerating.value = false
+  }
 }
 
 /** 组件挂载时加载统计数据 */
@@ -147,15 +177,17 @@ onMounted(() => {
           :key="module.key"
           type="button"
           class="question-bank-card"
+          :disabled="module.key === 'mock-exam' && randomExamGenerating"
           @click="handleModuleClick(module)"
         >
           <div>
             <h3><el-icon class="question-bank-card-icon"><Connection /></el-icon>{{ module.title }}</h3>
-            <span>{{ module.description }}</span>
+            <span>{{ module.key === 'mock-exam' && randomExamGenerating ? '正在从已选课程题库中抽题生成试卷...' : module.description }}</span>
           </div>
-          <strong>{{ module.count }}</strong>
+          <strong>{{ module.key === 'mock-exam' && randomExamGenerating ? '组卷中' : module.count }}</strong>
         </button>
       </div>
+      <p v-if="randomExamMessage" class="question-bank-action-message">{{ randomExamMessage }}</p>
     </section>
   </main>
 </template>

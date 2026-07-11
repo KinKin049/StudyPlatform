@@ -114,6 +114,7 @@ const routes = [
     path: '/onboarding',
     name: 'onboarding',
     component: AuthOnboardingPage,
+    meta: { hidePet: true },
   },
   {
     path: '/admin',
@@ -124,11 +125,13 @@ const routes = [
     path: '/exchange',
     name: 'exchange',
     component: ExchangeCenter,
+    meta: { requiresAuth: true },
   },
   {
     path: '/exchange/vouchers',
     name: 'exchange-vouchers',
     component: MyVouchers,
+    meta: { requiresAuth: true },
   },
   {
     path: '/academy',
@@ -374,6 +377,21 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+})
+
+router.beforeEach((to) => {
+  if (!to.matched.some((record) => record.meta?.requiresAuth)) return true
+  try {
+    const raw = localStorage.getItem('study-platform-auth-user')
+    const user = raw ? JSON.parse(raw) : null
+    if (user?.id) return true
+  } catch {
+    // Fall through to login.
+  }
+  return {
+    path: '/login',
+    query: { redirect: to.fullPath },
+  }
 })
 
 export default router

@@ -7,6 +7,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import {
+  createAcademyRandomExam,
   fetchAcademyAssignments,
   fetchAcademyExams,
   fetchMyAcademyCourses,
@@ -58,6 +59,11 @@ const assignmentsError = ref('')
 const exams = ref([])
 const examsLoading = ref(false)
 const examsError = ref('')
+const randomExamGenerating = ref(false)
+const randomExamForm = ref({
+  questionCount: 10,
+  durationMinutes: 45,
+})
 const courseSearchKeyword = ref('')
 const sidebarFeedback = ref('')
 const profileOverview = ref(null)
@@ -439,6 +445,11 @@ const sidebarModel = computed(() => {
   if (props.variant === 'exams') {
     return [
       {
+        title: '随机组卷',
+        kind: 'random-exam',
+        actions: [],
+      },
+      {
         title: '快捷操作',
         actions: [
           { key: 'exam-open', label: '查看可进入考试', meta: '筛选当前正在进行的考试', variant: 'exams', status: '正在进行' },
@@ -537,6 +548,27 @@ const showSidebarFeedback = (message) => {
   sidebarFeedbackTimer = window.setTimeout(() => {
     sidebarFeedback.value = ''
   }, 1800)
+}
+
+const createRandomExam = async () => {
+  if (randomExamGenerating.value) return
+  randomExamGenerating.value = true
+  examsError.value = ''
+  try {
+    const exam = await createAcademyRandomExam({
+      userId: 1,
+      questionCount: Number(randomExamForm.value.questionCount || 10),
+      durationMinutes: Number(randomExamForm.value.durationMinutes || 45),
+    })
+    await loadExams()
+    showSidebarFeedback('随机试卷已生成')
+    router.push(`/academy/exams/${encodeURIComponent(exam.id)}`)
+  } catch (error) {
+    examsError.value = error instanceof Error ? error.message : '随机组卷失败'
+    showSidebarFeedback(examsError.value)
+  } finally {
+    randomExamGenerating.value = false
+  }
 }
 
 /**
@@ -891,6 +923,25 @@ onBeforeUnmount(() => {
               aria-label="搜索在线学堂课程"
             />
             <button type="submit">搜索</button>
+          </form>
+
+          <form
+            v-if="section.kind === 'random-exam'"
+            class="academy-random-exam-form"
+            @submit.prevent="createRandomExam"
+          >
+            <label>
+              <span>题目数</span>
+              <input v-model.number="randomExamForm.questionCount" type="number" min="5" max="30" />
+            </label>
+            <label>
+              <span>时长</span>
+              <input v-model.number="randomExamForm.durationMinutes" type="number" min="10" max="180" />
+            </label>
+            <button type="submit" :disabled="randomExamGenerating">
+              {{ randomExamGenerating ? '组卷中...' : '生成试卷' }}
+            </button>
+            <small>从已选课程关联题库中随机抽题。</small>
           </form>
 
           <div class="academy-aggregate-side-actions">

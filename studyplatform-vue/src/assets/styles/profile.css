@@ -247,6 +247,10 @@
 .profile-edit-form {
   display: grid;
   gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-height: calc(90vh - 126px);
+  padding-right: 4px;
+  overflow-y: auto;
 }
 
 .profile-edit-form label {
@@ -277,14 +281,75 @@
 
 .profile-edit-form textarea {
   resize: vertical;
+  min-height: 92px;
   padding: 12px 13px;
   line-height: 1.65;
+}
+
+.profile-edit-form label:has(textarea),
+.profile-edit-tag-field,
+.profile-edit-password-section,
+.profile-edit-form .profile-user-message,
+.profile-edit-actions {
+  grid-column: 1 / -1;
 }
 
 .profile-edit-form input:focus,
 .profile-edit-form textarea:focus {
   border-color: rgba(23, 143, 134, 0.45);
   box-shadow: 0 0 0 4px rgba(116, 235, 213, 0.16);
+}
+
+.profile-edit-tag-field,
+.profile-edit-password-section {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 12px;
+  border: 1px solid rgba(71, 128, 151, 0.14);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.52);
+}
+
+.profile-edit-tag-field > span,
+.profile-edit-password-section > strong {
+  grid-column: 1 / -1;
+  color: #178f86;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.profile-edit-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.profile-edit-tag-list button,
+.profile-edit-tag-add button {
+  border: none;
+  border-radius: 999px;
+  color: #178f86;
+  background: rgba(116, 235, 213, 0.22);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.profile-edit-tag-list button {
+  padding: 7px 10px;
+}
+
+.profile-edit-tag-add {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.profile-edit-tag-add button {
+  min-width: 64px;
+  padding: 0 14px;
 }
 
 .profile-edit-actions {
@@ -352,20 +417,26 @@
 
 .profile-edit-dialog {
   width: min(560px, 100%);
+  max-height: 90vh;
+  overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.7);
   border-radius: 24px;
   background: rgba(255, 255, 255, 0.94);
   box-shadow: 0 28px 90px rgba(23, 52, 71, 0.28);
-  padding: 26px;
+  padding: 22px;
   animation: profile-dialog-in 0.24s cubic-bezier(0.2, 0.9, 0.2, 1.08) both;
+}
+
+.profile-user-edit-dialog {
+  width: min(780px, 100%);
 }
 
 .profile-edit-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 18px;
-  margin-bottom: 20px;
+  gap: 16px;
+  margin-bottom: 14px;
 }
 
 .profile-edit-head p {
@@ -406,6 +477,21 @@
 
 .profile-avatar-crop-dialog {
   width: min(520px, 100%);
+}
+
+@media (max-width: 720px) {
+  .profile-edit-form,
+  .profile-edit-password-section {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-modal-backdrop {
+    padding: 14px;
+  }
+
+  .profile-edit-dialog {
+    padding: 18px;
+  }
 }
 
 .profile-avatar-crop-frame {
@@ -882,6 +968,126 @@
   width: min(940px, 100%);
   max-height: min(88vh, 920px);
   overflow: auto;
+}
+
+.profile-teacher-assignment-dialog {
+  width: min(920px, 100%);
+  max-height: min(88vh, 920px);
+  overflow: auto;
+}
+
+.profile-teacher-assignment-form {
+  display: grid;
+  gap: 14px;
+}
+
+.profile-teacher-assignment-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.profile-teacher-assignment-form label {
+  display: grid;
+  gap: 7px;
+  color: #178f86;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.profile-teacher-assignment-form input,
+.profile-teacher-assignment-form select,
+.profile-teacher-assignment-form textarea {
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid rgba(71, 128, 151, 0.16);
+  border-radius: 10px;
+  outline: none;
+  color: #173447;
+  background: #ffffff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 10px 12px;
+}
+
+.profile-teacher-assignment-form input,
+.profile-teacher-assignment-form select {
+  min-height: 42px;
+}
+
+.profile-teacher-assignment-form textarea {
+  resize: vertical;
+  line-height: 1.55;
+}
+
+.profile-teacher-assignment-questions {
+  display: grid;
+  gap: 14px;
+}
+
+.profile-teacher-assignment-question {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(71, 128, 151, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.profile-teacher-assignment-question header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profile-teacher-assignment-question header strong {
+  color: #173447;
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.profile-teacher-assignment-question button,
+.profile-teacher-assignment-add-question,
+.profile-teacher-assignment-add-option {
+  min-height: 34px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 14px;
+  color: #178f86;
+  background: rgba(116, 235, 213, 0.18);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.profile-teacher-assignment-options {
+  display: grid;
+  gap: 10px;
+}
+
+.profile-teacher-assignment-options > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.profile-teacher-assignment-answer {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  color: #607986 !important;
+}
+
+.profile-teacher-assignment-answer input {
+  width: 16px;
+  min-height: 16px;
+  height: 16px;
+  padding: 0;
 }
 
 .profile-teacher-oj-form {
@@ -1881,6 +2087,8 @@
   .profile-preview-list-horizontal,
   .profile-teacher-course-card,
   .profile-teacher-course-class,
+  .profile-teacher-assignment-grid,
+  .profile-teacher-assignment-options > div,
   .profile-teacher-oj-card,
   .profile-teacher-oj-grid,
   .profile-teacher-oj-grid.is-three {

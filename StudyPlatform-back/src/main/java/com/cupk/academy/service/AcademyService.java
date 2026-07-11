@@ -13,15 +13,22 @@ import com.cupk.academy.dto.AcademyTextbookCartRequest;
 import com.cupk.academy.dto.AcademyTextbookDetailResponse;
 import com.cupk.academy.dto.AcademyTextbookOrderRequest;
 import com.cupk.academy.dto.AcademyTextbookOrderResponse;
+import com.cupk.academy.dto.AcademyTextbookPaymentRequest;
+import com.cupk.academy.dto.AcademyTextbookPaymentResponse;
+import com.cupk.academy.dto.AcademyTextbookPaymentStatusResponse;
 import com.cupk.academy.dto.AcademyTextbookCommentResponse;
 import com.cupk.academy.dto.AcademyTextbookReviewRequest;
 import com.cupk.academy.dto.AcademyTextbookResponse;
 import com.cupk.academy.dto.TeacherWorkbenchMetricResponse;
 import com.cupk.academy.dto.TeacherWorkbenchResponse;
 import com.cupk.academy.repository.AcademyRepository.AcademyTextbookOrderResponseData;
+import com.cupk.academy.repository.AcademyRepository.TextbookPaymentSessionData;
 import com.cupk.academy.repository.AcademyRepository;
 import com.cupk.auth.dto.AuthUserResponse;
 import com.cupk.auth.repository.AuthUserRepository;
+import com.cupk.payment.PaymentGateway;
+import com.cupk.payment.PaymentGatewayResult;
+import com.cupk.payment.QrCodeRenderer;
 import com.cupk.rewards.VoucherCatalog;
 import com.cupk.rewards.VoucherService;
 import com.cupk.rewards.dto.VoucherItemResponse;
@@ -31,6 +38,7 @@ import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -50,6 +58,8 @@ public class AcademyService {
     private final AcademyRepository academyRepository;
     private final AuthUserRepository authUserRepository;
     private final VoucherService voucherService;
+    private final List<PaymentGateway> paymentGateways;
+    private final QrCodeRenderer qrCodeRenderer;
 
     /**
      * 构造函数，注入依赖组件。
@@ -61,11 +71,15 @@ public class AcademyService {
     public AcademyService(
             AcademyRepository academyRepository,
             AuthUserRepository authUserRepository,
-            VoucherService voucherService
+            VoucherService voucherService,
+            List<PaymentGateway> paymentGateways,
+            QrCodeRenderer qrCodeRenderer
     ) {
         this.academyRepository = academyRepository;
         this.authUserRepository = authUserRepository;
         this.voucherService = voucherService;
+        this.paymentGateways = paymentGateways;
+        this.qrCodeRenderer = qrCodeRenderer;
     }
 
     /**
@@ -279,13 +293,17 @@ public class AcademyService {
      * @return 更新后的购物车列表
      */
     public List<AcademyTextbookCartItemResponse> addTextbookCartItem(AcademyTextbookCartRequest request) {
+        return addTextbookCartItem(request == null ? null : request.userId(), request);
+    }
+
+    public List<AcademyTextbookCartItemResponse> addTextbookCartItem(Long userId, AcademyTextbookCartRequest request) {
         if (request == null || request.textbookId() == null || request.textbookId().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "教材编号不能为空");
         }
         getTextbook(request.textbookId());
-        long userId = normalizeUserId(request.userId());
-        academyRepository.addTextbookCartItem(userId, request.textbookId().trim(), normalizeQuantity(request.quantity()));
-        return listTextbookCart(userId);
+        long normalizedUserId = normalizeUserId(userId);
+        academyRepository.addTextbookCartItem(normalizedUserId, request.textbookId().trim(), normalizeQuantity(request.quantity()));
+        return listTextbookCart(normalizedUserId);
     }
 
     /**
@@ -328,7 +346,11 @@ public class AcademyService {
      * @return 订单响应
      */
     public AcademyTextbookOrderResponse createTextbookOrder(AcademyTextbookOrderRequest request) {
-        long userId = normalizeUserId(request == null ? null : request.userId());
+        return createTextbookOrder(request == null ? null : request.userId(), request);
+    }
+
+    public AcademyTextbookOrderResponse createTextbookOrder(Long userId, AcademyTextbookOrderRequest request) {
+        long normalizedUserId = normalizeUserId(userId);
         List<Long> cartItemIds = request == null || request.cartItemIds() == null
                 ? List.of()
                 : request.cartItemIds().stream()
@@ -336,10 +358,10 @@ public class AcademyService {
                         .distinct()
                         .toList();
         if (!cartItemIds.isEmpty()) {
-            BigDecimal originalAmount = academyRepository.sumTextbookCartItems(userId, cartItemIds);
-            TextbookVoucherChoice voucherChoice = resolveTextbookVoucherChoice(userId, request, originalAmount);
+            BigDecimal originalAmount = academyRepository.sumTextbookCartItems(normalizedUserId, cartItemIds);
+            TextbookVoucherChoice voucherChoice = resolveTextbookVoucherChoice(normalizedUserId, request, originalAmount);
             AcademyTextbookOrderResponseData order = academyRepository.createTextbookOrderFromCart(
-                    userId,
+                    normalizedUserId,
                     cartItemIds,
                     voucherChoice.voucherKey(),
                     voucherChoice.voucherName(),
@@ -356,9 +378,9 @@ public class AcademyService {
         AcademyTextbookDetailResponse textbook = getTextbook(request.textbookId());
         BigDecimal originalAmount = (textbook.discountPrice() == null ? BigDecimal.ZERO : textbook.discountPrice())
                 .multiply(BigDecimal.valueOf(normalizeQuantity(request.quantity())));
-        TextbookVoucherChoice voucherChoice = resolveTextbookVoucherChoice(userId, request, originalAmount);
+        TextbookVoucherChoice voucherChoice = resolveTextbookVoucherChoice(normalizedUserId, request, originalAmount);
         AcademyTextbookOrderResponseData order = academyRepository.createTextbookOrder(
-                userId,
+                normalizedUserId,
                 textbook,
                 normalizeQuantity(request.quantity()),
                 voucherChoice.voucherKey(),
@@ -376,16 +398,109 @@ public class AcademyService {
      * @return 订单响应
      */
     public AcademyTextbookOrderResponse payTextbookOrder(String orderNo, Long userId) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请使用微信或支付宝二维码完成付款后再确认订单");
+    }
+
+    public AcademyTextbookPaymentResponse createTextbookPayment(String orderNo, AcademyTextbookPaymentRequest request) {
+        return createTextbookPayment(orderNo, request == null ? null : request.userId(), request);
+    }
+
+    public AcademyTextbookPaymentResponse createTextbookPayment(String orderNo, Long userId, AcademyTextbookPaymentRequest request) {
         if (orderNo == null || orderNo.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "订单编号不能为空");
         }
         long normalizedUserId = normalizeUserId(userId);
-        AcademyTextbookOrderResponseData order = academyRepository.payTextbookOrder(normalizedUserId, orderNo.trim())
+        String normalizedOrderNo = orderNo.trim();
+        String provider = normalizePaymentProvider(request == null ? null : request.provider());
+        String paymentMode = normalizePaymentMode(request == null ? null : request.paymentMode());
+        if ("PAGE".equals(paymentMode) && !"ALIPAY".equals(provider)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "网页收银台仅支持支付宝");
+        }
+        AcademyTextbookOrderResponseData order = academyRepository.findPendingTextbookOrder(normalizedUserId, normalizedOrderNo)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "订单不存在或当前不可支付"));
+        LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(15);
+        String gatewayOrderNo = createGatewayOrderNo(normalizedOrderNo);
+        String sessionId = createPaymentSessionId(provider + ("PAGE".equals(paymentMode) ? "-PAGE" : ""), normalizedOrderNo);
+        String subject = "StudyPlatform Textbook Order " + normalizedOrderNo;
+        PaymentGatewayResult gatewayResult = "PAGE".equals(paymentMode)
+                ? paymentGateway(provider).createPagePayment(gatewayOrderNo, subject, order.totalAmount(), createPaymentReturnUrl(sessionId))
+                : paymentGateway(provider).createNativePayment(gatewayOrderNo, subject, order.totalAmount());
+        TextbookPaymentSessionData session = academyRepository.createTextbookPaymentSession(
+                normalizedUserId,
+                normalizedOrderNo,
+                gatewayOrderNo,
+                sessionId,
+                provider,
+                order.totalAmount(),
+                gatewayResult.qrPayload(),
+                expiresAt
+        );
+        String paymentPayload = "PAGE".equals(paymentMode) ? createPaymentCashierUrl(session.sessionId()) : session.qrPayload();
+        return new AcademyTextbookPaymentResponse(
+                session.sessionId(),
+                session.orderNo(),
+                session.provider(),
+                session.amount(),
+                paymentPayload,
+                session.status(),
+                session.expiresAt(),
+                gatewayResult.message().isBlank() ? "请使用" + paymentProviderLabel(provider) + "扫码支付" : gatewayResult.message()
+        );
+    }
+
+    public AcademyTextbookPaymentStatusResponse getTextbookPaymentStatus(String sessionId) {
+        TextbookPaymentSessionData session = findActiveTextbookPaymentSession(sessionId);
+        if ("PENDING".equals(session.status()) && !session.expiresAt().isAfter(LocalDateTime.now())) {
+            academyRepository.expireTextbookPaymentSession(session.sessionId());
+            session = findActiveTextbookPaymentSession(session.sessionId());
+        }
+        if ("PENDING".equals(session.status())) {
+            PaymentGatewayResult gatewayResult;
+            try {
+                gatewayResult = paymentGateway(session.provider()).queryPayment(session.gatewayOrderNo());
+            } catch (ResponseStatusException ex) {
+                return toTextbookPaymentStatusResponse(session, null, ex.getReason());
+            }
+            if ("PAID".equals(gatewayResult.status())) {
+                academyRepository.markTextbookPaymentSessionPaid(session.sessionId());
+                session = findActiveTextbookPaymentSession(session.sessionId());
+            } else if ("EXPIRED".equals(gatewayResult.status())) {
+                academyRepository.expireTextbookPaymentSession(session.sessionId());
+                session = findActiveTextbookPaymentSession(session.sessionId());
+            }
+        }
+        AcademyTextbookOrderResponse order = null;
+        if ("PAID".equals(session.status())) {
+            order = completePaidTextbookOrder(session);
+        }
+        return toTextbookPaymentStatusResponse(session, order);
+    }
+
+    public AcademyTextbookPaymentStatusResponse confirmLocalTextbookPayment(String sessionId) {
+        return getTextbookPaymentStatus(sessionId);
+    }
+
+    public byte[] renderTextbookPaymentQr(String sessionId) {
+        TextbookPaymentSessionData session = findActiveTextbookPaymentSession(sessionId);
+        return qrCodeRenderer.renderPng(session.qrPayload());
+    }
+
+    public String renderTextbookPaymentCashier(String sessionId) {
+        TextbookPaymentSessionData session = findActiveTextbookPaymentSession(sessionId);
+        if (!"ALIPAY".equals(session.provider())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "该支付会话不支持网页收银台");
+        }
+        return session.qrPayload();
+    }
+
+    private AcademyTextbookOrderResponse completePaidTextbookOrder(TextbookPaymentSessionData session) {
+        AcademyTextbookOrderResponseData order = academyRepository.payTextbookOrder(session.userId(), session.orderNo())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "订单不存在或不可支付"));
         if (order.voucherKey() != null && !order.voucherKey().isBlank() && !order.voucherConsumed()) {
-            voucherService.consumeDiscountVoucher(normalizedUserId, order.voucherKey());
-            academyRepository.markTextbookOrderVoucherConsumed(normalizedUserId, order.orderNo());
+            voucherService.consumeDiscountVoucher(session.userId(), order.voucherKey());
+            academyRepository.markTextbookOrderVoucherConsumed(session.userId(), order.orderNo());
         }
+        academyRepository.deleteTextbookCartItemsForPaidOrder(session.userId(), order.orderNo());
         return toTextbookOrderResponse(order, "已支付", "支付成功，教材已购买", true);
     }
 
@@ -407,10 +522,7 @@ public class AcademyService {
         }
         String voucherKey = VoucherCatalog.normalize(request.voucherKey());
         if (voucherKey.isBlank()) {
-            voucherKey = VoucherCatalog.TEXTBOOK_80_15;
-        }
-        if (!VoucherCatalog.isTextbookVoucher(voucherKey)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "该优惠券不能用于教材购买");
+            return TextbookVoucherChoice.none();
         }
         if (!voucherService.hasVoucher(userId, voucherKey)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "优惠券数量不足");
@@ -448,6 +560,103 @@ public class AcademyService {
                 message,
                 paid
         );
+    }
+
+    private AcademyTextbookPaymentStatusResponse toTextbookPaymentStatusResponse(
+            TextbookPaymentSessionData session,
+            AcademyTextbookOrderResponse order
+    ) {
+        return toTextbookPaymentStatusResponse(session, order, null);
+    }
+
+    private AcademyTextbookPaymentStatusResponse toTextbookPaymentStatusResponse(
+            TextbookPaymentSessionData session,
+            AcademyTextbookOrderResponse order,
+            String fallbackMessage
+    ) {
+        boolean paid = "PAID".equals(session.status()) && order != null && order.paid();
+        String message = switch (session.status()) {
+            case "PAID" -> paid ? "支付成功，订单已确认" : "支付已完成，正在确认订单";
+            case "EXPIRED" -> "支付二维码已过期，请重新生成";
+            default -> "等待扫码支付";
+        };
+        if (fallbackMessage != null && !fallbackMessage.isBlank()) {
+            message = fallbackMessage;
+        }
+        return new AcademyTextbookPaymentStatusResponse(
+                session.sessionId(),
+                session.orderNo(),
+                session.provider(),
+                session.amount(),
+                session.status(),
+                paid,
+                session.expiresAt(),
+                order,
+                message
+        );
+    }
+
+    private TextbookPaymentSessionData findActiveTextbookPaymentSession(String sessionId) {
+        if (sessionId == null || sessionId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "支付会话不能为空");
+        }
+        return academyRepository.findTextbookPaymentSession(sessionId.trim())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "支付会话不存在"));
+    }
+
+    private String normalizePaymentProvider(String provider) {
+        String value = provider == null ? "" : provider.trim().toUpperCase(Locale.ROOT);
+        if (value.equals("WECHAT") || value.equals("ALIPAY")) {
+            return value;
+        }
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请选择微信或支付宝支付");
+    }
+
+    private String normalizePaymentMode(String paymentMode) {
+        String value = paymentMode == null ? "" : paymentMode.trim().toUpperCase(Locale.ROOT);
+        if (value.isBlank() || "NATIVE".equals(value) || "QR".equals(value)) {
+            return "NATIVE";
+        }
+        if ("PAGE".equals(value) || "CASHIER".equals(value)) {
+            return "PAGE";
+        }
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请选择有效的支付方式");
+    }
+
+    private String paymentProviderLabel(String provider) {
+        return "ALIPAY".equals(provider) ? "支付宝" : "微信";
+    }
+
+    private String createPaymentSessionId(String provider, String orderNo) {
+        String safeOrderNo = orderNo == null ? "" : orderNo.replaceAll("[^A-Za-z0-9_-]", "");
+        if (safeOrderNo.length() > 40) {
+            safeOrderNo = safeOrderNo.substring(0, 40);
+        }
+        return provider + "-" + safeOrderNo + "-" + UUID.randomUUID().toString().replace("-", "");
+    }
+
+    private String createGatewayOrderNo(String orderNo) {
+        String safeOrderNo = orderNo == null ? "" : orderNo.replaceAll("[^A-Za-z0-9_-]", "");
+        if (safeOrderNo.length() > 42) {
+            safeOrderNo = safeOrderNo.substring(0, 42);
+        }
+        return safeOrderNo + "-" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+    }
+
+    private String createPaymentCashierUrl(String sessionId) {
+        return "/api/academy/textbook-payments/" + URLEncoder.encode(sessionId, StandardCharsets.UTF_8) + "/cashier";
+    }
+
+    private String createPaymentReturnUrl(String sessionId) {
+        return "http://localhost:5173/academy/textbook-cart?paymentSession="
+                + URLEncoder.encode(sessionId, StandardCharsets.UTF_8);
+    }
+
+    private PaymentGateway paymentGateway(String provider) {
+        return paymentGateways.stream()
+                .filter(gateway -> gateway.provider().equals(provider))
+                .findFirst()
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "支付渠道不可用：" + provider));
     }
 
     /**

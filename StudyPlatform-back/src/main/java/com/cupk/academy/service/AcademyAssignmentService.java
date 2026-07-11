@@ -6,15 +6,20 @@ import com.cupk.academy.dto.AcademyAssignmentQuestionResponse;
 import com.cupk.academy.dto.AcademyAssignmentQuestionResultResponse;
 import com.cupk.academy.dto.AcademyAssignmentSubmitResponse;
 import com.cupk.academy.dto.AcademyAssignmentSummaryResponse;
+import com.cupk.academy.dto.TeacherAssignmentCreateRequest;
+import com.cupk.academy.dto.TeacherAssignmentQuestionRequest;
 import com.cupk.academy.repository.AcademyAssignmentRepository;
 import com.cupk.academy.repository.AcademyAssignmentRepository.AssignmentDetailRow;
 import com.cupk.academy.repository.AcademyAssignmentRepository.AssignmentQuestionRow;
+import com.cupk.academy.repository.AcademyRepository;
+import com.cupk.auth.repository.AuthUserRepository;
 import com.cupk.oj.dto.CreateSubmissionRequest;
 import com.cupk.oj.model.OjSubmission;
 import com.cupk.oj.service.OjSubmissionService;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import org.springframework.http.HttpStatus;
@@ -29,6 +34,8 @@ public class AcademyAssignmentService {
     private static final long DEFAULT_USER_ID = 1L;
 
     private final AcademyAssignmentRepository assignmentRepository;
+    private final AcademyRepository academyRepository;
+    private final AuthUserRepository authUserRepository;
     private final OjSubmissionService ojSubmissionService;
 
     /**
@@ -39,10 +46,73 @@ public class AcademyAssignmentService {
      */
     public AcademyAssignmentService(
             AcademyAssignmentRepository assignmentRepository,
+            AcademyRepository academyRepository,
+            AuthUserRepository authUserRepository,
             OjSubmissionService ojSubmissionService
     ) {
         this.assignmentRepository = assignmentRepository;
+        this.academyRepository = academyRepository;
+        this.authUserRepository = authUserRepository;
         this.ojSubmissionService = ojSubmissionService;
+    }
+
+    public AcademyAssignmentDetailResponse createTeacherAssignment(Long userId, TeacherAssignmentCreateRequest request) {
+        long teacherUserId = requireTeacher(userId);
+        if (request == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "作业内容不能为空");
+        }
+        String courseId = clean(request.courseId(), 120);
+        String title = clean(request.title(), 255);
+        if (courseId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "课程不能为空");
+        }
+        if (title.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "作业标题不能为空");
+        }
+
+        var course = academyRepository.findPublishedCourseForTeacher(teacherUserId, courseId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "课程不存在或不属于当前教师"));
+        List<TeacherAssignmentQuestionRequest> questions = normalizeTeacherQuestions(request.questions());
+        int totalScore = questions.stream()
+                .mapToInt(question -> normalizeScore(question.score()))
+                .sum();
+        String assignmentCode = "ta-" + teacherUserId + "-" + System.currentTimeMillis();
+        long assignmentId = assignmentRepository.createAssignment(
+                assignmentCode,
+                "online-open-courses",
+                course.courseId(),
+                course.courseName(),
+                title,
+                clean(course.teacherName(), 120),
+                request.deadline(),
+                request.attemptsLimit(),
+                request.durationMinutes(),
+                totalScore,
+                cleanNullable(request.description(), 4000)
+        );
+
+        for (int index = 0; index < questions.size(); index += 1) {
+            TeacherAssignmentQuestionRequest question = questions.get(index);
+            String type = normalizeQuestionType(question.type());
+            Object correctAnswer = normalizeCorrectAnswer(type, question.correctAnswer());
+            boolean autoGradable = isAutoGradableType(type) && correctAnswer != null;
+            assignmentRepository.createQuestion(
+                    assignmentId,
+                    index + 1,
+                    type,
+                    cleanNullable(question.label(), 64),
+                    clean(question.title(), 4000),
+                    normalizeOptions(type, question.options()),
+                    cleanNullable(question.placeholder(), 1000),
+                    normalizeScore(question.score()),
+                    correctAnswer,
+                    cleanNullable(question.explanation(), 2000),
+                    autoGradable,
+                    !autoGradable
+            );
+        }
+
+        return getAssignment(assignmentCode, teacherUserId);
     }
 
     /**
@@ -361,6 +431,99 @@ public class AcademyAssignmentService {
                     .toList();
         }
         return List.of(normalizeText(value));
+    }
+
+    private List<TeacherAssignmentQuestionRequest> normalizeTeacherQuestions(List<TeacherAssignmentQuestionRequest> questions) {
+        if (questions == null || questions.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "至少添加一道题目");
+        }
+        List<TeacherAssignmentQuestionRequest> normalized = questions.stream()
+                .filter(Objects::nonNull)
+                .toList();
+        if (normalized.isEmpty() || normalized.size() > 50) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "题目数量需在 1-50 道之间");
+        }
+        for (TeacherAssignmentQuestionRequest question : normalized) {
+            String type = normalizeQuestionType(question.type());
+            if (clean(question.title(), 4000).isBlank()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "题目标题不能为空");
+            }
+            if (("single".equals(type) || "multiple".equals(type)) && normalizeOptions(type, question.options()).size() < 2) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "选择题至少需要两个选项");
+            }
+        }
+        return normalized;
+    }
+
+    private String normalizeQuestionType(String type) {
+        return switch (type == null ? "" : type.trim().toLowerCase(Locale.ROOT)) {
+            case "single", "multiple", "blank", "short" -> type.trim().toLowerCase(Locale.ROOT);
+            default -> "short";
+        };
+    }
+
+    private boolean isAutoGradableType(String type) {
+        return "single".equals(type) || "multiple".equals(type) || "blank".equals(type);
+    }
+
+    private List<String> normalizeOptions(String type, List<String> options) {
+        if (!"single".equals(type) && !"multiple".equals(type)) {
+            return List.of();
+        }
+        if (options == null) {
+            return List.of();
+        }
+        return options.stream()
+                .map(option -> clean(option, 255))
+                .filter(option -> !option.isBlank())
+                .limit(8)
+                .toList();
+    }
+
+    private Object normalizeCorrectAnswer(String type, Object answer) {
+        if (answer == null) {
+            return null;
+        }
+        if ("multiple".equals(type)) {
+            List<String> values = normalizeList(answer).stream()
+                    .filter(value -> !value.isBlank())
+                    .toList();
+            return values.isEmpty() ? null : values;
+        }
+        String value = normalizeText(answer);
+        return value.isBlank() ? null : value;
+    }
+
+    private int normalizeScore(Integer score) {
+        if (score == null || score <= 0) {
+            return 1;
+        }
+        return Math.min(score, 100);
+    }
+
+    private long requireTeacher(Long userId) {
+        Long normalizedUserId = normalizeUserId(userId);
+        var user = authUserRepository.findById(normalizedUserId);
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "请先登录");
+        }
+        if (!"teacher".equals(user.roleType())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "只有教师可以布置作业");
+        }
+        return normalizedUserId;
+    }
+
+    private String clean(String value, int maxLength) {
+        String cleaned = value == null ? "" : value.trim();
+        if (cleaned.length() <= maxLength) {
+            return cleaned;
+        }
+        return cleaned.substring(0, maxLength);
+    }
+
+    private String cleanNullable(String value, int maxLength) {
+        String cleaned = clean(value, maxLength);
+        return cleaned.isBlank() ? null : cleaned;
     }
 
     /**

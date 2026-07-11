@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -115,9 +116,10 @@ public class ProfileRepository {
         ensureUserProfile(userId);
         String sql = """
                 SELECT p.user_id, p.display_name, p.handle, p.role_label,
+                       COALESCE(u.email, '') AS email,
                        COALESCE(u.role_type, CASE WHEN u.role = 'TEACHER' THEN 'teacher' ELSE 'student' END, '') AS role_type,
                        COALESCE(u.teacher_name, '') AS teacher_name,
-                       p.bio, p.location, p.school, p.avatar_path
+                       p.bio, p.location, p.profile_tags_json, p.school, p.avatar_path
                 FROM profile_user_profiles p
                 LEFT JOIN users u ON u.id = p.user_id
                 WHERE p.user_id = ?
@@ -132,15 +134,17 @@ public class ProfileRepository {
      * @param userId 用户ID
      * @param name 显示名称
      * @param bio 个人简介
+     * @param location 位置标签
+     * @param metaTags 自定义标签
      */
-    public void updateUserProfile(long userId, String name, String bio) {
+    public void updateUserProfile(long userId, String name, String bio, String location, List<String> metaTags) {
         ensureUserProfile(userId);
         String sql = """
                 UPDATE profile_user_profiles
-                SET display_name = ?, bio = ?
+                SET display_name = ?, bio = ?, location = ?, profile_tags_json = CAST(? AS JSON)
                 WHERE user_id = ?
                 """;
-        jdbcTemplate.update(sql, name, bio, userId);
+        jdbcTemplate.update(sql, name, bio, location, toJsonArray(metaTags), userId);
     }
 
     /**
@@ -677,12 +681,14 @@ public class ProfileRepository {
         return new ProfileUserResponse(
                 rs.getLong("user_id"),
                 rs.getString("display_name"),
+                rs.getString("email"),
                 rs.getString("handle"),
                 rs.getString("role_label"),
                 rs.getString("role_type"),
                 rs.getString("teacher_name"),
                 rs.getString("bio"),
                 rs.getString("location"),
+                parseJsonArray(rs.getString("profile_tags_json")),
                 rs.getString("school"),
                 avatarUrl
         );
@@ -701,7 +707,7 @@ public class ProfileRepository {
         int insertedFromUser = jdbcTemplate.update(
                 """
                 INSERT INTO profile_user_profiles
-                  (user_id, display_name, handle, role_label, bio, location, school)
+                  (user_id, display_name, handle, role_label, bio, location, profile_tags_json, school)
                 SELECT id,
                        COALESCE(NULLIF(nickname, ''), username),
                        CONCAT('@', COALESCE(NULLIF(nickname, ''), username)),
@@ -714,6 +720,11 @@ public class ProfileRepository {
                          ELSE '这个账号正在完善自己的学习主页。'
                        END,
                        'China',
+                       JSON_ARRAY(CASE
+                         WHEN learning_goal IS NOT NULL AND learning_goal <> ''
+                           THEN CONCAT('目标：', learning_goal)
+                         ELSE '目标：稳稳变强'
+                       END),
                        COALESCE(NULLIF(school, ''), 'StudyPlatform')
                 FROM users
                 WHERE id = ?
@@ -726,13 +737,76 @@ public class ProfileRepository {
 
         String sql = """
                 INSERT INTO profile_user_profiles
-                  (user_id, display_name, handle, role_label, bio, location, school)
+                  (user_id, display_name, handle, role_label, bio, location, profile_tags_json, school)
                 VALUES (?, 'Kinkin', '@study-platform', 'StudyPlatform 学习者',
                         '在题库、课程、实验与背单词之间来回穿梭，把零散练习沉淀成稳定的学习曲线。',
-                        'China', 'StudyPlatform')
+                        'China', JSON_ARRAY('目标：稳稳变强'), 'StudyPlatform')
                 ON DUPLICATE KEY UPDATE user_id = user_id
                 """;
         jdbcTemplate.update(sql, userId);
+    }
+
+    private List<String> parseJsonArray(String json) {
+        if (json == null || json.isBlank() || "null".equalsIgnoreCase(json)) {
+            return List.of();
+        }
+        String trimmed = json.trim();
+        if (!trimmed.startsWith("[") || !trimmed.endsWith("]")) {
+            return List.of();
+        }
+        String body = trimmed.substring(1, trimmed.length() - 1).trim();
+        if (body.isEmpty()) {
+            return List.of();
+        }
+        List<String> values = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        boolean inString = false;
+        boolean escaping = false;
+        for (int index = 0; index < body.length(); index += 1) {
+            char ch = body.charAt(index);
+            if (escaping) {
+                current.append(ch);
+                escaping = false;
+            } else if (ch == '\\') {
+                escaping = true;
+            } else if (ch == '"') {
+                inString = !inString;
+            } else if (ch == ',' && !inString) {
+                addJsonArrayValue(values, current.toString());
+                current.setLength(0);
+            } else {
+                current.append(ch);
+            }
+        }
+        addJsonArrayValue(values, current.toString());
+        return values;
+    }
+
+    private void addJsonArrayValue(List<String> values, String rawValue) {
+        String value = rawValue == null ? "" : rawValue.trim();
+        if (!value.isBlank()) {
+            values.add(value.replace("\\\"", "\"").replace("\\\\", "\\"));
+        }
+    }
+
+    private String toJsonArray(List<String> values) {
+        if (values == null || values.isEmpty()) {
+            return "[]";
+        }
+        return values.stream()
+                .map(this::jsonString)
+                .toList()
+                .toString();
+    }
+
+    private String jsonString(String value) {
+        String safeValue = value == null ? "" : value;
+        return "\"" + safeValue
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\r", "\\r")
+                .replace("\n", "\\n")
+                + "\"";
     }
 
     /**

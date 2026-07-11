@@ -16,6 +16,8 @@ import com.cupk.academy.dto.ProfileUserUpdateRequest;
 import com.cupk.academy.dto.QuestionBankMistakeSummaryResponse;
 import com.cupk.academy.repository.ProfileRepository;
 import com.cupk.academy.repository.QuestionBankRepository;
+import com.cupk.auth.repository.AuthUserRepository;
+import com.cupk.auth.repository.AuthUserRepository.AuthUserRow;
 import com.cupk.games.repository.GameRecordRepository;
 import com.cupk.rewards.CoinRewardService;
 import java.io.IOException;
@@ -26,14 +28,17 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -49,11 +54,14 @@ public class ProfileService {
     private static final int MAX_LEARNING_TIME_SECONDS = 12 * 60 * 60;
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("MM-dd HH:mm");
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
 
     private final ProfileRepository profileRepository;
     private final GameRecordRepository gameRecordRepository;
     private final QuestionBankRepository questionBankRepository;
     private final CoinRewardService coinRewardService;
+    private final AuthUserRepository authUserRepository;
+    private final PasswordEncoder passwordEncoder;
 
     /**
      * 构造函数，注入依赖的仓库和服务。
@@ -62,17 +70,23 @@ public class ProfileService {
      * @param gameRecordRepository   游戏记录数据访问层
      * @param questionBankRepository 题库数据访问层
      * @param coinRewardService      金币奖励服务
+     * @param authUserRepository     认证用户数据访问层
+     * @param passwordEncoder        密码编码器
      */
     public ProfileService(
             ProfileRepository profileRepository,
             GameRecordRepository gameRecordRepository,
             QuestionBankRepository questionBankRepository,
-            CoinRewardService coinRewardService
+            CoinRewardService coinRewardService,
+            AuthUserRepository authUserRepository,
+            PasswordEncoder passwordEncoder
     ) {
         this.profileRepository = profileRepository;
         this.gameRecordRepository = gameRecordRepository;
         this.questionBankRepository = questionBankRepository;
         this.coinRewardService = coinRewardService;
+        this.authUserRepository = authUserRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     /**
@@ -178,7 +192,7 @@ public class ProfileService {
     }
 
     /**
-     * 更新用户个人资料，包括昵称和简介。
+     * 更新用户个人资料，包括昵称、邮箱、简介、位置、标签和密码。
      *
      * @param userId  用户ID
      * @param request 用户资料更新请求对象
@@ -187,17 +201,85 @@ public class ProfileService {
     public ProfileUserResponse updateUserProfile(long userId, ProfileUserUpdateRequest request) {
         ProfileUserResponse currentProfile = getUserProfile(userId);
         String name = clean(request == null ? null : request.name(), currentProfile.name(), 64);
+        String email = clean(request == null ? null : request.email(), currentProfile.email(), 128)
+                .toLowerCase(Locale.ROOT);
         String bio = request == null || request.bio() == null
                 ? currentProfile.bio()
                 : clean(request.bio(), "", 512);
+        String location = clean(request == null ? null : request.location(), currentProfile.location(), 64);
+        List<String> metaTags = cleanMetaTags(
+                request == null ? null : request.metaTags(),
+                currentProfile.metaTags()
+        );
         if (name == null || name.isBlank()) {
             LOGGER.warn("Profile update rejected: blank display name, userId={}", userId);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "昵称不能为空");
         }
-        profileRepository.updateUserProfile(userId, name, bio);
-        LOGGER.info("Profile user updated successfully: userId={}, displayName={}, bioLength={}",
-                userId, name, bio == null ? 0 : bio.length());
+        if (!EMAIL_PATTERN.matcher(email).matches()) {
+            LOGGER.warn("Profile update rejected: invalid email, userId={}", userId);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "邮箱格式不正确");
+        }
+        if (authUserRepository.emailBelongsToOtherUser(email, userId)) {
+            LOGGER.warn("Profile update rejected: duplicate email, userId={}, email={}", userId, email);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "邮箱已被其他账号使用");
+        }
+
+        updatePasswordIfRequested(userId, request);
+        authUserRepository.updateEmail(userId, email);
+        profileRepository.updateUserProfile(userId, name, bio, location, metaTags);
+        LOGGER.info("Profile user updated successfully: userId={}, displayName={}, email={}, bioLength={}",
+                userId, name, email, bio == null ? 0 : bio.length());
         return getUserProfile(userId);
+    }
+
+    private void updatePasswordIfRequested(long userId, ProfileUserUpdateRequest request) {
+        String currentPassword = request == null || request.currentPassword() == null
+                ? ""
+                : request.currentPassword();
+        String newPassword = request == null || request.newPassword() == null
+                ? ""
+                : request.newPassword();
+        String confirmNewPassword = request == null || request.confirmNewPassword() == null
+                ? ""
+                : request.confirmNewPassword();
+        boolean passwordTouched = !currentPassword.isBlank()
+                || !newPassword.isBlank()
+                || !confirmNewPassword.isBlank();
+        if (!passwordTouched) {
+            return;
+        }
+        if (currentPassword.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请填写旧密码");
+        }
+        if (newPassword.length() < 6 || newPassword.length() > 72) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "新密码长度需为 6-72 位");
+        }
+        if (!newPassword.equals(confirmNewPassword)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "两次输入的新密码不一致");
+        }
+        AuthUserRow authUser = authUserRepository.findById(userId);
+        if (authUser == null || !passwordEncoder.matches(currentPassword, authUser.passwordHash())) {
+            LOGGER.warn("Profile password update rejected: old password mismatch, userId={}", userId);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "旧密码不正确");
+        }
+        authUserRepository.updatePassword(userId, passwordEncoder.encode(newPassword));
+    }
+
+    private List<String> cleanMetaTags(List<String> tags, List<String> fallback) {
+        List<String> source = tags == null ? fallback : tags;
+        LinkedHashSet<String> cleaned = new LinkedHashSet<>();
+        if (source != null) {
+            for (String tag : source) {
+                String value = clean(tag, "", 32);
+                if (!value.isBlank()) {
+                    cleaned.add(value);
+                }
+                if (cleaned.size() >= 12) {
+                    break;
+                }
+            }
+        }
+        return new ArrayList<>(cleaned);
     }
 
     /**
@@ -487,19 +569,7 @@ public class ProfileService {
     }
 
     /**
-     * 构建错题统计预览数据（样式预览用）。
-     *
-     * @return 错题指标响应列表
-     */
-    private List<ProfilePreviewMetricResponse> buildMistakeMetrics() {
-        return List.of(
-                new ProfilePreviewMetricResponse("错题本", "42 题", "待复习 12 题 · 样式预览", "rose"),
-                new ProfilePreviewMetricResponse("薄弱知识点", "7 个", "选择题 / 词汇 / 主观题", "amber")
-        );
-    }
-
-    /**
-     * 构建排名统计预览数据（样式预览用）。
+     * 构建排名统计数据。
      *
      * @return 排名指标响应列表
      */
@@ -528,19 +598,19 @@ public class ProfileService {
     }
 
     /**
-     * 构建成就统计预览数据（样式预览用）。
+     * 构建成就统计预览数据。
      *
      * @return 成就指标响应列表
      */
     private List<ProfilePreviewMetricResponse> buildAchievementMetrics() {
         return List.of(
-                new ProfilePreviewMetricResponse("成就点数", "1,260", "样式预览 · 12 枚徽章", "violet"),
-                new ProfilePreviewMetricResponse("稀有成就", "3 枚", "CET / OJ / 可视化", "amber")
+                new ProfilePreviewMetricResponse("成就点数", "0", "暂无成就点数", "violet"),
+                new ProfilePreviewMetricResponse("稀有成就", "0 枚", "暂无稀有成就", "amber")
         );
     }
 
     /**
-     * 构建教材订单统计预览数据（样式预览用）。
+     * 构建教材订单统计数据。
      *
      * @return 教材订单指标响应列表
      */
@@ -586,7 +656,9 @@ public class ProfileService {
             List<ProfileRepository.TrackRow> trackRows
     ) {
         List<String> badges = new ArrayList<>();
-        badges.add(streak > 0 ? streak + "天连续学习" : "今日待开张");
+        if (streak > 0) {
+            badges.add(streak + "天连续学习");
+        }
         if (knownVocabulary >= 50) {
             badges.add("CET 词汇探索者");
         } else if (vocabularyEvents > 0) {
@@ -601,7 +673,9 @@ public class ProfileService {
                 .filter(row -> row.practiced() > 0)
                 .findFirst()
                 .ifPresent(row -> badges.add(row.name() + "推进中"));
-        badges.add(totalEvents > 0 ? "真实数据已连接" : "等待第一条数据");
+        if (totalEvents > 0) {
+            badges.add("真实数据已连接");
+        }
         return badges.stream().distinct().limit(5).toList();
     }
 

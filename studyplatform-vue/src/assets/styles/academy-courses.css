@@ -709,6 +709,12 @@
   background: linear-gradient(135deg, rgba(116, 235, 213, 0.18), rgba(172, 182, 229, 0.18));
 }
 
+.textbook-shop-price small {
+  color: #526a75;
+  font-size: 13px;
+  font-weight: 950;
+}
+
 .textbook-shop-price span {
   color: #ef476f;
   font-size: 36px;
@@ -1156,7 +1162,7 @@
   font-weight: 950;
 }
 
-.textbook-payment-dialog div {
+.textbook-payment-actions {
   display: flex;
   justify-content: center;
   gap: 12px;
@@ -1183,6 +1189,59 @@
 .textbook-payment-dialog button:disabled {
   opacity: 0.58;
   cursor: not-allowed;
+}
+
+.textbook-payment-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.textbook-payment-tabs button.is-active {
+  color: #ffffff;
+  background: #178f86;
+  box-shadow: 0 12px 24px rgba(23, 143, 134, 0.18);
+}
+
+.textbook-payment-qr {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 220px;
+  height: 220px;
+  margin: 4px auto;
+  padding: 14px;
+  border: 1px solid rgba(20, 43, 54, 0.12);
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 8px rgba(247, 252, 251, 0.96);
+}
+
+.textbook-payment-qr img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.textbook-payment-qr span {
+  color: #4a6572;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.7;
+  padding: 0 12px;
+  text-align: center;
+  word-break: break-word;
+}
+
+.textbook-payment-qr span.is-error {
+  color: #c2410c;
+}
+
+.textbook-payment-status {
+  max-width: 300px;
+  margin: 0 auto;
+  line-height: 1.7;
 }
 
 .textbook-cart-checkout-hero {
@@ -1483,9 +1542,62 @@
   cursor: not-allowed;
 }
 
+.textbook-voucher-options {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.textbook-cart-checkout-side .textbook-voucher-options {
+  display: grid;
+  align-items: stretch;
+  justify-content: stretch;
+  gap: 8px;
+}
+
+.textbook-voucher-options button {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  height: auto;
+  min-height: 58px;
+  padding: 10px 12px;
+  border: 1px solid rgba(15, 118, 110, 0.14);
+  border-radius: 10px;
+  color: #173447;
+  background: rgba(255, 255, 255, 0.88);
+  cursor: pointer;
+  text-align: left;
+  white-space: normal;
+  box-shadow: none;
+}
+
+.textbook-voucher-options button.is-active {
+  border-color: rgba(15, 118, 110, 0.46);
+  background: rgba(20, 184, 166, 0.12);
+}
+
+.textbook-voucher-options button span {
+  min-width: 0;
+  font-weight: 950;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.textbook-voucher-options button strong {
+  color: #b45309;
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
 .textbook-detail-voucher-toggle {
   max-width: 420px;
   margin-top: 14px;
+}
+
+.textbook-detail-voucher-options {
+  max-width: 420px;
 }
 
 .textbook-detail-payable {

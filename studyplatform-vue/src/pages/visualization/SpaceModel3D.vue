@@ -8,7 +8,9 @@ import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } 
 import { useRoute, useRouter } from 'vue-router'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { chatWithAiPet } from '../../api/aiPet'
 import { useLearningTimeTracker } from '../../composables/useLearningTimeTracker'
+import { renderMessageMarkdown } from '../../utils/markdown'
 import { calculusModelOptions, physicsModelOptions, probabilityModelOptions, subjectOptions } from './spaceModelCatalog'
 
 /** Canvas 容器引用 */
@@ -91,6 +93,82 @@ const activeExplanation = computed(() => {
       : '你可以拖拽左侧三维视图改变观察角度，用滚轮缩放，并通过右侧滑块调节高度系数、定义域范围和曲面精度。'
   return `${activeModel.value.detail}${shared}`
 })
+
+/**
+ * 三维可视化页面 AI 助手状态和上下文
+ */
+const aiLoading = ref(false)
+const aiError = ref('')
+const aiMessages = ref([
+  {
+    role: 'assistant',
+    text: '你好，我可以结合当前三维模型、公式和参数回答问题。',
+  },
+])
+
+const visualizationAiContext = computed(() => {
+  const formSnapshot = [
+    `学科：${activeSubject.value.label}`,
+    `模型：${activeModel.value.name}`,
+    `公式：${activeModel.value.formula}`,
+    `振幅/高度系数：${state.amplitude}`,
+    `定义域：[-${state.domain}, ${state.domain}]`,
+    `曲面精度：${state.resolution}`,
+  ]
+  if (state.subject === 'probability') {
+    formSnapshot.push(`相关系数：${state.rho}`, `方差：${state.variance}`, `均值：(${state.meanX}, ${state.meanY})`)
+  }
+  if (activeModel.value.id === 'saddle-tangent') {
+    formSnapshot.push(`切面高度：${state.sliceLevel}`)
+  }
+  const textSnippet = [
+    '当前页面是三维可视化实验室。',
+    `当前学科：${activeSubject.value.title}。`,
+    `当前模型：${activeModel.value.name}。`,
+    `模型说明：${activeModel.value.description || ''}`,
+    `详细讲解：${activeExplanation.value}`,
+  ].join('\n')
+  return {
+    path: route.fullPath,
+    routeName: 'visualization-space-3d',
+    title: `${activeSubject.value.title} - ${activeModel.value.name}`,
+    headings: [activeSubject.value.title, activeModel.value.name, '三维模型 AI 助手'],
+    selectedText: '',
+    formSnapshot,
+    contentLength: textSnippet.length,
+    textSnippet,
+  }
+})
+
+const buildVisualizationAiHistory = () => aiMessages.value
+  .slice(0, -1)
+  .slice(-8)
+  .map((message) => ({ role: message.role === 'user' ? 'user' : 'assistant', text: message.text }))
+
+const sendVisualizationQuestion = async (content) => {
+  const text = String(content || '').trim()
+  if (!text || aiLoading.value) return
+  aiMessages.value.push({ role: 'user', text })
+  aiLoading.value = true
+  aiError.value = ''
+  try {
+    const response = await chatWithAiPet({
+      message: text,
+      pageContext: visualizationAiContext.value,
+      history: buildVisualizationAiHistory(),
+    })
+    aiMessages.value.push({
+      role: 'assistant',
+      text: response.reply || '我没有拿到有效回复，请换个问法再试一次。',
+    })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'AI 助手暂时无法连接'
+    aiError.value = message
+    aiMessages.value.push({ role: 'assistant', text: message })
+  } finally {
+    aiLoading.value = false
+  }
+}
 
 /**
  * 双曲线截线预览计算
@@ -1230,7 +1308,7 @@ const submitQuestion = () => {
   if (!content) return
   state.lastQuestion = content
   state.question = ''
-  // TODO: 接入后端问答接口，例如 POST /api/visualization/space-3d/questions
+  sendVisualizationQuestion(content)
 }
 
 watch(
@@ -1470,18 +1548,30 @@ onBeforeUnmount(() => {
       <!-- 问答区卡片 -->
       <article class="calculus-qa-card">
         <p>Q&A Interface</p>
-        <h2>问答区</h2>
-        <span>这里预留后端问答接口，后续可接入 AI 助教、课程题库或教师答疑 API。</span>
+        <h2>AI 助手</h2>
+        <span>结合当前三维模型、公式和参数回答问题。</span>
         <textarea
           v-model="state.question"
           rows="5"
           :placeholder="state.subject === 'physics' ? '输入你想问的问题，例如：为什么电磁波中 E、B、k 两两垂直？' : '输入你想问的问题，例如：为什么马鞍面的原点不是极值点？'"
         ></textarea>
-        <button type="button" @click="submitQuestion">提交问题</button>
+        <button type="button" :disabled="aiLoading" @click="submitQuestion">
+          {{ aiLoading ? '思考中...' : '提交问题' }}
+        </button>
         <div v-if="state.lastQuestion" class="calculus-question-preview">
-          <strong>已暂存的问题</strong>
+          <strong>最近提问</strong>
           <p>{{ state.lastQuestion }}</p>
         </div>
+        <div class="calculus-ai-thread" aria-live="polite">
+          <article
+            v-for="(message, index) in aiMessages"
+            :key="`${message.role}-${index}`"
+            :class="['calculus-ai-message', `is-${message.role}`]"
+            v-html="renderMessageMarkdown(message.text)"
+          ></article>
+          <article v-if="aiLoading" class="calculus-ai-message is-assistant">正在结合当前模型思考...</article>
+        </div>
+        <p v-if="aiError" class="calculus-ai-error">{{ aiError }}</p>
       </article>
     </section>
   </main>
