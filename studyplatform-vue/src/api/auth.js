@@ -39,6 +39,12 @@ export const saveAuthOnboarding = (payload) =>
     body: JSON.stringify(payload),
   })
 
+export const updateAuthPet = (payload) =>
+  request('/api/auth/pet', {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  })
+
 /**
  * 发送密码重置验证码
  * @param {Object} payload - 请求参数

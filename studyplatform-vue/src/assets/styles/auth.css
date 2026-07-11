@@ -319,6 +319,13 @@
     linear-gradient(135deg, #74ebd5, #acb6e5);
 }
 
+.auth-pet-card img {
+  width: 78px;
+  height: 78px;
+  object-fit: contain;
+  filter: drop-shadow(0 14px 18px rgba(23, 52, 71, 0.16));
+}
+
 .auth-step-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;

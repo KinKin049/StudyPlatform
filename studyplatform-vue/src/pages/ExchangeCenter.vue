@@ -3,11 +3,12 @@
  * 金币兑换中心页面组件
  * 提供学习金币兑换卡券、宠物形象和游戏道具的功能
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
+import { getStoredAuthUser, storeAuthUser, updateAuthPet } from '../api/auth'
 import { fetchProfileOverview } from '../api/profile'
 import { exchangeVoucher, fetchUserVouchers, fetchVoucherItems } from '../api/vouchers'
-import { AI_PET_SHOP_ITEMS, PET_SELECTION_EVENT, PET_STORAGE_KEYS } from '../data/aiPetShop'
+import { AI_PET_SHOP_ITEMS, PET_SELECTION_EVENT, PET_STORAGE_KEYS, normalizePetKey } from '../data/aiPetShop'
 
 // 用户概览信息
 const overview = ref(null)
@@ -26,6 +27,7 @@ const exchangeError = ref('')
 const ownedPetKeys = ref([])
 const activePetKey = ref('')
 const localPetSpent = ref(0)
+const authUpdatedEvent = 'study-platform:auth-updated'
 
 // 金币获取规则列表
 const earnRules = [
@@ -136,20 +138,32 @@ async function loadOverview() {
 }
 
 function loadPetState() {
+  const user = getStoredAuthUser()
   try {
-    const savedOwned = JSON.parse(window.localStorage.getItem(PET_STORAGE_KEYS.owned) || '[]')
+    const savedOwned = JSON.parse(window.localStorage.getItem(userPetStorageKey(PET_STORAGE_KEYS.owned, user?.id)) || '[]')
     ownedPetKeys.value = Array.isArray(savedOwned) ? savedOwned.filter((key) => typeof key === 'string') : []
   } catch {
     ownedPetKeys.value = []
   }
-  activePetKey.value = window.localStorage.getItem(PET_STORAGE_KEYS.active) || ''
-  localPetSpent.value = Number(window.localStorage.getItem(PET_STORAGE_KEYS.spent) || 0) || 0
+  const userPetKey = normalizePetKey(user?.petKey)
+  if (!ownedPetKeys.value.includes(userPetKey)) {
+    ownedPetKeys.value = [...ownedPetKeys.value, userPetKey]
+  }
+  activePetKey.value = normalizePetKey(user?.petKey || window.localStorage.getItem(userPetStorageKey(PET_STORAGE_KEYS.active, user?.id)))
+  localPetSpent.value = Number(window.localStorage.getItem(userPetStorageKey(PET_STORAGE_KEYS.spent, user?.id)) || 0) || 0
+  savePetState()
 }
 
 function savePetState() {
-  window.localStorage.setItem(PET_STORAGE_KEYS.owned, JSON.stringify(ownedPetKeys.value))
+  const user = getStoredAuthUser()
+  window.localStorage.setItem(userPetStorageKey(PET_STORAGE_KEYS.owned, user?.id), JSON.stringify(ownedPetKeys.value))
+  window.localStorage.setItem(userPetStorageKey(PET_STORAGE_KEYS.active, user?.id), activePetKey.value)
+  window.localStorage.setItem(userPetStorageKey(PET_STORAGE_KEYS.spent, user?.id), String(localPetSpent.value))
   window.localStorage.setItem(PET_STORAGE_KEYS.active, activePetKey.value)
-  window.localStorage.setItem(PET_STORAGE_KEYS.spent, String(localPetSpent.value))
+}
+
+function userPetStorageKey(baseKey, userId) {
+  return userId ? `${baseKey}:${userId}` : baseKey
 }
 
 function notifyPetSelectionChanged(pet) {
@@ -161,7 +175,7 @@ function notifyPetSelectionChanged(pet) {
   }))
 }
 
-function handlePetAction(item) {
+async function handlePetAction(item) {
   if (item.active) {
     exchangeMessage.value = `${item.name} 已经是当前陪伴宠物`
     exchangeError.value = ''
@@ -174,6 +188,10 @@ function handlePetAction(item) {
     return
   }
 
+  const previousOwnedPetKeys = [...ownedPetKeys.value]
+  const previousActivePetKey = activePetKey.value
+  const previousLocalPetSpent = localPetSpent.value
+
   if (!item.owned) {
     ownedPetKeys.value = [...new Set([...ownedPetKeys.value, item.key])]
     localPetSpent.value += Number(item.price) || 0
@@ -184,8 +202,22 @@ function handlePetAction(item) {
 
   activePetKey.value = item.key
   exchangeError.value = ''
-  savePetState()
-  notifyPetSelectionChanged(item)
+  try {
+    const nextUser = await updateAuthPet({ petKey: item.key })
+    savePetState()
+    storeAuthUser(nextUser)
+    notifyPetSelectionChanged(item)
+  } catch (error) {
+    ownedPetKeys.value = previousOwnedPetKeys
+    activePetKey.value = previousActivePetKey
+    localPetSpent.value = previousLocalPetSpent
+    exchangeError.value = error?.message || '宠物切换失败'
+  }
+}
+
+function handleAuthUpdated() {
+  loadPetState()
+  loadOverview()
 }
 
 /**
@@ -330,6 +362,11 @@ function formatDate(value) {
 onMounted(() => {
   loadPetState()
   loadOverview()
+  window.addEventListener(authUpdatedEvent, handleAuthUpdated)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener(authUpdatedEvent, handleAuthUpdated)
 })
 </script>
 

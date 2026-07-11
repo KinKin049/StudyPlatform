@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -11,6 +12,8 @@ import java.util.Optional;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -199,6 +202,76 @@ public class AcademyAssignmentRepository {
         );
     }
 
+    public long createAssignment(
+            String assignmentCode,
+            String courseResourceType,
+            String courseId,
+            String courseTitle,
+            String assignmentTitle,
+            String teacherName,
+            LocalDateTime deadlineAt,
+            Integer attemptsLimit,
+            Integer durationMinutes,
+            Integer totalScore,
+            String description,
+            List<AssignmentQuestionCreateRow> questions
+    ) {
+        String insertAssignmentSql = """
+                INSERT INTO academy_assignments
+                  (assignment_code, course_resource_type, course_id, course_title, assignment_title, teacher_name,
+                   assignment_status, deadline_at, attempts_limit, duration_minutes, total_score, assignment_description)
+                VALUES (?, ?, ?, ?, ?, ?, '正在进行', ?, ?, ?, ?, ?)
+                """;
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(connection -> {
+            var ps = connection.prepareStatement(insertAssignmentSql, Statement.RETURN_GENERATED_KEYS);
+            ps.setString(1, assignmentCode);
+            ps.setString(2, courseResourceType);
+            ps.setString(3, courseId);
+            ps.setString(4, courseTitle);
+            ps.setString(5, assignmentTitle);
+            ps.setString(6, teacherName);
+            ps.setObject(7, deadlineAt);
+            ps.setInt(8, attemptsLimit == null ? 1 : attemptsLimit);
+            ps.setObject(9, durationMinutes);
+            ps.setInt(10, totalScore == null ? 0 : totalScore);
+            ps.setString(11, description);
+            return ps;
+        }, keyHolder);
+        Number key = keyHolder.getKey();
+        long assignmentId = key == null ? 0L : key.longValue();
+        for (int index = 0; index < questions.size(); index += 1) {
+            insertQuestion(assignmentId, index + 1, questions.get(index));
+        }
+        return assignmentId;
+    }
+
+    private void insertQuestion(long assignmentId, int questionOrder, AssignmentQuestionCreateRow question) {
+        String sql = """
+                INSERT INTO academy_assignment_questions
+                  (assignment_id, question_order, question_type, question_label, question_title,
+                   question_options, placeholder_text, score, correct_answer, answer_explanation,
+                   auto_gradable, oj_problem_id, requires_teacher_review)
+                VALUES (?, ?, ?, ?, ?, CAST(? AS JSON), ?, ?, CAST(? AS JSON), ?, ?, ?, ?)
+                """;
+        jdbcTemplate.update(
+                sql,
+                assignmentId,
+                questionOrder,
+                question.type(),
+                question.label(),
+                question.title(),
+                writeJson(question.options()),
+                question.placeholder(),
+                question.score(),
+                writeNullableJson(question.correctAnswer()),
+                question.explanation(),
+                question.autoGradable(),
+                question.ojProblemId(),
+                question.requiresTeacherReview()
+        );
+    }
+
     /**
      * 创建作业汇总行映射器
      *
@@ -344,6 +417,17 @@ public class AcademyAssignmentRepository {
         }
     }
 
+    private String writeNullableJson(Object value) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
     public record AssignmentSummaryRow(
             String code,
             String courseTitle,
@@ -396,6 +480,21 @@ public class AcademyAssignmentRepository {
     public record SubmissionStatusRow(
             String status,
             Integer score
+    ) {
+    }
+
+    public record AssignmentQuestionCreateRow(
+            String type,
+            String label,
+            String title,
+            List<String> options,
+            String placeholder,
+            Integer score,
+            Object correctAnswer,
+            String explanation,
+            Boolean autoGradable,
+            Long ojProblemId,
+            Boolean requiresTeacherReview
     ) {
     }
 }

@@ -2,6 +2,7 @@ package com.cupk.auth.service;
 
 import com.cupk.auth.dto.AuthLoginRequest;
 import com.cupk.auth.dto.AuthOnboardingRequest;
+import com.cupk.auth.dto.AuthPetRequest;
 import com.cupk.auth.dto.AuthRegisterRequest;
 import com.cupk.auth.dto.AuthUserResponse;
 import com.cupk.auth.dto.PasswordResetCodeRequest;
@@ -193,6 +194,18 @@ public class AuthService {
 
         authUserRepository.updateOnboarding(request, toJsonArray(request.interests()));
         return authUserRepository.findResponseById(request.userId());
+    }
+
+    public AuthUserResponse updatePet(Long userId, AuthPetRequest request) {
+        if (userId == null || userId <= 0) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "请先登录后再切换宠物");
+        }
+        String petKey = clean(request == null ? null : request.petKey());
+        if (petKey.isBlank() || petKey.length() > 80) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "宠物标识不合法");
+        }
+        authUserRepository.updatePetKey(userId, petKey);
+        return authUserRepository.findResponseById(userId);
     }
 
     /**

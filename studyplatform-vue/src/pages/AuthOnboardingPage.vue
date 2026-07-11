@@ -7,6 +7,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { fetchAcademyCategories } from '../api/academy'
 import { getStoredAuthUser, saveAuthOnboarding, storeAuthUser } from '../api/auth'
+import { AI_PET_SHOP_ITEMS } from '../data/aiPetShop'
 
 const router = useRouter()
 
@@ -74,11 +75,12 @@ const errorMessage = ref('')
 /**
  * 宠物选项列表
  */
-const pets = [
-  { key: 'spark', name: '星火', note: '偏学习陪伴' },
-  { key: 'byte', name: '比特', note: '偏编程训练' },
-  { key: 'terra', name: '塔拉', note: '偏实验探索' },
-]
+const pets = AI_PET_SHOP_ITEMS.slice(0, 3).map((pet) => ({
+  key: pet.key,
+  name: pet.name,
+  note: pet.tag,
+  image: pet.preview || pet.image,
+}))
 
 /**
  * 当前步骤索引（从0开始）
@@ -100,7 +102,7 @@ const cardTitle = computed(() => {
 const cardSubtitle = computed(() => {
   if (step.value === 'role') return '请选择学生或教师，后续页面会根据身份切换。'
   if (step.value === 'details') return selectedRole.value === 'teacher' ? '填写学校和教师姓名。' : '填写目标，并选择你感兴趣的课程方向。'
-  return '宠物功能暂未实现，这里先提供三个占位选择。'
+  return '选择一个 AI 学习伙伴，之后也可以在金币兑换中心切换。'
 })
 
 /**
@@ -324,7 +326,7 @@ function uniqueValues(values) {
               :class="{ 'is-selected': selectedPet === pet.key }"
               @click="selectedPet = pet.key"
             >
-              <i></i>
+              <img :src="pet.image" :alt="pet.name" />
               <strong>{{ pet.name }}</strong>
               <span>{{ pet.note }}</span>
             </button>

@@ -144,6 +144,18 @@ public class AuthUserRepository {
         );
     }
 
+    public void updatePetKey(long userId, String petKey) {
+        jdbcTemplate.update(
+                """
+                UPDATE users
+                SET pet_key = ?
+                WHERE id = ?
+                """,
+                petKey,
+                userId
+        );
+    }
+
     /**
      * 更新用户入职引导信息。更新角色类型、学习目标、兴趣等字段，并标记入职完成。
      *
