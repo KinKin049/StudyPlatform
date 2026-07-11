@@ -125,7 +125,7 @@ public class AiPetChatService {
      */
     private List<Map<String, String>> buildMessages(AiPetChatRequest request) {
         List<Map<String, String>> messages = new ArrayList<>();
-        messages.add(message("system", systemPrompt()));
+        messages.add(message("system", systemPrompt(request)));
 
         List<AiPetChatMessage> history = request.history() == null ? List.of() : request.history();
         int fromIndex = Math.max(0, history.size() - MAX_HISTORY_MESSAGES);
@@ -147,9 +147,12 @@ public class AiPetChatService {
      *
      * @return 系统提示词文本
      */
-    private String systemPrompt() {
+    private String systemPrompt(AiPetChatRequest request) {
+        String petName = resolvePetName(request);
+        String petShortName = resolvePetShortName(request, petName);
         return """
-                你是 StudyPlatform 的 AI 宠物“星云学习猫”。
+                你是 StudyPlatform 的 AI 宠物“%s”，简称“%s”。
+                当用户问你叫什么、是什么形象或当前身份时，必须回答当前名称，不要自称星云学习猫，除非当前名称确实是星云学习猫。
                 你的语气温暖、简洁、可爱，但不要过度卖萌。
                 你要优先结合当前页面内容回答学习问题，可以解释页面、总结重点、给出下一步操作建议。
                 当前页面上下文来自前端实时读取的可见文本、标题、选中文本和安全表单摘要；用户问“本页”“这里”“这个按钮/内容”时，必须优先依据这些上下文回答。
@@ -159,7 +162,21 @@ public class AiPetChatService {
                 如果用户问到作业、考试、题库、番茄钟、待办事项，要给出明确可执行的步骤，不要假装已经代替用户操作。
                 不确定时请说明不确定，不要编造项目中不存在的按钮或数据。
                 回复尽量控制在 180 字以内，复杂问题可以用短列表。
-                """;
+                """.formatted(petName, petShortName);
+    }
+
+    private String resolvePetName(AiPetChatRequest request) {
+        String petName = request == null ? "" : clean(request.petName());
+        if (!petName.isBlank()) {
+            return limit(petName, 80);
+        }
+        String petShortName = request == null ? "" : clean(request.petShortName());
+        return petShortName.isBlank() ? "AI 学习伙伴" : limit(petShortName, 80);
+    }
+
+    private String resolvePetShortName(AiPetChatRequest request, String fallbackName) {
+        String petShortName = request == null ? "" : clean(request.petShortName());
+        return petShortName.isBlank() ? fallbackName : limit(petShortName, 60);
     }
 
     /**

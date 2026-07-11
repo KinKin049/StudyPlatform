@@ -7,6 +7,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { fetchAcademyCategories } from '../api/academy'
 import { getStoredAuthUser, saveAuthOnboarding, storeAuthUser } from '../api/auth'
+import { AI_PET_SHOP_ITEMS, PET_SELECTION_EVENT, PET_STORAGE_KEYS } from '../data/aiPetShop'
 import { AI_PET_SHOP_ITEMS } from '../data/aiPetShop'
 
 const router = useRouter()
@@ -35,6 +36,11 @@ const selectedRole = ref('')
  * 用户选择的宠物key
  */
 const selectedPet = ref('')
+
+/**
+ * 当前随机展示的宠物候选项
+ */
+const petOptions = ref([])
 
 /**
  * 学生表单数据
@@ -72,6 +78,21 @@ const submitting = ref(false)
  */
 const errorMessage = ref('')
 
+const PET_DISPLAY_TEXT = {
+  'pet-07-lucky-cat': { name: '幸运星猫', note: '轻快活泼，适合日常学习陪伴' },
+  'pet-20-cream-dog': { name: '奶油学习犬', note: '温和可靠，适合长期专注训练' },
+  'pet-27-crystal-bunny': { name: '冰晶耳兔', note: '安静灵敏，适合复习和记忆任务' },
+  'pet-29-bamboo-panda': { name: '竹叶熊猫', note: '沉稳耐心，适合题库练习' },
+  'pet-39-gray-dragon': { name: '灰羽精灵龙', note: '冷静专注，适合实验探索' },
+  'pet-44-violet-dragon': { name: '紫翼精灵龙', note: '能量感强，适合冲刺目标' },
+  'pet-49-pink-dragon': { name: '粉翼精灵龙', note: '轻盈可爱，适合奖励反馈' },
+  'pet-75-screenbot': { name: '薄荷屏幕机器人', note: '科技感强，适合编程训练' },
+}
+
+const petCatalog = AI_PET_SHOP_ITEMS.map((pet) => ({
+  ...pet,
+  ...(PET_DISPLAY_TEXT[pet.key] || {}),
+  note: PET_DISPLAY_TEXT[pet.key]?.note || pet.tag || '学习陪伴宠物',
 /**
  * 宠物选项列表
  */
@@ -102,6 +123,7 @@ const cardTitle = computed(() => {
 const cardSubtitle = computed(() => {
   if (step.value === 'role') return '请选择学生或教师，后续页面会根据身份切换。'
   if (step.value === 'details') return selectedRole.value === 'teacher' ? '填写学校和教师姓名。' : '填写目标，并选择你感兴趣的课程方向。'
+  return '系统会随机给出三位学习伙伴。引导页不会提前显示悬浮AI宠物，选择完成后它会进入平台陪你学习。'
   return '选择一个 AI 学习伙伴，之后也可以在金币兑换中心切换。'
 })
 
@@ -109,6 +131,8 @@ const cardSubtitle = computed(() => {
  * 步骤切换动画名称
  */
 const transitionName = computed(() => (slideDirection.value === 'forward' ? 'auth-slide' : 'auth-slide-back'))
+
+const selectedPetOption = computed(() => petOptions.value.find((pet) => pet.key === selectedPet.value) || null)
 
 /**
  * 组件挂载时初始化
@@ -180,6 +204,7 @@ function continueToPets() {
     errorMessage.value = '请填写所属学校和教师姓名'
     return
   }
+  refreshPetOptions()
   goToStep('pet')
 }
 
@@ -204,6 +229,7 @@ async function finishOnboarding() {
       teacherName: selectedRole.value === 'teacher' ? teacherForm.value.teacherName.trim() : '',
       petKey: selectedPet.value,
     })
+    activateSelectedPet(selectedPetOption.value)
     storeAuthUser(nextUser)
     router.push('/')
   } catch (error) {
@@ -219,7 +245,52 @@ async function finishOnboarding() {
 function goToStep(nextStep) {
   const steps = ['role', 'details', 'pet']
   slideDirection.value = steps.indexOf(nextStep) > currentStepIndex.value ? 'forward' : 'back'
+  if (nextStep === 'details' && step.value === 'pet') {
+    selectedPet.value = ''
+  }
   step.value = nextStep
+}
+
+/**
+ * 随机刷新宠物候选项，每次进入宠物选择页给出三个不同宠物
+ */
+function refreshPetOptions() {
+  petOptions.value = shuffle(petCatalog).slice(0, 3)
+  selectedPet.value = ''
+}
+
+function choosePet(petKey) {
+  selectedPet.value = petKey
+  errorMessage.value = ''
+}
+
+/**
+ * 将新手引导中选择的宠物同步为全局当前宠物
+ */
+function activateSelectedPet(pet) {
+  if (!pet || typeof window === 'undefined') return
+
+  const nextOwned = readOwnedPetKeys()
+  if (!nextOwned.includes(pet.key)) {
+    nextOwned.push(pet.key)
+  }
+  window.localStorage.setItem(PET_STORAGE_KEYS.owned, JSON.stringify(nextOwned))
+  window.localStorage.setItem(PET_STORAGE_KEYS.active, pet.key)
+  window.dispatchEvent(new CustomEvent(PET_SELECTION_EVENT, {
+    detail: {
+      key: pet.key,
+      name: pet.name,
+    },
+  }))
+}
+
+function readOwnedPetKeys() {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(PET_STORAGE_KEYS.owned) || '[]')
+    return Array.isArray(saved) ? saved.filter((key) => typeof key === 'string') : []
+  } catch {
+    return []
+  }
 }
 
 /**
@@ -319,17 +390,25 @@ function uniqueValues(values) {
         <section v-else key="pet" class="auth-step-panel">
           <div class="auth-pet-grid">
             <button
-              v-for="pet in pets"
+              v-for="pet in petOptions"
               :key="pet.key"
               type="button"
               class="auth-pet-card"
               :class="{ 'is-selected': selectedPet === pet.key }"
-              @click="selectedPet = pet.key"
+              @click="choosePet(pet.key)"
             >
+              <img class="auth-pet-card-image" :src="pet.preview || pet.image" :alt="pet.name" />
               <img :src="pet.image" :alt="pet.name" />
               <strong>{{ pet.name }}</strong>
               <span>{{ pet.note }}</span>
             </button>
+          </div>
+          <div v-if="selectedPetOption" class="auth-pet-preview">
+            <img :src="selectedPetOption.preview || selectedPetOption.image" :alt="selectedPetOption.name" />
+            <div>
+              <span>已选择</span>
+              <strong>{{ selectedPetOption.name }}</strong>
+            </div>
           </div>
           <!-- 错误提示 -->
           <p v-if="errorMessage" class="auth-error">{{ errorMessage }}</p>

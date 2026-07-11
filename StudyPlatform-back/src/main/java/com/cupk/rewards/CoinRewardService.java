@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class CoinRewardService {
     private static final int REWARD_UNIT_SECONDS = 10 * 60;
+    private static final int LEARNING_TIME_REWARD_MULTIPLIER = 10;
 
     private final CoinRewardRepository coinRewardRepository;
 
@@ -37,7 +38,9 @@ public class CoinRewardService {
             String targetTitle,
             int durationSeconds
     ) {
-        int amount = (durationSeconds / REWARD_UNIT_SECONDS) * learningTimeRate(moduleType);
+        int amount = (durationSeconds / REWARD_UNIT_SECONDS)
+                * learningTimeRate(moduleType)
+                * LEARNING_TIME_REWARD_MULTIPLIER;
         coinRewardRepository.insertReward(
                 userId,
                 "learning_time",

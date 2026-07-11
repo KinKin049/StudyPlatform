@@ -32,9 +32,9 @@ export const TYPE_WARRIOR_BALANCE = {
   /** UI 调试配置 */
   ui: {
     /** 是否显示技能调试面板 */
-    showSkillDebugPanel: true,
+    showSkillDebugPanel: false,
     /** 是否显示波次调试面板 */
-    showWaveDebugPanel: true,
+    showWaveDebugPanel: false,
   },
   /** 玩家属性 */
   player: {

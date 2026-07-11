@@ -3,7 +3,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { fetchTeacherWorkbench } from '../api/academy'
-import { getStoredAuthUser } from '../api/auth'
+import { clearStoredAuthUser, getStoredAuthUser } from '../api/auth'
 import { fetchProfileUser } from '../api/profile'
 import { resolveResourceUrl } from '../api/request'
 
@@ -37,6 +37,11 @@ const avatarSrc = computed(() => resolveResourceUrl(navigationUser.value.avatarU
 const avatarInitial = computed(() => (userDisplayName.value || 'K').trim().slice(0, 1).toUpperCase())
 const teacherUnreadCount = computed(() => Number(teacherWorkbench.value?.unreadComments ?? 0))
 
+const defaultNavigationUser = () => ({
+  name: 'Kinkin',
+  avatarUrl: '',
+})
+
 // 导航跳转方法，点击后移除按钮焦点
 const navigateTo = (path, event) => {
   event?.currentTarget?.blur()
@@ -58,6 +63,17 @@ const switchUser = (event) => {
 const registerNewUser = (event) => {
   event?.currentTarget?.blur()
   router.push('/register')
+}
+
+// 退出当前账号，清空本地登录态并回到登录页
+const logoutUser = (event) => {
+  event?.currentTarget?.blur()
+  clearStoredAuthUser()
+  authUser.value = null
+  navigationUser.value = defaultNavigationUser()
+  teacherWorkbench.value = null
+  teacherMailboxError.value = ''
+  router.push('/login')
 }
 
 // 加载导航栏用户信息
@@ -98,6 +114,9 @@ const handleProfileUpdated = (event) => {
 // 处理认证状态更新事件
 const handleAuthUpdated = (event) => {
   authUser.value = event.detail || getStoredAuthUser()
+  if (!authUser.value?.id) {
+    navigationUser.value = defaultNavigationUser()
+  }
   loadTeacherWorkbench()
 }
 
@@ -205,6 +224,9 @@ onBeforeUnmount(() => {
           <button class="user-menu-link" type="button" role="menuitem" @click="registerNewUser">
             注册新账号
           </button>
+          <button class="user-menu-link user-menu-logout" type="button" role="menuitem" @click="logoutUser">
+            退出登录
+          </button>
         </template>
         <!-- 未登录状态菜单 -->
         <template v-else>
@@ -213,9 +235,6 @@ onBeforeUnmount(() => {
           </button>
           <button class="user-menu-link" type="button" role="menuitem" @click="navigateTo('/register', $event)">
             注册
-          </button>
-          <button class="user-menu-link" type="button" role="menuitem" @click="navigateTo('/exchange', $event)">
-            金币兑换中心
           </button>
         </template>
       </div>

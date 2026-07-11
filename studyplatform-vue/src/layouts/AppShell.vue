@@ -1,11 +1,13 @@
 <script setup>
 // 应用根布局组件，提供全局导航、路由视图和 AI 宠物组件的容器
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 import AiPetWidget from '../components/AiPetWidget.vue'
 import AppNavigation from '../components/AppNavigation.vue'
+import { getStoredAuthUser } from '../api/auth'
 
 const route = useRoute()
+const authUser = ref(getStoredAuthUser())
 
 // 导航菜单项配置，包含在线学堂、实验平台、可视化和游戏四大模块
 const navItems = [
@@ -114,6 +116,20 @@ const showNavigation = computed(() =>
     route.path !== '/forgot-password' &&
     route.path !== '/onboarding',
 )
+
+const showAiPet = computed(() => Boolean(authUser.value?.id) && !route.matched.some((record) => record.meta?.hidePet))
+
+const handleAuthUpdated = (event) => {
+  authUser.value = event.detail || getStoredAuthUser()
+}
+
+onMounted(() => {
+  window.addEventListener('study-platform:auth-updated', handleAuthUpdated)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('study-platform:auth-updated', handleAuthUpdated)
+})
 </script>
 
 <template>
@@ -124,6 +140,6 @@ const showNavigation = computed(() =>
     <!-- 路由视图容器，渲染当前路由对应的页面组件 -->
     <RouterView />
     <!-- AI 学习宠物组件，全局显示 -->
-    <AiPetWidget />
+    <AiPetWidget v-if="showAiPet" />
   </div>
 </template>

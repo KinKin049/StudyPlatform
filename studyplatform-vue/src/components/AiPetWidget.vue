@@ -6,6 +6,8 @@ import { Hide, View } from '@element-plus/icons-vue'
 
 import { chatWithAiPet } from '../api/aiPet'
 import { getStoredAuthUser } from '../api/auth'
+import { AI_PET_BY_KEY, DEFAULT_PET_KEY, PET_SELECTION_EVENT, PET_STORAGE_KEYS } from '../data/aiPetShop'
+import { renderMessageMarkdown } from '../utils/markdown'
 import { AI_PET_BY_KEY, DEFAULT_PET_KEY, PET_SELECTION_EVENT, PET_STORAGE_KEYS, normalizePetKey } from '../data/aiPetShop'
 import idle01 from '../assets/pet/nebula-cat/idle-01.png'
 import idle02 from '../assets/pet/nebula-cat/idle-02.png'
@@ -35,106 +37,6 @@ import sleep04 from '../assets/pet/nebula-cat/sleep-04.png'
 const route = useRoute()
 const router = useRouter()
 
-const allowedMessageTags = new Set([
-  'A',
-  'BLOCKQUOTE',
-  'BR',
-  'CODE',
-  'EM',
-  'HR',
-  'LI',
-  'OL',
-  'P',
-  'PRE',
-  'S',
-  'STRONG',
-  'UL',
-])
-const allowedLinkProtocols = new Set(['http:', 'https:', 'mailto:'])
-
-function escapeHtml(value) {
-  return String(value || '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-}
-
-function renderInlineMarkdown(text) {
-  return escapeHtml(text)
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-    .replace(/__([^_]+)__/g, '<strong>$1</strong>')
-    .replace(/~~([^~]+)~~/g, '<s>$1</s>')
-    .replace(/\*([^*\n]+)\*/g, '<em>$1</em>')
-    .replace(/_([^_\n]+)_/g, '<em>$1</em>')
-    .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+|mailto:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
-    .replace(/(^|[\s>])((?:https?:\/\/)[^\s<]+)/g, '$1<a href="$2" target="_blank" rel="noopener noreferrer">$2</a>')
-}
-
-function renderSimpleMarkdown(text) {
-  const source = String(text || '').replace(/\r\n/g, '\n')
-  const codeBlocks = []
-  const withoutCodeBlocks = source.replace(/```([\s\S]*?)```/g, (_, code) => {
-    const index = codeBlocks.push(`<pre><code>${escapeHtml(code.replace(/^\n|\n$/g, ''))}</code></pre>`) - 1
-    return `\n@@AI_PET_CODE_BLOCK_${index}@@\n`
-  })
-
-  const blocks = withoutCodeBlocks
-    .split(/\n{2,}/)
-    .map((block) => block.trim())
-    .filter(Boolean)
-    .map((block) => {
-      const codeMatch = block.match(/^@@AI_PET_CODE_BLOCK_(\d+)@@$/)
-      if (codeMatch) {
-        return codeBlocks[Number(codeMatch[1])] || ''
-      }
-      return `<p>${renderInlineMarkdown(block).replace(/\n/g, '<br>')}</p>`
-    })
-
-  return blocks.join('')
-}
-
-function sanitizeMessageHtml(html) {
-  if (typeof document === 'undefined') return String(html || '')
-  const template = document.createElement('template')
-  template.innerHTML = String(html || '')
-
-  template.content.querySelectorAll('*').forEach((element) => {
-    if (!allowedMessageTags.has(element.tagName)) {
-      element.replaceWith(...Array.from(element.childNodes))
-      return
-    }
-
-    Array.from(element.attributes).forEach((attribute) => {
-      const name = attribute.name.toLowerCase()
-      if (element.tagName === 'A' && ['href', 'target', 'rel'].includes(name)) {
-        return
-      }
-      element.removeAttribute(attribute.name)
-    })
-
-    if (element.tagName === 'A') {
-      const href = element.getAttribute('href') || ''
-      let safeHref = false
-      try {
-        const parsedUrl = new URL(href, window.location.origin)
-        safeHref = allowedLinkProtocols.has(parsedUrl.protocol)
-      } catch {
-        safeHref = false
-      }
-      if (!safeHref) {
-        element.removeAttribute('href')
-      }
-      element.setAttribute('target', '_blank')
-      element.setAttribute('rel', 'noopener noreferrer')
-    }
-  })
-
-  return template.innerHTML
-}
-
 // 宠物表情帧动画配置，包含空闲、说话、思考、开心、专注、睡眠六种状态
 const frames = {
   idle: [idle01, idle02, idle03, idle04],
@@ -146,7 +48,7 @@ const frames = {
 }
 
 // 本地存储键名配置
-const todoStorageKey = 'study-platform-ai-pet-todos'
+const todoStorageKeyPrefix = 'study-platform-ai-pet-todos'
 const focusStorageKey = 'study-platform-ai-pet-focus-summary'
 const positionStorageKey = 'study-platform-ai-pet-position'
 const visibilityStorageKey = 'study-platform-ai-pet-hidden'
@@ -352,6 +254,15 @@ const activeMood = computed(() => {
 const selectedPet = computed(() => AI_PET_BY_KEY[selectedPetKey.value] || null)
 
 const petDisplayName = computed(() => selectedPet.value?.shortName || '星云猫')
+const petFullName = computed(() => selectedPet.value?.name || petDisplayName.value)
+
+function getCurrentUserStorageId() {
+  const user = getStoredAuthUser()
+  const rawId = user?.id || user?.email || user?.username || 'guest'
+  return String(rawId).replace(/[^\w.-]/g, '_')
+}
+
+const currentTodoStorageKey = () => `${todoStorageKeyPrefix}:${getCurrentUserStorageId()}`
 
 const selectedPetAction = computed(() => {
   if (!selectedPet.value?.actions) {
@@ -721,10 +632,6 @@ function pushPetMessage(text) {
   showPetBubble(text)
 }
 
-function renderMessageMarkdown(text) {
-  return sanitizeMessageHtml(renderSimpleMarkdown(text))
-}
-
 async function scrollChatMessagesToBottom() {
   if (!open.value || activeTab.value !== 'chat') {
     return
@@ -896,7 +803,7 @@ function buildChatHistory() {
 // 从本地存储加载待办列表
 function loadTodos() {
   try {
-    const savedTodos = JSON.parse(window.localStorage.getItem(todoStorageKey) || '[]')
+    const savedTodos = JSON.parse(window.localStorage.getItem(currentTodoStorageKey()) || '[]')
     todos.value = Array.isArray(savedTodos) ? savedTodos : []
   } catch {
     todos.value = []
@@ -905,7 +812,7 @@ function loadTodos() {
 
 // 保存待办列表到本地存储
 function saveTodos() {
-  window.localStorage.setItem(todoStorageKey, JSON.stringify(todos.value))
+  window.localStorage.setItem(currentTodoStorageKey(), JSON.stringify(todos.value))
 }
 
 // 从本地存储加载专注统计数据
@@ -979,6 +886,8 @@ function handlePetStorageChanged(event) {
   }
 }
 
+function handleAuthUpdated() {
+  loadTodos()
 function userPetStorageKey(baseKey, userId) {
   return userId ? `${baseKey}:${userId}` : baseKey
 }
@@ -1341,6 +1250,9 @@ async function sendMessage() {
     const currentPageContext = await refreshPageContext()
     const response = await chatWithAiPet({
       message: text,
+      petName: petFullName.value,
+      petShortName: petDisplayName.value,
+      petKey: selectedPetKey.value,
       pageContext: currentPageContext,
       history: buildChatHistory(),
     })
@@ -1427,6 +1339,7 @@ onMounted(() => {
   window.addEventListener(PET_SELECTION_EVENT, handlePetSelectionChanged)
   window.addEventListener(authUpdatedEvent, handleAuthUpdated)
   window.addEventListener('storage', handlePetStorageChanged)
+  window.addEventListener('study-platform:auth-updated', handleAuthUpdated)
   // 首次挂载后读取当前页面内容
   schedulePageContextRefresh(80)
 })
@@ -1466,6 +1379,7 @@ onBeforeUnmount(() => {
   window.removeEventListener(PET_SELECTION_EVENT, handlePetSelectionChanged)
   window.removeEventListener(authUpdatedEvent, handleAuthUpdated)
   window.removeEventListener('storage', handlePetStorageChanged)
+  window.removeEventListener('study-platform:auth-updated', handleAuthUpdated)
 })
 </script>
 

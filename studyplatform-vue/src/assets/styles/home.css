@@ -2975,9 +2975,8 @@
 }
 
 .home-recommendation-corner {
-  position: absolute;
-  left: clamp(32px, 5vw, 88px);
-  top: 30px;
+  width: min(1240px, 100%);
+  margin: -14px auto 0;
   color: rgba(79, 70, 229, 0.78);
   font-size: 14px;
   font-weight: 900;

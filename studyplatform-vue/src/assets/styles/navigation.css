@@ -327,6 +327,17 @@
   outline: none;
 }
 
+.user-menu-logout {
+  margin-top: 6px;
+  border-top: 1px solid rgba(185, 28, 28, 0.12);
+  color: #b91c1c;
+}
+
+.user-menu-logout:hover,
+.user-menu-logout:focus-visible {
+  background: #fef2f2;
+}
+
 .user-avatar {
   display: inline-flex;
   align-items: center;

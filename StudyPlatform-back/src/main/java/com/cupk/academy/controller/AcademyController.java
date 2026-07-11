@@ -14,6 +14,7 @@ import com.cupk.academy.dto.AcademyCourseResponse;
 import com.cupk.academy.dto.AcademyEnrolledCourseResponse;
 import com.cupk.academy.dto.AcademyExamAnswerRequest;
 import com.cupk.academy.dto.AcademyExamDetailResponse;
+import com.cupk.academy.dto.AcademyRandomExamRequest;
 import com.cupk.academy.dto.AcademyExamSubmitResponse;
 import com.cupk.academy.dto.AcademyExamSummaryResponse;
 import com.cupk.academy.dto.AcademyHomeSectionResponse;
@@ -22,26 +23,32 @@ import com.cupk.academy.dto.AcademyTextbookCartRequest;
 import com.cupk.academy.dto.AcademyTextbookDetailResponse;
 import com.cupk.academy.dto.AcademyTextbookOrderRequest;
 import com.cupk.academy.dto.AcademyTextbookOrderResponse;
+import com.cupk.academy.dto.AcademyTextbookPaymentRequest;
+import com.cupk.academy.dto.AcademyTextbookPaymentResponse;
+import com.cupk.academy.dto.AcademyTextbookPaymentStatusResponse;
 import com.cupk.academy.dto.AcademyTextbookCommentResponse;
 import com.cupk.academy.dto.AcademyTextbookReviewRequest;
 import com.cupk.academy.dto.AcademyTextbookResponse;
 import com.cupk.academy.dto.AcademyTeacherAssignmentRequest;
 import com.cupk.academy.dto.TeacherWorkbenchResponse;
+import com.cupk.academy.dto.TeacherAssignmentCreateRequest;
 import com.cupk.academy.service.AcademyAssignmentService;
 import com.cupk.academy.service.AcademyExamService;
 import com.cupk.academy.service.AcademyService;
 import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.http.CacheControl;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -166,6 +173,13 @@ public class AcademyController {
         return examService.listExams(userId);
     }
 
+    @PostMapping("/exams/random")
+    public AcademyExamDetailResponse createRandomExam(
+            @RequestBody(required = false) AcademyRandomExamRequest request
+    ) {
+        return examService.createRandomExam(request);
+    }
+
     /**
      * 获取考试详情。
      *
@@ -266,6 +280,7 @@ public class AcademyController {
     @PostMapping("/teacher/assignments")
     public AcademyAssignmentDetailResponse createTeacherAssignment(
             @RequestHeader(value = "X-Auth-User-Id", required = false) Long userId,
+            @RequestBody TeacherAssignmentCreateRequest request
             @RequestBody AcademyTeacherAssignmentRequest request
     ) {
         return assignmentService.createTeacherAssignment(userId, request);
@@ -399,9 +414,12 @@ public class AcademyController {
      * @param id 课程ID
      * @return 评论列表
      */
-    @GetMapping("/online-open-courses/{id}/reviews")
-    public List<AcademyCourseReviewResponse> listOnlineOpenCourseReviews(@PathVariable String id) {
-        return academyService.listCourseReviews("online-open-courses", id);
+    @GetMapping("/{resource:online-open-courses|general-courses|micro-major-courses}/{id}/reviews")
+    public List<AcademyCourseReviewResponse> listCourseReviews(
+            @PathVariable String resource,
+            @PathVariable String id
+    ) {
+        return academyService.listCourseReviews(resource, id);
     }
 
     /**
@@ -411,13 +429,14 @@ public class AcademyController {
      * @param request 评论请求
      * @return 评论响应
      */
-    @PostMapping("/online-open-courses/{id}/reviews")
-    public AcademyCourseReviewResponse saveOnlineOpenCourseReview(
+    @PostMapping("/{resource:online-open-courses|general-courses|micro-major-courses}/{id}/reviews")
+    public AcademyCourseReviewResponse saveCourseReview(
+            @PathVariable String resource,
             @PathVariable String id,
             @RequestHeader(value = "X-Auth-User-Id", required = false) Long userId,
             @Valid @RequestBody AcademyCourseReviewRequest request
     ) {
-        return academyService.saveCourseReview("online-open-courses", id, userId, request);
+        return academyService.saveCourseReview(resource, id, userId, request);
     }
 
     @PostMapping("/reviews/{reviewId}/reply")
@@ -581,9 +600,10 @@ public class AcademyController {
     @GetMapping("/textbooks/{id}")
     public AcademyTextbookDetailResponse getTextbook(
             @PathVariable String id,
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long authUserId,
             @RequestParam(required = false) Long userId
     ) {
-        return academyService.getTextbook(id, userId);
+        return academyService.getTextbook(id, resolveUserId(authUserId, userId));
     }
 
     /**
@@ -594,9 +614,10 @@ public class AcademyController {
      */
     @GetMapping("/textbook-cart")
     public List<AcademyTextbookCartItemResponse> listTextbookCart(
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long authUserId,
             @RequestParam(required = false) Long userId
     ) {
-        return academyService.listTextbookCart(userId);
+        return academyService.listTextbookCart(resolveUserId(authUserId, userId));
     }
 
     /**
@@ -607,9 +628,10 @@ public class AcademyController {
      */
     @PostMapping("/textbook-cart")
     public List<AcademyTextbookCartItemResponse> addTextbookCartItem(
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long authUserId,
             @RequestBody(required = false) AcademyTextbookCartRequest request
     ) {
-        return academyService.addTextbookCartItem(request);
+        return academyService.addTextbookCartItem(resolveUserId(authUserId, request == null ? null : request.userId()), request);
     }
 
     /**
@@ -622,9 +644,10 @@ public class AcademyController {
     @DeleteMapping("/textbook-cart/{itemId}")
     public List<AcademyTextbookCartItemResponse> deleteTextbookCartItem(
             @PathVariable Long itemId,
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long authUserId,
             @RequestParam(required = false) Long userId
     ) {
-        return academyService.deleteTextbookCartItem(userId, itemId);
+        return academyService.deleteTextbookCartItem(resolveUserId(authUserId, userId), itemId);
     }
 
     /**
@@ -637,9 +660,14 @@ public class AcademyController {
     @PutMapping("/textbook-cart/{itemId}")
     public List<AcademyTextbookCartItemResponse> updateTextbookCartItem(
             @PathVariable Long itemId,
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long authUserId,
             @RequestBody(required = false) AcademyTextbookCartRequest request
     ) {
-        return academyService.updateTextbookCartItem(request == null ? null : request.userId(), itemId, request == null ? null : request.quantity());
+        return academyService.updateTextbookCartItem(
+                resolveUserId(authUserId, request == null ? null : request.userId()),
+                itemId,
+                request == null ? null : request.quantity()
+        );
     }
 
     /**
@@ -650,9 +678,10 @@ public class AcademyController {
      */
     @PostMapping("/textbook-orders")
     public AcademyTextbookOrderResponse createTextbookOrder(
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long authUserId,
             @RequestBody(required = false) AcademyTextbookOrderRequest request
     ) {
-        return academyService.createTextbookOrder(request);
+        return academyService.createTextbookOrder(resolveUserId(authUserId, request == null ? null : request.userId()), request);
     }
 
     /**
@@ -665,9 +694,60 @@ public class AcademyController {
     @PostMapping("/textbook-orders/{orderNo}/pay")
     public AcademyTextbookOrderResponse payTextbookOrder(
             @PathVariable String orderNo,
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long authUserId,
             @RequestParam(required = false) Long userId
     ) {
-        return academyService.payTextbookOrder(orderNo, userId);
+        return academyService.payTextbookOrder(orderNo, resolveUserId(authUserId, userId));
+    }
+
+    @PostMapping("/textbook-orders/{orderNo}/payments")
+    public AcademyTextbookPaymentResponse createTextbookPayment(
+            @PathVariable String orderNo,
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long authUserId,
+            @RequestBody(required = false) AcademyTextbookPaymentRequest request
+    ) {
+        return academyService.createTextbookPayment(orderNo, resolveUserId(authUserId, request == null ? null : request.userId()), request);
+    }
+
+    @GetMapping("/textbook-payments/{sessionId}")
+    public AcademyTextbookPaymentStatusResponse getTextbookPaymentStatus(
+            @PathVariable String sessionId
+    ) {
+        return academyService.getTextbookPaymentStatus(sessionId);
+    }
+
+    @GetMapping(value = "/textbook-payments/{sessionId}/qr", produces = MediaType.IMAGE_PNG_VALUE)
+    public ResponseEntity<byte[]> getTextbookPaymentQr(
+            @PathVariable String sessionId
+    ) {
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .contentType(MediaType.IMAGE_PNG)
+                .body(academyService.renderTextbookPaymentQr(sessionId));
+    }
+
+    @GetMapping(value = "/textbook-payments/{sessionId}/cashier", produces = MediaType.TEXT_HTML_VALUE)
+    public ResponseEntity<String> getTextbookPaymentCashier(
+            @PathVariable String sessionId
+    ) {
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .contentType(new MediaType("text", "html", java.nio.charset.StandardCharsets.UTF_8))
+                .body(academyService.renderTextbookPaymentCashier(sessionId));
+    }
+
+    @PostMapping("/textbook-payments/{sessionId}/local-confirm")
+    public AcademyTextbookPaymentStatusResponse confirmLocalTextbookPayment(
+            @PathVariable String sessionId
+    ) {
+        return academyService.confirmLocalTextbookPayment(sessionId);
+    }
+
+    @PostMapping("/textbook-payments/{sessionId}/refresh")
+    public AcademyTextbookPaymentStatusResponse refreshTextbookPaymentStatus(
+            @PathVariable String sessionId
+    ) {
+        return academyService.getTextbookPaymentStatus(sessionId);
     }
 
     /**
@@ -693,5 +773,9 @@ public class AcademyController {
     @GetMapping("/textbooks/categories")
     public List<AcademyCategoryResponse> listTextbookCategories() {
         return academyService.listTextbookCategories();
+    }
+
+    private Long resolveUserId(Long authUserId, Long fallbackUserId) {
+        return authUserId != null && authUserId > 0 ? authUserId : fallbackUserId;
     }
 }

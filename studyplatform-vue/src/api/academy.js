@@ -2,7 +2,7 @@
  * 学习平台模块，提供课程、作业、考试、题库等学习相关 API
  */
 
-import { request } from './request'
+import { request, resolveResourceUrl } from './request'
 
 /**
  * 获取学习平台首页数据
@@ -96,6 +96,26 @@ export const createAcademyTextbookOrder = (payload) =>
  */
 export const payAcademyTextbookOrder = (orderNo, userId = 1) =>
   request(`/api/academy/textbook-orders/${encodeURIComponent(orderNo)}/pay?userId=${encodeURIComponent(userId)}`, {
+    method: 'POST',
+  })
+
+export const createAcademyTextbookPayment = (orderNo, payload) =>
+  request(`/api/academy/textbook-orders/${encodeURIComponent(orderNo)}/payments`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+
+export const fetchAcademyTextbookPaymentStatus = (sessionId) =>
+  request(`/api/academy/textbook-payments/${encodeURIComponent(sessionId)}`)
+
+export const getAcademyTextbookPaymentQrUrl = (sessionId) =>
+  resolveResourceUrl(`/api/academy/textbook-payments/${encodeURIComponent(sessionId)}/qr`)
+
+export const getAcademyTextbookPaymentCashierUrl = (sessionId) =>
+  resolveResourceUrl(`/api/academy/textbook-payments/${encodeURIComponent(sessionId)}/cashier`)
+
+export const refreshAcademyTextbookPaymentStatus = (sessionId) =>
+  request(`/api/academy/textbook-payments/${encodeURIComponent(sessionId)}/refresh`, {
     method: 'POST',
   })
 
@@ -217,6 +237,17 @@ export const submitAcademyAssignment = (assignmentId, answers, userId = 1) =>
  */
 export const fetchAcademyExams = (userId = 1) =>
   request(`/api/academy/exams?userId=${encodeURIComponent(userId)}`)
+
+/**
+ * 从已选课程题库中随机组卷
+ * @param {Object} payload - 组卷参数
+ * @returns {Promise<any>} 新生成的考试详情
+ */
+export const createAcademyRandomExam = (payload) =>
+  request('/api/academy/exams/random', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
 
 /**
  * 获取考试详情

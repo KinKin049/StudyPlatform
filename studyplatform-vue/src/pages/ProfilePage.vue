@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 // 个人主页组件，展示用户学习数据、成就统计和课程管理功能
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import {
@@ -24,6 +24,7 @@ import {
   updateProfileUser,
   uploadProfileAvatar,
 } from '../api/profile'
+import { getStoredAuthUser, storeAuthUser } from '../api/auth'
 import { resolveResourceUrl } from '../api/request'
 import {
   difficultyOptions,
@@ -35,12 +36,14 @@ import {
 // 用户信息兜底数据
 const fallbackUser = {
   name: 'Kinkin',
+  email: '',
   handle: '@study-platform',
   role: 'StudyPlatform 学习者',
   roleType: 'student',
   teacherName: '',
   bio: '在题库、课程、实验与背单词之间来回穿梭，把零散练习沉淀成稳定的学习曲线。',
   location: 'China',
+  metaTags: ['目标：稳稳变强'],
   school: 'StudyPlatform',
   avatarUrl: '',
 }
@@ -68,7 +71,7 @@ const fallbackOverview = {
   recentActivities: [
     { title: '暂无真实练习记录', meta: '完成一道题或标记一个单词后，这里会自动刷新' },
   ],
-  badges: ['等待第一条数据', '真实数据接口已准备'],
+  badges: [],
   activityDays: Array.from({ length: 119 }, (_, index) => ({
     id: index,
     level: 0,
@@ -84,30 +87,29 @@ const fallbackOverview = {
     { label: '困难', level: 'HARD', solved: 0, total: 0, color: '#ef476f' },
   ],
   gameMetrics: [
-    { title: '游戏时长', value: '2h 18m', meta: '样式预览 · 待接入真实计时', tone: 'cyan' },
-    { title: '跳跃游戏最高纪录', value: '128 层', meta: '第一个游戏 · 最高记录', tone: 'blue' },
-    { title: '节奏游戏最终得分', value: '92,480', meta: '第二个游戏 · 最终得分', tone: 'violet' },
-    { title: '节奏游戏最高连击', value: '186 Combo', meta: '第二个游戏 · 最高连击', tone: 'amber' },
+    { title: '游戏时长', value: '0m', meta: '暂无游戏时长记录', tone: 'cyan' },
+    { title: '跳跃游戏最高纪录', value: '0 层', meta: '暂无最高纪录', tone: 'blue' },
+    { title: '节奏游戏最终得分', value: '0', meta: '暂无最终得分', tone: 'violet' },
+    { title: '节奏游戏最高连击', value: '0 Combo', meta: '暂无最高连击', tone: 'amber' },
   ],
   mistakeMetrics: [
-    { title: '错题本', value: '42 题', meta: '待复习 12 题 · 样式预览', tone: 'rose' },
-    { title: '薄弱知识点', value: '7 个', meta: '选择题 / 词汇 / 主观题', tone: 'amber' },
+    { title: '错题本', value: '0 题', meta: '待复习 0 题 · 已掌握 0 题', tone: 'rose' },
+    { title: '薄弱知识点', value: '0 个', meta: '暂无薄弱知识点数据', tone: 'amber' },
   ],
   rankingMetrics: [
     { title: '学习时长排名', value: '#0', meta: '累计学习时长 0m · 暂无排名数据', tone: 'cyan' },
     { title: '累计学习时长', value: '0m', meta: '排名依据：全站累计学习时长', tone: 'blue' },
   ],
   achievementMetrics: [
-    { title: '成就点数', value: '1,260', meta: '样式预览 · 12 枚徽章', tone: 'violet' },
-    { title: '稀有成就', value: '3 枚', meta: 'CET / OJ / 可视化', tone: 'amber' },
+    { title: '成就点数', value: '0', meta: '暂无成就点数', tone: 'violet' },
+    { title: '稀有成就', value: '0 枚', meta: '暂无稀有成就', tone: 'amber' },
   ],
   textbookOrders: [
     { title: '购物车', value: '0 本', meta: '购物车暂无教材', tone: 'blue' },
     { title: '待评价', value: '0 本', meta: '已购教材均已评价或暂无已购教材', tone: 'amber' },
   ],
 }
-
-// 数据状态
+// 数据状�?
 const overview = ref(null)
 const profileUser = ref(null)
 const profileLoading = ref(false)
@@ -177,14 +179,21 @@ let feedbackTimer = null
 let activeTiltElements = new Set()
 const profileForm = ref({
   name: fallbackUser.name,
+  email: fallbackUser.email,
   bio: fallbackUser.bio,
+  location: fallbackUser.location,
+  metaTags: [...fallbackUser.metaTags],
+  tagDraft: '',
+  currentPassword: '',
+  newPassword: '',
+  confirmNewPassword: '',
 })
 const courseDeleteConfirm = ref({
   open: false,
   course: null,
 })
 
-// 卡片倾斜效果选择器
+// 卡片倾斜效果选择�?
 const profileTiltSelector = [
   '.profile-card',
   '.profile-summary',
@@ -198,9 +207,16 @@ const profileTiltSelector = [
   '.profile-activity-list > div',
 ].join(',')
 
-// 获取当前用户信息（带兜底）
+// 获取当前用户信息（带兜底�?
 const user = computed(() => profileUser.value || fallbackUser)
-// 判断是否为教师用户
+const profileMetaTags = computed(() => {
+  const tags = [
+    user.value.location,
+    ...(Array.isArray(user.value.metaTags) ? user.value.metaTags : []),
+  ]
+  return tags.map((tag) => String(tag || '').trim()).filter(Boolean)
+})
+// 判断是否为教师用�?
 const isTeacherProfile = computed(() => user.value.roleType === 'teacher')
 // 教师课程数量
 const teacherCourseCount = computed(() => teacherCourses.value.length)
@@ -254,7 +270,7 @@ const teacherWorkbenchRingStyle = computed(() => {
     background: `conic-gradient(from -90deg, ${segments.join(', ')})`,
   }
 })
-// 学习概览数据（带兜底）
+// 学习概览数据（带兜底�?
 const dashboard = computed(() => overview.value || fallbackOverview)
 // 学习统计数据
 const stats = computed(() => dashboard.value.stats?.length ? dashboard.value.stats : fallbackOverview.stats)
@@ -262,17 +278,17 @@ const stats = computed(() => dashboard.value.stats?.length ? dashboard.value.sta
 const difficultyStats = computed(() =>
   dashboard.value.difficultyStats?.length ? dashboard.value.difficultyStats : fallbackOverview.difficultyStats,
 )
-// 技能轨道数据
+// 技能轨道数�?
 const skillTracks = computed(() =>
   dashboard.value.skillTracks?.length ? dashboard.value.skillTracks : fallbackOverview.skillTracks,
 )
-// 最近活动记录
+// 最近活动记�?
 const recentActivities = computed(() =>
   dashboard.value.recentActivities?.length ? dashboard.value.recentActivities : fallbackOverview.recentActivities,
 )
 // 成就徽章
 const badges = computed(() => dashboard.value.badges?.length ? dashboard.value.badges : fallbackOverview.badges)
-// 活动热力图数据
+// 活动热力图数�?
 const activityDays = computed(() =>
   dashboard.value.activityDays?.length ? dashboard.value.activityDays : fallbackOverview.activityDays,
 )
@@ -296,11 +312,11 @@ const profileCoinValue = computed(() => {
   const coinMetric = gameMetrics.value.find((item) => {
     const title = String(item.title || '').toLowerCase()
     return title.includes('金币') || title.includes('coin')
-  }) || gameMetrics.value[1]
+  })
 
   return coinMetric?.value || '0'
 })
-// 错题本数据
+// 错题本数�?
 const mistakeMetrics = computed(() =>
   dashboard.value.mistakeMetrics?.length ? dashboard.value.mistakeMetrics : fallbackOverview.mistakeMetrics,
 )
@@ -318,8 +334,8 @@ const achievementMetrics = computed(() => [
   },
   {
     title: '最近徽章',
-    value: achievementPreview.value[0]?.title || '暂无成就',
-    meta: unlockedAchievements.value.length ? '来自成就徽章系统' : '继续学习即可解锁',
+    value: unlockedAchievements.value[0]?.title || '0 枚',
+    meta: unlockedAchievements.value.length ? '来自成就徽章系统' : '暂无已解锁成就',
     tone: 'amber',
   },
 ])
@@ -341,7 +357,7 @@ const previewSections = computed(() => [
   { key: 'achievements', eyebrow: 'Achievements', title: '成就', items: achievementMetrics.value },
   { key: 'orders', eyebrow: 'Textbooks', title: '教材数据', items: textbookOrders.value },
 ])
-// 整体进度百分比
+// 整体进度百分�?
 const overallProgress = computed(() => {
   const explicitProgress = Number(dashboard.value.overallProgress)
   const difficultySolved = difficultyStats.value.reduce((sum, item) => sum + Number(item.solved || 0), 0)
@@ -352,7 +368,7 @@ const overallProgress = computed(() => {
     : derivedProgress
   return Math.min(Math.max(Number.isFinite(progress) ? Math.round(progress) : 0, 0), 100)
 })
-// 进度环样式
+// 进度环样�?
 const progressRingStyle = computed(() => ({
   '--profile-progress': `${overallProgress.value}%`,
   '--profile-progress-deg': `${overallProgress.value * 3.6}deg`,
@@ -387,7 +403,7 @@ const practiceDistributionGradient = computed(() => {
   })
   return `conic-gradient(from -90deg, ${segments.join(', ')})`
 })
-// 用户名称首字母
+// 用户名称首字�?
 const userInitial = computed(() => (user.value.name || 'K').trim().slice(0, 1).toUpperCase())
 // 用户头像 URL
 const avatarSrc = computed(() => resolveResourceUrl(user.value.avatarUrl))
@@ -512,7 +528,9 @@ const allAchievements = computed(() => {
 const unlockedAchievements = computed(() => allAchievements.value.filter((achievement) => achievement.unlocked))
 const achievementPreview = computed(() => {
   const unlocked = unlockedAchievements.value.slice(0, 6)
-  return unlocked.length ? unlocked : allAchievements.value.slice(0, 6)
+  return unlocked.length
+    ? unlocked
+    : [{ key: 'empty-achievement', title: '0 枚', tone: 'violet', unlocked: false }]
 })
 const achievementSummary = computed(() => ({
   unlocked: unlockedAchievements.value.length,
@@ -768,10 +786,10 @@ function formatTeacherOjCategoryName(value) {
 function formatTeacherOjActualOutput(caseResult) {
   const output = caseResult?.actualOutput
   if (output === null || output === undefined) {
-    return '实际输出：<沙箱未返回 actualOutput 字段>'
+    return '实际输出：沙箱未返回 actualOutput 字段'
   }
   if (String(output).length === 0) {
-    return '实际输出：<程序输出为空>'
+    return '实际输出：程序输出为空'
   }
   return `实际输出：\n${output}`
 }
@@ -863,7 +881,7 @@ const resetProfileTilt = () => {
   activeTiltElements = new Set()
 }
 
-// 收集需要应用倾斜效果的元素
+// 收集需要应用倾斜效果的元�?
 const collectProfileTiltElements = (target, container) => {
   const tiltElements = []
   let current = target?.closest?.(profileTiltSelector)
@@ -1105,7 +1123,7 @@ const submitTeacherOjProblem = async () => {
   }
 }
 
-// 为课程分配班级
+// 为课程分配班�?
 const assignCourseClass = (course) => {
   const value = classAssignments.value[course.id]?.trim()
   if (!value) {
@@ -1115,6 +1133,7 @@ const assignCourseClass = (course) => {
   showFeedback(`已为《${course.name}》分配班级：${value}`)
 }
 
+// 打开发布课程对话�?
 // 打开布置作业入口
 const openAssignmentEntry = (course) => {
   assignmentCourse.value = course
@@ -1189,7 +1208,7 @@ const openEditCourseDialog = (course) => {
   loadPublishCourseCategories()
 }
 
-// 关闭发布课程对话框
+// 关闭发布课程对话�?
 const closePublishCourseDialog = () => {
   if (publishingCourse.value) return
   publishCourseDialogOpen.value = false
@@ -1311,8 +1330,16 @@ const applyProfileUser = (nextUser) => {
   profileUser.value = nextUser
   profileForm.value = {
     name: nextUser?.name || fallbackUser.name,
+    email: nextUser?.email || fallbackUser.email,
     bio: nextUser?.bio || fallbackUser.bio,
+    location: nextUser?.location || fallbackUser.location,
+    metaTags: Array.isArray(nextUser?.metaTags) ? [...nextUser.metaTags] : [...fallbackUser.metaTags],
+    tagDraft: '',
+    currentPassword: '',
+    newPassword: '',
+    confirmNewPassword: '',
   }
+  syncStoredAuthUser(nextUser)
   window.dispatchEvent(new CustomEvent('study-platform:profile-updated', { detail: nextUser }))
   if (nextUser?.roleType === 'teacher') {
     overview.value = null
@@ -1336,11 +1363,18 @@ const loadProfileUser = async () => {
   }
 }
 
-// 开始编辑个人资料
+// 开始编辑个人资�?
 const startProfileEdit = () => {
   profileForm.value = {
     name: user.value.name,
+    email: user.value.email || '',
     bio: user.value.bio,
+    location: user.value.location || '',
+    metaTags: Array.isArray(user.value.metaTags) ? [...user.value.metaTags] : [],
+    tagDraft: '',
+    currentPassword: '',
+    newPassword: '',
+    confirmNewPassword: '',
   }
   editingProfile.value = true
   userError.value = ''
@@ -1352,21 +1386,97 @@ const cancelProfileEdit = () => {
   userError.value = ''
 }
 
+const syncStoredAuthUser = (nextUser) => {
+  const storedUser = getStoredAuthUser()
+  if (!storedUser || !nextUser?.userId || Number(storedUser.id) !== Number(nextUser.userId)) {
+    return
+  }
+  storeAuthUser({
+    ...storedUser,
+    email: nextUser.email || storedUser.email,
+    username: nextUser.name || storedUser.username,
+    roleType: nextUser.roleType || storedUser.roleType,
+  })
+}
+
+const addProfileMetaTag = () => {
+  const tag = profileForm.value.tagDraft.trim()
+  if (!tag) return
+  if (tag.length > 32) {
+    userError.value = '标签最多 32 个字'
+    showFeedback(userError.value)
+    return
+  }
+  const nextTags = profileForm.value.metaTags.filter((item) => item !== tag)
+  if (nextTags.length >= 12) {
+    userError.value = '最多添加 12 个标签'
+    showFeedback(userError.value)
+    return
+  }
+  profileForm.value.metaTags = [...nextTags, tag]
+  profileForm.value.tagDraft = ''
+  userError.value = ''
+}
+
+const removeProfileMetaTag = (index) => {
+  profileForm.value.metaTags = profileForm.value.metaTags.filter((_, currentIndex) => currentIndex !== index)
+}
+
 // 保存个人资料编辑
 const saveProfileEdit = async () => {
   const name = profileForm.value.name.trim()
+  const email = profileForm.value.email.trim()
+  const location = profileForm.value.location.trim()
   if (!name) {
     userError.value = '昵称不能为空'
     console.warn('profile user update rejected: blank name')
     showFeedback('昵称不能为空')
     return
   }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    userError.value = '邮箱格式不正确'
+    showFeedback(userError.value)
+    return
+  }
+  if (!location) {
+    userError.value = '位置标签不能为空'
+    showFeedback(userError.value)
+    return
+  }
+  const passwordTouched = Boolean(
+    profileForm.value.currentPassword
+    || profileForm.value.newPassword
+    || profileForm.value.confirmNewPassword,
+  )
+  if (passwordTouched) {
+    if (!profileForm.value.currentPassword) {
+      userError.value = '请填写旧密码'
+      showFeedback(userError.value)
+      return
+    }
+    if (profileForm.value.newPassword.length < 6 || profileForm.value.newPassword.length > 72) {
+      userError.value = '新密码长度需为 6-72 位'
+      showFeedback(userError.value)
+      return
+    }
+    if (profileForm.value.newPassword !== profileForm.value.confirmNewPassword) {
+      userError.value = '两次输入的新密码不一致'
+      showFeedback(userError.value)
+      return
+    }
+  }
   savingProfile.value = true
   userError.value = ''
   try {
     const updatedUser = await updateProfileUser({
       name,
+      email,
       bio: profileForm.value.bio.trim(),
+      location,
+      metaTags: profileForm.value.metaTags.map((tag) => tag.trim()).filter(Boolean),
+      currentPassword: passwordTouched ? profileForm.value.currentPassword : '',
+      newPassword: passwordTouched ? profileForm.value.newPassword : '',
+      confirmNewPassword: passwordTouched ? profileForm.value.confirmNewPassword : '',
     })
     applyProfileUser(updatedUser)
     console.info('profile user updated successfully:', updatedUser)
@@ -1381,12 +1491,12 @@ const saveProfileEdit = async () => {
   }
 }
 
-// 打开头像选择器
+// 打开头像选择�?
 const openAvatarPicker = () => {
   avatarInputRef.value?.click()
 }
 
-// 重置头像裁剪状态
+// 重置头像裁剪状�?
 const resetAvatarCrop = () => {
   const frame = avatarCropFrameRef.value
   const image = avatarCropImageRef.value
@@ -1401,7 +1511,7 @@ const resetAvatarCrop = () => {
   avatarCropOffset.value = { x: 0, y: 0 }
 }
 
-// 限制头像裁剪偏移量在有效范围内
+// 限制头像裁剪偏移量在有效范围�?
 const limitAvatarCropOffset = (offset, zoom = avatarCropZoom.value) => {
   const frame = avatarCropFrameRef.value
   if (!frame) return offset
@@ -1421,7 +1531,7 @@ const normalizeAvatarCropOffset = () => {
   avatarCropOffset.value = limitAvatarCropOffset(avatarCropOffset.value)
 }
 
-// 开始拖动头像裁剪图片
+// 开始拖动头像裁剪图�?
 const startAvatarCropDrag = (event) => {
   if (avatarUploading.value) return
   avatarCropDragging.value = true
@@ -1449,7 +1559,7 @@ const stopAvatarCropDrag = (event) => {
   event.currentTarget.releasePointerCapture?.(event.pointerId)
 }
 
-// 关闭头像裁剪器
+// 关闭头像裁剪�?
 const closeAvatarCropper = (force = false) => {
   if (avatarUploading.value && !force) return
   if (avatarCropImageUrl.value) {
@@ -1522,7 +1632,7 @@ const createCroppedAvatarFile = async () => {
   return new File([blob], 'avatar-cropped.png', { type: 'image/png' })
 }
 
-// 确认头像裁剪并上传
+// 确认头像裁剪并上�?
 const confirmAvatarCrop = async () => {
   avatarUploading.value = true
   userError.value = ''
@@ -1562,7 +1672,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <!-- 个人主页主容器 -->
+  <!-- 个人主页主容�?-->
   <main class="profile-main" @pointermove="handleProfileTilt" @pointerleave="resetProfileTilt">
     <!-- 用户信息区域 -->
     <section class="profile-hero">
@@ -1585,7 +1695,7 @@ onBeforeUnmount(() => {
           <span v-else>{{ userInitial }}</span>
           <small>{{ avatarUploading ? '上传中' : '换头像' }}</small>
         </button>
-        <!-- 隐藏的头像文件输入 -->
+        <!-- 隐藏的头像文件输�?-->
         <input
           ref="avatarInputRef"
           class="profile-avatar-input"
@@ -1599,18 +1709,17 @@ onBeforeUnmount(() => {
           <h1>{{ user.name }}</h1>
           <span>{{ user.handle }}</span>
         </div>
-        <!-- 用户简介 -->
+        <!-- 用户简�?-->
         <p class="profile-bio">{{ user.bio }}</p>
         <!-- 编辑资料按钮 -->
         <button class="profile-edit-button" type="button" @click="startProfileEdit">编辑资料</button>
         <!-- 错误提示 -->
         <p v-if="userError && !editingProfile" class="profile-user-message">{{ userError }}</p>
-        <!-- 用户元信息 -->
+        <!-- 用户元信�?-->
         <div class="profile-meta">
           <span v-if="isTeacherProfile">教师姓名：{{ user.teacherName || user.name }}</span>
-          <span>{{ isTeacherProfile ? `所属学校：${user.school}` : user.school }}</span>
-          <span>{{ user.location }}</span>
-          <span>目标：稳稳变强</span>
+          <span v-if="user.school && String(user.school).trim()">{{ isTeacherProfile ? `所属学校：${user.school}` : user.school }}</span>
+          <span v-for="tag in profileMetaTags" :key="tag">{{ tag }}</span>
         </div>
       </div>
 
@@ -1658,14 +1767,14 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <!-- 加载状态 -->
+        <!-- 加载状�?-->
         <div v-if="teacherCoursesLoading" class="profile-teacher-state">正在加载课程...</div>
-        <!-- 错误状态 -->
+        <!-- 错误状�?-->
         <div v-else-if="teacherCoursesError" class="profile-teacher-state is-error">
           <span>{{ teacherCoursesError }}</span>
           <button type="button" @click="loadTeacherCourses">重试</button>
         </div>
-        <!-- 空状态 -->
+        <!-- 空状�?-->
         <div v-else-if="teacherCourses.length === 0" class="profile-teacher-state">
           <span>暂无自己发布的课程</span>
           <button type="button" @click="openPublishCourseDialog">添加课程</button>
@@ -1695,6 +1804,7 @@ onBeforeUnmount(() => {
               <!-- 课程操作 -->
               <div class="profile-teacher-course-actions">
                 <RouterLink :to="`/academy/open-courses/${encodeURIComponent(course.id)}`">查看课程</RouterLink>
+                <button type="button">布置作业</button>
                 <button type="button" @click="openEditCourseDialog(course)">编辑课程</button>
                 <button type="button" @click="openAssignmentEntry(course)">布置作业</button>
                 <button
@@ -1703,7 +1813,7 @@ onBeforeUnmount(() => {
                   :disabled="deletingCourseId === course.id"
                   @click="openTeacherCourseDeleteConfirm(course)"
                 >
-                  {{ deletingCourseId === course.id ? '删除中' : '删除课程' }}
+                  {{ deletingCourseId === course.id ? '删除中...' : '删除课程' }}
                 </button>
               </div>
             </div>
@@ -1999,7 +2109,7 @@ onBeforeUnmount(() => {
               v-model="publishCourseForm.startTime"
               type="text"
               maxlength="64"
-              placeholder="例如：2026-09-01"
+              placeholder="例如 2026-09-01"
               required
             />
           </label>
@@ -2018,7 +2128,7 @@ onBeforeUnmount(() => {
               v-model="publishCourseForm.semesterPlan"
               type="text"
               maxlength="512"
-              placeholder="例如：16 周，每周 2 学时"
+              placeholder="例如 16 周，每周 2 学时"
               required
             />
           </label>
@@ -2515,7 +2625,7 @@ onBeforeUnmount(() => {
       @click.self="cancelProfileEdit"
     >
       <section
-        class="profile-edit-dialog"
+        class="profile-edit-dialog profile-user-edit-dialog"
         role="dialog"
         aria-modal="true"
         aria-labelledby="profile-edit-title"
@@ -2536,9 +2646,55 @@ onBeforeUnmount(() => {
             <input v-model="profileForm.name" type="text" maxlength="64" />
           </label>
           <label>
+            邮箱
+            <input v-model="profileForm.email" type="email" maxlength="128" autocomplete="email" />
+          </label>
+          <label>
             简介
             <textarea v-model="profileForm.bio" maxlength="512" rows="4"></textarea>
           </label>
+          <label>
+            位置标签
+            <input v-model="profileForm.location" type="text" maxlength="64" />
+          </label>
+          <div class="profile-edit-tag-field">
+            <span>个人标签</span>
+            <div class="profile-edit-tag-list">
+              <button
+                v-for="(tag, index) in profileForm.metaTags"
+                :key="`${tag}-${index}`"
+                type="button"
+                @click="removeProfileMetaTag(index)"
+              >
+                {{ tag }} ×
+              </button>
+            </div>
+            <div class="profile-edit-tag-add">
+              <input
+                v-model="profileForm.tagDraft"
+                type="text"
+                maxlength="32"
+                placeholder="例如：目标：稳稳变强"
+                @keydown.enter.prevent="addProfileMetaTag"
+              />
+              <button type="button" @click="addProfileMetaTag">添加</button>
+            </div>
+          </div>
+          <div class="profile-edit-password-section">
+            <strong>修改密码</strong>
+            <label>
+              旧密码
+              <input v-model="profileForm.currentPassword" type="password" autocomplete="current-password" />
+            </label>
+            <label>
+              新密码
+              <input v-model="profileForm.newPassword" type="password" autocomplete="new-password" minlength="6" maxlength="72" />
+            </label>
+            <label>
+              确认新密码
+              <input v-model="profileForm.confirmNewPassword" type="password" autocomplete="new-password" />
+            </label>
+          </div>
           <p v-if="userError" class="profile-user-message">{{ userError }}</p>
           <div class="profile-edit-actions">
             <button type="submit" :disabled="savingProfile">

@@ -243,6 +243,28 @@ public class AcademyRepository {
         return count != null && count > 0;
     }
 
+    public Optional<PublishedCourseOwnerRow> findPublishedCourseForTeacher(long publisherUserId, String courseId) {
+        String sql = """
+                SELECT c.external_course_id, c.course_name, c.teacher_name
+                FROM teacher_published_courses p
+                JOIN online_open_courses c ON c.external_course_id = p.course_id
+                WHERE p.publisher_user_id = ? AND p.course_id = ?
+                LIMIT 1
+                """;
+        try {
+            return Optional.ofNullable(jdbcTemplate.queryForObject(
+                    sql,
+                    (rs, rowNum) -> new PublishedCourseOwnerRow(
+                            rs.getString("external_course_id"),
+                            rs.getString("course_name"),
+                            rs.getString("teacher_name")
+                    ),
+                    publisherUserId,
+                    courseId
+            ));
+        } catch (EmptyResultDataAccessException ex) {
+            return Optional.empty();
+        }
     public int updatePublishedOnlineOpenCourse(
             long publisherUserId,
             String courseId,
@@ -398,6 +420,111 @@ public class AcademyRepository {
                 rs.getString("cover_file_path"),
                 rs.getString("source_url")
         ));
+    }
+
+    public Optional<AcademyTextbookOrderResponseData> findPendingTextbookOrder(Long userId, String orderNo) {
+        try {
+            return Optional.ofNullable(jdbcTemplate.queryForObject(
+                    """
+                    SELECT order_no, total_amount, original_amount, discount_amount, voucher_key, voucher_name, voucher_consumed
+                    FROM academy_textbook_orders
+                    WHERE user_id = ? AND order_no = ? AND order_status = '待支付'
+                    LIMIT 1
+                    """,
+                    (rs, rowNum) -> new AcademyTextbookOrderResponseData(
+                            rs.getString("order_no"),
+                            rs.getBigDecimal("total_amount"),
+                            rs.getBigDecimal("original_amount"),
+                            rs.getBigDecimal("discount_amount"),
+                            rs.getString("voucher_key"),
+                            rs.getString("voucher_name"),
+                            rs.getBoolean("voucher_consumed")
+                    ),
+                    userId,
+                    orderNo
+            ));
+        } catch (EmptyResultDataAccessException ignored) {
+            return Optional.empty();
+        }
+    }
+
+    public TextbookPaymentSessionData createTextbookPaymentSession(
+            Long userId,
+            String orderNo,
+            String gatewayOrderNo,
+            String sessionId,
+            String provider,
+            BigDecimal amount,
+            String qrPayload,
+            LocalDateTime expiresAt
+    ) {
+        jdbcTemplate.update(
+                """
+                INSERT INTO academy_textbook_payments
+                  (session_id, order_no, gateway_order_no, user_id, provider, amount, payment_status, qr_payload, expires_at)
+                VALUES (?, ?, ?, ?, ?, ?, 'PENDING', ?, ?)
+                """,
+                sessionId,
+                orderNo,
+                gatewayOrderNo,
+                userId,
+                provider,
+                amount,
+                qrPayload,
+                Timestamp.valueOf(expiresAt)
+        );
+        return findTextbookPaymentSession(sessionId).orElseThrow();
+    }
+
+    public Optional<TextbookPaymentSessionData> findTextbookPaymentSession(String sessionId) {
+        try {
+            return Optional.ofNullable(jdbcTemplate.queryForObject(
+                    """
+                    SELECT session_id, order_no, COALESCE(NULLIF(gateway_order_no, ''), order_no) AS gateway_order_no,
+                           user_id, provider, amount, payment_status, qr_payload, expires_at, paid_at
+                    FROM academy_textbook_payments
+                    WHERE session_id = ?
+                    LIMIT 1
+                    """,
+                    (rs, rowNum) -> new TextbookPaymentSessionData(
+                            rs.getString("session_id"),
+                            rs.getString("order_no"),
+                            rs.getString("gateway_order_no"),
+                            rs.getLong("user_id"),
+                            rs.getString("provider"),
+                            rs.getBigDecimal("amount"),
+                            rs.getString("payment_status"),
+                            rs.getString("qr_payload"),
+                            rs.getTimestamp("expires_at").toLocalDateTime(),
+                            rs.getTimestamp("paid_at") == null ? null : rs.getTimestamp("paid_at").toLocalDateTime()
+                    ),
+                    sessionId
+            ));
+        } catch (EmptyResultDataAccessException ignored) {
+            return Optional.empty();
+        }
+    }
+
+    public int markTextbookPaymentSessionPaid(String sessionId) {
+        return jdbcTemplate.update(
+                """
+                UPDATE academy_textbook_payments
+                SET payment_status = 'PAID', paid_at = CURRENT_TIMESTAMP
+                WHERE session_id = ? AND payment_status = 'PENDING' AND expires_at > CURRENT_TIMESTAMP
+                """,
+                sessionId
+        );
+    }
+
+    public int expireTextbookPaymentSession(String sessionId) {
+        return jdbcTemplate.update(
+                """
+                UPDATE academy_textbook_payments
+                SET payment_status = 'EXPIRED'
+                WHERE session_id = ? AND payment_status = 'PENDING' AND expires_at <= CURRENT_TIMESTAMP
+                """,
+                sessionId
+        );
     }
 
     /**
@@ -777,15 +904,6 @@ public class AcademyRepository {
             );
         }
 
-        Object[] deleteParams = new Object[cartItemIds.size() + 1];
-        deleteParams[0] = userId;
-        for (int index = 0; index < cartItemIds.size(); index += 1) {
-            deleteParams[index + 1] = cartItemIds.get(index);
-        }
-        jdbcTemplate.update(
-                "DELETE FROM academy_textbook_cart_items WHERE user_id = ? AND id IN (%s)".formatted(placeholders),
-                deleteParams
-        );
         return new AcademyTextbookOrderResponseData(
                 orderNo,
                 totalAmount,
@@ -835,6 +953,20 @@ public class AcademyRepository {
      * @param orderNo 订单号
      * @return 订单信息，支付失败或订单不存在则返回空
      */
+    public int deleteTextbookCartItemsForPaidOrder(Long userId, String orderNo) {
+        return jdbcTemplate.update(
+                """
+                DELETE c
+                FROM academy_textbook_cart_items c
+                JOIN academy_textbook_orders o ON o.user_id = c.user_id AND o.order_no = ?
+                JOIN academy_textbook_order_items i ON i.order_id = o.id AND i.textbook_id = c.textbook_id
+                WHERE c.user_id = ?
+                """,
+                orderNo,
+                userId
+        );
+    }
+
     public Optional<AcademyTextbookOrderResponseData> payTextbookOrder(Long userId, String orderNo) {
         int updated = jdbcTemplate.update(
                 """
@@ -1295,6 +1427,13 @@ public class AcademyRepository {
         );
     }
 
+    public record PublishedCourseOwnerRow(
+            String courseId,
+            String courseName,
+            String teacherName
+    ) {
+    }
+
     /**
      * 查询学习课程列表（通用方法）
      *
@@ -1544,6 +1683,20 @@ public class AcademyRepository {
             String voucherKey,
             String voucherName,
             boolean voucherConsumed
+    ) {
+    }
+
+    public record TextbookPaymentSessionData(
+            String sessionId,
+            String orderNo,
+            String gatewayOrderNo,
+            Long userId,
+            String provider,
+            BigDecimal amount,
+            String status,
+            String qrPayload,
+            LocalDateTime expiresAt,
+            LocalDateTime paidAt
     ) {
     }
 
