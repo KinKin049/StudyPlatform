@@ -8,7 +8,6 @@ import { useRouter } from 'vue-router'
 import { fetchAcademyCategories } from '../api/academy'
 import { getStoredAuthUser, saveAuthOnboarding, storeAuthUser } from '../api/auth'
 import { AI_PET_SHOP_ITEMS, PET_SELECTION_EVENT, PET_STORAGE_KEYS } from '../data/aiPetShop'
-import { AI_PET_SHOP_ITEMS } from '../data/aiPetShop'
 
 const router = useRouter()
 
@@ -96,10 +95,6 @@ const petCatalog = AI_PET_SHOP_ITEMS.map((pet) => ({
 /**
  * 宠物选项列表
  */
-const pets = AI_PET_SHOP_ITEMS.slice(0, 3).map((pet) => ({
-  key: pet.key,
-  name: pet.name,
-  note: pet.tag,
   image: pet.preview || pet.image,
 }))
 

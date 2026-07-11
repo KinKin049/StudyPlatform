@@ -6,7 +6,6 @@ import { Hide, View } from '@element-plus/icons-vue'
 
 import { chatWithAiPet } from '../api/aiPet'
 import { getStoredAuthUser } from '../api/auth'
-import { AI_PET_BY_KEY, DEFAULT_PET_KEY, PET_SELECTION_EVENT, PET_STORAGE_KEYS } from '../data/aiPetShop'
 import { renderMessageMarkdown } from '../utils/markdown'
 import { AI_PET_BY_KEY, DEFAULT_PET_KEY, PET_SELECTION_EVENT, PET_STORAGE_KEYS, normalizePetKey } from '../data/aiPetShop'
 import idle01 from '../assets/pet/nebula-cat/idle-01.png'
@@ -886,8 +885,6 @@ function handlePetStorageChanged(event) {
   }
 }
 
-function handleAuthUpdated() {
-  loadTodos()
 function userPetStorageKey(baseKey, userId) {
   return userId ? `${baseKey}:${userId}` : baseKey
 }
@@ -897,9 +894,12 @@ function readUserPetStorage(baseKey, userId) {
 }
 
 function handleAuthUpdated(event) {
+  loadTodos()
+  loadFocusSummary()
+  loadQuietMode()
   const previousName = petDisplayName.value
-  const user = event.detail || getStoredAuthUser()
-  const nextKey = normalizePetKey(user?.petKey || readUserPetStorage(PET_STORAGE_KEYS.active, user?.id))
+  const user = event?.detail || getStoredAuthUser()
+  const nextKey = normalizePetKey(user?.petKey || readUserPetStorage(PET_STORAGE_KEYS.active, user?.id) || window.localStorage.getItem(PET_STORAGE_KEYS.active))
   selectedPetKey.value = (AI_PET_BY_KEY[nextKey] || nextKey === DEFAULT_PET_KEY) ? nextKey : DEFAULT_PET_KEY
   window.localStorage.setItem(PET_STORAGE_KEYS.active, selectedPetKey.value)
   if (user?.id) {

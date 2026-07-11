@@ -265,6 +265,8 @@ public class AcademyRepository {
         } catch (EmptyResultDataAccessException ex) {
             return Optional.empty();
         }
+    }
+
     public int updatePublishedOnlineOpenCourse(
             long publisherUserId,
             String courseId,

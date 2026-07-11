@@ -1133,8 +1133,6 @@ const assignCourseClass = (course) => {
   showFeedback(`已为《${course.name}》分配班级：${value}`)
 }
 
-// 打开发布课程对话�?
-// 打开布置作业入口
 const openAssignmentEntry = (course) => {
   assignmentCourse.value = course
   assignmentForm.value = emptyAssignmentForm()
@@ -1804,9 +1802,8 @@ onBeforeUnmount(() => {
               <!-- 课程操作 -->
               <div class="profile-teacher-course-actions">
                 <RouterLink :to="`/academy/open-courses/${encodeURIComponent(course.id)}`">查看课程</RouterLink>
-                <button type="button">布置作业</button>
-                <button type="button" @click="openEditCourseDialog(course)">编辑课程</button>
                 <button type="button" @click="openAssignmentEntry(course)">布置作业</button>
+                <button type="button" @click="openEditCourseDialog(course)">编辑课程</button>
                 <button
                   type="button"
                   class="is-danger"

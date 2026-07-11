@@ -31,7 +31,6 @@ import com.cupk.academy.dto.AcademyTextbookReviewRequest;
 import com.cupk.academy.dto.AcademyTextbookResponse;
 import com.cupk.academy.dto.AcademyTeacherAssignmentRequest;
 import com.cupk.academy.dto.TeacherWorkbenchResponse;
-import com.cupk.academy.dto.TeacherAssignmentCreateRequest;
 import com.cupk.academy.service.AcademyAssignmentService;
 import com.cupk.academy.service.AcademyExamService;
 import com.cupk.academy.service.AcademyService;
@@ -280,7 +279,6 @@ public class AcademyController {
     @PostMapping("/teacher/assignments")
     public AcademyAssignmentDetailResponse createTeacherAssignment(
             @RequestHeader(value = "X-Auth-User-Id", required = false) Long userId,
-            @RequestBody TeacherAssignmentCreateRequest request
             @RequestBody AcademyTeacherAssignmentRequest request
     ) {
         return assignmentService.createTeacherAssignment(userId, request);
