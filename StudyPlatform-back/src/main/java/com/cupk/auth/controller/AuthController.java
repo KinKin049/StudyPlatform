@@ -3,6 +3,7 @@ package com.cupk.auth.controller;
 import com.cupk.auth.dto.AuthLoginRequest;
 import com.cupk.auth.dto.AuthMessageResponse;
 import com.cupk.auth.dto.AuthOnboardingRequest;
+import com.cupk.auth.dto.AuthPetRequest;
 import com.cupk.auth.dto.AuthRegisterRequest;
 import com.cupk.auth.dto.AuthUserResponse;
 import com.cupk.auth.dto.PasswordResetCodeRequest;
@@ -10,7 +11,9 @@ import com.cupk.auth.dto.PasswordResetConfirmRequest;
 import com.cupk.auth.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -81,5 +84,13 @@ public class AuthController {
     @PostMapping("/onboarding")
     public AuthUserResponse saveOnboarding(@RequestBody AuthOnboardingRequest request) {
         return authService.saveOnboarding(request);
+    }
+
+    @PutMapping("/pet")
+    public AuthUserResponse updatePet(
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long userId,
+            @RequestBody AuthPetRequest request
+    ) {
+        return authService.updatePet(userId, request);
     }
 }

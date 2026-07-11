@@ -196,7 +196,7 @@
   place-items: center;
   grid-template-columns: 1fr;
   max-width: none;
-  min-height: min(760px, calc(100vh - 118px));
+  min-height: clamp(860px, calc(100vh - 118px), 980px);
   width: calc(100% + 2 * clamp(32px, 5vw, 88px));
   margin: -48px calc(-1 * clamp(32px, 5vw, 88px)) 0;
   padding: 0 clamp(32px, 5vw, 88px);
@@ -3221,7 +3221,7 @@
 
 @media (max-width: 820px) {
   .home-hero.is-guest {
-    min-height: min(680px, calc(100vh - 102px));
+    min-height: clamp(760px, calc(100vh - 102px), 880px);
     width: calc(100% + 10vw);
     margin: -34px -5vw 0;
     padding-inline: 5vw;

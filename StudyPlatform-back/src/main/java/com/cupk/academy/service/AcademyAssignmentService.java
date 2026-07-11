@@ -6,17 +6,26 @@ import com.cupk.academy.dto.AcademyAssignmentQuestionResponse;
 import com.cupk.academy.dto.AcademyAssignmentQuestionResultResponse;
 import com.cupk.academy.dto.AcademyAssignmentSubmitResponse;
 import com.cupk.academy.dto.AcademyAssignmentSummaryResponse;
+import com.cupk.academy.dto.AcademyCourseResponse;
+import com.cupk.academy.dto.AcademyTeacherAssignmentQuestionRequest;
+import com.cupk.academy.dto.AcademyTeacherAssignmentRequest;
 import com.cupk.academy.repository.AcademyAssignmentRepository;
+import com.cupk.academy.repository.AcademyRepository;
 import com.cupk.academy.repository.AcademyAssignmentRepository.AssignmentDetailRow;
+import com.cupk.academy.repository.AcademyAssignmentRepository.AssignmentQuestionCreateRow;
 import com.cupk.academy.repository.AcademyAssignmentRepository.AssignmentQuestionRow;
+import com.cupk.auth.dto.AuthUserResponse;
+import com.cupk.auth.repository.AuthUserRepository;
 import com.cupk.oj.dto.CreateSubmissionRequest;
 import com.cupk.oj.model.OjSubmission;
 import com.cupk.oj.service.OjSubmissionService;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -29,6 +38,8 @@ public class AcademyAssignmentService {
     private static final long DEFAULT_USER_ID = 1L;
 
     private final AcademyAssignmentRepository assignmentRepository;
+    private final AcademyRepository academyRepository;
+    private final AuthUserRepository authUserRepository;
     private final OjSubmissionService ojSubmissionService;
 
     /**
@@ -39,9 +50,13 @@ public class AcademyAssignmentService {
      */
     public AcademyAssignmentService(
             AcademyAssignmentRepository assignmentRepository,
+            AcademyRepository academyRepository,
+            AuthUserRepository authUserRepository,
             OjSubmissionService ojSubmissionService
     ) {
         this.assignmentRepository = assignmentRepository;
+        this.academyRepository = academyRepository;
+        this.authUserRepository = authUserRepository;
         this.ojSubmissionService = ojSubmissionService;
     }
 
@@ -198,6 +213,46 @@ public class AcademyAssignmentService {
         );
     }
 
+    public AcademyAssignmentDetailResponse createTeacherAssignment(Long userId, AcademyTeacherAssignmentRequest request) {
+        long teacherUserId = requireUserId(userId);
+        AuthUserResponse teacher = ensureTeacher(teacherUserId);
+        if (request == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "作业信息不能为空");
+        }
+        String courseId = clean(request.courseId(), 120);
+        if (courseId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "课程编号不能为空");
+        }
+        if (!academyRepository.isPublishedOnlineOpenCourseOwner(teacherUserId, courseId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "只能为自己发布的课程布置作业");
+        }
+        AcademyCourseResponse course = academyRepository.findOnlineOpenCourseById(courseId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "课程不存在"));
+        String title = clean(request.title(), 255);
+        String description = clean(request.description(), 2000);
+        if (title.isBlank() || description.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "作业标题和说明不能为空");
+        }
+        List<AssignmentQuestionCreateRow> questions = normalizeQuestions(request.questions());
+        int totalScore = questions.stream().mapToInt(question -> question.score() == null ? 0 : question.score()).sum();
+        String code = "teacher-" + teacherUserId + "-" + UUID.randomUUID().toString().substring(0, 8);
+        assignmentRepository.createAssignment(
+                code,
+                "online-open-courses",
+                courseId,
+                course.name(),
+                title,
+                clean(teacher.teacherName(), 80).isBlank() ? clean(teacher.username(), 80) : clean(teacher.teacherName(), 80),
+                parseDeadline(request.deadlineAt()),
+                normalizePositive(request.attemptsLimit(), 1, 10),
+                normalizePositive(request.durationMinutes(), 30, 240),
+                totalScore,
+                description,
+                questions
+        );
+        return getAssignment(code, teacherUserId);
+    }
+
     /**
      * 创建待教师审核的题目结果。
      *
@@ -270,6 +325,121 @@ public class AcademyAssignmentService {
     private AssignmentDetailRow findAssignment(String assignmentCode) {
         return assignmentRepository.findAssignmentByCode(assignmentCode)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "作业不存在"));
+    }
+
+    private AuthUserResponse ensureTeacher(long userId) {
+        AuthUserResponse user = authUserRepository.findResponseById(userId);
+        if (!"teacher".equals(user.roleType())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "只有教师可以布置作业");
+        }
+        return user;
+    }
+
+    private long requireUserId(Long userId) {
+        if (userId == null || userId <= 0) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "请先登录教师账号");
+        }
+        return userId;
+    }
+
+    private List<AssignmentQuestionCreateRow> normalizeQuestions(List<AcademyTeacherAssignmentQuestionRequest> requests) {
+        if (requests == null || requests.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "至少需要添加一道题目");
+        }
+        List<AssignmentQuestionCreateRow> questions = new ArrayList<>();
+        for (int index = 0; index < requests.size(); index += 1) {
+            AcademyTeacherAssignmentQuestionRequest request = requests.get(index);
+            if (request == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "第 " + (index + 1) + " 题信息不能为空");
+            }
+            String type = clean(request == null ? null : request.type(), 32);
+            if (!List.of("single", "multiple", "blank", "short", "code").contains(type)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "第 " + (index + 1) + " 题题型不支持");
+            }
+            String title = clean(request.title(), 1200);
+            if (title.isBlank()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "第 " + (index + 1) + " 题题干不能为空");
+            }
+            int score = normalizePositive(request.score(), 10, 100);
+            List<String> options = normalizeOptions(type, request.options(), index);
+            Object correctAnswer = normalizeCorrectAnswer(type, request.correctAnswer(), index);
+            boolean requiresReview = "short".equals(type) || "code".equals(type) || Boolean.TRUE.equals(request.requiresTeacherReview());
+            boolean autoGradable = !requiresReview && Boolean.TRUE.equals(request.autoGradable());
+            Long ojProblemId = "code".equals(type) ? request.ojProblemId() : null;
+            if ("code".equals(type) && ojProblemId == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "第 " + (index + 1) + " 题请选择 OJ 题目");
+            }
+            questions.add(new AssignmentQuestionCreateRow(
+                    type,
+                    clean(request.label(), 64).isBlank() ? "第 " + (index + 1) + " 题" : clean(request.label(), 64),
+                    title,
+                    options,
+                    clean(request.placeholderText(), 1000),
+                    score,
+                    correctAnswer,
+                    clean(request.explanation(), 1000),
+                    autoGradable,
+                    ojProblemId,
+                    requiresReview
+            ));
+        }
+        return questions;
+    }
+
+    private List<String> normalizeOptions(String type, List<String> rawOptions, int index) {
+        if (!List.of("single", "multiple").contains(type)) {
+            return List.of();
+        }
+        List<String> options = rawOptions == null
+                ? List.of()
+                : rawOptions.stream().map(option -> clean(option, 255)).filter(option -> !option.isBlank()).toList();
+        if (options.size() < 2) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "第 " + (index + 1) + " 题至少需要两个选项");
+        }
+        return options;
+    }
+
+    private Object normalizeCorrectAnswer(String type, Object rawAnswer, int index) {
+        if ("single".equals(type) || "blank".equals(type)) {
+            String answer = normalizeText(rawAnswer);
+            if (answer.isBlank()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "第 " + (index + 1) + " 题需要填写参考答案");
+            }
+            return answer;
+        }
+        if ("multiple".equals(type)) {
+            List<String> answers = normalizeList(rawAnswer);
+            if (answers.isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "第 " + (index + 1) + " 题需要填写参考答案");
+            }
+            return answers;
+        }
+        return null;
+    }
+
+    private LocalDateTime parseDeadline(String value) {
+        String normalized = clean(value, 32);
+        if (normalized.isBlank()) {
+            return LocalDateTime.now().plusDays(7);
+        }
+        try {
+            return LocalDateTime.parse(normalized.length() == 10 ? normalized + "T23:59:00" : normalized);
+        } catch (Exception ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "截止时间格式不正确");
+        }
+    }
+
+    private int normalizePositive(Integer value, int fallback, int max) {
+        int normalized = value == null || value <= 0 ? fallback : value;
+        return Math.min(normalized, max);
+    }
+
+    private String clean(String value, int maxLength) {
+        String normalized = value == null ? "" : value.trim();
+        if (maxLength > 0 && normalized.length() > maxLength) {
+            return normalized.substring(0, maxLength);
+        }
+        return normalized;
     }
 
     /**

@@ -243,6 +243,67 @@ public class AcademyRepository {
         return count != null && count > 0;
     }
 
+    public int updatePublishedOnlineOpenCourse(
+            long publisherUserId,
+            String courseId,
+            String courseName,
+            String teacherName,
+            String schoolName,
+            String category,
+            String startTime,
+            String semesterPlan,
+            String courseDetail,
+            String courseOverview,
+            String coverFilePath,
+            String videoFilePath
+    ) {
+        if (!isPublishedOnlineOpenCourseOwner(publisherUserId, courseId)) {
+            return 0;
+        }
+        int courseRows = jdbcTemplate.update(
+                """
+                UPDATE online_open_courses
+                SET course_name = ?,
+                    teacher_name = ?,
+                    school_name = ?,
+                    category = ?,
+                    start_time = ?,
+                    course_comment = ?,
+                    course_description = ?,
+                    cover_file_path = COALESCE(?, cover_file_path),
+                    source_url = ?
+                WHERE external_course_id = ?
+                """,
+                courseName,
+                teacherName,
+                schoolName,
+                category,
+                startTime,
+                courseOverview,
+                courseDetail,
+                coverFilePath,
+                "/academy/open-courses/" + courseId,
+                courseId
+        );
+        jdbcTemplate.update(
+                """
+                UPDATE teacher_published_courses
+                SET semester_plan = ?,
+                    course_overview = ?,
+                    course_detail = ?,
+                    video_file_path = COALESCE(?, video_file_path)
+                WHERE publisher_user_id = ? AND course_id = ?
+                """,
+                semesterPlan,
+                courseOverview,
+                courseDetail,
+                videoFilePath,
+                publisherUserId,
+                courseId
+        );
+        return courseRows;
+    }
+
     /**
      * 删除发布的在线公开课（级联删除关联数据）
      *

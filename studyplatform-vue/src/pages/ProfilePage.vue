@@ -2,11 +2,13 @@
 // 个人主页组件，展示用户学习数据、成就统计和课程管理功能
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import {
+  createTeacherAssignment,
   deletePublishedOnlineOpenCourse,
   fetchAcademyCategories,
   fetchMyPublishedOnlineOpenCourses,
   fetchTeacherWorkbench,
   publishOnlineOpenCourse,
+  updatePublishedOnlineOpenCourse,
 } from '../api/academy'
 import {
   checkAdminOjProblem,
@@ -140,6 +142,8 @@ const publishCourseError = ref('')
 const publishCourseCoverFile = ref(null)
 const publishCourseVideoFile = ref(null)
 const publishCourseCategories = ref([])
+const publishCourseMode = ref('create')
+const editingCourseId = ref('')
 const publishCourseForm = ref({
   courseName: '',
   startTime: '',
@@ -148,6 +152,11 @@ const publishCourseForm = ref({
   courseDetail: '',
   courseOverview: '',
 })
+const assignmentDialogOpen = ref(false)
+const assignmentSaving = ref(false)
+const assignmentError = ref('')
+const assignmentCourse = ref(null)
+const assignmentForm = ref(emptyAssignmentForm())
 const teacherOjProblems = ref([])
 const teacherOjCategories = ref([])
 const teacherOjLoading = ref(false)
@@ -576,6 +585,41 @@ function emptyTeacherOjForm() {
   }
 }
 
+function emptyAssignmentQuestion(type = 'single', index = 0) {
+  return {
+    type,
+    label: `第 ${index + 1} 题`,
+    title: '',
+    options: type === 'single' || type === 'multiple' ? ['', '', '', ''] : [],
+    correctAnswer: type === 'multiple' ? [] : '',
+    placeholderText: type === 'code' ? '请提交完整代码，并说明关键思路。' : '',
+    score: type === 'code' ? 30 : 10,
+    explanation: '',
+    ojProblemId: '',
+    autoGradable: type === 'single' || type === 'multiple' || type === 'blank',
+    requiresTeacherReview: type === 'short' || type === 'code',
+  }
+}
+
+function emptyAssignmentForm() {
+  const nextWeek = new Date()
+  nextWeek.setDate(nextWeek.getDate() + 7)
+  nextWeek.setHours(23, 59, 0, 0)
+  return {
+    title: '',
+    deadlineAt: nextWeek.toISOString().slice(0, 16),
+    attemptsLimit: 2,
+    durationMinutes: 60,
+    description: '',
+    questions: [
+      emptyAssignmentQuestion('single', 0),
+      emptyAssignmentQuestion('blank', 1),
+      emptyAssignmentQuestion('short', 2),
+      emptyAssignmentQuestion('code', 3),
+    ],
+  }
+}
+
 function parseTeacherOjTags(tags) {
   return String(tags || '')
     .split(',')
@@ -730,6 +774,79 @@ function formatTeacherOjActualOutput(caseResult) {
     return '实际输出：<程序输出为空>'
   }
   return `实际输出：\n${output}`
+}
+
+function relabelAssignmentQuestions() {
+  assignmentForm.value.questions.forEach((question, index) => {
+    if (!question.label || /^第 \d+ 题$/.test(question.label)) {
+      question.label = `第 ${index + 1} 题`
+    }
+  })
+}
+
+function changeAssignmentQuestionType(question, type) {
+  const index = assignmentForm.value.questions.indexOf(question)
+  const nextQuestion = emptyAssignmentQuestion(type, Math.max(index, 0))
+  nextQuestion.title = question.title
+  nextQuestion.score = question.score || nextQuestion.score
+  nextQuestion.explanation = question.explanation || ''
+  if (index >= 0) {
+    assignmentForm.value.questions.splice(index, 1, nextQuestion)
+  }
+}
+
+function addAssignmentQuestion(type = 'single') {
+  assignmentForm.value.questions.push(emptyAssignmentQuestion(type, assignmentForm.value.questions.length))
+}
+
+function removeAssignmentQuestion(index) {
+  if (assignmentForm.value.questions.length <= 1) {
+    showFeedback('至少保留一道题目')
+    return
+  }
+  assignmentForm.value.questions.splice(index, 1)
+  relabelAssignmentQuestions()
+}
+
+function toggleAssignmentMultipleAnswer(question, option, checked) {
+  const value = String(option || '').trim()
+  if (!value) return
+  const answers = Array.isArray(question.correctAnswer) ? question.correctAnswer : []
+  question.correctAnswer = checked
+    ? Array.from(new Set([...answers, value]))
+    : answers.filter((item) => item !== value)
+}
+
+function assignmentQuestionPayload(question) {
+  const options = Array.isArray(question.options)
+    ? question.options.map((item) => String(item || '').trim()).filter(Boolean)
+    : []
+  const isAutoType = ['single', 'multiple', 'blank'].includes(question.type)
+  return {
+    type: question.type,
+    label: question.label,
+    title: question.title,
+    options,
+    placeholderText: question.placeholderText,
+    score: Number(question.score || 0),
+    correctAnswer: question.type === 'multiple'
+      ? (Array.isArray(question.correctAnswer) ? question.correctAnswer : [])
+      : String(question.correctAnswer || '').trim(),
+    explanation: question.explanation,
+    autoGradable: isAutoType,
+    ojProblemId: question.type === 'code' && question.ojProblemId ? Number(question.ojProblemId) : null,
+    requiresTeacherReview: question.type === 'short' || question.type === 'code' || Boolean(question.requiresTeacherReview),
+  }
+}
+
+function formatAssignmentQuestionType(type) {
+  return ({
+    single: '单选题',
+    multiple: '多选题',
+    blank: '填空题',
+    short: '简答题',
+    code: 'OJ编程题',
+  })[type] || '题目'
 }
 
 // 重置单个元素的倾斜效果
@@ -1000,11 +1117,73 @@ const assignCourseClass = (course) => {
 
 // 打开布置作业入口
 const openAssignmentEntry = (course) => {
-  showFeedback(`《${course.name}》布置作业入口待实现`)
+  assignmentCourse.value = course
+  assignmentForm.value = emptyAssignmentForm()
+  assignmentForm.value.title = `${course.name}阶段练习`
+  assignmentForm.value.description = `围绕《${course.name}》近期教学内容布置的综合练习，包含客观题、主观题和 OJ 编程题。`
+  assignmentError.value = ''
+  assignmentDialogOpen.value = true
+  if (!teacherOjProblems.value.length) {
+    loadTeacherOjProblems()
+  }
+}
+
+const closeAssignmentDialog = () => {
+  if (assignmentSaving.value) return
+  assignmentDialogOpen.value = false
+  assignmentError.value = ''
+  assignmentCourse.value = null
+}
+
+const submitTeacherAssignment = async () => {
+  if (!assignmentCourse.value) return
+  assignmentSaving.value = true
+  assignmentError.value = ''
+  try {
+    const payload = {
+      courseId: assignmentCourse.value.id,
+      title: assignmentForm.value.title,
+      deadlineAt: assignmentForm.value.deadlineAt,
+      attemptsLimit: Number(assignmentForm.value.attemptsLimit || 1),
+      durationMinutes: Number(assignmentForm.value.durationMinutes || 60),
+      description: assignmentForm.value.description,
+      questions: assignmentForm.value.questions.map(assignmentQuestionPayload),
+    }
+    await createTeacherAssignment(payload)
+    await loadTeacherWorkbench()
+    assignmentDialogOpen.value = false
+    showFeedback('作业已布置')
+  } catch (error) {
+    assignmentError.value = error.message || '作业布置失败'
+    showFeedback(assignmentError.value)
+  } finally {
+    assignmentSaving.value = false
+  }
 }
 
 // 打开发布课程对话框
 const openPublishCourseDialog = () => {
+  publishCourseMode.value = 'create'
+  editingCourseId.value = ''
+  resetPublishCourseForm()
+  publishCourseDialogOpen.value = true
+  publishCourseError.value = ''
+  loadPublishCourseCategories()
+}
+
+const openEditCourseDialog = (course) => {
+  publishCourseMode.value = 'edit'
+  editingCourseId.value = course.id
+  publishCourseForm.value = {
+    courseName: course.name || '',
+    startTime: course.startTime || '',
+    category: course.category || '',
+    semesterPlan: course.semesterPlan || '',
+    courseDetail: course.description || '',
+    courseOverview: course.overview || course.comment || '',
+  }
+  publishCourseCoverFile.value = null
+  publishCourseVideoFile.value = null
   publishCourseDialogOpen.value = true
   publishCourseError.value = ''
   loadPublishCourseCategories()
@@ -1015,6 +1194,7 @@ const closePublishCourseDialog = () => {
   if (publishingCourse.value) return
   publishCourseDialogOpen.value = false
   publishCourseError.value = ''
+  editingCourseId.value = ''
 }
 
 // 处理课程封面选择
@@ -1044,7 +1224,7 @@ const resetPublishCourseForm = () => {
 // 提交发布课程表单
 const submitPublishCourseFromProfile = async () => {
   publishCourseError.value = ''
-  if (!publishCourseCoverFile.value || !publishCourseVideoFile.value) {
+  if (publishCourseMode.value === 'create' && (!publishCourseCoverFile.value || !publishCourseVideoFile.value)) {
     publishCourseError.value = '请上传课程封面和视频'
     return
   }
@@ -1056,18 +1236,26 @@ const submitPublishCourseFromProfile = async () => {
   Object.entries(publishCourseForm.value).forEach(([key, value]) => {
     formData.append(key, String(value || '').trim())
   })
-  formData.append('cover', publishCourseCoverFile.value)
-  formData.append('video', publishCourseVideoFile.value)
+  if (publishCourseCoverFile.value) {
+    formData.append('cover', publishCourseCoverFile.value)
+  }
+  if (publishCourseVideoFile.value) {
+    formData.append('video', publishCourseVideoFile.value)
+  }
 
   publishingCourse.value = true
   try {
-    await publishOnlineOpenCourse(formData)
+    if (publishCourseMode.value === 'edit' && editingCourseId.value) {
+      await updatePublishedOnlineOpenCourse(editingCourseId.value, formData)
+    } else {
+      await publishOnlineOpenCourse(formData)
+    }
     resetPublishCourseForm()
     await loadTeacherCourses()
     publishCourseDialogOpen.value = false
-    showFeedback('课程发布成功')
+    showFeedback(publishCourseMode.value === 'edit' ? '课程已更新' : '课程发布成功')
   } catch (error) {
-    publishCourseError.value = error.message || '课程发布失败'
+    publishCourseError.value = error.message || (publishCourseMode.value === 'edit' ? '课程更新失败' : '课程发布失败')
   } finally {
     publishingCourse.value = false
   }
@@ -1507,6 +1695,7 @@ onBeforeUnmount(() => {
               <!-- 课程操作 -->
               <div class="profile-teacher-course-actions">
                 <RouterLink :to="`/academy/open-courses/${encodeURIComponent(course.id)}`">查看课程</RouterLink>
+                <button type="button" @click="openEditCourseDialog(course)">编辑课程</button>
                 <button type="button" @click="openAssignmentEntry(course)">布置作业</button>
                 <button
                   type="button"
@@ -1787,12 +1976,12 @@ onBeforeUnmount(() => {
         <div class="online-course-publish-head">
           <div>
             <p>Teacher Course</p>
-            <h2 id="profile-publish-course-title">添加课程</h2>
+            <h2 id="profile-publish-course-title">{{ publishCourseMode === 'edit' ? '编辑课程' : '添加课程' }}</h2>
           </div>
           <button
             type="button"
             :disabled="publishingCourse"
-            aria-label="关闭添加课程窗口"
+            :aria-label="publishCourseMode === 'edit' ? '关闭编辑课程窗口' : '关闭添加课程窗口'"
             @click="closePublishCourseDialog"
           >
             ×
@@ -1843,25 +2032,30 @@ onBeforeUnmount(() => {
           </label>
           <div class="online-course-upload-grid">
             <label>
-              上传课程封面
-              <input type="file" accept="image/png,image/jpeg,image/webp" required @change="handlePublishCourseCoverSelected" />
-              <span>{{ publishCourseCoverFile?.name || '未选择文件' }}</span>
+              {{ publishCourseMode === 'edit' ? '替换课程封面' : '上传课程封面' }}
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                :required="publishCourseMode === 'create'"
+                @change="handlePublishCourseCoverSelected"
+              />
+              <span>{{ publishCourseCoverFile?.name || (publishCourseMode === 'edit' ? '不选择则保留原封面' : '未选择文件') }}</span>
             </label>
             <label>
-              上传课程视频
+              {{ publishCourseMode === 'edit' ? '替换课程视频' : '上传课程视频' }}
               <input
                 type="file"
                 accept="video/mp4,video/webm,video/ogg,video/quicktime"
-                required
+                :required="publishCourseMode === 'create'"
                 @change="handlePublishCourseVideoSelected"
               />
-              <span>{{ publishCourseVideoFile?.name || '未选择文件' }}</span>
+              <span>{{ publishCourseVideoFile?.name || (publishCourseMode === 'edit' ? '不选择则保留原视频' : '未选择文件') }}</span>
             </label>
           </div>
           <p v-if="publishCourseError" class="online-course-publish-message is-error">{{ publishCourseError }}</p>
           <div class="online-course-publish-actions">
             <button type="submit" :disabled="publishingCourse">
-              {{ publishingCourse ? '发布中...' : '确认发布' }}
+              {{ publishingCourse ? '保存中...' : (publishCourseMode === 'edit' ? '保存修改' : '确认发布') }}
             </button>
             <button type="button" :disabled="publishingCourse" @click="closePublishCourseDialog">取消</button>
           </div>
@@ -1984,6 +2178,160 @@ onBeforeUnmount(() => {
               {{ teacherOjSaving ? '保存中...' : '保存OJ题目' }}
             </button>
             <button type="button" :disabled="teacherOjSaving" @click="requestCloseTeacherOjDialog">取消</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <div
+      v-if="assignmentDialogOpen"
+      class="profile-modal-backdrop"
+      role="presentation"
+      @click.self="closeAssignmentDialog"
+    >
+      <section
+        class="profile-edit-dialog profile-assignment-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="profile-assignment-title"
+      >
+        <div class="profile-edit-head">
+          <div>
+            <p>Teacher Assignment</p>
+            <h2 id="profile-assignment-title">布置作业</h2>
+          </div>
+          <button type="button" :disabled="assignmentSaving" aria-label="关闭布置作业窗口" @click="closeAssignmentDialog">
+            ×
+          </button>
+        </div>
+
+        <form class="profile-assignment-form" @submit.prevent="submitTeacherAssignment">
+          <div class="profile-assignment-course">
+            <span>课程</span>
+            <strong>{{ assignmentCourse?.name }}</strong>
+          </div>
+          <div class="profile-teacher-oj-grid">
+            <label>
+              作业标题
+              <input v-model="assignmentForm.title" type="text" maxlength="255" required />
+            </label>
+            <label>
+              截止时间
+              <input v-model="assignmentForm.deadlineAt" type="datetime-local" required />
+            </label>
+          </div>
+          <div class="profile-teacher-oj-grid is-three">
+            <label>
+              提交次数
+              <input v-model.number="assignmentForm.attemptsLimit" type="number" min="1" max="10" required />
+            </label>
+            <label>
+              建议时长(分钟)
+              <input v-model.number="assignmentForm.durationMinutes" type="number" min="10" max="240" required />
+            </label>
+            <label>
+              题目数量
+              <input :value="assignmentForm.questions.length" type="number" readonly />
+            </label>
+          </div>
+          <label class="profile-assignment-wide-label">
+            作业说明
+            <textarea v-model="assignmentForm.description" rows="3" maxlength="2000" required></textarea>
+          </label>
+
+          <div class="profile-assignment-toolbar">
+            <button type="button" @click="addAssignmentQuestion('single')">单选题</button>
+            <button type="button" @click="addAssignmentQuestion('multiple')">多选题</button>
+            <button type="button" @click="addAssignmentQuestion('blank')">填空题</button>
+            <button type="button" @click="addAssignmentQuestion('short')">简答题</button>
+            <button type="button" @click="addAssignmentQuestion('code')">OJ题</button>
+          </div>
+
+          <div class="profile-assignment-question-list">
+            <article
+              v-for="(question, index) in assignmentForm.questions"
+              :key="index"
+              class="profile-assignment-question"
+            >
+              <header>
+                <strong>{{ question.label }} · {{ formatAssignmentQuestionType(question.type) }}</strong>
+                <button type="button" aria-label="删除题目" @click="removeAssignmentQuestion(index)">×</button>
+              </header>
+              <div class="profile-teacher-oj-grid is-three">
+                <label>
+                  题型
+                  <select :value="question.type" @change="changeAssignmentQuestionType(question, $event.target.value)">
+                    <option value="single">单选题</option>
+                    <option value="multiple">多选题</option>
+                    <option value="blank">填空题</option>
+                    <option value="short">简答题</option>
+                    <option value="code">OJ编程题</option>
+                  </select>
+                </label>
+                <label>
+                  题号标签
+                  <input v-model="question.label" type="text" maxlength="64" />
+                </label>
+                <label>
+                  分值
+                  <input v-model.number="question.score" type="number" min="1" max="100" required />
+                </label>
+              </div>
+              <textarea v-model="question.title" rows="3" placeholder="题干" required></textarea>
+
+              <div v-if="question.type === 'single' || question.type === 'multiple'" class="profile-assignment-options">
+                <label v-for="(_, optionIndex) in question.options" :key="optionIndex">
+                  选项 {{ optionIndex + 1 }}
+                  <input v-model="question.options[optionIndex]" type="text" maxlength="255" required />
+                  <span v-if="question.type === 'single'">
+                    <input v-model="question.correctAnswer" type="radio" :value="question.options[optionIndex]" />
+                    正确
+                  </span>
+                  <span v-else>
+                    <input
+                      type="checkbox"
+                      :checked="Array.isArray(question.correctAnswer) && question.correctAnswer.includes(question.options[optionIndex])"
+                      @change="toggleAssignmentMultipleAnswer(question, question.options[optionIndex], $event.target.checked)"
+                    />
+                    正确
+                  </span>
+                </label>
+              </div>
+
+              <label v-else-if="question.type === 'blank'" class="profile-assignment-wide-label">
+                参考答案
+                <input v-model="question.correctAnswer" type="text" maxlength="255" required />
+              </label>
+
+              <div v-else-if="question.type === 'code'" class="profile-teacher-oj-grid">
+                <label>
+                  关联OJ题目
+                  <select v-model="question.ojProblemId" required>
+                    <option value="" disabled>请选择OJ题目</option>
+                    <option v-for="problem in teacherOjProblems" :key="problem.id" :value="problem.id">
+                      {{ problem.title }} · {{ formatDifficulty(problem.difficulty) }}
+                    </option>
+                  </select>
+                </label>
+                <label>
+                  代码提示
+                  <input v-model="question.placeholderText" type="text" maxlength="1000" />
+                </label>
+              </div>
+
+              <label v-if="question.type !== 'code'" class="profile-assignment-wide-label">
+                解析或批改提示
+                <input v-model="question.explanation" type="text" maxlength="1000" />
+              </label>
+            </article>
+          </div>
+
+          <p v-if="assignmentError" class="online-course-publish-message is-error">{{ assignmentError }}</p>
+          <div class="online-course-publish-actions">
+            <button type="submit" :disabled="assignmentSaving">
+              {{ assignmentSaving ? '保存中...' : '确认布置' }}
+            </button>
+            <button type="button" :disabled="assignmentSaving" @click="closeAssignmentDialog">取消</button>
           </div>
         </form>
       </section>

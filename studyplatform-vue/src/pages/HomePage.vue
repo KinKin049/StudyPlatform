@@ -44,20 +44,25 @@ const guestParticlePath = [
   [87.2, 16.6],
   [90.5, 2.7],
 ]
+const guestParticleSpread = 7.2
 const guestParticles = Array.from({ length: 420 }, (_, index) => {
   const lane = index % 28
   const band = Math.floor(index / 28)
   const laneOffset = lane - 14
-  const startJitterX = ((index * 17) % 70) / 10 - 3.5
-  const startJitterY = ((index * 23) % 56) / 10 - 2.8
+  const startJitterX = (((index * 17) % 70) / 10 - 3.5) * guestParticleSpread
+  const startJitterY = (((index * 23) % 56) / 10 - 2.8) * guestParticleSpread
   const arcJitter = ((index * 13) % 80) / 10 - 4
   const depthJitter = ((index * 19) % 70) / 10 - 3.5
   const nearBrand = lane > 8 && lane < 20 && band > 4 && band < 11
   const point = (pointIndex, jitterScaleX = 0.16, jitterScaleY = 0.16) => {
     const [x, y] = guestParticlePath[pointIndex]
+    const alternatingBand = band % 2 === 0 ? 1 : -1
     return {
-      x: x + laneOffset * 0.1 + arcJitter * jitterScaleX,
-      y: y + depthJitter * jitterScaleY,
+      x: x + laneOffset * 0.1 * guestParticleSpread + arcJitter * jitterScaleX * guestParticleSpread,
+      y:
+        y +
+        depthJitter * jitterScaleY * guestParticleSpread +
+        laneOffset * alternatingBand * 0.06 * guestParticleSpread,
     }
   }
   const pathPoints = guestParticlePath.map((_, pointIndex) => point(pointIndex))
