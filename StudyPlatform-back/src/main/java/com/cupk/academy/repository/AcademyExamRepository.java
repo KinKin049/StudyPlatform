@@ -67,7 +67,15 @@ public class AcademyExamRepository {
                   )
                 WHERE e.course_resource_type <> 'random-paper' OR e.course_id = CONCAT('user-', ?)
                 GROUP BY e.id, latest.id
-                ORDER BY e.starts_at ASC, e.deadline_at DESC, e.id DESC
+                ORDER BY
+                  CASE
+                    WHEN latest.submission_status IN ('graded', 'pending_review')
+                      OR e.exam_status = '已结束'
+                      OR (e.deadline_at IS NOT NULL AND e.deadline_at < NOW())
+                    THEN 1 ELSE 0
+                  END ASC,
+                  COALESCE(e.starts_at, e.deadline_at, STR_TO_DATE('9999-12-31 23:59:59', '%Y-%m-%d %H:%i:%s')) ASC,
+                  e.id DESC
                 """;
         return jdbcTemplate.query(sql, examSummaryMapper(), userId, userId);
     }

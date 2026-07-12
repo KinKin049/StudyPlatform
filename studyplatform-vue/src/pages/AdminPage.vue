@@ -92,6 +92,10 @@ const confirmDialog = reactive({
   pending: false,
   onConfirm: null,
 })
+const batchDelete = reactive({
+  scope: '',
+  selected: {},
+})
 
 // 表单数据
 const courseForm = reactive(emptyCourseForm())
@@ -252,6 +256,221 @@ async function handleQuestionSetFilterChange() {
 
 function reviewKey(review) {
   return `${review.reviewType || 'course'}-${review.id}`
+}
+
+function itemKey(value) {
+  return String(value ?? '')
+}
+
+function batchSelectedSet(scope) {
+  return batchDelete.selected[scope] || new Set()
+}
+
+function isBatchDeleteMode(scope) {
+  return batchDelete.scope === scope
+}
+
+function selectedBatchCount(scope) {
+  return batchSelectedSet(scope).size
+}
+
+function isBatchSelected(scope, key) {
+  return batchSelectedSet(scope).has(itemKey(key))
+}
+
+function startBatchDelete(scope) {
+  batchDelete.scope = scope
+  batchDelete.selected = {
+    ...batchDelete.selected,
+    [scope]: new Set(),
+  }
+}
+
+function cancelBatchDelete() {
+  const scope = batchDelete.scope
+  batchDelete.scope = ''
+  if (scope) {
+    batchDelete.selected = {
+      ...batchDelete.selected,
+      [scope]: new Set(),
+    }
+  }
+}
+
+function switchAdminTab(tabKey) {
+  activeTab.value = tabKey
+  cancelBatchDelete()
+}
+
+function switchQuestionBankMode(mode) {
+  questionBankMode.value = mode
+  cancelBatchDelete()
+}
+
+function setBatchSelection(scope, key, checked) {
+  const normalizedKey = itemKey(key)
+  const next = new Set(batchSelectedSet(scope))
+  if (checked) {
+    next.add(normalizedKey)
+  } else {
+    next.delete(normalizedKey)
+  }
+  batchDelete.selected = {
+    ...batchDelete.selected,
+    [scope]: next,
+  }
+}
+
+function selectableBatchItems(items, getKey, canSelect = () => true) {
+  return items.filter((item) => item && canSelect(item) && itemKey(getKey(item)))
+}
+
+function setAllBatchSelection(scope, items, getKey, checked, canSelect = () => true) {
+  const next = checked
+    ? new Set(selectableBatchItems(items, getKey, canSelect).map((item) => itemKey(getKey(item))))
+    : new Set()
+  batchDelete.selected = {
+    ...batchDelete.selected,
+    [scope]: next,
+  }
+}
+
+function selectedBatchItems(scope, items, getKey, canSelect = () => true) {
+  const selected = batchSelectedSet(scope)
+  return selectableBatchItems(items, getKey, canSelect).filter((item) => selected.has(itemKey(getKey(item))))
+}
+
+function confirmBatchDelete({ scope, title, itemName, items, getKey, getLabel, deleteItem, reload, canSelect, afterDelete }) {
+  const selectedItems = selectedBatchItems(scope, items, getKey, canSelect)
+  if (!selectedItems.length) {
+    message.value = '请先勾选要删除的数据'
+    return
+  }
+  const preview = selectedItems.slice(0, 5).map(getLabel).join('、')
+  const suffix = selectedItems.length > 5 ? ` 等 ${selectedItems.length} 项` : ''
+  openConfirm({
+    title,
+    message: `确认批量删除 ${selectedItems.length} 个${itemName}：${preview}${suffix}？`,
+    confirmText: '批量删除',
+    onConfirm: async () => {
+      await runTask(async () => {
+        for (const item of selectedItems) {
+          await deleteItem(item)
+        }
+        if (afterDelete) {
+          await afterDelete(selectedItems)
+        }
+        cancelBatchDelete()
+        await reload()
+      }, `已删除 ${selectedItems.length} 个${itemName}`)
+    },
+  })
+}
+
+function isUserBatchSelectable(user) {
+  return user.roleType !== 'admin'
+}
+
+function confirmBatchDeleteUsers() {
+  confirmBatchDelete({
+    scope: 'users',
+    title: '批量删除用户',
+    itemName: '用户',
+    items: filteredUsers.value,
+    getKey: (user) => user.id,
+    getLabel: (user) => user.username || user.email || user.id,
+    deleteItem: (user) => deleteAdminUser(user.id),
+    reload: loadUsers,
+    canSelect: isUserBatchSelectable,
+  })
+}
+
+function confirmBatchDeleteCourses() {
+  confirmBatchDelete({
+    scope: 'courses',
+    title: '批量删除课程',
+    itemName: '课程',
+    items: filteredCourses.value,
+    getKey: (course) => course.id,
+    getLabel: (course) => course.name || course.id,
+    deleteItem: (course) => deleteAdminCourse(selectedResourceType.value, course.id),
+    reload: loadCourses,
+  })
+}
+
+function confirmBatchDeleteVouchers() {
+  confirmBatchDelete({
+    scope: 'vouchers',
+    title: '批量下架卡券',
+    itemName: '卡券',
+    items: filteredVouchers.value,
+    getKey: (voucher) => voucher.voucherKey,
+    getLabel: (voucher) => voucher.name || voucher.voucherKey,
+    deleteItem: (voucher) => deleteAdminVoucher(voucher.voucherKey),
+    reload: loadVouchers,
+  })
+}
+
+function confirmBatchDeleteOjProblems() {
+  confirmBatchDelete({
+    scope: 'oj-problems',
+    title: '批量删除OJ题目',
+    itemName: 'OJ题目',
+    items: filteredOjProblems.value,
+    getKey: (problem) => problem.id,
+    getLabel: (problem) => problem.title || problem.slug || problem.id,
+    deleteItem: (problem) => deleteAdminOjProblem(problem.id),
+    afterDelete: (deletedProblems) => {
+      if (deletedProblems.some((problem) => problem.id === editorOjForm.id)) {
+        Object.assign(editorOjForm, emptyOjForm())
+        editorOjCheckResult.value = null
+        closeEditor()
+      }
+    },
+    reload: loadOjProblems,
+  })
+}
+
+function confirmBatchDeleteQuestions() {
+  confirmBatchDelete({
+    scope: 'questions',
+    title: '批量删除题目',
+    itemName: '题目',
+    items: filteredQuestions.value,
+    getKey: (question) => question.id,
+    getLabel: (question) => question.stem || question.id,
+    deleteItem: (question) => deleteAdminQuestion(question.id),
+    reload: loadQuestions,
+  })
+}
+
+function confirmBatchDeleteSets() {
+  confirmBatchDelete({
+    scope: 'question-sets',
+    title: '批量删除题库',
+    itemName: '题库',
+    items: filteredQuestionSets.value,
+    getKey: (set) => set.code,
+    getLabel: (set) => set.title || set.code,
+    deleteItem: (set) => deleteAdminQuestionBankSet(set.code),
+    reload: async () => {
+      selectedSetCode.value = ''
+      await loadQuestionSets()
+    },
+  })
+}
+
+function confirmBatchDeleteReviews(scope, items, label) {
+  confirmBatchDelete({
+    scope,
+    title: `批量删除${label}`,
+    itemName: label,
+    items,
+    getKey: reviewKey,
+    getLabel: (review) => review.content || review.userName || review.id,
+    deleteItem: (review) => deleteAdminReview(review.reviewType || 'course', review.id),
+    reload: loadReviews,
+  })
 }
 
 function reviewTarget(review) {
@@ -1251,7 +1470,7 @@ onMounted(async () => {
             :key="tab.key"
             type="button"
             :class="{ active: activeTab === tab.key }"
-            @click="activeTab = tab.key"
+            @click="switchAdminTab(tab.key)"
           >
             {{ tab.label }}
           </button>
@@ -1269,8 +1488,34 @@ onMounted(async () => {
                 <input v-model="userSearch" placeholder="搜索用户序号、邮箱或名称" />
               </label>
             </div>
+            <div class="admin-batch-toolbar">
+              <template v-if="isBatchDeleteMode('users')">
+                <label class="admin-batch-check">
+                  <input
+                    type="checkbox"
+                    :checked="selectedBatchCount('users') > 0 && selectedBatchCount('users') === selectableBatchItems(filteredUsers, (user) => user.id, isUserBatchSelectable).length"
+                    @change="setAllBatchSelection('users', filteredUsers, (user) => user.id, $event.target.checked, isUserBatchSelectable)"
+                  />
+                  全选
+                </label>
+                <span>已选 {{ selectedBatchCount('users') }} 项</span>
+                <button type="button" class="admin-action-delete" :disabled="!selectedBatchCount('users')" @click="confirmBatchDeleteUsers">
+                  确认删除
+                </button>
+                <button type="button" @click="cancelBatchDelete">取消</button>
+              </template>
+              <button v-else type="button" class="admin-action-delete" @click="startBatchDelete('users')">批量删除</button>
+            </div>
             <div class="admin-table">
               <article v-for="user in filteredUsers" :key="user.id" class="admin-row">
+                <label v-if="isBatchDeleteMode('users')" class="admin-batch-check">
+                  <input
+                    type="checkbox"
+                    :checked="isBatchSelected('users', user.id)"
+                    :disabled="!isUserBatchSelectable(user)"
+                    @change="setBatchSelection('users', user.id, $event.target.checked)"
+                  />
+                </label>
                 <strong>{{ user.username }}</strong>
                 <span>{{ user.email }}</span>
                 <span>{{ user.roleType === 'teacher' ? '教师' : user.roleType === 'admin' ? '管理员' : '学生' }}</span>
@@ -1394,9 +1639,34 @@ onMounted(async () => {
                 <input v-model="courseSearch" placeholder="搜索课程名称或编号" />
               </label>
             </div>
+            <div class="admin-batch-toolbar">
+              <template v-if="isBatchDeleteMode('courses')">
+                <label class="admin-batch-check">
+                  <input
+                    type="checkbox"
+                    :checked="selectedBatchCount('courses') > 0 && selectedBatchCount('courses') === selectableBatchItems(filteredCourses, (course) => course.id).length"
+                    @change="setAllBatchSelection('courses', filteredCourses, (course) => course.id, $event.target.checked)"
+                  />
+                  全选
+                </label>
+                <span>已选 {{ selectedBatchCount('courses') }} 项</span>
+                <button type="button" class="admin-action-delete" :disabled="!selectedBatchCount('courses')" @click="confirmBatchDeleteCourses">
+                  确认删除
+                </button>
+                <button type="button" @click="cancelBatchDelete">取消</button>
+              </template>
+              <button v-else type="button" class="admin-action-delete" @click="startBatchDelete('courses')">批量删除</button>
+            </div>
             <!-- 课程列表 -->
             <div class="admin-card-grid">
               <article v-for="course in filteredCourses" :key="course.id" class="admin-card">
+                <label v-if="isBatchDeleteMode('courses')" class="admin-batch-check">
+                  <input
+                    type="checkbox"
+                    :checked="isBatchSelected('courses', course.id)"
+                    @change="setBatchSelection('courses', course.id, $event.target.checked)"
+                  />
+                </label>
                 <strong>{{ course.name }}</strong>
               <span>{{ course.id }} · {{ course.category }}</span>
               <em>{{ course.certificationLabel || '无认证标签' }}</em>
@@ -1518,9 +1788,34 @@ onMounted(async () => {
                 <input v-model="voucherSearch" placeholder="按卡券编号搜索" />
               </label>
             </div>
+            <div class="admin-batch-toolbar">
+              <template v-if="isBatchDeleteMode('vouchers')">
+                <label class="admin-batch-check">
+                  <input
+                    type="checkbox"
+                    :checked="selectedBatchCount('vouchers') > 0 && selectedBatchCount('vouchers') === selectableBatchItems(filteredVouchers, (voucher) => voucher.voucherKey).length"
+                    @change="setAllBatchSelection('vouchers', filteredVouchers, (voucher) => voucher.voucherKey, $event.target.checked)"
+                  />
+                  全选
+                </label>
+                <span>已选 {{ selectedBatchCount('vouchers') }} 项</span>
+                <button type="button" class="admin-action-delete" :disabled="!selectedBatchCount('vouchers')" @click="confirmBatchDeleteVouchers">
+                  确认下架
+                </button>
+                <button type="button" @click="cancelBatchDelete">取消</button>
+              </template>
+              <button v-else type="button" class="admin-action-delete" @click="startBatchDelete('vouchers')">批量删除</button>
+            </div>
             <!-- 卡券列表 -->
             <div class="admin-card-grid">
               <article v-for="voucher in filteredVouchers" :key="voucher.voucherKey" class="admin-card">
+                <label v-if="isBatchDeleteMode('vouchers')" class="admin-batch-check">
+                  <input
+                    type="checkbox"
+                    :checked="isBatchSelected('vouchers', voucher.voucherKey)"
+                    @change="setBatchSelection('vouchers', voucher.voucherKey, $event.target.checked)"
+                  />
+                </label>
                 <strong>{{ voucher.name }}</strong>
               <span>{{ voucher.voucherKey }}</span>
               <span>{{ formatVoucherSummary(voucher) }}</span>
@@ -1548,8 +1843,8 @@ onMounted(async () => {
           <section v-if="activeTab === 'question-bank'" class="admin-panel">
             <h2>题库管理</h2>
             <div class="admin-mode-switch">
-              <button type="button" :class="{ active: questionBankMode === 'course' }" @click="questionBankMode = 'course'">课程题库</button>
-              <button type="button" :class="{ active: questionBankMode === 'oj' }" @click="questionBankMode = 'oj'">OJ题库</button>
+              <button type="button" :class="{ active: questionBankMode === 'course' }" @click="switchQuestionBankMode('course')">课程题库</button>
+              <button type="button" :class="{ active: questionBankMode === 'oj' }" @click="switchQuestionBankMode('oj')">OJ题库</button>
             </div>
             <div class="admin-search-row admin-question-search">
                             <label class="admin-field">
@@ -1699,8 +1994,33 @@ onMounted(async () => {
                   <span>{{ ojCheckResult.message }}</span>
                 </div>
               </form>
+              <div class="admin-batch-toolbar">
+                <template v-if="isBatchDeleteMode('oj-problems')">
+                  <label class="admin-batch-check">
+                    <input
+                      type="checkbox"
+                      :checked="selectedBatchCount('oj-problems') > 0 && selectedBatchCount('oj-problems') === selectableBatchItems(filteredOjProblems, (problem) => problem.id).length"
+                      @change="setAllBatchSelection('oj-problems', filteredOjProblems, (problem) => problem.id, $event.target.checked)"
+                    />
+                    全选
+                  </label>
+                  <span>已选 {{ selectedBatchCount('oj-problems') }} 项</span>
+                  <button type="button" class="admin-action-delete" :disabled="!selectedBatchCount('oj-problems')" @click="confirmBatchDeleteOjProblems">
+                    确认删除
+                  </button>
+                  <button type="button" @click="cancelBatchDelete">取消</button>
+                </template>
+                <button v-else type="button" class="admin-action-delete" @click="startBatchDelete('oj-problems')">批量删除</button>
+              </div>
               <div class="admin-card-grid">
                 <article v-for="problem in filteredOjProblems" :key="problem.id" class="admin-card">
+                  <label v-if="isBatchDeleteMode('oj-problems')" class="admin-batch-check">
+                    <input
+                      type="checkbox"
+                      :checked="isBatchSelected('oj-problems', problem.id)"
+                      @change="setBatchSelection('oj-problems', problem.id, $event.target.checked)"
+                    />
+                  </label>
                   <strong>{{ problem.title }}</strong>
                   <span>{{ problem.slug }} · {{ formatOjCategoryName(problem.category) || '未分类' }} · {{ formatDifficulty(problem.difficulty) }} · {{ problem.status }}</span>
                   <div class="admin-actions">
@@ -1764,16 +2084,41 @@ onMounted(async () => {
               </form>
 
                 <!-- 题库列表 -->
+                <div class="admin-batch-toolbar">
+                  <template v-if="isBatchDeleteMode('question-sets')">
+                    <label class="admin-batch-check">
+                      <input
+                        type="checkbox"
+                        :checked="selectedBatchCount('question-sets') > 0 && selectedBatchCount('question-sets') === selectableBatchItems(filteredQuestionSets, (set) => set.code).length"
+                        @change="setAllBatchSelection('question-sets', filteredQuestionSets, (set) => set.code, $event.target.checked)"
+                      />
+                      全选
+                    </label>
+                    <span>已选 {{ selectedBatchCount('question-sets') }} 项</span>
+                    <button type="button" class="admin-action-delete" :disabled="!selectedBatchCount('question-sets')" @click="confirmBatchDeleteSets">
+                      确认删除
+                    </button>
+                    <button type="button" @click="cancelBatchDelete">取消</button>
+                  </template>
+                  <button v-else type="button" class="admin-action-delete" @click="startBatchDelete('question-sets')">批量删除</button>
+                </div>
                 <div class="admin-list">
-                  <button
+                  <div
                     v-for="set in filteredQuestionSets"
                     :key="set.code"
-                    type="button"
-                    :class="{ active: selectedSetCode === set.code }"
-                    @click="fillSet(set)"
+                    :class="['admin-list-selectable', { active: selectedSetCode === set.code }]"
                   >
-                    {{ set.title }} · {{ set.questionCount }}
-                  </button>
+                    <label v-if="isBatchDeleteMode('question-sets')" class="admin-batch-check">
+                      <input
+                        type="checkbox"
+                        :checked="isBatchSelected('question-sets', set.code)"
+                        @change="setBatchSelection('question-sets', set.code, $event.target.checked)"
+                      />
+                    </label>
+                    <button type="button" @click="fillSet(set)">
+                      {{ set.title }} · {{ set.questionCount }}
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -1830,8 +2175,33 @@ onMounted(async () => {
               </form>
 
                 <!-- 题目列表 -->
+                <div class="admin-batch-toolbar">
+                  <template v-if="isBatchDeleteMode('questions')">
+                    <label class="admin-batch-check">
+                      <input
+                        type="checkbox"
+                        :checked="selectedBatchCount('questions') > 0 && selectedBatchCount('questions') === selectableBatchItems(filteredQuestions, (question) => question.id).length"
+                        @change="setAllBatchSelection('questions', filteredQuestions, (question) => question.id, $event.target.checked)"
+                      />
+                      全选
+                    </label>
+                    <span>已选 {{ selectedBatchCount('questions') }} 项</span>
+                    <button type="button" class="admin-action-delete" :disabled="!selectedBatchCount('questions')" @click="confirmBatchDeleteQuestions">
+                      确认删除
+                    </button>
+                    <button type="button" @click="cancelBatchDelete">取消</button>
+                  </template>
+                  <button v-else type="button" class="admin-action-delete" @click="startBatchDelete('questions')">批量删除</button>
+                </div>
                 <div class="admin-card-grid">
                   <article v-for="question in filteredQuestions" :key="question.id" class="admin-card">
+                    <label v-if="isBatchDeleteMode('questions')" class="admin-batch-check">
+                      <input
+                        type="checkbox"
+                        :checked="isBatchSelected('questions', question.id)"
+                        @change="setBatchSelection('questions', question.id, $event.target.checked)"
+                      />
+                    </label>
                     <strong>{{ question.stem }}</strong>
                   <span>{{ question.type }} · {{ question.answer }}</span>
                   <div class="admin-actions">
@@ -1866,8 +2236,38 @@ onMounted(async () => {
 
             <section class="admin-review-section">
               <h3>课程评论管理</h3>
+              <div class="admin-batch-toolbar">
+                <template v-if="isBatchDeleteMode('course-reviews')">
+                  <label class="admin-batch-check">
+                    <input
+                      type="checkbox"
+                      :checked="selectedBatchCount('course-reviews') > 0 && selectedBatchCount('course-reviews') === selectableBatchItems(filteredCourseReviews, reviewKey).length"
+                      @change="setAllBatchSelection('course-reviews', filteredCourseReviews, reviewKey, $event.target.checked)"
+                    />
+                    全选
+                  </label>
+                  <span>已选 {{ selectedBatchCount('course-reviews') }} 项</span>
+                  <button
+                    type="button"
+                    class="admin-action-delete"
+                    :disabled="!selectedBatchCount('course-reviews')"
+                    @click="confirmBatchDeleteReviews('course-reviews', filteredCourseReviews, '课程评论')"
+                  >
+                    确认删除
+                  </button>
+                  <button type="button" @click="cancelBatchDelete">取消</button>
+                </template>
+                <button v-else type="button" class="admin-action-delete" @click="startBatchDelete('course-reviews')">批量删除</button>
+              </div>
               <div class="admin-card-grid">
                 <article v-for="review in filteredCourseReviews" :key="reviewKey(review)" class="admin-card admin-review-card">
+                  <label v-if="isBatchDeleteMode('course-reviews')" class="admin-batch-check">
+                    <input
+                      type="checkbox"
+                      :checked="isBatchSelected('course-reviews', reviewKey(review))"
+                      @change="setBatchSelection('course-reviews', reviewKey(review), $event.target.checked)"
+                    />
+                  </label>
                   <strong>
                     <span class="admin-review-author">
                       {{ review.userName || '匿名用户' }}
@@ -1905,8 +2305,38 @@ onMounted(async () => {
 
             <section class="admin-review-section">
               <h3>教材评论管理</h3>
+              <div class="admin-batch-toolbar">
+                <template v-if="isBatchDeleteMode('textbook-reviews')">
+                  <label class="admin-batch-check">
+                    <input
+                      type="checkbox"
+                      :checked="selectedBatchCount('textbook-reviews') > 0 && selectedBatchCount('textbook-reviews') === selectableBatchItems(filteredTextbookReviews, reviewKey).length"
+                      @change="setAllBatchSelection('textbook-reviews', filteredTextbookReviews, reviewKey, $event.target.checked)"
+                    />
+                    全选
+                  </label>
+                  <span>已选 {{ selectedBatchCount('textbook-reviews') }} 项</span>
+                  <button
+                    type="button"
+                    class="admin-action-delete"
+                    :disabled="!selectedBatchCount('textbook-reviews')"
+                    @click="confirmBatchDeleteReviews('textbook-reviews', filteredTextbookReviews, '教材评论')"
+                  >
+                    确认删除
+                  </button>
+                  <button type="button" @click="cancelBatchDelete">取消</button>
+                </template>
+                <button v-else type="button" class="admin-action-delete" @click="startBatchDelete('textbook-reviews')">批量删除</button>
+              </div>
               <div class="admin-card-grid">
                 <article v-for="review in filteredTextbookReviews" :key="reviewKey(review)" class="admin-card admin-review-card">
+                  <label v-if="isBatchDeleteMode('textbook-reviews')" class="admin-batch-check">
+                    <input
+                      type="checkbox"
+                      :checked="isBatchSelected('textbook-reviews', reviewKey(review))"
+                      @change="setBatchSelection('textbook-reviews', reviewKey(review), $event.target.checked)"
+                    />
+                  </label>
                   <strong>
                     <span class="admin-review-author">
                       {{ review.userName || '匿名用户' }}
@@ -2257,7 +2687,8 @@ onMounted(async () => {
 
 .admin-tabs button,
 .admin-actions button,
-.admin-list button {
+.admin-list button,
+.admin-batch-toolbar button {
   border: 1px solid rgba(15, 23, 42, 0.12);
   border-radius: 12px;
   background: #ffffff;
@@ -2510,6 +2941,47 @@ onMounted(async () => {
   color: #ffffff;
 }
 
+.admin-batch-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 12px;
+  background: rgba(248, 250, 252, 0.9);
+  color: #475569;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.admin-batch-toolbar button {
+  min-height: 34px;
+  padding: 0 12px;
+}
+
+.admin-batch-toolbar .admin-action-delete {
+  border-color: rgba(248, 113, 113, 0.32);
+  background: #f87171;
+  color: #ffffff;
+}
+
+.admin-batch-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: max-content;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.admin-batch-check input {
+  width: 16px;
+  height: 16px;
+  accent-color: #ef4444;
+}
+
 .admin-mode-switch {
   display: inline-flex;
   gap: 6px;
@@ -2696,6 +3168,21 @@ onMounted(async () => {
 .admin-card {
   display: grid;
   gap: 8px;
+}
+
+.admin-list-selectable {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-list-selectable button {
+  width: 100%;
+}
+
+.admin-list-selectable:not(:has(.admin-batch-check)) {
+  grid-template-columns: 1fr;
 }
 
 .admin-card strong,

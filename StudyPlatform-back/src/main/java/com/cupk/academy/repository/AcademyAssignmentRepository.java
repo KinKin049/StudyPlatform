@@ -65,7 +65,15 @@ public class AcademyAssignmentRepository {
                     LIMIT 1
                   )
                 GROUP BY a.id, latest.id
-                ORDER BY a.deadline_at DESC, a.id DESC
+                ORDER BY
+                  CASE
+                    WHEN latest.submission_status IN ('graded', 'pending_review')
+                      OR a.assignment_status = '已结束'
+                      OR (a.deadline_at IS NOT NULL AND a.deadline_at < NOW())
+                    THEN 1 ELSE 0
+                  END ASC,
+                  COALESCE(a.deadline_at, STR_TO_DATE('9999-12-31 23:59:59', '%Y-%m-%d %H:%i:%s')) ASC,
+                  a.id DESC
                 """;
         return jdbcTemplate.query(sql, assignmentSummaryMapper(), userId);
     }

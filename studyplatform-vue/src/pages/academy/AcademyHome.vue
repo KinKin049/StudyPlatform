@@ -23,7 +23,7 @@ const fallbackSections = [
     items: [
       { title: '人工智能导论', category: '在线开放课程', meta: '32 学时 · 8 个章节' },
       { title: '大学生创新实践', category: '通识课程', meta: '24 学时 · 项目制学习' },
-      { title: '数据分析微专业', category: '微专业课程', meta: '6 门课 · 能力认证' },
+      { title: '创新工程实践', category: '微专业课程', meta: '创新创业微专业 · 项目制学习' },
     ],
   },
   {
@@ -32,7 +32,7 @@ const fallbackSections = [
     items: [
       { title: 'C语言程序设计（下）', category: '待提交', meta: '第 3 章函数练习 · 截止本周五' },
       { title: '劳动通论', category: '进行中', meta: '专题讨论 1 篇 · 已完成 60%' },
-      { title: '数据分析微专业', category: '待批阅', meta: '项目报告已提交 · 等待教师反馈' },
+      { title: '创新工程实践', category: '待批阅', meta: '项目报告已提交 · 等待教师反馈' },
     ],
   },
   {
@@ -112,14 +112,14 @@ const overviewStats = [
 const recentCourses = [
   { title: 'C语言程序设计（下）', meta: '上次学习到：指针与数组', path: '/academy/open-courses' },
   { title: '劳动通论', meta: '专题讨论已完成 60%', path: '/academy/general-courses' },
-  { title: '数据分析微专业', meta: '项目报告等待反馈', path: '/academy/micro-majors' },
+  { title: '创新工程实践', meta: '项目报告等待反馈', path: '/academy/micro-majors/26341267' },
 ]
 
 // 默认课程动态数据
 const courseFeeds = [
   '程序设计单元测试已开放，7 月 8 日前完成',
   '劳动通论发布了新的专题讨论',
-  '数据分析微专业新增项目案例资料',
+  '创新工程实践新增项目案例资料',
 ]
 
 /**
@@ -127,12 +127,9 @@ const courseFeeds = [
  * 过滤掉已批阅和已结束的作业，只保留待提交的作业
  */
 const pendingAssignments = computed(() =>
-  assignments.value.filter((assignment) => {
-    if (assignment.submissionStatus === 'graded' || assignment.submissionStatus === 'pending_review') {
-      return false
-    }
-    return assignment.status !== '已结束' && !isDeadlinePassed(assignment.deadline)
-  }),
+  assignments.value
+    .filter(isAssignmentUnfinished)
+    .sort(sortAssignmentsByPriority),
 )
 
 /**
@@ -140,12 +137,9 @@ const pendingAssignments = computed(() =>
  * 过滤掉已结束的考试，只保留即将开始、正在进行的考试
  */
 const upcomingExams = computed(() =>
-  exams.value.filter((exam) => {
-    if (exam.status === '已结束' || isDeadlinePassed(exam.deadline)) {
-      return false
-    }
-    return exam.status === '即将开始' || isBeforeStart(exam.startsAt) || exam.status === '正在进行'
-  }),
+  exams.value
+    .filter(isExamUnfinished)
+    .sort(sortExamsByPriority),
 )
 
 /**
@@ -717,6 +711,37 @@ const isBeforeStart = (startsAt) => {
 const getTimeValue = (value) => {
   const time = new Date(value || 0).getTime()
   return Number.isFinite(time) ? time : 0
+}
+
+const getNearestTimeValue = (...values) => {
+  const times = values.map(getTimeValue).filter((time) => time > 0)
+  return times.length ? Math.min(...times) : Number.MAX_SAFE_INTEGER
+}
+
+const isAssignmentUnfinished = (assignment) => {
+  if (assignment.submissionStatus === 'graded' || assignment.submissionStatus === 'pending_review') {
+    return false
+  }
+  return assignment.status !== '已结束' && !isDeadlinePassed(assignment.deadline)
+}
+
+const isExamUnfinished = (exam) => {
+  if (exam.submissionStatus === 'graded' || exam.submissionStatus === 'pending_review') {
+    return false
+  }
+  return exam.status !== '已结束' && !isDeadlinePassed(exam.deadline)
+}
+
+const sortAssignmentsByPriority = (left, right) => {
+  const unfinishedDiff = Number(isAssignmentUnfinished(right)) - Number(isAssignmentUnfinished(left))
+  if (unfinishedDiff) return unfinishedDiff
+  return getNearestTimeValue(left.deadline) - getNearestTimeValue(right.deadline)
+}
+
+const sortExamsByPriority = (left, right) => {
+  const unfinishedDiff = Number(isExamUnfinished(right)) - Number(isExamUnfinished(left))
+  if (unfinishedDiff) return unfinishedDiff
+  return getNearestTimeValue(left.startsAt, left.deadline) - getNearestTimeValue(right.startsAt, right.deadline)
 }
 
 /**

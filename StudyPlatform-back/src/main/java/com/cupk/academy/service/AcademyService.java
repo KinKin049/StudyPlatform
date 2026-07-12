@@ -56,6 +56,8 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class AcademyService {
     private static final long DEFAULT_USER_ID = 1L;
+    private static final String SHARED_COURSE_VIDEO_FILE_PATH =
+            "online_course/videos/c-language-programming-20260709-recording.mp4";
 
     private final AcademyRepository academyRepository;
     private final AuthUserRepository authUserRepository;
@@ -106,12 +108,12 @@ public class AcademyService {
                 new AcademyHomeSectionResponse("my-courses", "我的课程", List.of(
                         new AcademyHomeItemResponse("人工智能导论", "在线开放课程", "32 学时 · 8 个章节"),
                         new AcademyHomeItemResponse("大学生创新实践", "通识课程", "24 学时 · 项目制学习"),
-                        new AcademyHomeItemResponse("数据分析微专业", "微专业课程", "6 门课 · 能力认证")
+                        new AcademyHomeItemResponse("创新工程实践", "微专业课程", "创新创业微专业 · 项目制学习")
                 )),
                 new AcademyHomeSectionResponse("course-assignments", "课程作业", List.of(
                         new AcademyHomeItemResponse("C语言程序设计（下）", "待提交", "第 3 章函数练习 · 截止本周五"),
                         new AcademyHomeItemResponse("劳动通论", "进行中", "专题讨论 1 篇 · 已完成 60%"),
-                        new AcademyHomeItemResponse("数据分析微专业", "待批阅", "项目报告已提交 · 等待教师反馈")
+                        new AcademyHomeItemResponse("创新工程实践", "待批阅", "项目报告已提交 · 等待教师反馈")
                 )),
                 new AcademyHomeSectionResponse("my-exams", "我的考试", List.of(
                         new AcademyHomeItemResponse("高等数学阶段测验", "未开始", "7 月 12 日 09:00 · 60 分钟"),
@@ -1032,8 +1034,8 @@ public class AcademyService {
                 course.description(),
                 course.semesterPlan(),
                 course.overview(),
-                fileUrl(course.videoFilePath()),
-                course.videoFilePath(),
+                fileUrl(SHARED_COURSE_VIDEO_FILE_PATH),
+                SHARED_COURSE_VIDEO_FILE_PATH,
                 course.link(),
                 course.certified(),
                 course.certificationLabel()
@@ -1112,8 +1114,8 @@ public class AcademyService {
                 course.description(),
                 course.semesterPlan(),
                 course.overview(),
-                fileUrl(course.videoFilePath()),
-                course.videoFilePath(),
+                fileUrl(SHARED_COURSE_VIDEO_FILE_PATH),
+                SHARED_COURSE_VIDEO_FILE_PATH,
                 course.link(),
                 course.enrolledAt()
         );

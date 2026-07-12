@@ -24,7 +24,7 @@ const members = [
 const classCourses = [
   { title: 'C语言程序设计（下）', meta: '平均进度 78% · 2 项作业' },
   { title: '劳动通论', meta: '平均进度 64% · 1 项讨论' },
-  { title: '数据分析微专业', meta: '平均进度 51% · 1 个项目' },
+  { title: '创新工程实践', meta: '平均进度 51% · 1 个项目' },
 ]
 
 // 班级学习排行榜数据

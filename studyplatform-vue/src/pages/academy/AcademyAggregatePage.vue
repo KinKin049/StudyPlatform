@@ -186,6 +186,37 @@ const getTimeValue = (value) => {
   return Number.isFinite(time) ? time : 0
 }
 
+const getNearestTimeValue = (...values) => {
+  const times = values.map(getTimeValue).filter((time) => time > 0)
+  return times.length ? Math.min(...times) : Number.MAX_SAFE_INTEGER
+}
+
+const isAssignmentUnfinished = (assignment) => {
+  if (assignment.submissionStatus === 'graded' || assignment.submissionStatus === 'pending_review') {
+    return false
+  }
+  return assignment.status !== '已结束' && !isDeadlinePassed(assignment.deadline)
+}
+
+const isExamUnfinished = (exam) => {
+  if (exam.submissionStatus === 'graded' || exam.submissionStatus === 'pending_review') {
+    return false
+  }
+  return exam.status !== '已结束' && !isDeadlinePassed(exam.deadline)
+}
+
+const sortAssignmentsByPriority = (left, right) => {
+  const unfinishedDiff = Number(isAssignmentUnfinished(right)) - Number(isAssignmentUnfinished(left))
+  if (unfinishedDiff) return unfinishedDiff
+  return getNearestTimeValue(left.deadline) - getNearestTimeValue(right.deadline)
+}
+
+const sortExamsByPriority = (left, right) => {
+  const unfinishedDiff = Number(isExamUnfinished(right)) - Number(isExamUnfinished(left))
+  if (unfinishedDiff) return unfinishedDiff
+  return getNearestTimeValue(left.startsAt, left.deadline) - getNearestTimeValue(right.startsAt, right.deadline)
+}
+
 const getExamSidebarTime = (exam) => {
   if (exam.status === '即将开始' || isBeforeStart(exam.startsAt)) {
     return `开始 ${formatDateTime(exam.startsAt) || '时间待定'}`
@@ -254,7 +285,7 @@ const cardCoverStyle = (card) => (card?.cover ? { background: card.cover } : {})
  * 将作业数据转换为卡片格式
  */
 const assignmentCards = computed(() =>
-  assignments.value.map((assignment) => {
+  [...assignments.value].sort(sortAssignmentsByPriority).map((assignment) => {
     const deadline = assignment.deadline ? assignment.deadline.replace('T', ' ').slice(0, 16) : '截止时间待定'
     const attempts = assignment.attemptsLeft ?? 0
     const statusBadge = getAssignmentStatusBadge(assignment)
@@ -288,7 +319,7 @@ const assignmentCards = computed(() =>
  * 将考试数据转换为卡片格式
  */
 const examCards = computed(() =>
-  exams.value.map((exam) => {
+  [...exams.value].sort(sortExamsByPriority).map((exam) => {
     const statusBadge = getExamStatusBadge(exam)
     const deadline = formatDateTime(exam.deadline) || '结束时间待定'
     const startsAt = formatDateTime(exam.startsAt) || '开始时间待定'
@@ -339,13 +370,8 @@ const visibleCards = computed(() =>
 
 const pendingAssignments = computed(() =>
   assignments.value
-    .filter((assignment) => {
-      if (assignment.submissionStatus === 'graded' || assignment.submissionStatus === 'pending_review') {
-        return false
-      }
-      return assignment.status !== '已结束' && !isDeadlinePassed(assignment.deadline)
-    })
-    .sort((left, right) => getTimeValue(left.deadline) - getTimeValue(right.deadline)),
+    .filter(isAssignmentUnfinished)
+    .sort(sortAssignmentsByPriority),
 )
 
 const reviewedAssignments = computed(() =>
@@ -356,15 +382,8 @@ const reviewedAssignments = computed(() =>
 
 const upcomingExams = computed(() =>
   exams.value
-    .filter((exam) => {
-      if (exam.status === '已结束' || isDeadlinePassed(exam.deadline)) {
-        return false
-      }
-      return exam.status === '即将开始' || isBeforeStart(exam.startsAt) || exam.status === '正在进行'
-    })
-    .sort((left, right) =>
-      getTimeValue(left.startsAt || left.deadline) - getTimeValue(right.startsAt || right.deadline),
-    ),
+    .filter(isExamUnfinished)
+    .sort(sortExamsByPriority),
 )
 
 const recentCourseActions = computed(() =>

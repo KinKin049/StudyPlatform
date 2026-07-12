@@ -74,7 +74,7 @@ useVideoLearningTimeTracker(courseVideoRef, {
 
 // 智慧课堂功能列表
 const featureItems = [
-  { key: 'ai-assistant', icon: '◌', title: 'AI 助教智能问答', text: '基于课程介绍和概述进行即时答疑' },
+  { key: 'ai-assistant', icon: '◌', title: 'AI 助教智能问答', text: '基于课程介绍进行即时答疑' },
 ]
 
 /**
@@ -166,7 +166,7 @@ const courseAiError = ref('')
 const courseAiMessages = ref([
   {
     role: 'assistant',
-    text: '你好，我会结合这门课的介绍、概述和教师信息回答问题。',
+    text: '你好，我会结合这门课的介绍和教师信息回答问题。',
   },
 ])
 
@@ -176,7 +176,6 @@ const courseAiContext = computed(() => {
     `课程分类：${course.value?.category || ''}`,
     `授课教师：${teacherList.value.join('、')}`,
     `课程简介：${courseIntro.value}`,
-    `课程概述：${course.value?.description || course.value?.overview || course.value?.comment || ''}`,
     `学期计划：${course.value?.semesterPlan || courseWeeks.value}`,
     `开课时间：${coursePeriod.value}`,
   ].join('\n')
@@ -184,7 +183,7 @@ const courseAiContext = computed(() => {
     path: window.location.pathname + window.location.search,
     routeName: 'academy-course-detail',
     title: `${course.value?.name || '课程详情'} AI 助手`,
-    headings: [course.value?.name || '课程详情', '课程简介', '课程概述', 'AI 助教智能问答'],
+    headings: [course.value?.name || '课程详情', '课程简介', 'AI 助教智能问答'],
     selectedText: '',
     formSnapshot: [
       `资源类型：${props.resource}`,
@@ -550,7 +549,7 @@ watch(() => [props.resource, props.courseId], loadCourse)
             <textarea
               v-model="courseAiInput"
               rows="3"
-              placeholder="围绕课程介绍、概述或学习安排提问"
+              placeholder="围绕课程介绍或学习安排提问"
             ></textarea>
             <button type="submit" :disabled="courseAiLoading || !courseAiInput.trim()">发送</button>
           </form>
@@ -572,18 +571,6 @@ watch(() => [props.resource, props.courseId], loadCourse)
             <p>{{ courseIntro }}</p>
             <span>—— 课程团队</span>
           </div>
-
-          <!-- 课程概述卡片 -->
-          <section class="course-outline-card">
-            <h2><span></span>课程概述</h2>
-            <h3>一、为什么要学习这门课？</h3>
-            <p v-if="course.description">
-              {{ course.description }}
-            </p>
-            <p v-else>
-              C 语言是理解计算机系统、算法实现和底层开发的重要基础。本课程通过连续案例训练，帮助学习者把语法知识落实到可运行、可调试、可扩展的程序中。
-            </p>
-          </section>
 
           <!-- 课程视频播放区域 -->
           <section class="course-player-page" aria-label="课程视频播放区域">
