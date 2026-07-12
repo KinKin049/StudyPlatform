@@ -2,6 +2,9 @@ package com.cupk.academy.dto;
 
 import java.time.LocalDateTime;
 
+/**
+ * 已报名课程响应DTO，用于返回用户已报名课程的详细信息。
+ */
 public record AcademyEnrolledCourseResponse(
         String resourceType,
         String id,

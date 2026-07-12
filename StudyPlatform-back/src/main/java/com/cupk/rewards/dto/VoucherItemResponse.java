@@ -3,6 +3,9 @@ package com.cupk.rewards.dto;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * 卡券商品响应DTO，用于返回可兑换的卡券商品信息。
+ */
 public record VoucherItemResponse(
         long id,
         String voucherKey,

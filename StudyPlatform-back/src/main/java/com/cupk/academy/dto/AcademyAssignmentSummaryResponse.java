@@ -2,6 +2,9 @@ package com.cupk.academy.dto;
 
 import java.time.LocalDateTime;
 
+/**
+ * 作业摘要响应DTO，用于返回作业列表中单个作业的简要信息。
+ */
 public record AcademyAssignmentSummaryResponse(
         String id,
         String title,

@@ -15,12 +15,17 @@ import org.springframework.web.server.ResponseStatusException;
 public class WellLogTemplateService {
     private final WellLogTemplateRepository templateRepository;
 
+    /**
+     * 构造函数。
+     * @param templateRepository 测井模板数据访问层
+     */
     public WellLogTemplateService(WellLogTemplateRepository templateRepository) {
         this.templateRepository = templateRepository;
     }
 
     /**
      * 查询所有测井基础模板。
+     * @return 模板列表
      */
     public List<WellLogTemplate> listTemplates() {
         return templateRepository.findAll();
@@ -28,6 +33,8 @@ public class WellLogTemplateService {
 
     /**
      * 查询单个测井基础模板；不存在时返回 404。
+     * @param id 模板ID
+     * @return 模板详情
      */
     public WellLogTemplate getTemplate(Long id) {
         return templateRepository.findById(id)

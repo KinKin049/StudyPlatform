@@ -25,6 +25,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * 微信支付网关实现。
+ */
 @Component
 public class WechatPaymentGateway implements PaymentGateway {
     private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(8);
@@ -41,6 +44,17 @@ public class WechatPaymentGateway implements PaymentGateway {
     private final String privateKeyPath;
     private final String notifyUrl;
 
+    /**
+     * 构造微信支付网关。
+     *
+     * @param baseUrl 微信支付网关地址
+     * @param appId 应用ID
+     * @param mchId 商户号
+     * @param serialNo 商户证书序列号
+     * @param privateKey 商户私钥
+     * @param privateKeyPath 商户私钥文件路径
+     * @param notifyUrl 异步通知地址
+     */
     public WechatPaymentGateway(
             @Value("${payment.wechat.base-url:https://api.mch.weixin.qq.com}") String baseUrl,
             @Value("${payment.wechat.app-id:}") String appId,
@@ -59,11 +73,24 @@ public class WechatPaymentGateway implements PaymentGateway {
         this.notifyUrl = notifyUrl;
     }
 
+    /**
+     * 返回支付渠道标识。
+     *
+     * @return 支付渠道标识字符串
+     */
     @Override
     public String provider() {
         return "WECHAT";
     }
 
+    /**
+     * 创建微信扫码支付（Native下单）。
+     *
+     * @param orderNo 商户订单号
+     * @param subject 订单标题
+     * @param amount 订单金额
+     * @return 支付网关结果，包含二维码链接
+     */
     @Override
     public PaymentGatewayResult createNativePayment(String orderNo, String subject, BigDecimal amount) {
         requireConfigured();
@@ -83,6 +110,12 @@ public class WechatPaymentGateway implements PaymentGateway {
         return new PaymentGatewayResult(provider() + "-" + orderNo, provider(), codeUrl, "PENDING", "", "请使用微信扫码支付");
     }
 
+    /**
+     * 查询微信订单支付状态。
+     *
+     * @param orderNo 商户订单号
+     * @return 支付网关结果，包含支付状态
+     */
     @Override
     public PaymentGatewayResult queryPayment(String orderNo) {
         requireConfigured();
@@ -98,6 +131,14 @@ public class WechatPaymentGateway implements PaymentGateway {
         return new PaymentGatewayResult(provider() + "-" + orderNo, provider(), "", status, transactionId, message.isBlank() ? tradeState : message);
     }
 
+    /**
+     * 向微信支付网关发送HTTP请求。
+     *
+     * @param method HTTP方法（GET或POST）
+     * @param pathAndQuery 请求路径及查询参数
+     * @param body 请求体内容
+     * @return 微信支付响应内容
+     */
     private String request(String method, String pathAndQuery, String body) {
         try {
             URI uri = URI.create(baseUrl + pathAndQuery);
@@ -127,6 +168,14 @@ public class WechatPaymentGateway implements PaymentGateway {
         }
     }
 
+    /**
+     * 生成微信支付Authorization请求头。
+     *
+     * @param method HTTP方法
+     * @param pathAndQuery 请求路径及查询参数
+     * @param body 请求体内容
+     * @return Authorization头字符串
+     */
     private String authorization(String method, String pathAndQuery, String body) {
         String nonce = UUID.randomUUID().toString().replace("-", "");
         String timestamp = String.valueOf(Instant.now().getEpochSecond());
@@ -140,6 +189,12 @@ public class WechatPaymentGateway implements PaymentGateway {
                 + "signature=\"" + signature + "\"";
     }
 
+    /**
+     * 对消息进行RSA-SHA256签名。
+     *
+     * @param message 待签名消息
+     * @return Base64编码的签名值
+     */
     private String sign(String message) {
         try {
             Signature signature = Signature.getInstance("SHA256withRSA");
@@ -151,6 +206,12 @@ public class WechatPaymentGateway implements PaymentGateway {
         }
     }
 
+    /**
+     * 读取微信支付商户私钥。
+     *
+     * @return 商户私钥对象
+     * @throws Exception 读取或解析私钥失败时抛出
+     */
     private PrivateKey readPrivateKey() throws Exception {
         String key = privateKey == null || privateKey.isBlank()
                 ? Files.readString(Path.of(privateKeyPath.trim()), StandardCharsets.UTF_8)
@@ -163,10 +224,19 @@ public class WechatPaymentGateway implements PaymentGateway {
         return KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(decoded));
     }
 
+    /**
+     * 将金额转换为分（整数）。
+     *
+     * @param amount 订单金额
+     * @return 金额对应的分值
+     */
     private int amountToCents(BigDecimal amount) {
         return amount.multiply(BigDecimal.valueOf(100)).setScale(0, RoundingMode.HALF_UP).intValueExact();
     }
 
+    /**
+     * 校验微信支付配置是否完整。
+     */
     private void requireConfigured() {
         boolean hasPrivateKey = (privateKey != null && !privateKey.isBlank())
                 || (privateKeyPath != null && !privateKeyPath.isBlank());

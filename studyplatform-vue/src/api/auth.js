@@ -74,8 +74,14 @@ export const confirmPasswordReset = (payload) =>
 export function getStoredAuthUser() {
   try {
     const raw = localStorage.getItem(AUTH_USER_KEY)
-    return raw ? JSON.parse(raw) : null
+    const user = raw ? JSON.parse(raw) : null
+    if (!user?.id || typeof user?.token !== 'string' || !user.token) {
+      localStorage.removeItem(AUTH_USER_KEY)
+      return null
+    }
+    return user
   } catch {
+    localStorage.removeItem(AUTH_USER_KEY)
     return null
   }
 }

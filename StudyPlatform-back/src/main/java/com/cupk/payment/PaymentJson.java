@@ -4,6 +4,9 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * 支付模块JSON工具类，提供轻量级JSON构建和解析功能。
+ */
 final class PaymentJson {
     private PaymentJson() {
     }

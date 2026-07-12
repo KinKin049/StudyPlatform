@@ -393,7 +393,6 @@ function uniqueValues(values) {
               @click="choosePet(pet.key)"
             >
               <img class="auth-pet-card-image" :src="pet.preview || pet.image" :alt="pet.name" />
-              <img :src="pet.image" :alt="pet.name" />
               <strong>{{ pet.name }}</strong>
               <span>{{ pet.note }}</span>
             </button>

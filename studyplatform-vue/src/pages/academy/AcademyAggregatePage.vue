@@ -246,11 +246,15 @@ const getExamProgress = (exam) => {
  */
 const getStatusLetters = (status) => Array.from(status || '')
 
+const isAssignmentOrExamCard = (card) => card?.type === 'assignments' || card?.type === 'exams'
+const shouldShowCardCover = (card) => !isAssignmentOrExamCard(card) || Boolean(card?.coverImage)
+const cardCoverStyle = (card) => (card?.cover ? { background: card.cover } : {})
+
 /**
  * 将作业数据转换为卡片格式
  */
 const assignmentCards = computed(() =>
-  assignments.value.map((assignment, index) => {
+  assignments.value.map((assignment) => {
     const deadline = assignment.deadline ? assignment.deadline.replace('T', ' ').slice(0, 16) : '截止时间待定'
     const attempts = assignment.attemptsLeft ?? 0
     const statusBadge = getAssignmentStatusBadge(assignment)
@@ -276,11 +280,6 @@ const assignmentCards = computed(() =>
       progress,
       meta: `${assignment.questionCount || 0} 题 · 可提交 ${attempts} 次`,
       link: `/academy/assignments/${encodeURIComponent(assignment.id)}`,
-      cover: [
-        'linear-gradient(135deg, #74ebd5, #bfe9ff 58%, #acb6e5)',
-        'linear-gradient(135deg, #d5f8ef, #74ebd5 45%, #ffc1cb)',
-        'linear-gradient(135deg, #acb6e5, #bfe9ff 52%, #74ebd5)',
-      ][index % 3],
     }
   }),
 )
@@ -289,7 +288,7 @@ const assignmentCards = computed(() =>
  * 将考试数据转换为卡片格式
  */
 const examCards = computed(() =>
-  exams.value.map((exam, index) => {
+  exams.value.map((exam) => {
     const statusBadge = getExamStatusBadge(exam)
     const deadline = formatDateTime(exam.deadline) || '结束时间待定'
     const startsAt = formatDateTime(exam.startsAt) || '开始时间待定'
@@ -308,11 +307,6 @@ const examCards = computed(() =>
       progress: getExamProgress(exam),
       meta: `${exam.questionCount || 0} 题 · ${exam.durationMinutes || 0} 分钟 · ${exam.totalScore || 100} 分`,
       link: `/academy/exams/${encodeURIComponent(exam.id)}`,
-      cover: [
-        'linear-gradient(135deg, #7fd8ee, #74ebd5 50%, #acb6e5)',
-        'linear-gradient(135deg, #bfe9ff, #acb6e5 48%, #74ebd5)',
-        'linear-gradient(135deg, #ffc1cb, #bfe9ff 52%, #74ebd5)',
-      ][index % 3],
     }
   }),
 )
@@ -846,11 +840,11 @@ onBeforeUnmount(() => {
           <article
             v-for="card in visibleCards"
             :key="card.key || `${card.type}-${card.title}`"
-            :class="['online-course-card', { 'academy-assignment-card': card.type === 'assignments' || card.type === 'exams' }]"
+            :class="['online-course-card', { 'academy-assignment-card': isAssignmentOrExamCard(card) }]"
           >
             <RouterLink :to="card.link">
               <!-- 卡片封面 -->
-              <div class="academy-aggregate-cover" :style="{ background: card.cover }">
+              <div v-if="shouldShowCardCover(card)" class="academy-aggregate-cover" :style="cardCoverStyle(card)">
                 <img v-if="card.coverImage" :src="card.coverImage" :alt="card.title" />
               </div>
               <!-- 卡片内容 -->

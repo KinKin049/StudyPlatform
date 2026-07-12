@@ -3,6 +3,9 @@ package com.cupk.rewards;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+/**
+ * 金币奖励数据访问层，提供金币发放、消费和余额查询等功能。
+ */
 @Repository
 public class CoinRewardRepository {
     private final JdbcTemplate jdbcTemplate;

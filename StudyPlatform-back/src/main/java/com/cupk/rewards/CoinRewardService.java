@@ -193,6 +193,11 @@ public class CoinRewardService {
         };
     }
 
+    /**
+     * 生成学习行为奖励原因描述。
+     * @param request 学习事件请求
+     * @return 奖励原因描述
+     */
     private String learningEventReason(ProfileLearningEventRequest request) {
         if (request == null) {
             return "学习行为奖励";

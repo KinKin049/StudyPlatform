@@ -7,6 +7,9 @@ import java.util.List;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+/**
+ * 密码重置码数据访问层，管理验证码的生成、验证和使用状态。
+ */
 @Repository
 public class PasswordResetCodeRepository {
     private final JdbcTemplate jdbcTemplate;

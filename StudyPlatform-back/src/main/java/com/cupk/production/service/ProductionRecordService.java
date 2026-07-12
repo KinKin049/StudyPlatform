@@ -55,6 +55,11 @@ public class ProductionRecordService {
         return getPumpRecord(id);
     }
 
+    /**
+     * 保存油藏仿真记录。
+     * @param request 保存请求
+     * @return 保存后的记录
+     */
     @Transactional
     public ProductionReservoirRecord saveReservoirRecord(SaveReservoirRecordRequest request) {
         Long id = recordRepository.createReservoirRecord(request);
@@ -87,6 +92,13 @@ public class ProductionRecordService {
         return getStimulationRecord(id);
     }
 
+    /**
+     * 分页查询抽油机仿真记录。
+     * @param userId 用户ID（可选）
+     * @param page 页码
+     * @param size 每页数量
+     * @return 分页结果
+     */
     public ProductionPage<ProductionPumpRecord> pagePumpRecords(Long userId, int page, int size) {
         int safePage = safePage(page);
         int safeSize = safeSize(size);
@@ -116,6 +128,13 @@ public class ProductionRecordService {
         );
     }
 
+    /**
+     * 分页查询注水开发仿真记录。
+     * @param userId 用户ID（可选）
+     * @param page 页码
+     * @param size 每页数量
+     * @return 分页结果
+     */
     public ProductionPage<ProductionWaterfloodRecord> pageWaterfloodRecords(Long userId, int page, int size) {
         int safePage = safePage(page);
         int safeSize = safeSize(size);
@@ -145,21 +164,41 @@ public class ProductionRecordService {
         );
     }
 
+    /**
+     * 根据ID获取抽油机仿真记录。
+     * @param id 记录ID
+     * @return 抽油机仿真记录
+     */
     public ProductionPumpRecord getPumpRecord(Long id) {
         return recordRepository.findPumpById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pump record not found"));
     }
 
+    /**
+     * 根据ID获取油藏仿真记录。
+     * @param id 记录ID
+     * @return 油藏仿真记录
+     */
     public ProductionReservoirRecord getReservoirRecord(Long id) {
         return recordRepository.findReservoirById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Reservoir record not found"));
     }
 
+    /**
+     * 根据ID获取注水开发仿真记录。
+     * @param id 记录ID
+     * @return 注水开发仿真记录
+     */
     public ProductionWaterfloodRecord getWaterfloodRecord(Long id) {
         return recordRepository.findWaterfloodById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Waterflood record not found"));
     }
 
+    /**
+     * 根据ID获取增产措施仿真记录。
+     * @param id 记录ID
+     * @return 增产措施仿真记录
+     */
     public ProductionStimulationRecord getStimulationRecord(Long id) {
         return recordRepository.findStimulationById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Stimulation record not found"));
@@ -201,6 +240,12 @@ public class ProductionRecordService {
         deleteRecord(STIMULATION_TABLE, id, "Stimulation record not found");
     }
 
+    /**
+     * 根据表名和ID删除记录，不存在时抛出异常。
+     * @param tableName 表名
+     * @param id 记录ID
+     * @param notFoundMessage 记录不存在时的异常消息
+     */
     private void deleteRecord(String tableName, Long id, String notFoundMessage) {
         int deleted = recordRepository.deleteById(tableName, id);
         if (deleted == 0) {
@@ -208,6 +253,11 @@ public class ProductionRecordService {
         }
     }
 
+    /**
+     * 安全页码，确保页码不小于1。
+     * @param page 原始页码
+     * @return 安全页码
+     */
     private int safePage(int page) {
         return Math.max(page, 1);
     }
@@ -221,6 +271,11 @@ public class ProductionRecordService {
         return Math.min(Math.max(size, 1), 100);
     }
 
+    /**
+     * 校验字符串是否为合法JSON，非法时抛出异常。
+     * @param json 待校验的JSON字符串
+     * @param fieldName 字段名称
+     */
     private void validateJson(String json, String fieldName) {
         try {
             objectMapper.readTree(json);

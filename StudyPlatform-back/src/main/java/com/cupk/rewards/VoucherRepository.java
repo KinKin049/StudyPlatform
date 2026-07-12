@@ -9,6 +9,10 @@ import java.util.List;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+/**
+ * 卡券数据访问层。
+ * 提供用户卡券查询、兑换、使用及库存管理等数据操作。
+ */
 @Repository
 public class VoucherRepository {
     private final JdbcTemplate jdbcTemplate;

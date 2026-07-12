@@ -43,6 +43,10 @@ defineProps({
 
 /** 定义面板交互事件 */
 const emit = defineEmits(['toggle', 'select'])
+
+const selectQuestionBank = (code) => {
+  emit('select', code)
+}
 </script>
 
 <template>
@@ -54,20 +58,21 @@ const emit = defineEmits(['toggle', 'select'])
       type="button"
       class="ladder-bank-panel__trigger"
       :disabled="questionBankLoading"
-      @click="emit('toggle')"
+      @click.stop="emit('toggle')"
     >
       <span class="ladder-bank-panel__trigger-title">{{ questionBankButtonTitle }}</span>
       <span class="ladder-bank-panel__trigger-meta">{{ questionBankButtonSubtitle }}</span>
     </button>
 
     <!-- 题库下拉菜单 -->
-    <div v-if="questionDropdownOpen" class="ladder-bank-panel__menu">
+    <div v-if="questionDropdownOpen" class="ladder-bank-panel__menu" @pointerdown.stop>
       <!-- 全部题库选项 -->
       <button
         type="button"
         class="ladder-bank-panel__option"
         :class="{ 'is-active': !selectedQuestionBankCode }"
-        @click="emit('select', '')"
+        @pointerdown.prevent.stop="selectQuestionBank('')"
+        @click.prevent.stop="selectQuestionBank('')"
       >
         <span>全部单选题库</span>
         <small>随机混合题池</small>
@@ -79,7 +84,8 @@ const emit = defineEmits(['toggle', 'select'])
         type="button"
         class="ladder-bank-panel__option"
         :class="{ 'is-active': bank.code === selectedQuestionBankCode }"
-        @click="emit('select', bank.code)"
+        @pointerdown.prevent.stop="selectQuestionBank(bank.code)"
+        @click.prevent.stop="selectQuestionBank(bank.code)"
       >
         <span>{{ bank.title }}</span>
         <small>{{ bank.categoryName }} · {{ bank.questionCount }} 题</small>

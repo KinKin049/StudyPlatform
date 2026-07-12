@@ -39,6 +39,7 @@ public class AuthService {
     private final AuthUserRepository authUserRepository;
     private final PasswordResetCodeRepository passwordResetCodeRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuthTokenService authTokenService;
     private final JavaMailSender mailSender;
     private final String mailUsername;
 
@@ -55,12 +56,14 @@ public class AuthService {
             AuthUserRepository authUserRepository,
             PasswordResetCodeRepository passwordResetCodeRepository,
             PasswordEncoder passwordEncoder,
+            AuthTokenService authTokenService,
             JavaMailSender mailSender,
             @Value("${spring.mail.username:}") String mailUsername
     ) {
         this.authUserRepository = authUserRepository;
         this.passwordResetCodeRepository = passwordResetCodeRepository;
         this.passwordEncoder = passwordEncoder;
+        this.authTokenService = authTokenService;
         this.mailSender = mailSender;
         this.mailUsername = mailUsername == null ? "" : mailUsername.trim();
     }
@@ -87,7 +90,7 @@ public class AuthService {
         }
 
         long userId = authUserRepository.insertUser(username, email, passwordEncoder.encode(password));
-        return authUserRepository.findResponseById(userId);
+        return withToken(authUserRepository.findById(userId));
     }
 
     /**
@@ -102,7 +105,7 @@ public class AuthService {
         if (user == null || !passwordEncoder.matches(request.password(), user.passwordHash())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "邮箱或密码错误");
         }
-        return user.toResponse();
+        return withToken(user);
     }
 
     /**
@@ -174,8 +177,8 @@ public class AuthService {
      * @param request 入职请求
      * @return 用户响应
      */
-    public AuthUserResponse saveOnboarding(AuthOnboardingRequest request) {
-        if (request == null || request.userId() == null) {
+    public AuthUserResponse saveOnboarding(Long authenticatedUserId, AuthOnboardingRequest request) {
+        if (request == null || authenticatedUserId == null || authenticatedUserId <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少用户信息");
         }
         String roleType = clean(request.roleType());
@@ -192,8 +195,17 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "请选择宠物");
         }
 
-        authUserRepository.updateOnboarding(request, toJsonArray(request.interests()));
-        return authUserRepository.findResponseById(request.userId());
+        AuthOnboardingRequest safeRequest = new AuthOnboardingRequest(
+                authenticatedUserId,
+                request.roleType(),
+                request.learningGoal(),
+                request.interests(),
+                request.school(),
+                request.teacherName(),
+                request.petKey()
+        );
+        authUserRepository.updateOnboarding(safeRequest, toJsonArray(safeRequest.interests()));
+        return withToken(authUserRepository.findById(authenticatedUserId));
     }
 
     public AuthUserResponse updatePet(Long userId, AuthPetRequest request) {
@@ -205,7 +217,7 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "宠物标识不合法");
         }
         authUserRepository.updatePetKey(userId, petKey);
-        return authUserRepository.findResponseById(userId);
+        return withToken(authUserRepository.findById(userId));
     }
 
     /**
@@ -250,6 +262,26 @@ public class AuthService {
      */
     private String clean(String value) {
         return value == null ? "" : value.trim();
+    }
+
+    private AuthUserResponse withToken(AuthUserRow user) {
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "请先登录");
+        }
+        AuthUserResponse response = user.toResponse();
+        return new AuthUserResponse(
+                response.id(),
+                response.username(),
+                response.email(),
+                response.roleType(),
+                response.learningGoal(),
+                response.interests(),
+                response.school(),
+                response.teacherName(),
+                response.petKey(),
+                response.onboardingCompleted(),
+                authTokenService.issue(user)
+        );
     }
 
     /**

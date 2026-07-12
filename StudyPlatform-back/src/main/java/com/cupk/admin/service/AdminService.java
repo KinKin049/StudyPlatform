@@ -712,7 +712,7 @@ public class AdminService {
         if (!List.of("EASY", "MEDIUM", "HARD").contains(difficulty)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "OJ题目难度不支持");
         }
-        String status = clean(request.status(), "DRAFT", 16).toUpperCase(Locale.ROOT);
+        String status = clean(request.status(), problemId == null ? "PUBLISHED" : "DRAFT", 16).toUpperCase(Locale.ROOT);
         if (!List.of("DRAFT", "PUBLISHED", "ARCHIVED").contains(status)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "OJ题目状态不支持");
         }

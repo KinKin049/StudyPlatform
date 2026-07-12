@@ -1,9 +1,6 @@
 package com.cupk.admin.dto;
 
-/**
- * 管理员用户更新请求 DTO
- * 用于接收管理后台更新用户信息的请求参数
- */
+/** 管理员用户更新请求DTO，用于接收管理后台更新用户信息的请求参数。 */
 public record AdminUserUpdateRequest(
         /** 用户名 */
         String username,

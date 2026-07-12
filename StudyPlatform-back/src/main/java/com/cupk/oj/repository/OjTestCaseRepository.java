@@ -11,6 +11,9 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
+/**
+ * 在线判题系统测试用例数据访问层，提供测试用例创建、查询和删除等功能。
+ */
 @Repository
 public class OjTestCaseRepository {
     private final JdbcTemplate jdbcTemplate;

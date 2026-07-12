@@ -2,6 +2,9 @@ package com.cupk.academy.dto;
 
 import java.util.List;
 
+/**
+ * 用户档案概览响应DTO，用于返回用户学习档案的综合概览信息。
+ */
 public record ProfileOverviewResponse(
         List<ProfileStatResponse> stats,
         int overallProgress,

@@ -2,6 +2,9 @@ package com.cupk.payment;
 
 import java.math.BigDecimal;
 
+/**
+ * 支付网关接口，定义支付服务的标准操作。
+ */
 public interface PaymentGateway {
     String provider();
 

@@ -1,5 +1,8 @@
 package com.cupk.academy.dto;
 
+/**
+ * 课程响应DTO，用于返回在线公开课、普通课程或微专业课程的详细信息。
+ */
 public record AcademyCourseResponse(
         String id,
         String name,

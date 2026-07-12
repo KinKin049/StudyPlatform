@@ -20,13 +20,11 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
+/**
+ * 在线判题系统题目数据访问层，提供题目创建、更新、查询和搜索等功能。
+ */
 @Repository
 public class OjProblemRepository {
-
-    /**
-     * 在线判题系统题目数据访问层，提供题目创建、更新、查询和搜索等功能。
-     */
-
     private final JdbcTemplate jdbcTemplate;
 
     /**

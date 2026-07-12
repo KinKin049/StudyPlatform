@@ -165,6 +165,13 @@ public class AiPetChatService {
                 """.formatted(petName, petShortName);
     }
 
+    /**
+     * 解析宠物名称
+     * 优先使用 petName，其次回退到 petShortName，均为空时返回默认名称
+     *
+     * @param request 聊天请求
+     * @return 解析后的宠物名称
+     */
     private String resolvePetName(AiPetChatRequest request) {
         String petName = request == null ? "" : clean(request.petName());
         if (!petName.isBlank()) {
@@ -174,6 +181,14 @@ public class AiPetChatService {
         return petShortName.isBlank() ? "AI 学习伙伴" : limit(petShortName, 80);
     }
 
+    /**
+     * 解析宠物简称
+     * 为空时回退到传入的 fallbackName
+     *
+     * @param request 聊天请求
+     * @param fallbackName 回退名称
+     * @return 解析后的宠物简称
+     */
     private String resolvePetShortName(AiPetChatRequest request, String fallbackName) {
         String petShortName = request == null ? "" : clean(request.petShortName());
         return petShortName.isBlank() ? fallbackName : limit(petShortName, 60);

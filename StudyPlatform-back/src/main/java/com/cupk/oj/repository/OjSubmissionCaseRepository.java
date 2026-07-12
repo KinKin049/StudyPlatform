@@ -10,6 +10,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
+/**
+ * 在线判题系统提交测试用例数据访问层，提供测试用例结果批量创建和查询等功能。
+ */
 @Repository
 public class OjSubmissionCaseRepository {
     private final JdbcTemplate jdbcTemplate;

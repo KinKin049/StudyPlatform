@@ -384,7 +384,8 @@ router.beforeEach((to) => {
   try {
     const raw = localStorage.getItem('study-platform-auth-user')
     const user = raw ? JSON.parse(raw) : null
-    if (user?.id) return true
+    if (user?.id && typeof user?.token === 'string' && user.token) return true
+    localStorage.removeItem('study-platform-auth-user')
   } catch {
     // Fall through to login.
   }

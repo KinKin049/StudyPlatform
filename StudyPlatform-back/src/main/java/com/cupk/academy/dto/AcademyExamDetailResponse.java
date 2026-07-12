@@ -4,6 +4,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 考试详情响应DTO，用于返回考试的完整信息，包括题目列表和用户答题记录。
+ */
 public record AcademyExamDetailResponse(
         String id,
         String title,

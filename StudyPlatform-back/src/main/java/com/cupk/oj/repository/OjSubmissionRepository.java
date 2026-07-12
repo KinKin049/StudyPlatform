@@ -17,13 +17,11 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
+/**
+ * 在线判题系统提交记录数据访问层，提供提交创建、查询、状态更新和判题结果记录等功能。
+ */
 @Repository
 public class OjSubmissionRepository {
-
-    /**
-     * 在线判题系统提交记录数据访问层，提供提交创建、查询、状态更新和判题结果记录等功能。
-     */
-
     private final JdbcTemplate jdbcTemplate;
 
     /**

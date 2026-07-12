@@ -2,6 +2,9 @@ package com.cupk.academy.dto;
 
 import java.util.List;
 
+/**
+ * 考试题目响应DTO，用于返回考试中单个题目的详细信息。
+ */
 public record AcademyExamQuestionResponse(
         Long id,
         String type,

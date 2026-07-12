@@ -20,12 +20,21 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Repository;
+import org.springframework.web.server.ResponseStatusException;
 
 @Repository
 public class AcademyRepository {
+    private static final Set<String> ALLOWED_CATEGORY_TABLES = Set.of(
+            "excellent_textbooks",
+            "online_open_courses",
+            "general_courses",
+            "micro_major_courses"
+    );
 
     /**
      * 课程与教材数据访问层，提供在线公开课、普通课程、微专业课程和精品教材的查询、发布、报名、评论及购物车等功能。
@@ -1041,6 +1050,9 @@ public class AcademyRepository {
      * @return 分类列表
      */
     public List<AcademyCategoryResponse> findCategories(String tableName) {
+        if (!ALLOWED_CATEGORY_TABLES.contains(tableName)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "无效的分类来源");
+        }
         String sql = "SELECT DISTINCT category FROM " + tableName + " WHERE category IS NOT NULL AND category <> '' ORDER BY category";
         return jdbcTemplate.query(sql, (rs, rowNum) -> new AcademyCategoryResponse(rs.getString("category")));
     }

@@ -4,6 +4,7 @@
  * 整合游戏世界、HUD界面、题库选择面板和游戏覆盖层，管理游戏核心逻辑
  */
 import { watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import LadderGameOverlay from './components/LadderGameOverlay.vue'
 import LadderHud from './components/LadderHud.vue'
 import LadderQuestionBankPanel from './components/LadderQuestionBankPanel.vue'
@@ -15,6 +16,24 @@ import './styles/ladderJump.css'
 
 /** 定义返回事件 */
 const emit = defineEmits(['back'])
+const route = useRoute()
+const router = useRouter()
+
+const routeQuestionBankCode = () => {
+  const queryCode = route.query.setCode
+  return typeof queryCode === 'string' ? queryCode.trim() : ''
+}
+
+function syncQuestionBankRoute(code) {
+  const normalizedCode = String(code || '').trim()
+  const nextQuery = { ...route.query }
+  if (normalizedCode) {
+    nextQuery.setCode = normalizedCode
+  } else {
+    delete nextQuery.setCode
+  }
+  router.replace({ query: nextQuery })
+}
 
 /** 用户券相关操作 */
 const {
@@ -67,7 +86,10 @@ const {
   finishGame,
   reviveGame,
   persistLadderJumpRecord,
-} = useLadderJumpGame()
+} = useLadderJumpGame({
+  initialQuestionBankCode: routeQuestionBankCode(),
+  onQuestionBankChange: syncQuestionBankRoute,
+})
 
 /**
  * 设置题库面板引用
@@ -110,6 +132,17 @@ function handleFinishGame() {
   finishGame('本局结束')
   persistLadderJumpRecord()
 }
+
+/** 监听路由题库参数，支持从题库入口直接进入游戏 */
+watch(
+  () => route.query.setCode,
+  (nextCode) => {
+    const normalizedCode = typeof nextCode === 'string' ? nextCode.trim() : ''
+    if (normalizedCode !== selectedQuestionBankCode.value) {
+      selectQuestionBank(normalizedCode)
+    }
+  },
+)
 
 /** 监听游戏结束状态，无复活券时自动保存记录 */
 watch(

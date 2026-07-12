@@ -16,6 +16,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * 二维码渲染器，将支付链接转换为PNG格式的二维码图片。
+ */
 @Component
 public class QrCodeRenderer {
     private static final int DEFAULT_SIZE = 320;

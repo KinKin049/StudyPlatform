@@ -78,6 +78,10 @@ const logoutUser = (event) => {
 
 // 加载导航栏用户信息
 const loadNavigationUser = async () => {
+  if (!isLoggedIn.value) {
+    navigationUser.value = defaultNavigationUser()
+    return
+  }
   try {
     navigationUser.value = await fetchProfileUser()
   } catch (error) {
@@ -117,6 +121,7 @@ const handleAuthUpdated = (event) => {
   if (!authUser.value?.id) {
     navigationUser.value = defaultNavigationUser()
   }
+  loadNavigationUser()
   loadTeacherWorkbench()
 }
 

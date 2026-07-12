@@ -33,6 +33,9 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
+/**
+ * 管理员数据访问层，提供用户管理、课程管理、题库管理、OJ题目管理和卡券管理的数据操作。
+ */
 @Repository
 public class AdminRepository {
     private static final TypeReference<List<String>> STRING_LIST = new TypeReference<>() {

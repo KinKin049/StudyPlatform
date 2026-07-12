@@ -10,6 +10,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * OJ测试用例服务，提供测试用例列表查询、创建和删除等功能。
+ */
 @Service
 public class OjTestCaseService {
     private final OjProblemRepository problemRepository;

@@ -120,6 +120,11 @@
 }
 
 .ladder-bank-panel__menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 1;
   max-height: 284px;
   padding: 8px;
   overflow-y: auto;
@@ -221,14 +226,14 @@
   --z-lamp: 8;
   --z-road: 6;
   --z-car: 91;
-  --z-floating-ui: 40;
-  --z-control-hint: 41;
+  --z-floating-ui: 120;
+  --z-control-hint: 121;
   --z-question-card: 80;
   --z-option-platform: 81;
   --z-confirm-line: 82;
   --z-coin: 90;
   --z-player: 90;
-  --z-game-over: 100;
+  --z-game-over: 160;
   position: relative;
   height: 100vh;
   min-height: 720px;

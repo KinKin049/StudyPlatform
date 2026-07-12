@@ -4,6 +4,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
+/**
+ * 卡券目录，定义系统支持的卡券类型和常量。
+ */
 public final class VoucherCatalog {
     public static final String TYPE_WARRIOR_SKILL_REFRESH = "type-warrior-skill-refresh";
     public static final String GAME_REVIVE = "game-revive";

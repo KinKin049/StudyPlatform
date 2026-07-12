@@ -18,6 +18,8 @@ import com.cupk.academy.repository.ProfileRepository;
 import com.cupk.academy.repository.QuestionBankRepository;
 import com.cupk.auth.repository.AuthUserRepository;
 import com.cupk.auth.repository.AuthUserRepository.AuthUserRow;
+import com.cupk.config.FileSignatureValidator;
+import com.cupk.config.StoragePathProvider;
 import com.cupk.games.repository.GameRecordRepository;
 import com.cupk.rewards.CoinRewardService;
 import java.io.IOException;
@@ -62,6 +64,7 @@ public class ProfileService {
     private final CoinRewardService coinRewardService;
     private final AuthUserRepository authUserRepository;
     private final PasswordEncoder passwordEncoder;
+    private final StoragePathProvider storagePathProvider;
 
     /**
      * 构造函数，注入依赖的仓库和服务。
@@ -79,7 +82,8 @@ public class ProfileService {
             QuestionBankRepository questionBankRepository,
             CoinRewardService coinRewardService,
             AuthUserRepository authUserRepository,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            StoragePathProvider storagePathProvider
     ) {
         this.profileRepository = profileRepository;
         this.gameRecordRepository = gameRecordRepository;
@@ -87,6 +91,7 @@ public class ProfileService {
         this.coinRewardService = coinRewardService;
         this.authUserRepository = authUserRepository;
         this.passwordEncoder = passwordEncoder;
+        this.storagePathProvider = storagePathProvider;
     }
 
     /**
@@ -299,9 +304,9 @@ public class ProfileService {
                     userId, file.getSize());
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "头像图片不能超过 2MB");
         }
-        String extension = resolveAvatarExtension(file);
+        String extension = FileSignatureValidator.requireImage(file, List.of("jpg", "png", "webp"));
         String fileName = "avatar-" + userId + "-" + UUID.randomUUID() + "." + extension;
-        Path avatarDirectory = resolveStoragePath().resolve("profile").resolve("avatars").normalize();
+        Path avatarDirectory = storagePathProvider.storageRoot().resolve("profile").resolve("avatars").normalize();
         Path targetPath = avatarDirectory.resolve(fileName).normalize();
         if (!targetPath.startsWith(avatarDirectory)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "头像文件名不合法");
@@ -768,56 +773,6 @@ public class ProfileService {
                     "visualization", "petroleum", "assignment", "exam" -> normalized;
             default -> "general";
         };
-    }
-
-    /**
-     * 根据文件类型解析头像扩展名。
-     *
-     * @param file 上传的文件
-     * @return 扩展名
-     */
-    private String resolveAvatarExtension(MultipartFile file) {
-        String contentType = clean(file.getContentType(), "").toLowerCase(Locale.ROOT);
-        return switch (contentType) {
-            case "image/jpeg", "image/jpg" -> "jpg";
-            case "image/png" -> "png";
-            case "image/webp" -> "webp";
-            default -> resolveAvatarExtensionFromName(file.getOriginalFilename());
-        };
-    }
-
-    /**
-     * 根据文件名解析头像扩展名。
-     *
-     * @param originalFilename 原始文件名
-     * @return 扩展名
-     */
-    private String resolveAvatarExtensionFromName(String originalFilename) {
-        String fileName = clean(originalFilename, "").toLowerCase(Locale.ROOT);
-        int dotIndex = fileName.lastIndexOf('.');
-        String extension = dotIndex >= 0 ? fileName.substring(dotIndex + 1) : "";
-        if (List.of("jpg", "jpeg", "png", "webp").contains(extension)) {
-            return "jpeg".equals(extension) ? "jpg" : extension;
-        }
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "仅支持 jpg、png、webp 头像");
-    }
-
-    /**
-     * 解析存储路径，优先使用当前目录下的storage文件夹。
-     *
-     * @return 存储路径
-     */
-    private Path resolveStoragePath() {
-        Path currentDirectory = Path.of("").toAbsolutePath();
-        Path directStorage = currentDirectory.resolve("storage").normalize();
-        if (Files.isDirectory(directStorage)) {
-            return directStorage;
-        }
-        Path backendStorage = currentDirectory.resolve("StudyPlatform-back").resolve("storage").normalize();
-        if (Files.isDirectory(backendStorage)) {
-            return backendStorage;
-        }
-        return directStorage;
     }
 
     /**

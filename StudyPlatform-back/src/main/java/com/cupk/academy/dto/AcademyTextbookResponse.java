@@ -1,5 +1,8 @@
 package com.cupk.academy.dto;
 
+/**
+ * 教材响应DTO，用于返回精品教材的基本信息。
+ */
 public record AcademyTextbookResponse(
         String id,
         String name,

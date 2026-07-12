@@ -45,6 +45,9 @@ const selectedOptions = ref({})
 /** 答题结果状态 */
 const answerStates = ref({})
 
+/** 已展开答案的题目 ID 集合 */
+const openedAnswers = ref(new Set())
+
 /** 提交中的题目 ID 集合 */
 const submittingAnswers = ref({})
 
@@ -181,6 +184,25 @@ const hasAnswered = (question) => {
 /** 判断选项是否为正确答案 */
 const isOptionCorrect = (question, option) => {
   return answerKeys(question).includes(optionKey(option))
+}
+
+/** 获取错题答案展开状态使用的稳定 ID */
+const answerToggleId = (question) => question?.questionId || question?.id
+
+/** 判断题目答案是否已展开 */
+const isAnswerOpened = (question) => openedAnswers.value.has(answerToggleId(question))
+
+/** 切换题目答案展开状态 */
+const toggleAnswer = (question) => {
+  const id = answerToggleId(question)
+  if (!id) return
+  const next = new Set(openedAnswers.value)
+  if (next.has(id)) {
+    next.delete(id)
+  } else {
+    next.add(id)
+  }
+  openedAnswers.value = next
 }
 
 /** 判断是否应该记录选择题作答 */
@@ -321,6 +343,7 @@ const loadMistakes = async (shouldScroll = false) => {
     pageJumpInput.value = String(page.value + 1)
     selectedOptions.value = {}
     answerStates.value = {}
+    openedAnswers.value = new Set()
     if (shouldScroll) {
       scrollToFirstMistake()
     }
@@ -489,10 +512,14 @@ onMounted(() => {
               <!-- 错题快照 -->
               <div class="question-bank-mistake-snapshot">
                 <span>上次错选：{{ question.selectedAnswer || '未记录' }}</span>
-                <span>正确答案：{{ question.correctAnswer || question.answer || '暂无' }}</span>
+                <span v-if="isAnswerOpened(question)">正确答案：{{ question.correctAnswer || question.answer || '暂无' }}</span>
               </div>
             </div>
           </div>
+
+          <button type="button" class="question-bank-answer-toggle" @click="toggleAnswer(question)">
+            {{ isAnswerOpened(question) ? '隐藏答案' : '查看答案' }}
+          </button>
 
           <!-- 选择题选项 -->
           <ul v-if="question.options?.length" class="question-bank-options">
@@ -504,10 +531,12 @@ onMounted(() => {
                 :class="{
                   'is-selected': isOptionSelected(question, option),
                   'is-correct':
+                    isAnswerOpened(question) &&
                     hasAnswered(question) &&
                     isOptionCorrect(question, option) &&
                     (isQuestionCorrect(question) || !isOptionSelected(question, option)),
                   'is-wrong':
+                    isAnswerOpened(question) &&
                     hasAnswered(question) &&
                     !isQuestionCorrect(question) &&
                     isOptionSelected(question, option) &&
@@ -522,8 +551,10 @@ onMounted(() => {
 
           <!-- 词汇错题 -->
           <div v-else-if="question.type === 'vocabulary'" class="question-bank-mistake-vocabulary">
-            <strong>{{ question.answer }}</strong>
-            <p>{{ question.explanation }}</p>
+            <template v-if="isAnswerOpened(question)">
+              <strong>{{ question.answer }}</strong>
+              <p>{{ question.explanation }}</p>
+            </template>
             <div>
               <button type="button" @click="markVocabulary(question, 'known')">认识</button>
               <button type="button" @click="markVocabulary(question, 'fuzzy')">模糊</button>
@@ -532,14 +563,14 @@ onMounted(() => {
           </div>
 
           <!-- 非选择题答案 -->
-          <div v-else class="question-bank-answer">
+          <div v-else-if="isAnswerOpened(question)" class="question-bank-answer">
             <strong>参考答案：{{ question.answer }}</strong>
             <p>{{ question.explanation }}</p>
           </div>
 
           <!-- 选择题答案判定 -->
           <div
-            v-if="question.options?.length && hasAnswered(question)"
+            v-if="question.options?.length && hasAnswered(question) && isAnswerOpened(question)"
             class="question-bank-answer"
             :class="{
               'is-correct': isQuestionCorrect(question),

@@ -82,8 +82,11 @@ public class AuthController {
      * @return 用户响应，包含更新后的用户信息
      */
     @PostMapping("/onboarding")
-    public AuthUserResponse saveOnboarding(@RequestBody AuthOnboardingRequest request) {
-        return authService.saveOnboarding(request);
+    public AuthUserResponse saveOnboarding(
+            @RequestHeader(value = "X-Auth-User-Id", required = false) Long userId,
+            @RequestBody AuthOnboardingRequest request
+    ) {
+        return authService.saveOnboarding(userId, request);
     }
 
     @PutMapping("/pet")

@@ -26,6 +26,8 @@ import com.cupk.academy.repository.AcademyRepository.TextbookPaymentSessionData;
 import com.cupk.academy.repository.AcademyRepository;
 import com.cupk.auth.dto.AuthUserResponse;
 import com.cupk.auth.repository.AuthUserRepository;
+import com.cupk.config.FileSignatureValidator;
+import com.cupk.config.StoragePathProvider;
 import com.cupk.payment.PaymentGateway;
 import com.cupk.payment.PaymentGatewayResult;
 import com.cupk.payment.QrCodeRenderer;
@@ -60,6 +62,7 @@ public class AcademyService {
     private final VoucherService voucherService;
     private final List<PaymentGateway> paymentGateways;
     private final QrCodeRenderer qrCodeRenderer;
+    private final StoragePathProvider storagePathProvider;
 
     /**
      * 构造函数，注入依赖组件。
@@ -73,13 +76,15 @@ public class AcademyService {
             AuthUserRepository authUserRepository,
             VoucherService voucherService,
             List<PaymentGateway> paymentGateways,
-            QrCodeRenderer qrCodeRenderer
+            QrCodeRenderer qrCodeRenderer,
+            StoragePathProvider storagePathProvider
     ) {
         this.academyRepository = academyRepository;
         this.authUserRepository = authUserRepository;
         this.voucherService = voucherService;
         this.paymentGateways = paymentGateways;
         this.qrCodeRenderer = qrCodeRenderer;
+        this.storagePathProvider = storagePathProvider;
     }
 
     /**
@@ -1208,11 +1213,11 @@ public class AcademyService {
             }
             return null;
         }
-        String extension = resolveExtension(file.getOriginalFilename());
+        String extension = "cover".equals(type) ? FileSignatureValidator.requireImage(file, List.of("jpg", "png", "webp")) : FileSignatureValidator.requireVideo(file, List.of("mp4", "webm", "ogg"));
         if (!allowedExtensions.contains(extension)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "课程" + ("cover".equals(type) ? "封面" : "视频") + "格式不支持");
         }
-        Path storageDirectory = resolveStoragePath()
+        Path storageDirectory = storagePathProvider.storageRoot()
                 .resolve("teacher_courses")
                 .resolve(String.valueOf(userId))
                 .normalize();
@@ -1228,39 +1233,6 @@ public class AcademyService {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "课程文件保存失败", ex);
         }
         return "teacher_courses/" + userId + "/" + fileName;
-    }
-
-    /**
-     * 解析文件扩展名。
-     *
-     * @param originalFilename 原始文件名
-     * @return 文件扩展名
-     */
-    private String resolveExtension(String originalFilename) {
-        String fileName = originalFilename == null ? "" : originalFilename.toLowerCase(Locale.ROOT);
-        int dotIndex = fileName.lastIndexOf('.');
-        if (dotIndex < 0 || dotIndex == fileName.length() - 1) {
-            return "";
-        }
-        return fileName.substring(dotIndex + 1);
-    }
-
-    /**
-     * 解析存储路径。优先使用当前目录下的storage，其次使用backend目录下的storage。
-     *
-     * @return 存储路径
-     */
-    private Path resolveStoragePath() {
-        Path currentDirectory = Path.of("").toAbsolutePath();
-        Path directStorage = currentDirectory.resolve("storage").normalize();
-        if (Files.isDirectory(directStorage)) {
-            return directStorage;
-        }
-        Path backendStorage = currentDirectory.resolve("StudyPlatform-back").resolve("storage").normalize();
-        if (Files.isDirectory(backendStorage)) {
-            return backendStorage;
-        }
-        return directStorage;
     }
 
     /**

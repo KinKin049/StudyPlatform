@@ -3,6 +3,9 @@ package com.cupk.academy.dto;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * 题库编程题响应DTO，用于返回题库中单个编程题目的详细信息。
+ */
 public record QuestionBankProblemResponse(
         Long id,
         String source,

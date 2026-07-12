@@ -1176,7 +1176,7 @@ function emptyOjForm() {
     timeLimitMs: 1000,
     memoryLimitKb: 262144,
     tags: '',
-    status: 'DRAFT',
+    status: 'PUBLISHED',
     testCases: [emptyOjCase()],
   }
 }
@@ -1805,7 +1805,7 @@ onMounted(async () => {
                     <input v-model="questionForm.options[index]" :placeholder="`${choiceLabels[index]}.待输入选项`" />
                     <button type="button" aria-label="删除选项" @click="removeChoiceOption(index)">×</button>
                   </label>
-                  <button v-if="questionForm.options.length < choiceLabels.length" type="button" class="admin-add-option" @click="addChoiceOption">+</button>
+                  <button v-if="questionForm.options.length < choiceLabels.length" type="button" class="admin-add-option" @click="addChoiceOption()">+</button>
                 </div>
                 <label v-else class="admin-field admin-field-wide">
                   <span>选项或补充内容，每行一个</span>

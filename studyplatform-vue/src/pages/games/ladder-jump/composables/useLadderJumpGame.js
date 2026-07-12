@@ -1,7 +1,6 @@
 ﻿import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { recordQuestionBankAnswer } from '../../../../api/academy'
-import { fetchLadderJumpQuestionBanks, saveLadderJumpRecord } from '../../../../api/games'
-import { request } from '../../../../api/request'
+import { fetchLadderJumpQuestionBanks, fetchLadderJumpQuestions, saveLadderJumpRecord } from '../../../../api/games'
 import {
   answeredLeftPadding,
   answerPlatformWidth,
@@ -30,10 +29,10 @@ import {
 } from '../config/ladderJumpConfig'
 import { formatAverageDuration, formatDuration, seededRandom } from '../utils/ladderJumpFormat'
 
-export function useLadderJumpGame() {
+export function useLadderJumpGame(options = {}) {
 const questions = ref(defaultQuestions)
 const questionBanks = ref([])
-const selectedQuestionBankCode = ref('')
+const selectedQuestionBankCode = ref(String(options.initialQuestionBankCode || '').trim())
 const questionBankLoading = ref(false)
 const questionDropdownOpen = ref(false)
 const questionBankPanelRef = ref(null)
@@ -160,15 +159,6 @@ function stopPlayTimer(now = performance.now()) {
   syncElapsed(now)
 }
 
-function buildQuestionRequestPath() {
-  const params = new URLSearchParams()
-  if (selectedQuestionBankCode.value) {
-    params.set('setCode', selectedQuestionBankCode.value)
-  }
-  const query = params.toString()
-  return query ? `/api/games/ladder-jump/questions?${query}` : '/api/games/ladder-jump/questions'
-}
-
 function resolvePlatformLayout(index) {
   if (platformLayouts[index]) {
     return platformLayouts[index]
@@ -269,17 +259,20 @@ async function loadQuestionBanks() {
     const banks = await fetchLadderJumpQuestionBanks()
     questionBanks.value = Array.isArray(banks)
       ? banks
+          .map((set) => ({
+            code: set?.setCode || set?.code || '',
+            title: set?.title || set?.name || set?.setName || '',
+            categoryCode: set?.categoryCode || '',
+            categoryName: set?.categoryName || '',
+            questionCount: Number(set?.questionCount || 0),
+          }))
           .filter(
             (set) =>
-              !excludedQuestionBankCategoryCodes.has(set?.categoryCode) &&
-              !excludedQuestionBankSetCodes.has(set?.setCode || set?.code),
+              set.code &&
+              set.title &&
+              !excludedQuestionBankCategoryCodes.has(set.categoryCode) &&
+              !excludedQuestionBankSetCodes.has(set.code),
           )
-          .map((set) => ({
-            code: set.setCode || set.code,
-            title: set.title,
-            categoryName: set.categoryName || '',
-            questionCount: Number(set.questionCount || 0),
-          }))
       : []
   } catch {
     questionBanks.value = []
@@ -290,7 +283,7 @@ async function loadQuestionBanks() {
 
 async function loadQuestions() {
   try {
-    const data = await request(buildQuestionRequestPath())
+    const data = await fetchLadderJumpQuestions(selectedQuestionBankCode.value)
     if (Array.isArray(data) && data.length > 0) {
       questions.value = data
       usingFallbackQuestions.value = false
@@ -324,9 +317,11 @@ function toggleQuestionDropdown() {
 }
 
 async function selectQuestionBank(code) {
+  const normalizedCode = String(code || '').trim()
   questionDropdownOpen.value = false
-  if (selectedQuestionBankCode.value === code) return
-  selectedQuestionBankCode.value = code
+  if (selectedQuestionBankCode.value === normalizedCode) return
+  selectedQuestionBankCode.value = normalizedCode
+  options.onQuestionBankChange?.(normalizedCode)
   await loadQuestions()
   restartGame(false)
   feedback.value = selectedQuestionBank.value

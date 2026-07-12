@@ -1,2 +1,28 @@
+# Logs
 logs/
 *.log
+
+# Local configuration
+application-local.properties
+**/application-local.properties
+.env
+.env.*
+
+# Build outputs
+target/
+**/target/
+dist/
+**/dist/
+node_modules/
+**/node_modules/
+
+# Temporary/scratch artifacts
+tmp/
+temp/
+.codex-tmp/
+*.tmp
+*.bak
+
+# Runtime uploads. Seed catalog media under StudyPlatform-back/storage remains tracked.
+StudyPlatform-back/storage/profile/avatars/
+StudyPlatform-back/storage/teacher_courses/

@@ -10,24 +10,48 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * 卡券服务。
+ * 提供用户卡券查询、卡券兑换、使用及折扣计算等功能。
+ */
 @Service
 public class VoucherService {
     private final VoucherRepository voucherRepository;
     private final CoinRewardService coinRewardService;
 
+    /**
+     * 构造函数。
+     * @param voucherRepository 卡券数据访问层
+     * @param coinRewardService 金币奖励服务
+     */
     public VoucherService(VoucherRepository voucherRepository, CoinRewardService coinRewardService) {
         this.voucherRepository = voucherRepository;
         this.coinRewardService = coinRewardService;
     }
 
+    /**
+     * 查询用户已拥有的卡券列表。
+     * @param userId 用户ID
+     * @return 用户卡券列表
+     */
     public List<UserVoucherResponse> findUserVouchers(long userId) {
         return voucherRepository.findUserVouchers(userId);
     }
 
+    /**
+     * 查询可兑换的卡券项目列表。
+     * @return 可兑换卡券列表
+     */
     public List<VoucherItemResponse> findAvailableItems() {
         return voucherRepository.findAvailableItems();
     }
 
+    /**
+     * 兑换卡券，扣除金币并扣减库存。
+     * @param userId 用户ID
+     * @param voucherKey 卡券标识
+     * @return 兑换后用户的卡券列表
+     */
     @Transactional
     public List<UserVoucherResponse> exchange(long userId, String voucherKey) {
         String normalizedKey = VoucherCatalog.normalize(voucherKey);
@@ -81,6 +105,11 @@ public class VoucherService {
         return voucherRepository.findQuantity(userId, normalizedKey) > 0;
     }
 
+    /**
+     * 消费折扣优惠券，校验类型并扣减数量。
+     * @param userId 用户ID
+     * @param voucherKey 优惠券标识
+     */
     public void consumeDiscountVoucher(long userId, String voucherKey) {
         String normalizedKey = VoucherCatalog.normalize(voucherKey);
         VoucherItemResponse item = voucherRepository.findAvailableItem(normalizedKey);
@@ -109,6 +138,12 @@ public class VoucherService {
         return item;
     }
 
+    /**
+     * 计算优惠券可抵扣的折扣金额。
+     * @param item 优惠券详情
+     * @param originalAmount 原始金额
+     * @return 折扣金额
+     */
     public BigDecimal calculateDiscount(VoucherItemResponse item, BigDecimal originalAmount) {
         BigDecimal safeOriginal = originalAmount == null ? BigDecimal.ZERO : originalAmount.max(BigDecimal.ZERO);
         BigDecimal threshold = item.thresholdAmount() == null ? BigDecimal.ZERO : item.thresholdAmount();

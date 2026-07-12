@@ -42,12 +42,25 @@ public class ApiAccessLogFilter extends OncePerRequestFilter {
         MODULE_NAMES.put("/api/admin", "后台管理");
     }
 
+    /**
+     * 判断是否跳过过滤，仅对 /api/ 开头的请求记录日志。
+     * @param request HTTP 请求
+     * @return 非业务接口返回 true，跳过日志记录
+     */
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String uri = request.getRequestURI();
         return uri == null || !uri.startsWith("/api/");
     }
 
+    /**
+     * 记录业务接口访问的开始与结束日志，包含模块、操作、方法和耗时。
+     * @param request HTTP 请求
+     * @param response HTTP 响应
+     * @param filterChain 过滤器链
+     * @throws ServletException Servlet 异常
+     * @throws IOException IO 异常
+     */
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,
@@ -73,6 +86,11 @@ public class ApiAccessLogFilter extends OncePerRequestFilter {
         }
     }
 
+    /**
+     * 根据请求路径解析所属业务模块名称。
+     * @param uri 请求路径
+     * @return 模块名称，未匹配时返回"其他业务接口"
+     */
     private String resolveModule(String uri) {
         for (Map.Entry<String, String> entry : MODULE_NAMES.entrySet()) {
             if (uri.startsWith(entry.getKey())) {
@@ -82,6 +100,12 @@ public class ApiAccessLogFilter extends OncePerRequestFilter {
         return "其他业务接口";
     }
 
+    /**
+     * 根据 HTTP 方法和请求路径解析具体操作名称。
+     * @param method HTTP 方法
+     * @param uri 请求路径
+     * @return 操作名称，未匹配时按方法返回默认操作描述
+     */
     private String resolveOperation(String method, String uri) {
         if (uri.contains("/login")) {
             return "用户登录";
@@ -266,6 +290,11 @@ public class ApiAccessLogFilter extends OncePerRequestFilter {
         };
     }
 
+    /**
+     * 清理查询字符串，对敏感参数脱敏后返回带问号前缀的字符串。
+     * @param queryString 原始查询字符串
+     * @return 脱敏后的查询字符串，无查询参数时返回空字符串
+     */
     private String sanitizeQuery(String queryString) {
         if (queryString == null || queryString.isBlank()) {
             return "";
@@ -274,6 +303,12 @@ public class ApiAccessLogFilter extends OncePerRequestFilter {
                 .replaceAll("(?i)(password|code|token|apiKey|api-key)=([^&]*)", "$1=***");
     }
 
+    /**
+     * 返回非空字符串值，为空时使用回退值。
+     * @param value 原始值
+     * @param fallback 回退值
+     * @return 原始值非空时返回原始值，否则返回回退值
+     */
     private String defaultValue(String value, String fallback) {
         return value == null || value.isBlank() ? fallback : value;
     }

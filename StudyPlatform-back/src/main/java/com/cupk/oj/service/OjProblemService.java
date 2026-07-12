@@ -49,6 +49,11 @@ public class OjProblemService {
         return problemRepository.findAll(status, keyword, tags, difficulties, languages);
     }
 
+    /**
+     * 查询题目分类列表。
+     *
+     * @return 题目分类列表
+     */
     public List<AcademyCategoryResponse> listCategories() {
         return problemRepository.findCategories();
     }

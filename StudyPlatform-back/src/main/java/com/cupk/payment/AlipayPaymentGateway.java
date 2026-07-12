@@ -29,6 +29,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * 支付宝支付网关实现。
+ */
 @Component
 public class AlipayPaymentGateway implements PaymentGateway {
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -44,6 +47,15 @@ public class AlipayPaymentGateway implements PaymentGateway {
     private final String privateKeyPath;
     private final String notifyUrl;
 
+    /**
+     * 构造支付宝支付网关。
+     *
+     * @param gatewayUrl 支付宝网关地址
+     * @param appId 应用ID
+     * @param privateKey 应用私钥
+     * @param privateKeyPath 应用私钥文件路径
+     * @param notifyUrl 异步通知地址
+     */
     public AlipayPaymentGateway(
             @Value("${payment.alipay.gateway-url:https://openapi.alipay.com/gateway.do}") String gatewayUrl,
             @Value("${payment.alipay.app-id:}") String appId,
@@ -58,11 +70,24 @@ public class AlipayPaymentGateway implements PaymentGateway {
         this.notifyUrl = notifyUrl;
     }
 
+    /**
+     * 返回支付渠道标识。
+     *
+     * @return 支付渠道标识字符串
+     */
     @Override
     public String provider() {
         return "ALIPAY";
     }
 
+    /**
+     * 创建支付宝扫码支付（预下单）。
+     *
+     * @param orderNo 商户订单号
+     * @param subject 订单标题
+     * @param amount 订单金额
+     * @return 支付网关结果，包含二维码链接
+     */
     @Override
     public PaymentGatewayResult createNativePayment(String orderNo, String subject, BigDecimal amount) {
         requireConfigured();
@@ -79,6 +104,15 @@ public class AlipayPaymentGateway implements PaymentGateway {
         return new PaymentGatewayResult(provider() + "-" + orderNo, provider(), qrCode, "PENDING", "", "请使用支付宝扫码支付");
     }
 
+    /**
+     * 创建支付宝网页支付（电脑网站支付）。
+     *
+     * @param orderNo 商户订单号
+     * @param subject 订单标题
+     * @param amount 订单金额
+     * @param returnUrl 同步返回地址
+     * @return 支付网关结果，包含跳转表单HTML
+     */
     @Override
     public PaymentGatewayResult createPagePayment(String orderNo, String subject, BigDecimal amount, String returnUrl) {
         requireConfigured();
@@ -91,6 +125,12 @@ public class AlipayPaymentGateway implements PaymentGateway {
         return new PaymentGatewayResult(provider() + "-" + orderNo, provider(), formHtml, "PENDING", "", "请在支付宝沙箱网页收银台完成付款");
     }
 
+    /**
+     * 查询支付宝订单支付状态。
+     *
+     * @param orderNo 商户订单号
+     * @return 支付网关结果，包含支付状态
+     */
     @Override
     public PaymentGatewayResult queryPayment(String orderNo) {
         requireConfigured();
@@ -107,6 +147,13 @@ public class AlipayPaymentGateway implements PaymentGateway {
         return new PaymentGatewayResult(provider() + "-" + orderNo, provider(), "", status, tradeNo, resolveAlipayMessage(response));
     }
 
+    /**
+     * 向支付宝网关发送POST请求。
+     *
+     * @param method 接口方法名
+     * @param bizContent 业务参数JSON
+     * @return 支付宝响应内容
+     */
     private String post(String method, String bizContent) {
         try {
             Map<String, String> params = commonParams(method, bizContent);
@@ -131,6 +178,14 @@ public class AlipayPaymentGateway implements PaymentGateway {
         }
     }
 
+    /**
+     * 生成支付宝网页支付跳转表单HTML。
+     *
+     * @param method 接口方法名
+     * @param bizContent 业务参数JSON
+     * @param returnUrl 同步返回地址
+     * @return 表单HTML字符串
+     */
     private String pagePayForm(String method, String bizContent, String returnUrl) {
         Map<String, String> params = commonParams(method, bizContent);
         if (returnUrl != null && !returnUrl.isBlank()) {
@@ -164,6 +219,13 @@ public class AlipayPaymentGateway implements PaymentGateway {
         return builder.toString();
     }
 
+    /**
+     * 构造支付宝请求公共参数。
+     *
+     * @param method 接口方法名
+     * @param bizContent 业务参数JSON
+     * @return 公共参数Map
+     */
     private Map<String, String> commonParams(String method, String bizContent) {
         Map<String, String> params = new LinkedHashMap<>();
         params.put("app_id", appId.trim());
@@ -180,6 +242,12 @@ public class AlipayPaymentGateway implements PaymentGateway {
         return params;
     }
 
+    /**
+     * 对请求参数进行RSA2签名。
+     *
+     * @param params 待签名参数
+     * @return Base64编码的签名值
+     */
     private String sign(Map<String, String> params) {
         try {
             Signature signature = Signature.getInstance("SHA256withRSA");
@@ -191,6 +259,12 @@ public class AlipayPaymentGateway implements PaymentGateway {
         }
     }
 
+    /**
+     * 读取支付宝应用私钥。
+     *
+     * @return 应用私钥对象
+     * @throws Exception 读取或解析私钥失败时抛出
+     */
     private PrivateKey readPrivateKey() throws Exception {
         String key = privateKey == null || privateKey.isBlank()
                 ? Files.readString(Path.of(privateKeyPath.trim()), StandardCharsets.UTF_8)
@@ -203,6 +277,12 @@ public class AlipayPaymentGateway implements PaymentGateway {
         return KeyFactory.getInstance("RSA").generatePrivate(new PKCS8EncodedKeySpec(decoded));
     }
 
+    /**
+     * 构造待签名字符串（按字典序拼接参数）。
+     *
+     * @param params 请求参数
+     * @return 待签名字符串
+     */
     private String canonical(Map<String, String> params) {
         List<Map.Entry<String, String>> entries = new ArrayList<>(params.entrySet());
         entries.removeIf(entry -> "sign".equals(entry.getKey()) || entry.getValue() == null || entry.getValue().isBlank());
@@ -214,6 +294,12 @@ public class AlipayPaymentGateway implements PaymentGateway {
         return String.join("&", parts);
     }
 
+    /**
+     * 将参数进行表单URL编码。
+     *
+     * @param params 请求参数
+     * @return URL编码后的表单字符串
+     */
     private String formEncode(Map<String, String> params) {
         List<String> parts = new ArrayList<>();
         for (Map.Entry<String, String> entry : params.entrySet()) {
@@ -224,6 +310,12 @@ public class AlipayPaymentGateway implements PaymentGateway {
         return String.join("&", parts);
     }
 
+    /**
+     * 对字符串进行HTML转义。
+     *
+     * @param value 原始字符串
+     * @return 转义后的字符串
+     */
     private String escapeHtml(String value) {
         return value == null ? "" : value
                 .replace("&", "&amp;")
@@ -232,6 +324,12 @@ public class AlipayPaymentGateway implements PaymentGateway {
                 .replace(">", "&gt;");
     }
 
+    /**
+     * 解析支付宝响应消息。
+     *
+     * @param response 支付宝响应内容
+     * @return 错误消息
+     */
     private String resolveAlipayMessage(String response) {
         String subMessage = PaymentJson.stringValue(response, "sub_msg");
         if (!subMessage.isBlank()) {
@@ -241,6 +339,9 @@ public class AlipayPaymentGateway implements PaymentGateway {
         return message.isBlank() ? "未知错误" : message;
     }
 
+    /**
+     * 校验支付宝支付配置是否完整。
+     */
     private void requireConfigured() {
         boolean hasPrivateKey = (privateKey != null && !privateKey.isBlank())
                 || (privateKeyPath != null && !privateKeyPath.isBlank());

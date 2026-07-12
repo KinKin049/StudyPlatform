@@ -44,6 +44,10 @@ public class WellLogRecordService {
 
     /**
      * 查询分页历史记录，并对页码和每页数量做边界保护。
+     * @param userId 用户ID
+     * @param page 页码
+     * @param size 每页数量
+     * @return 分页记录结果
      */
     public WellLogRecordPage pageRecords(Long userId, int page, int size) {
         int safePage = Math.max(page, 1);
@@ -68,6 +72,7 @@ public class WellLogRecordService {
 
     /**
      * 删除单条记录；不存在时返回 404。
+     * @param id 记录ID
      */
     @Transactional
     public void deleteRecord(Long id) {
